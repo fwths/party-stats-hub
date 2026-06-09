@@ -624,7 +624,7 @@ function PartyHighlights({ ids }: { ids: number[] }) {
     .filter((x): x is { name: string; member: PartyMember; mod: number } => !!x);
 
   return (
-    <details open className="group card-arcane mb-4 rounded-lg border border-border p-3">
+    <details className="group card-arcane mb-4 rounded-lg border border-border p-3">
       <summary className="flex cursor-pointer list-none items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-accent">
         <span>Best at Each Skill</span>
         <span className="ml-2 transition-transform group-open:rotate-90">›</span>

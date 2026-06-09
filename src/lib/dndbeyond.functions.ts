@@ -400,6 +400,11 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const skills = computeSkills(modifiers, abilities, pb);
     const saves = computeSaves(modifiers, abilities, pb);
     const { spellSlots, pactSlots } = computeSpellSlots(data);
+    const conditions: string[] = Array.isArray(data.conditions)
+      ? data.conditions
+          .map((c: any) => c?.definition?.name ?? c?.name)
+          .filter((n: any): n is string => typeof n === "string" && n.length > 0)
+      : [];
 
     const investigationSkill = skills.find((s) => s.key === "investigation");
     const insightSkill = skills.find((s) => s.key === "insight");
@@ -429,6 +434,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       spellSlots,
       pactSlots,
       abilities,
+      conditions,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
   } catch (err: any) {
@@ -460,6 +466,7 @@ function errorMember(id: number, message: string): PartyMember {
     spellSlots: [],
     pactSlots: [],
     abilities: ABILITY_NAMES.map((name) => ({ name, score: 0, modifier: 0 })),
+    conditions: [],
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };

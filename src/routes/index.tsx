@@ -141,6 +141,11 @@ function CharacterCard({ member }: { member: PartyMember }) {
               ))}
             </div>
           )}
+          {member.subclasses.length > 0 && (
+            <p className="mt-1 truncate text-[10px] uppercase tracking-wider text-muted-foreground">
+              {member.subclasses.join(" • ")}
+            </p>
+          )}
           {member.conditions.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-1">
               {member.conditions.map((c) => (

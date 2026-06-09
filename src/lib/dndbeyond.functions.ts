@@ -491,6 +491,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const { spellSlots, pactSlots } = computeSpellSlots(data);
     const defenses = computeDefenses(modifiers);
     const actions = computeActions(data, abilities, pb);
+    const inventory = computeInventory(data);
     let exhaustion = 0;
     const conditions: string[] = [];
     if (Array.isArray(data.conditions)) {
@@ -553,6 +554,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       conditions,
       defenses,
       actions,
+      inventory,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
   } catch (err: any) {
@@ -663,6 +665,7 @@ function errorMember(id: number, message: string): PartyMember {
     conditions: [],
     defenses: [],
     actions: [],
+    inventory: [],
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };

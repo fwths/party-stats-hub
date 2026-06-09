@@ -130,9 +130,9 @@ function CharacterCard({ member }: { member: PartyMember }) {
 
           <div className="mt-4 grid grid-cols-4 gap-1.5 text-center">
             <Stat label="AC" value={member.armorClass} />
-            <Stat label="Init" value={fmt(member.initiative)} />
+            <Stat label="Initiative" value={fmt(member.initiative)} />
             <Stat label="Speed" value={`${member.speed}ft`} />
-            <Stat label="Prof" value={fmt(member.proficiencyBonus)} />
+            <Stat label="Proficiency" value={fmt(member.proficiencyBonus)} />
           </div>
 
           <div className="mt-4 grid grid-cols-6 gap-1.5">

@@ -273,8 +273,8 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   const available = s.max - s.used;
                   return (
                     <div key={`s-${s.level}`} className="flex items-center gap-2">
-                      <span className="w-6 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
-                        L{s.level}
+                      <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+                        Level {s.level}
                       </span>
                       <div
                         className="flex flex-wrap gap-1"

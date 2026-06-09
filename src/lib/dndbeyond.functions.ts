@@ -478,7 +478,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const saves = computeSaves(modifiers, abilities, pb);
     const { spellSlots, pactSlots } = computeSpellSlots(data);
     const defenses = computeDefenses(modifiers);
-    const actions = computeActions(data);
+    const actions = computeActions(data, abilities, pb);
     let exhaustion = 0;
     const conditions: string[] = [];
     if (Array.isArray(data.conditions)) {

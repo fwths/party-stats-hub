@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  Eye, EyeOff, EarOff, Ghost, Hand, Ban, Snowflake, Mountain,
+  FlaskConical, ArrowDown, Lock, Zap, Moon, Brain, Heart, Flame,
+  HeartCrack, Skull, Sparkles, AlertCircle, Plus, X,
+} from "lucide-react";
 import { getParty, type PartyMember, type InventoryItem } from "@/lib/dndbeyond.functions";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 
@@ -206,25 +211,11 @@ function CharacterCard({ member }: { member: PartyMember }) {
               {member.subclasses.join(" • ")}
             </p>
           )}
-          {member.conditions.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {member.conditions.map((c) => (
-                <span
-                  key={c}
-                  className="rounded-full border border-destructive/60 bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_60%,transparent)]"
-                >
-                  {c}
-                </span>
-              ))}
-            </div>
-          )}
-          {member.exhaustion > 0 && (
-            <div className="mt-1">
-              <span className="rounded-full border border-destructive bg-destructive/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive shadow-[0_0_8px_color-mix(in_oklab,var(--destructive)_70%,transparent)]">
-                Exhaustion {member.exhaustion}
-              </span>
-            </div>
-          )}
+          <ConditionsPanel
+            characterId={member.id}
+            remoteConditions={member.conditions}
+            exhaustion={member.exhaustion}
+          />
           {member.error ? (
             <p className="mt-1 text-xs text-destructive">{member.error}</p>
           ) : null}
@@ -617,8 +608,8 @@ const SKILL_ABILITY: Record<string, string> = {
 function PartyHighlights({ ids }: { ids: number[] }) {
   const { data } = useSuspenseQuery(partyQueryOptions(ids));
   const members = data.members.filter((m) => !m.error);
+  if (members.length === 0) return null;
 
-  // Best at each skill
   const skillNames = Object.keys(SKILL_ABILITY);
   const bestBySkill = skillNames
     .map((name) => {
@@ -632,86 +623,279 @@ function PartyHighlights({ ids }: { ids: number[] }) {
     })
     .filter((x): x is { name: string; member: PartyMember; mod: number } => !!x);
 
-  // Party-wide conditions/status overview
-  const afflicted = members.filter(
-    (m) => m.conditions.length > 0 || m.exhaustion > 0 || m.hpCurrent <= 0,
+  return (
+    <details open className="group card-arcane mb-4 rounded-lg border border-border p-3">
+      <summary className="flex cursor-pointer list-none items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-accent">
+        <span>Best at Each Skill</span>
+        <span className="ml-2 transition-transform group-open:rotate-90">›</span>
+      </summary>
+      <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs sm:grid-cols-3">
+        {bestBySkill.map(({ name, member, mod }) => (
+          <div key={name} className="flex items-baseline justify-between gap-2">
+            <div className="min-w-0">
+              <div className="truncate text-foreground">{name}</div>
+              <div className="truncate text-[10px] text-muted-foreground">{member.name}</div>
+            </div>
+            <span className="font-mono text-accent">{mod >= 0 ? `+${mod}` : mod}</span>
+          </div>
+        ))}
+      </div>
+    </details>
   );
+}
 
-  if (members.length === 0) return null;
+// ============================================================================
+// Conditions & Status Effects (per character)
+// ============================================================================
+
+type ConditionDef = {
+  name: string;
+  Icon: React.ComponentType<{ size?: number; className?: string }>;
+};
+
+const CONDITION_DEFS: ConditionDef[] = [
+  { name: "Blinded", Icon: EyeOff },
+  { name: "Charmed", Icon: Heart },
+  { name: "Concentration", Icon: Sparkles },
+  { name: "Deafened", Icon: EarOff },
+  { name: "Exhaustion", Icon: HeartCrack },
+  { name: "Frightened", Icon: Ghost },
+  { name: "Grappled", Icon: Hand },
+  { name: "Incapacitated", Icon: Ban },
+  { name: "Invisible", Icon: Eye },
+  { name: "Paralyzed", Icon: Snowflake },
+  { name: "Petrified", Icon: Mountain },
+  { name: "Poisoned", Icon: FlaskConical },
+  { name: "Prone", Icon: ArrowDown },
+  { name: "Restrained", Icon: Lock },
+  { name: "Stunned", Icon: Zap },
+  { name: "Unconscious", Icon: Moon },
+  { name: "On Fire", Icon: Flame },
+  { name: "Dying", Icon: Skull },
+  { name: "Blessed", Icon: Brain },
+];
+
+const CONDITION_BY_NAME = new Map(
+  CONDITION_DEFS.map((d) => [d.name.toLowerCase(), d]),
+);
+
+function conditionIcon(name: string) {
+  return CONDITION_BY_NAME.get(name.toLowerCase())?.Icon ?? AlertCircle;
+}
+
+type LocalCondition = { name: string; rounds: number | null };
+
+const CONDITIONS_KEY = "mob.conditions.v1";
+
+function readAllConditions(): Record<string, LocalCondition[]> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(CONDITIONS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function useCharacterConditions(characterId: number) {
+  const [all, setAll] = useState<Record<string, LocalCondition[]>>(() => readAllConditions());
+  const key = String(characterId);
+  const list = all[key] ?? [];
+
+  const persist = (next: Record<string, LocalCondition[]>) => {
+    setAll(next);
+    try {
+      localStorage.setItem(CONDITIONS_KEY, JSON.stringify(next));
+    } catch {}
+  };
+
+  const add = (name: string, rounds: number | null) => {
+    const exists = list.some((c) => c.name.toLowerCase() === name.toLowerCase());
+    if (exists) return;
+    persist({ ...all, [key]: [...list, { name, rounds }] });
+  };
+  const remove = (name: string) => {
+    persist({ ...all, [key]: list.filter((c) => c.name !== name) });
+  };
+  const tick = (name: string, delta: number) => {
+    persist({
+      ...all,
+      [key]: list
+        .map((c) =>
+          c.name === name && c.rounds != null
+            ? { ...c, rounds: c.rounds + delta }
+            : c,
+        )
+        .filter((c) => c.rounds == null || c.rounds > 0),
+    });
+  };
+
+  return { list, add, remove, tick };
+}
+
+function ConditionsPanel({
+  characterId,
+  remoteConditions,
+  exhaustion,
+}: {
+  characterId: number;
+  remoteConditions: string[];
+  exhaustion: number;
+}) {
+  const { list, add, remove, tick } = useCharacterConditions(characterId);
+  const [picking, setPicking] = useState(false);
+  const [rounds, setRounds] = useState<string>("");
+
+  const remoteNames = new Set(remoteConditions.map((c) => c.toLowerCase()));
+  // Avoid duplicates between remote (D&D Beyond) and local conditions
+  const localOnly = list.filter((c) => !remoteNames.has(c.name.toLowerCase()));
+
+  const showAny =
+    remoteConditions.length > 0 || exhaustion > 0 || localOnly.length > 0;
 
   return (
-    <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <details
-        open
-        className="group card-arcane rounded-lg border border-border p-3"
-      >
-        <summary className="flex cursor-pointer list-none items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-accent">
-          <span>Best at Each Skill</span>
-          <span className="ml-2 transition-transform group-open:rotate-90">›</span>
-        </summary>
-        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs sm:grid-cols-3">
-          {bestBySkill.map(({ name, member, mod }) => (
-            <div key={name} className="flex items-baseline justify-between gap-2">
-              <div className="min-w-0">
-                <div className="truncate text-foreground">{name}</div>
-                <div className="truncate text-[10px] text-muted-foreground">
-                  {member.name}
-                </div>
-              </div>
-              <span className="font-mono text-accent">
-                {mod >= 0 ? `+${mod}` : mod}
-              </span>
-            </div>
-          ))}
-        </div>
-      </details>
+    <div className="mt-1.5">
+      <div className="flex flex-wrap items-center gap-1">
+        {exhaustion > 0 && (
+          <ConditionChip
+            name={`Exhaustion ${exhaustion}`}
+            Icon={HeartCrack}
+            intense
+          />
+        )}
+        {remoteConditions.map((c) => {
+          const Icon = conditionIcon(c);
+          return <ConditionChip key={`r-${c}`} name={c} Icon={Icon} />;
+        })}
+        {localOnly.map((c) => {
+          const Icon = conditionIcon(c.name);
+          return (
+            <ConditionChip
+              key={`l-${c.name}`}
+              name={c.name}
+              Icon={Icon}
+              rounds={c.rounds}
+              onTick={c.rounds != null ? () => tick(c.name, -1) : undefined}
+              onRemove={() => remove(c.name)}
+            />
+          );
+        })}
+        <button
+          onClick={() => setPicking((p) => !p)}
+          title="Add condition"
+          className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+            picking
+              ? "border-accent bg-accent/15 text-accent"
+              : "border-border bg-secondary/60 text-muted-foreground hover:border-accent/60 hover:text-accent"
+          }`}
+        >
+          <Plus size={10} />
+          {showAny ? "" : "Add"}
+        </button>
+      </div>
 
-      <details
-        open
-        className="group card-arcane rounded-lg border border-border p-3"
-      >
-        <summary className="flex cursor-pointer list-none items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-accent">
-          <span>Party Status</span>
-          <span className="ml-2 transition-transform group-open:rotate-90">›</span>
-        </summary>
-        <div className="mt-2 flex flex-col gap-1.5 text-xs">
-          {afflicted.length === 0 ? (
-            <span className="text-muted-foreground">
-              No active conditions or status effects.
+      {picking && (
+        <div className="mt-2 rounded border border-border bg-secondary/40 p-2">
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Rounds
             </span>
-          ) : (
-            afflicted.map((m) => (
-              <div
-                key={m.id}
-                className="flex flex-wrap items-center gap-1.5 rounded border border-border bg-secondary/40 px-2 py-1"
-              >
-                <span className="text-foreground font-semibold">{m.name}</span>
-                {m.hpCurrent <= 0 && (
-                  <span className="rounded-full border border-destructive/60 bg-destructive/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive">
-                    {m.deathSaves.stabilized ? "Stable" : "Down"}
-                  </span>
-                )}
-                {m.exhaustion > 0 && (
-                  <span className="rounded-full border border-destructive/60 bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive">
-                    Exhaustion {m.exhaustion}
-                  </span>
-                )}
-                {m.conditions.map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-full border border-destructive/60 bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            ))
-          )}
+            <input
+              type="number"
+              min={1}
+              value={rounds}
+              onChange={(e) => setRounds(e.target.value)}
+              placeholder="∞"
+              className="w-16 rounded border border-border bg-background px-1.5 py-0.5 text-xs text-foreground outline-none focus:border-accent"
+            />
+            <span className="text-[10px] text-muted-foreground">
+              (blank = no timer)
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {CONDITION_DEFS.filter(
+              (d) => !remoteNames.has(d.name.toLowerCase()),
+            ).map(({ name, Icon }) => {
+              const active = list.some((c) => c.name === name);
+              return (
+                <button
+                  key={name}
+                  onClick={() => {
+                    if (active) {
+                      remove(name);
+                    } else {
+                      const n = parseInt(rounds, 10);
+                      add(name, Number.isFinite(n) && n > 0 ? n : null);
+                    }
+                  }}
+                  className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] ${
+                    active
+                      ? "border-destructive/70 bg-destructive/20 text-destructive"
+                      : "border-border bg-background/60 text-foreground hover:border-accent/60"
+                  }`}
+                >
+                  <Icon size={10} />
+                  {name}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </details>
+      )}
     </div>
   );
 }
+
+function ConditionChip({
+  name,
+  Icon,
+  rounds,
+  intense,
+  onTick,
+  onRemove,
+}: {
+  name: string;
+  Icon: React.ComponentType<{ size?: number; className?: string }>;
+  rounds?: number | null;
+  intense?: boolean;
+  onTick?: () => void;
+  onRemove?: () => void;
+}) {
+  const base = intense
+    ? "border-destructive bg-destructive/25 text-destructive shadow-[0_0_8px_color-mix(in_oklab,var(--destructive)_70%,transparent)]"
+    : "border-destructive/60 bg-destructive/15 text-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_55%,transparent)]";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${base}`}
+      title={rounds != null ? `${name} — ${rounds} round${rounds === 1 ? "" : "s"} remaining` : name}
+    >
+      <Icon size={10} />
+      <span>{name}</span>
+      {rounds != null && (
+        <button
+          onClick={onTick}
+          disabled={!onTick}
+          className="ml-0.5 rounded bg-destructive/30 px-1 font-mono text-[10px] text-destructive hover:bg-destructive/50 disabled:cursor-default disabled:opacity-60"
+          title="Click to advance one round"
+        >
+          {rounds}r
+        </button>
+      )}
+      {onRemove && (
+        <button
+          onClick={onRemove}
+          className="ml-0.5 rounded hover:text-foreground"
+          title="Remove"
+        >
+          <X size={10} />
+        </button>
+      )}
+    </span>
+  );
+}
+
 
 function parseCharacterIdInput(raw: string): number | null {
   const trimmed = raw.trim();

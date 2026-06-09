@@ -43,6 +43,16 @@ export interface ActionInfo {
   uses?: { current: number; max: number; reset: string };
 }
 
+export interface InventoryItem {
+  name: string;
+  type: string; // Weapon / Armor / Wondrous item / Potion / ...
+  rarity: string | null; // Common, Uncommon, Rare, Very Rare, Legendary, Artifact, Mundane
+  magic: boolean;
+  equipped: boolean;
+  attuned: boolean;
+  quantity: number;
+}
+
 
 export interface DeathSaves {
   successes: number;
@@ -81,6 +91,7 @@ export interface PartyMember {
   conditions: string[];
   defenses: DefenseInfo[];
   actions: ActionInfo[];
+  inventory: InventoryItem[];
   readonlyUrl: string;
   error?: string;
 }

@@ -151,3 +151,41 @@
     color: var(--color-foreground);
   }
 }
+
+@utility card-arcane {
+  position: relative;
+  background-image:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 55%),
+    radial-gradient(100% 70% at 100% 100%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 60%),
+    linear-gradient(180deg, color-mix(in oklab, var(--card) 100%, transparent), color-mix(in oklab, var(--card) 88%, black));
+}
+@utility card-arcane {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.06;
+    mix-blend-mode: overlay;
+    background-image: radial-gradient(currentColor 1px, transparent 1px);
+    background-size: 3px 3px;
+  }
+}
+
+@keyframes hp-flash-damage {
+  0% { opacity: 0; transform: translateY(-4px); }
+  15% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+@keyframes hp-flash-heal {
+  0% { opacity: 0; transform: translateY(4px); }
+  15% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+@utility hp-delta-damage {
+  animation: hp-flash-damage 1.6s ease-out forwards;
+}
+@utility hp-delta-heal {
+  animation: hp-flash-heal 1.6s ease-out forwards;
+}

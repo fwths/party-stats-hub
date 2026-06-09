@@ -84,6 +84,10 @@
   --accent-foreground: oklch(0.14 0.03 265);
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
+  --hp-good: oklch(0.70 0.17 155);
+  --hp-wounded: oklch(0.78 0.16 80);
+  --hp-critical: oklch(0.62 0.22 25);
+  --gold: oklch(0.82 0.15 85);
   --border: oklch(0.32 0.06 280);
   --input: oklch(0.28 0.05 270);
   --ring: oklch(0.65 0.14 300);

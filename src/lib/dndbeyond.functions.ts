@@ -307,9 +307,11 @@ function computeSkillProficiency(
   modifiers: any[],
   subType: string,
 ): "none" | "half" | "proficient" | "expertise" {
+  const target = subType.toLowerCase().replace(/\s+/g, "-");
   let level: "none" | "half" | "proficient" = "none";
   for (const m of modifiers) {
-    if (m?.subType !== subType) continue;
+    const modSub = String(m?.subType ?? "").toLowerCase().replace(/\s+/g, "-");
+    if (modSub !== target) continue;
     if (m.type === "expertise") return "expertise";
     if (m.type === "proficiency") level = "proficient";
     if (m.type === "half-proficiency" && level === "none") level = "half";
@@ -329,7 +331,8 @@ function computeSkills(
     // Flat skill bonuses (rare)
     let extra = 0;
     for (const m of modifiers) {
-      if (m?.subType === key && m?.type === "bonus" && typeof m?.value === "number") {
+      const modSub = String(m?.subType ?? "").toLowerCase().replace(/\s+/g, "-");
+      if (modSub === key && m?.type === "bonus" && typeof m?.value === "number") {
         extra += m.value;
       }
     }

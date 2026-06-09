@@ -32,12 +32,24 @@ export interface SpellSlotLevel {
   used: number;
 }
 
+export interface DefenseInfo {
+  type: "resistance" | "immunity" | "vulnerability";
+  damageType: string;
+}
+
+export interface ActionInfo {
+  name: string;
+  source: string; // class / race / feat / item
+  uses?: { current: number; max: number; reset: string };
+}
+
 export interface PartyMember {
   id: number;
   name: string;
   avatarUrl: string | null;
   race: string;
   classes: string;
+  subclasses: string[];
   level: number;
   hpMax: number;
   hpCurrent: number;
@@ -56,6 +68,8 @@ export interface PartyMember {
   pactSlots: SpellSlotLevel[];
   abilities: AbilityScore[];
   conditions: string[];
+  defenses: DefenseInfo[];
+  actions: ActionInfo[];
   readonlyUrl: string;
   error?: string;
 }

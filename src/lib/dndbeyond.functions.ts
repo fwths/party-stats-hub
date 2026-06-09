@@ -671,11 +671,57 @@ function errorMember(id: number, message: string): PartyMember {
   };
 }
 
+const RARITY_ORDER = ["Mundane", "Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact"];
+
+function computeInventory(data: any): InventoryItem[] {
+  const inv: any[] = data?.inventory ?? [];
+  const out: InventoryItem[] = [];
+  for (const i of inv) {
+    const def = i?.definition ?? {};
+    const name: string = def.name;
+    if (!name) continue;
+    const type: string = def.type ?? def.filterType ?? "Item";
+    const rarity: string | null = def.rarity ?? null;
+    const magic = !!def.magic || (!!rarity && rarity !== "Common" && rarity !== "Mundane");
+    out.push({
+      name,
+      type,
+      rarity,
+      magic,
+      equipped: !!i.equipped,
+      attuned: !!i.isAttuned,
+      quantity: i.quantity ?? 1,
+    });
+  }
+  // Sort: attuned > equipped magic > equipped > other magic > rest; within: by rarity desc, then name
+  out.sort((a, b) => {
+    const rank = (x: InventoryItem) =>
+      x.attuned ? 0 : x.equipped && x.magic ? 1 : x.equipped ? 2 : x.magic ? 3 : 4;
+    const ra = rank(a);
+    const rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    const rIdx = (x: InventoryItem) => (x.rarity ? RARITY_ORDER.indexOf(x.rarity) : -1);
+    const ria = rIdx(a);
+    const rib = rIdx(b);
+    if (ria !== rib) return rib - ria;
+    return a.name.localeCompare(b.name);
+  });
+  return out;
+}
+
 export async function loadParty(ids: number[] = PARTY_CHARACTER_IDS): Promise<PartyMember[]> {
   return Promise.all(ids.map(fetchCharacter));
 }
 
-export const getParty = createServerFn({ method: "GET" }).handler(async () => {
-  const members = await loadParty();
-  return { members, fetchedAt: new Date().toISOString() };
-});
+export const getParty = createServerFn({ method: "GET" })
+  .inputValidator((input?: { ids?: number[] }) => {
+    const ids = Array.isArray(input?.ids)
+      ? input!.ids!.filter((n) => Number.isInteger(n) && n > 0).slice(0, 12)
+      : [];
+    return { ids };
+  })
+  .handler(async ({ data }) => {
+    const ids = data.ids.length > 0 ? data.ids : PARTY_CHARACTER_IDS;
+    const members = await loadParty(ids);
+    return { members, fetchedAt: new Date().toISOString() };
+  });

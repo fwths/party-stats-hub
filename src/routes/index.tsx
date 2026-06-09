@@ -767,7 +767,7 @@ function ConditionsPanel({
         )}
         {remoteConditions.map((c) => {
           const Icon = conditionIcon(c);
-          return <ConditionChip key={`r-${c}`} name={c} Icon={Icon} />;
+          return <ConditionChip key={`r-${c}`} name={c} Icon={Icon} readOnly />;
         })}
         {localOnly.map((c) => {
           const Icon = conditionIcon(c.name);

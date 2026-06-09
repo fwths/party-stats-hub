@@ -32,12 +32,24 @@ export interface SpellSlotLevel {
   used: number;
 }
 
+export interface DefenseInfo {
+  type: "resistance" | "immunity" | "vulnerability";
+  damageType: string;
+}
+
+export interface ActionInfo {
+  name: string;
+  source: string; // class / race / feat / item
+  uses?: { current: number; max: number; reset: string };
+}
+
 export interface PartyMember {
   id: number;
   name: string;
   avatarUrl: string | null;
   race: string;
   classes: string;
+  subclasses: string[];
   level: number;
   hpMax: number;
   hpCurrent: number;
@@ -56,6 +68,8 @@ export interface PartyMember {
   pactSlots: SpellSlotLevel[];
   abilities: AbilityScore[];
   conditions: string[];
+  defenses: DefenseInfo[];
+  actions: ActionInfo[];
   readonlyUrl: string;
   error?: string;
 }
@@ -409,6 +423,13 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const classes = (data.classes ?? [])
       .map((c: any) => `${c.definition?.name ?? "?"} ${c.level ?? ""}`.trim())
       .join(" / ");
+    const subclasses: string[] = (data.classes ?? [])
+      .map((c: any) => {
+        const sub = c.subclassDefinition?.name;
+        const cls = c.definition?.name ?? "";
+        return sub ? `${cls}: ${sub}` : "";
+      })
+      .filter((s: string) => s.length > 0);
 
     const conMod = abilities[2].modifier;
     const baseHp = data.baseHitPoints ?? 0;
@@ -442,6 +463,8 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const skills = computeSkills(modifiers, abilities, pb, data.characterValues ?? []);
     const saves = computeSaves(modifiers, abilities, pb);
     const { spellSlots, pactSlots } = computeSpellSlots(data);
+    const defenses = computeDefenses(modifiers);
+    const actions = computeActions(data);
     const conditions: string[] = Array.isArray(data.conditions)
       ? data.conditions
           .map((c: any) => c?.definition?.name ?? c?.name)
@@ -459,6 +482,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       avatarUrl: data.decorations?.avatarUrl ?? null,
       race: data.race?.fullName ?? data.race?.baseName ?? "Unknown",
       classes: classes || "—",
+      subclasses,
       level: totalLevel,
       hpMax,
       hpCurrent,
@@ -477,11 +501,73 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       pactSlots,
       abilities,
       conditions,
+      defenses,
+      actions,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
   } catch (err: any) {
     return errorMember(id, err?.message ?? "Fetch failed");
   }
+}
+
+function titleCase(s: string): string {
+  return s.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function computeDefenses(modifiers: any[]): DefenseInfo[] {
+  const seen = new Set<string>();
+  const out: DefenseInfo[] = [];
+  for (const m of modifiers) {
+    let type: DefenseInfo["type"] | null = null;
+    if (m?.type === "resistance") type = "resistance";
+    else if (m?.type === "immunity") type = "immunity";
+    else if (m?.type === "vulnerability") type = "vulnerability";
+    if (!type) continue;
+    const raw = m?.friendlySubtypeName || m?.subType || "";
+    if (!raw) continue;
+    const damageType = titleCase(String(raw));
+    const key = `${type}:${damageType.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ type, damageType });
+  }
+  return out;
+}
+
+function computeActions(data: any): ActionInfo[] {
+  const sources: Array<[string, any[]]> = [
+    ["class", data?.actions?.class ?? []],
+    ["race", data?.actions?.race ?? []],
+    ["feat", data?.actions?.feat ?? []],
+    ["item", data?.actions?.item ?? []],
+  ];
+  const out: ActionInfo[] = [];
+  const seen = new Set<string>();
+  for (const [source, list] of sources) {
+    for (const a of list) {
+      const name = a?.name;
+      if (!name) continue;
+      const key = `${source}:${name}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const info: ActionInfo = { name, source };
+      const lu = a?.limitedUse;
+      if (lu && typeof lu.maxUses === "number" && lu.maxUses > 0) {
+        const reset =
+          lu.resetType === 1 ? "short rest" :
+          lu.resetType === 2 ? "long rest" :
+          lu.resetType === 3 ? "day" :
+          "rest";
+        info.uses = {
+          current: Math.max(0, lu.maxUses - (lu.numberUsed ?? 0)),
+          max: lu.maxUses,
+          reset,
+        };
+      }
+      out.push(info);
+    }
+  }
+  return out;
 }
 
 function errorMember(id: number, message: string): PartyMember {
@@ -491,6 +577,7 @@ function errorMember(id: number, message: string): PartyMember {
     avatarUrl: null,
     race: "—",
     classes: "—",
+    subclasses: [],
     level: 0,
     hpMax: 0,
     hpCurrent: 0,
@@ -509,6 +596,8 @@ function errorMember(id: number, message: string): PartyMember {
     pactSlots: [],
     abilities: ABILITY_NAMES.map((name) => ({ name, score: 0, modifier: 0 })),
     conditions: [],
+    defenses: [],
+    actions: [],
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };

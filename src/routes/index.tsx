@@ -297,10 +297,7 @@ function CharacterCard({ member }: { member: PartyMember }) {
 
 
           {member.saves.length > 0 && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Saving Throws
-              </div>
+            <Section title="Saving Throws">
               <div className="grid grid-cols-6 gap-1">
                 {member.saves.map((s) => {
                   const marker =
@@ -323,14 +320,22 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   );
                 })}
               </div>
-            </div>
+              <div className="mt-2 flex items-center justify-between rounded border border-accent/40 bg-accent/10 px-2 py-1 text-xs">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Concentration
+                  {member.concentration.advantage && (
+                    <span className="ml-1 text-gold" title="War Caster: advantage on concentration saves">
+                      ★ ADV
+                    </span>
+                  )}
+                </span>
+                <span className="font-mono text-accent">{fmt(member.concentration.modifier)}</span>
+              </div>
+            </Section>
           )}
 
           {(member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Spell Slots
-              </div>
+            <Section title="Spell Slots">
               <div className="flex flex-col gap-1.5">
                 {member.spellSlots.map((s) => {
                   const available = s.max - s.used;
@@ -395,14 +400,11 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   );
                 })}
               </div>
-            </div>
+            </Section>
           )}
 
           {(member.senses.length > 0 || member.passivePerception != null) && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Senses
-              </div>
+            <Section title="Senses">
               <div className="flex flex-col gap-1">
                 {[
                   { label: "Passive Perception", value: member.passivePerception },
@@ -427,14 +429,11 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   </div>
                 )}
               </div>
-            </div>
+            </Section>
           )}
 
           {profSkills.length > 0 && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Skills
-              </div>
+            <Section title="Skills">
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
                 {profSkills.map((s) => (
                   <div key={s.key} className="flex items-baseline justify-between">
@@ -446,14 +445,11 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   </div>
                 ))}
               </div>
-            </div>
+            </Section>
           )}
 
           {member.defenses.length > 0 && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Defenses
-              </div>
+            <Section title="Defenses">
               <div className="flex flex-wrap gap-1">
                 {member.defenses.map((d) => {
                   const styles =
@@ -476,14 +472,11 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   );
                 })}
               </div>
-            </div>
+            </Section>
           )}
 
           {member.actions?.filter((a) => a.source === "class" && a.uses).length ? (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Resources
-              </div>
+            <Section title="Resources">
               <div className="flex flex-col gap-1">
                 {member.actions
                   .filter((a) => a.source === "class" && a.uses)
@@ -508,12 +501,47 @@ function CharacterCard({ member }: { member: PartyMember }) {
                     );
                   })}
               </div>
-            </div>
+            </Section>
           ) : null}
+
+          {member.feats.length > 0 && (
+            <Section title="Feats" defaultOpen={false}>
+              <div className="flex flex-wrap gap-1">
+                {member.feats.map((f) => (
+                  <span
+                    key={f}
+                    className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            </Section>
+          )}
 
         </>
       )}
     </article>
+  );
+}
+
+function Section({
+  title,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details open={defaultOpen} className="group mt-3">
+      <summary className="mb-1 flex cursor-pointer list-none items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-accent">
+        <span>{title}</span>
+        <span className="ml-2 transition-transform group-open:rotate-90">›</span>
+      </summary>
+      {children}
+    </details>
   );
 }
 

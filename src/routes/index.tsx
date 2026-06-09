@@ -390,6 +390,67 @@ function CharacterCard({ member }: { member: PartyMember }) {
               </div>
             </div>
           )}
+
+          {member.defenses.length > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Defenses
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {member.defenses.map((d) => {
+                  const styles =
+                    d.type === "immunity"
+                      ? "border-gold/60 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] text-gold"
+                      : d.type === "vulnerability"
+                      ? "border-destructive/60 bg-destructive/15 text-destructive"
+                      : "border-accent/50 bg-accent/10 text-accent";
+                  const mark =
+                    d.type === "immunity" ? "IMM" : d.type === "vulnerability" ? "VUL" : "RES";
+                  return (
+                    <span
+                      key={`${d.type}-${d.damageType}`}
+                      className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${styles}`}
+                      title={`${d.type}: ${d.damageType}`}
+                    >
+                      <span className="opacity-70 mr-1">{mark}</span>
+                      {d.damageType}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {member.actions.length > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Actions
+              </div>
+              <div className="grid grid-cols-1 gap-0.5 text-xs">
+                {member.actions.map((a) => (
+                  <div
+                    key={`${a.source}-${a.name}`}
+                    className="flex items-baseline justify-between gap-2"
+                  >
+                    <span className="truncate text-foreground">
+                      <span className="mr-1 text-[9px] uppercase tracking-wider text-muted-foreground">
+                        {a.source}
+                      </span>
+                      {a.name}
+                    </span>
+                    {a.uses ? (
+                      <span
+                        className="shrink-0 font-mono text-[10px] text-accent"
+                        title={`Resets on ${a.uses.reset}`}
+                      >
+                        {a.uses.current}/{a.uses.max}
+                      </span>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </article>

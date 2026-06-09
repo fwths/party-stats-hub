@@ -439,7 +439,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const initiative = dexMod;
     const speed = data.race?.weightSpeeds?.normal?.walk ?? 30;
     const senses = computeSenses(modifiers, data.customSenses ?? []);
-    const skills = computeSkills(modifiers, abilities, pb);
+    const skills = computeSkills(modifiers, abilities, pb, data.characterValues ?? []);
     const saves = computeSaves(modifiers, abilities, pb);
     const { spellSlots, pactSlots } = computeSpellSlots(data);
     const conditions: string[] = Array.isArray(data.conditions)

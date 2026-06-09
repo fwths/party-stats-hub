@@ -218,30 +218,29 @@ function CharacterCard({ member }: { member: PartyMember }) {
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Senses
               </div>
-              <div className="flex flex-wrap gap-1">
-                {member.passivePerception != null && (
-                  <span className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[11px] text-foreground">
-                    👁 Perception {member.passivePerception}
-                  </span>
-                )}
-                {member.passiveInvestigation != null && (
-                  <span className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[11px] text-foreground">
-                    🔍 Investigation {member.passiveInvestigation}
-                  </span>
-                )}
-                {member.passiveInsight != null && (
-                  <span className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[11px] text-foreground">
-                    💡 Insight {member.passiveInsight}
-                  </span>
-                )}
-                {member.senses.map((s) => (
-                  <span
-                    key={s.name}
-                    className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] text-foreground"
+              <div className="flex flex-col gap-1">
+                {[
+                  { label: "Passive Perception", value: member.passivePerception },
+                  { label: "Passive Investigation", value: member.passiveInvestigation },
+                  { label: "Passive Insight", value: member.passiveInsight },
+                ].filter((p) => p.value != null).map((p) => (
+                  <div
+                    key={p.label}
+                    className="flex items-center gap-2 rounded border border-border bg-secondary/40 px-2 py-1"
                   >
-                    {s.name}{s.value != null ? ` ${s.value}ft` : ""}
-                  </span>
+                    <span className="flex h-6 w-6 items-center justify-center rounded border border-accent/50 bg-accent/10 text-xs font-mono font-semibold text-foreground">
+                      {p.value}
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {p.label}
+                    </span>
+                  </div>
                 ))}
+                {member.senses.length > 0 && (
+                  <div className="mt-1 text-center text-xs text-muted-foreground">
+                    {member.senses.map((s) => `${s.name}${s.value != null ? ` ${s.value} ft.` : ""}`).join(" • ")}
+                  </div>
+                )}
               </div>
             </div>
           )}

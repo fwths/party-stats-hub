@@ -479,14 +479,14 @@ function CharacterCard({ member }: { member: PartyMember }) {
             </div>
           )}
 
-          {member.actions.filter((a) => a.uses).length > 0 && (
+          {member.actions?.filter((a) => a.source === "class" && a.uses).length ? (
             <div className="mt-3">
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Resources
+                Class Resources
               </div>
               <div className="flex flex-col gap-1">
                 {member.actions
-                  .filter((a) => a.uses)
+                  .filter((a) => a.source === "class" && a.uses)
                   .map((a) => {
                     const u = a.uses!;
                     const out = u.current <= 0;
@@ -509,7 +509,7 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   })}
               </div>
             </div>
-          )}
+          ) : null}
 
         </>
       )}

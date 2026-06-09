@@ -425,8 +425,13 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       .join(" / ");
     const subclasses: string[] = (data.classes ?? [])
       .map((c: any) => {
-        const sub = c.subclassDefinition?.name;
-        return sub ?? "";
+        const sub =
+          c?.subclassDefinition?.name ??
+          c?.definition?.subclassDefinition?.name ??
+          c?.subClassDefinition?.name ??
+          c?.subclass?.name ??
+          "";
+        return typeof sub === "string" ? sub.trim() : "";
       })
       .filter((s: string) => s.length > 0);
 

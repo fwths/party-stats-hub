@@ -40,6 +40,7 @@ function Index() {
           </div>
         </header>
         <Suspense fallback={<p className="text-muted-foreground">Summoning heroes…</p>}>
+          <PartySummary />
           <PartyGrid />
         </Suspense>
       </div>
@@ -70,6 +71,62 @@ function PartyGrid() {
       {data.members.map((m) => (
         <CharacterCard key={m.id} member={m} />
       ))}
+    </div>
+  );
+}
+
+function PartySummary() {
+  const { data } = useSuspenseQuery(partyQueryOptions);
+  const alive = data.members.filter((m) => !m.error);
+  if (alive.length === 0) return null;
+  const totalHp = alive.reduce((s, m) => s + m.hpCurrent, 0);
+  const totalMax = alive.reduce((s, m) => s + m.hpMax, 0);
+  const pct = totalMax > 0 ? Math.round((totalHp / totalMax) * 100) : 0;
+  const down = alive.filter((m) => m.hpCurrent <= 0).length;
+  const inspired = alive.filter((m) => m.inspiration).length;
+  const avgLevel = (alive.reduce((s, m) => s + m.level, 0) / alive.length).toFixed(1);
+  const slotsLeft = alive.reduce(
+    (s, m) =>
+      s +
+      m.spellSlots.reduce((a, x) => a + (x.max - x.used), 0) +
+      m.pactSlots.reduce((a, x) => a + (x.max - x.used), 0),
+    0,
+  );
+  return (
+    <div className="mb-4 grid grid-cols-2 gap-2 rounded-lg border border-border bg-secondary/40 p-3 text-center sm:grid-cols-5">
+      <SummaryStat label="Party HP" value={`${totalHp}/${totalMax}`} sub={`${pct}%`} />
+      <SummaryStat label="Down" value={down} highlight={down > 0} />
+      <SummaryStat label="Inspired" value={inspired} />
+      <SummaryStat label="Avg Level" value={avgLevel} />
+      <SummaryStat label="Slots Left" value={slotsLeft} />
+    </div>
+  );
+}
+
+function SummaryStat({
+  label,
+  value,
+  sub,
+  highlight,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div
+        className={`text-lg font-bold leading-tight ${
+          highlight ? "text-destructive" : "text-foreground"
+        }`}
+      >
+        {value}
+      </div>
+      {sub && <div className="text-[10px] font-mono text-accent">{sub}</div>}
     </div>
   );
 }
@@ -118,16 +175,29 @@ function CharacterCard({ member }: { member: PartyMember }) {
           <div className="h-16 w-16 flex-shrink-0 rounded-md border border-border bg-muted" />
         )}
         <div className="min-w-0 flex-1">
-          <a
-            href={member.readonlyUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="block truncate text-lg font-semibold text-accent hover:underline"
-          >
-            {member.name}
-          </a>
+          <div className="flex items-center gap-1.5">
+            <a
+              href={member.readonlyUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block truncate text-lg font-semibold text-accent hover:underline"
+            >
+              {member.name}
+            </a>
+            {member.inspiration && (
+              <span
+                title="Inspiration"
+                className="text-gold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_80%,transparent)] animate-pulse"
+              >
+                ★
+              </span>
+            )}
+          </div>
           <p className="truncate text-xs text-muted-foreground">
             {member.race}
+            {member.background ? (
+              <span className="text-muted-foreground/70"> • {member.background}</span>
+            ) : null}
           </p>
           {classChips.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-1">
@@ -156,6 +226,13 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   {c}
                 </span>
               ))}
+            </div>
+          )}
+          {member.exhaustion > 0 && (
+            <div className="mt-1">
+              <span className="rounded-full border border-destructive bg-destructive/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive shadow-[0_0_8px_color-mix(in_oklab,var(--destructive)_70%,transparent)]">
+                Exhaustion {member.exhaustion}
+              </span>
             </div>
           )}
           {member.error ? (

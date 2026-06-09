@@ -354,9 +354,9 @@ function computeSkills(
     const key = SKILL_ID_TO_KEY[String(cv.valueId)];
     if (!key) continue;
     const v = cv.value;
-    if (v === 3) overrides[key] = "expertise";
-    else if (v === 2) overrides[key] = "proficient";
-    else if (v === 1) overrides[key] = "half";
+    if (v === 4) overrides[key] = "expertise";
+    else if (v === 3) overrides[key] = "proficient";
+    else if (v === 2) overrides[key] = "half";
   }
   return SKILLS.map(([key, name, abilityIdx]) => {
     const modProf = computeSkillProficiency(modifiers, key);

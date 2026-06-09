@@ -320,6 +320,7 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   );
                 })}
               </div>
+            </Section>
           )}
 
           {(member.spellSlots.length > 0 || member.pactSlots.length > 0) && (

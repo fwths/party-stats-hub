@@ -154,11 +154,6 @@ function CharacterCard({ member }: { member: PartyMember }) {
             ))}
           </div>
 
-          <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
-            <Stat label="Pass. Perc" value={member.passivePerception} />
-            <Stat label="Pass. Inv" value={member.passiveInvestigation} />
-            <Stat label="Pass. Ins" value={member.passiveInsight} />
-          </div>
 
           {member.saves.length > 0 && (
             <div className="mt-3">
@@ -218,12 +213,27 @@ function CharacterCard({ member }: { member: PartyMember }) {
             </div>
           )}
 
-          {member.senses.length > 0 && (
+          {(member.senses.length > 0 || member.passivePerception != null) && (
             <div className="mt-3">
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Senses
               </div>
               <div className="flex flex-wrap gap-1">
+                {member.passivePerception != null && (
+                  <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] text-foreground">
+                    Passive Perception {member.passivePerception}
+                  </span>
+                )}
+                {member.passiveInvestigation != null && (
+                  <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] text-foreground">
+                    Passive Investigation {member.passiveInvestigation}
+                  </span>
+                )}
+                {member.passiveInsight != null && (
+                  <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] text-foreground">
+                    Passive Insight {member.passiveInsight}
+                  </span>
+                )}
                 {member.senses.map((s) => (
                   <span
                     key={s.name}

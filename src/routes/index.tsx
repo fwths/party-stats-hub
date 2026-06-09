@@ -1,15 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { getParty, type PartyMember } from "@/lib/dndbeyond.functions";
+import { getParty, type PartyMember, type InventoryItem } from "@/lib/dndbeyond.functions";
+import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 
-const partyQueryOptions = queryOptions({
-  queryKey: ["party"],
-  queryFn: () => getParty(),
-  staleTime: 15_000,
-  refetchInterval: 30_000,
-  refetchOnWindowFocus: true,
-});
+const STORAGE_KEY = "mob.partyIds.v1";
+
+function readStoredIds(): number[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return null;
+    const ids = arr.filter((n) => Number.isInteger(n) && n > 0);
+    return ids.length > 0 ? ids : null;
+  } catch {
+    return null;
+  }
+}
+
+function partyQueryOptions(ids: number[] | null) {
+  const effective = ids && ids.length > 0 ? ids : PARTY_CHARACTER_IDS;
+  return queryOptions({
+    queryKey: ["party", effective],
+    queryFn: () => getParty({ data: { ids: effective } }),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,11 +40,24 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Live D&D party stats for MOB." },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(partyQueryOptions),
+  loader: ({ context }) => context.queryClient.ensureQueryData(partyQueryOptions(null)),
   component: Index,
 });
 
 function Index() {
+  const [ids, setIds] = useState<number[]>(() => readStoredIds() ?? PARTY_CHARACTER_IDS);
+  const [managing, setManaging] = useState(false);
+
+  useEffect(() => {
+    try {
+      const isDefault =
+        ids.length === PARTY_CHARACTER_IDS.length &&
+        ids.every((v, i) => v === PARTY_CHARACTER_IDS[i]);
+      if (isDefault) localStorage.removeItem(STORAGE_KEY);
+      else localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+    } catch {}
+  }, [ids]);
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-4 py-6">
@@ -33,27 +66,41 @@ function Index() {
             Mother of Bob <span className="text-muted-foreground">(MOB)</span>
           </h1>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <button
+              onClick={() => setManaging(true)}
+              className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60"
+            >
+              ⚙ Manage
+            </button>
             <a className="underline hover:text-accent" href="/api/party">JSON</a>
             <Suspense fallback={null}>
-              <RefreshButton />
+              <RefreshButton ids={ids} />
             </Suspense>
           </div>
         </header>
         <Suspense fallback={<p className="text-muted-foreground">Summoning heroes…</p>}>
-          <PartyGrid />
+          <PartyHighlights ids={ids} />
+          <PartyGrid ids={ids} />
         </Suspense>
+        {managing && (
+          <ManagePartyDialog
+            ids={ids}
+            onClose={() => setManaging(false)}
+            onChange={setIds}
+          />
+        )}
       </div>
     </main>
   );
 }
 
-function RefreshButton() {
+function RefreshButton({ ids }: { ids: number[] }) {
   const qc = useQueryClient();
-  const { data, isFetching } = useSuspenseQuery(partyQueryOptions);
+  const { data, isFetching } = useSuspenseQuery(partyQueryOptions(ids));
   const fetchedAt = new Date(data.fetchedAt);
   return (
     <button
-      onClick={() => qc.invalidateQueries({ queryKey: ["party"] })}
+      onClick={() => qc.invalidateQueries({ queryKey: ["party", ids] })}
       disabled={isFetching}
       className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60 disabled:opacity-50"
       title={`Last fetched ${fetchedAt.toLocaleTimeString()}`}
@@ -63,8 +110,8 @@ function RefreshButton() {
   );
 }
 
-function PartyGrid() {
-  const { data } = useSuspenseQuery(partyQueryOptions);
+function PartyGrid({ ids }: { ids: number[] }) {
+  const { data } = useSuspenseQuery(partyQueryOptions(ids));
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {data.members.map((m) => (

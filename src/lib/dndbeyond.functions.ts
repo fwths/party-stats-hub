@@ -307,9 +307,11 @@ function computeSkillProficiency(
   modifiers: any[],
   subType: string,
 ): "none" | "half" | "proficient" | "expertise" {
+  const target = subType.toLowerCase().replace(/\s+/g, "-");
   let level: "none" | "half" | "proficient" = "none";
   for (const m of modifiers) {
-    if (m?.subType !== subType) continue;
+    const modSub = String(m?.subType ?? "").toLowerCase().replace(/\s+/g, "-");
+    if (modSub !== target) continue;
     if (m.type === "expertise") return "expertise";
     if (m.type === "proficiency") level = "proficient";
     if (m.type === "half-proficiency" && level === "none") level = "half";

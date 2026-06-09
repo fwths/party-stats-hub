@@ -40,7 +40,6 @@ function Index() {
           </div>
         </header>
         <Suspense fallback={<p className="text-muted-foreground">Summoning heroes…</p>}>
-          <PartySummary />
           <PartyGrid />
         </Suspense>
       </div>
@@ -71,62 +70,6 @@ function PartyGrid() {
       {data.members.map((m) => (
         <CharacterCard key={m.id} member={m} />
       ))}
-    </div>
-  );
-}
-
-function PartySummary() {
-  const { data } = useSuspenseQuery(partyQueryOptions);
-  const alive = data.members.filter((m) => !m.error);
-  if (alive.length === 0) return null;
-  const totalHp = alive.reduce((s, m) => s + m.hpCurrent, 0);
-  const totalMax = alive.reduce((s, m) => s + m.hpMax, 0);
-  const pct = totalMax > 0 ? Math.round((totalHp / totalMax) * 100) : 0;
-  const down = alive.filter((m) => m.hpCurrent <= 0).length;
-  const inspired = alive.filter((m) => m.inspiration).length;
-  const avgLevel = (alive.reduce((s, m) => s + m.level, 0) / alive.length).toFixed(1);
-  const slotsLeft = alive.reduce(
-    (s, m) =>
-      s +
-      m.spellSlots.reduce((a, x) => a + (x.max - x.used), 0) +
-      m.pactSlots.reduce((a, x) => a + (x.max - x.used), 0),
-    0,
-  );
-  return (
-    <div className="mb-4 grid grid-cols-2 gap-2 rounded-lg border border-border bg-secondary/40 p-3 text-center sm:grid-cols-5">
-      <SummaryStat label="Party HP" value={`${totalHp}/${totalMax}`} sub={`${pct}%`} />
-      <SummaryStat label="Down" value={down} highlight={down > 0} />
-      <SummaryStat label="Inspired" value={inspired} />
-      <SummaryStat label="Avg Level" value={avgLevel} />
-      <SummaryStat label="Slots Left" value={slotsLeft} />
-    </div>
-  );
-}
-
-function SummaryStat({
-  label,
-  value,
-  sub,
-  highlight,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </div>
-      <div
-        className={`text-lg font-bold leading-tight ${
-          highlight ? "text-destructive" : "text-foreground"
-        }`}
-      >
-        {value}
-      </div>
-      {sub && <div className="text-[10px] font-mono text-accent">{sub}</div>}
     </div>
   );
 }

@@ -669,6 +669,8 @@ function errorMember(id: number, message: string): PartyMember {
     conditions: [],
     defenses: [],
     actions: [],
+    feats: [],
+    concentration: { modifier: 0, advantage: false },
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };

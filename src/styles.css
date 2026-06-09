@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -169,6 +170,22 @@
     background-image: radial-gradient(currentColor 1px, transparent 1px);
     background-size: 3px 3px;
   }
+}
+
+@utility font-display {
+  font-family: "Cinzel", serif;
+  letter-spacing: 0.02em;
+}
+
+@utility section-heading {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: color-mix(in oklab, var(--accent) 75%, white);
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--accent) 30%, transparent);
+  margin-bottom: 0.625rem;
 }
 
 @keyframes hp-flash-damage {

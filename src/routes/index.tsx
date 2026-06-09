@@ -40,6 +40,7 @@ function Index() {
           </div>
         </header>
         <Suspense fallback={<p className="text-muted-foreground">Summoning heroes…</p>}>
+          <PartySummary />
           <PartyGrid />
         </Suspense>
       </div>
@@ -70,6 +71,62 @@ function PartyGrid() {
       {data.members.map((m) => (
         <CharacterCard key={m.id} member={m} />
       ))}
+    </div>
+  );
+}
+
+function PartySummary() {
+  const { data } = useSuspenseQuery(partyQueryOptions);
+  const alive = data.members.filter((m) => !m.error);
+  if (alive.length === 0) return null;
+  const totalHp = alive.reduce((s, m) => s + m.hpCurrent, 0);
+  const totalMax = alive.reduce((s, m) => s + m.hpMax, 0);
+  const pct = totalMax > 0 ? Math.round((totalHp / totalMax) * 100) : 0;
+  const down = alive.filter((m) => m.hpCurrent <= 0).length;
+  const inspired = alive.filter((m) => m.inspiration).length;
+  const avgLevel = (alive.reduce((s, m) => s + m.level, 0) / alive.length).toFixed(1);
+  const slotsLeft = alive.reduce(
+    (s, m) =>
+      s +
+      m.spellSlots.reduce((a, x) => a + (x.max - x.used), 0) +
+      m.pactSlots.reduce((a, x) => a + (x.max - x.used), 0),
+    0,
+  );
+  return (
+    <div className="mb-4 grid grid-cols-2 gap-2 rounded-lg border border-border bg-secondary/40 p-3 text-center sm:grid-cols-5">
+      <SummaryStat label="Party HP" value={`${totalHp}/${totalMax}`} sub={`${pct}%`} />
+      <SummaryStat label="Down" value={down} highlight={down > 0} />
+      <SummaryStat label="Inspired" value={inspired} />
+      <SummaryStat label="Avg Level" value={avgLevel} />
+      <SummaryStat label="Slots Left" value={slotsLeft} />
+    </div>
+  );
+}
+
+function SummaryStat({
+  label,
+  value,
+  sub,
+  highlight,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div
+        className={`text-lg font-bold leading-tight ${
+          highlight ? "text-destructive" : "text-foreground"
+        }`}
+      >
+        {value}
+      </div>
+      {sub && <div className="text-[10px] font-mono text-accent">{sub}</div>}
     </div>
   );
 }
@@ -118,16 +175,29 @@ function CharacterCard({ member }: { member: PartyMember }) {
           <div className="h-16 w-16 flex-shrink-0 rounded-md border border-border bg-muted" />
         )}
         <div className="min-w-0 flex-1">
-          <a
-            href={member.readonlyUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="block truncate text-lg font-semibold text-accent hover:underline"
-          >
-            {member.name}
-          </a>
+          <div className="flex items-center gap-1.5">
+            <a
+              href={member.readonlyUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block truncate text-lg font-semibold text-accent hover:underline"
+            >
+              {member.name}
+            </a>
+            {member.inspiration && (
+              <span
+                title="Inspiration"
+                className="text-gold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_80%,transparent)] animate-pulse"
+              >
+                ★
+              </span>
+            )}
+          </div>
           <p className="truncate text-xs text-muted-foreground">
             {member.race}
+            {member.background ? (
+              <span className="text-muted-foreground/70"> • {member.background}</span>
+            ) : null}
           </p>
           {classChips.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-1">
@@ -156,6 +226,13 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   {c}
                 </span>
               ))}
+            </div>
+          )}
+          {member.exhaustion > 0 && (
+            <div className="mt-1">
+              <span className="rounded-full border border-destructive bg-destructive/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive shadow-[0_0_8px_color-mix(in_oklab,var(--destructive)_70%,transparent)]">
+                Exhaustion {member.exhaustion}
+              </span>
             </div>
           )}
           {member.error ? (
@@ -195,6 +272,44 @@ function CharacterCard({ member }: { member: PartyMember }) {
               />
             </div>
           </div>
+
+          {member.hpCurrent <= 0 && (
+            <div className="mt-3 rounded border border-destructive/60 bg-destructive/10 px-2 py-2">
+              <div className="mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider">
+                <span className="text-destructive">
+                  {member.deathSaves.stabilized ? "Stabilized" : "Death Saves"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">Success</span>
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={`s-${i}`}
+                      className={`h-3 w-3 rotate-45 border ${
+                        i < member.deathSaves.successes
+                          ? "border-hp-good bg-hp-good shadow-[0_0_6px_color-mix(in_oklab,var(--hp-good)_70%,transparent)]"
+                          : "border-border bg-transparent"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">Fail</span>
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={`f-${i}`}
+                      className={`h-3 w-3 rotate-45 border ${
+                        i < member.deathSaves.failures
+                          ? "border-destructive bg-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_70%,transparent)]"
+                          : "border-border bg-transparent"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-4 grid grid-cols-4 gap-1.5 text-center">
             <Stat label="AC" value={member.armorClass} />
@@ -417,6 +532,62 @@ function CharacterCard({ member }: { member: PartyMember }) {
                     </span>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {member.hitDice.length > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Hit Dice
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {member.hitDice.map((h, i) => {
+                  const avail = h.max - h.used;
+                  return (
+                    <span
+                      key={`hd-${i}`}
+                      className="rounded border border-border bg-secondary/60 px-2 py-0.5 text-[10px] font-mono text-foreground"
+                      title={`${avail}/${h.max} d${h.die} remaining`}
+                    >
+                      <span className="text-accent">{avail}</span>
+                      <span className="text-muted-foreground">/{h.max}</span>
+                      <span className="ml-1 text-muted-foreground">d{h.die}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {member.actions.filter((a) => a.uses).length > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Resources
+              </div>
+              <div className="flex flex-col gap-1">
+                {member.actions
+                  .filter((a) => a.uses)
+                  .map((a) => {
+                    const u = a.uses!;
+                    const out = u.current <= 0;
+                    return (
+                      <div
+                        key={`${a.source}-${a.name}`}
+                        className="flex items-center justify-between gap-2 rounded border border-border bg-secondary/40 px-2 py-1 text-xs"
+                        title={`Resets on ${u.reset}`}
+                      >
+                        <span className="truncate text-foreground">{a.name}</span>
+                        <span
+                          className={`font-mono ${
+                            out ? "text-destructive" : "text-accent"
+                          }`}
+                        >
+                          {u.current}/{u.max}
+                        </span>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}

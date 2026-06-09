@@ -43,17 +43,34 @@ export interface ActionInfo {
   uses?: { current: number; max: number; reset: string };
 }
 
+export interface HitDieInfo {
+  die: number; // d6/d8/d10/d12
+  max: number;
+  used: number;
+}
+
+export interface DeathSaves {
+  successes: number;
+  failures: number;
+  stabilized: boolean;
+}
+
 export interface PartyMember {
   id: number;
   name: string;
   avatarUrl: string | null;
   race: string;
+  background: string;
   classes: string;
   subclasses: string[];
   level: number;
   hpMax: number;
   hpCurrent: number;
   tempHp: number;
+  inspiration: boolean;
+  exhaustion: number;
+  deathSaves: DeathSaves;
+  hitDice: HitDieInfo[];
   passivePerception: number;
   passiveInvestigation: number;
   passiveInsight: number;
@@ -469,11 +486,39 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const { spellSlots, pactSlots } = computeSpellSlots(data);
     const defenses = computeDefenses(modifiers);
     const actions = computeActions(data);
-    const conditions: string[] = Array.isArray(data.conditions)
-      ? data.conditions
-          .map((c: any) => c?.definition?.name ?? c?.name)
-          .filter((n: any): n is string => typeof n === "string" && n.length > 0)
-      : [];
+    let exhaustion = 0;
+    const conditions: string[] = [];
+    if (Array.isArray(data.conditions)) {
+      for (const c of data.conditions) {
+        const name: string | undefined = c?.definition?.name ?? c?.name;
+        if (!name) continue;
+        if (/exhaustion/i.test(name)) {
+          exhaustion = Math.max(exhaustion, c?.level ?? 1);
+          continue;
+        }
+        conditions.push(name);
+      }
+    }
+
+    const hitDice: HitDieInfo[] = (data.classes ?? [])
+      .map((c: any) => ({
+        die: c?.definition?.hitDice ?? 0,
+        max: c?.level ?? 0,
+        used: c?.hitDiceUsed ?? 0,
+      }))
+      .filter((h: HitDieInfo) => h.die > 0 && h.max > 0);
+
+    const ds = data.deathSaves ?? {};
+    const deathSaves: DeathSaves = {
+      successes: ds.successCount ?? 0,
+      failures: ds.failCount ?? 0,
+      stabilized: !!ds.isStabilized,
+    };
+
+    const background =
+      data.background?.definition?.name ??
+      data.background?.customBackground?.name ??
+      "";
 
     const investigationSkill = skills.find((s) => s.key === "investigation");
     const insightSkill = skills.find((s) => s.key === "insight");
@@ -485,12 +530,17 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       name: data.name ?? "Unnamed",
       avatarUrl: data.decorations?.avatarUrl ?? null,
       race: data.race?.fullName ?? data.race?.baseName ?? "Unknown",
+      background,
       classes: classes || "—",
       subclasses,
       level: totalLevel,
       hpMax,
       hpCurrent,
       tempHp,
+      inspiration: !!data.inspiration,
+      exhaustion,
+      deathSaves,
+      hitDice,
       passivePerception,
       passiveInvestigation,
       passiveInsight,
@@ -580,12 +630,17 @@ function errorMember(id: number, message: string): PartyMember {
     name: `Character ${id}`,
     avatarUrl: null,
     race: "—",
+    background: "",
     classes: "—",
     subclasses: [],
     level: 0,
     hpMax: 0,
     hpCurrent: 0,
     tempHp: 0,
+    inspiration: false,
+    exhaustion: 0,
+    deathSaves: { successes: 0, failures: 0, stabilized: false },
+    hitDice: [],
     passivePerception: 0,
     passiveInvestigation: 0,
     passiveInsight: 0,

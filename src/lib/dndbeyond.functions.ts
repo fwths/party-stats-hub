@@ -331,7 +331,8 @@ function computeSkills(
     // Flat skill bonuses (rare)
     let extra = 0;
     for (const m of modifiers) {
-      if (m?.subType === key && m?.type === "bonus" && typeof m?.value === "number") {
+      const modSub = String(m?.subType ?? "").toLowerCase().replace(/\s+/g, "-");
+      if (modSub === key && m?.type === "bonus" && typeof m?.value === "number") {
         extra += m.value;
       }
     }

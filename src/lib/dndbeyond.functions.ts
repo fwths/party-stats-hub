@@ -323,9 +323,48 @@ function computeSkills(
   modifiers: any[],
   abilities: AbilityScore[],
   pb: number,
+  characterValues: any[] = [],
 ): SkillInfo[] {
+  // D&D Beyond skill ID -> skill key (used in characterValues overrides)
+  const SKILL_ID_TO_KEY: Record<string, string> = {
+    "2": "athletics",
+    "3": "acrobatics",
+    "4": "sleight-of-hand",
+    "5": "stealth",
+    "6": "arcana",
+    "8": "history",
+    "9": "investigation",
+    "10": "nature",
+    "11": "animal-handling",
+    "12": "insight",
+    "13": "medicine",
+    "14": "perception",
+    "15": "religion",
+    "16": "deception",
+    "17": "intimidation",
+    "18": "performance",
+    "19": "persuasion",
+    "20": "survival",
+  };
+  // typeId 26 = skill proficiency level override
+  // value: 1=half, 2=proficient, 3=expertise
+  const overrides: Record<string, "half" | "proficient" | "expertise"> = {};
+  for (const cv of characterValues) {
+    if (cv?.typeId !== 26) continue;
+    const key = SKILL_ID_TO_KEY[String(cv.valueId)];
+    if (!key) continue;
+    const v = cv.value;
+    if (v === 3) overrides[key] = "expertise";
+    else if (v === 2) overrides[key] = "proficient";
+    else if (v === 1) overrides[key] = "half";
+  }
   return SKILLS.map(([key, name, abilityIdx]) => {
-    const prof = computeSkillProficiency(modifiers, key);
+    const modProf = computeSkillProficiency(modifiers, key);
+    const override = overrides[key];
+    // Take the higher of the two
+    const rank = { none: 0, half: 1, proficient: 2, expertise: 3 } as const;
+    const prof: "none" | "half" | "proficient" | "expertise" =
+      override && rank[override] > rank[modProf] ? override : modProf;
     const profBonus =
       prof === "expertise" ? pb * 2 : prof === "proficient" ? pb : prof === "half" ? Math.floor(pb / 2) : 0;
     // Flat skill bonuses (rare)

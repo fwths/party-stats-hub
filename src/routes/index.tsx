@@ -12,10 +12,10 @@ const partyQueryOptions = queryOptions({
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Party Stats" },
-      { name: "description", content: "Live D&D party stats pulled from D&D Beyond." },
-      { property: "og:title", content: "Party Stats" },
-      { property: "og:description", content: "Live D&D party stats pulled from D&D Beyond." },
+      { title: "Mother of Bob (MOB) — Party Stats" },
+      { name: "description", content: "Live stats for the Mother of Bob (MOB) party, pulled from D&D Beyond." },
+      { property: "og:title", content: "Mother of Bob (MOB)" },
+      { property: "og:description", content: "Live D&D party stats for MOB." },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(partyQueryOptions),
@@ -28,7 +28,7 @@ function Index() {
       <div className="mx-auto max-w-6xl px-4 py-6">
         <header className="mb-6 flex items-baseline justify-between border-b border-border pb-3">
           <h1 className="text-2xl font-semibold tracking-wide text-accent">
-            The Party
+            Mother of Bob <span className="text-muted-foreground">(MOB)</span>
           </h1>
           <p className="text-xs text-muted-foreground">
             Live from D&amp;D Beyond ·{" "}
@@ -56,6 +56,8 @@ function PartyGrid() {
 
 function CharacterCard({ member }: { member: PartyMember }) {
   const hpPct = member.hpMax > 0 ? Math.min(100, (member.hpCurrent / member.hpMax) * 100) : 0;
+  const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+  const profSkills = member.skills.filter((s) => s.proficiency !== "none");
   return (
     <article className="rounded-lg border border-border bg-card p-4 shadow-md transition-colors hover:border-accent/60">
       <div className="flex items-start gap-3">
@@ -106,6 +108,13 @@ function CharacterCard({ member }: { member: PartyMember }) {
             </div>
           </div>
 
+          <div className="mt-4 grid grid-cols-4 gap-1.5 text-center">
+            <Stat label="AC" value={member.armorClass} />
+            <Stat label="Init" value={fmt(member.initiative)} />
+            <Stat label="Speed" value={`${member.speed}ft`} />
+            <Stat label="Prof" value={fmt(member.proficiencyBonus)} />
+          </div>
+
           <div className="mt-4 grid grid-cols-6 gap-1.5">
             {member.abilities.map((a) => (
               <div
@@ -129,8 +138,56 @@ function CharacterCard({ member }: { member: PartyMember }) {
             <span className="text-muted-foreground">Passive Perception</span>
             <span className="font-mono text-foreground">{member.passivePerception}</span>
           </div>
+
+          {member.senses.length > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Senses
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {member.senses.map((s) => (
+                  <span
+                    key={s.name}
+                    className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] text-foreground"
+                  >
+                    {s.name}{s.value != null ? ` ${s.value}ft` : ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {profSkills.length > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Skills
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+                {profSkills.map((s) => (
+                  <div key={s.key} className="flex items-baseline justify-between">
+                    <span className="truncate text-foreground">
+                      {s.proficiency === "expertise" ? "★ " : s.proficiency === "half" ? "◐ " : "● "}
+                      {s.name}
+                    </span>
+                    <span className="font-mono text-accent">{fmt(s.modifier)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </article>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded border border-border bg-secondary/60 px-1 py-2">
+      <div className="text-[10px] font-semibold tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="text-sm font-bold text-foreground leading-tight">{value}</div>
+    </div>
   );
 }

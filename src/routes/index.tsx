@@ -134,10 +134,69 @@ function CharacterCard({ member }: { member: PartyMember }) {
             ))}
           </div>
 
-          <div className="mt-3 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Passive Perception</span>
-            <span className="font-mono text-foreground">{member.passivePerception}</span>
+          <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+            <Stat label="Pass. Perc" value={member.passivePerception} />
+            <Stat label="Pass. Inv" value={member.passiveInvestigation} />
+            <Stat label="Pass. Ins" value={member.passiveInsight} />
           </div>
+
+          {member.saves.length > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Saving Throws
+              </div>
+              <div className="grid grid-cols-6 gap-1">
+                {member.saves.map((s) => {
+                  const marker =
+                    s.proficiency === "expertise" ? "★" : s.proficiency === "proficient" ? "●" : "";
+                  return (
+                    <div
+                      key={s.ability}
+                      className={`rounded border px-1 py-1 text-center ${
+                        s.proficiency !== "none"
+                          ? "border-accent/60 bg-accent/10"
+                          : "border-border bg-secondary/60"
+                      }`}
+                    >
+                      <div className="text-[9px] font-semibold tracking-wider text-muted-foreground">
+                        {s.ability}
+                        {marker && <span className="ml-0.5 text-accent">{marker}</span>}
+                      </div>
+                      <div className="text-xs font-mono text-foreground">{fmt(s.modifier)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {(member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Spell Slots
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {member.spellSlots.map((s) => (
+                  <span
+                    key={`s-${s.level}`}
+                    className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] font-mono text-foreground"
+                    title={`Level ${s.level}: ${s.max - s.used}/${s.max} remaining`}
+                  >
+                    L{s.level}: {s.max - s.used}/{s.max}
+                  </span>
+                ))}
+                {member.pactSlots.map((s) => (
+                  <span
+                    key={`p-${s.level}`}
+                    className="rounded border border-accent/60 bg-accent/10 px-1.5 py-0.5 text-[11px] font-mono text-foreground"
+                    title={`Pact (L${s.level}): ${s.max - s.used}/${s.max} remaining`}
+                  >
+                    Pact L{s.level}: {s.max - s.used}/{s.max}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {member.senses.length > 0 && (
             <div className="mt-3">

@@ -7,4 +7,5 @@ export const PARTY_CHARACTER_IDS: number[] = [
   131593533,
   132900149,
   132940690,
+  31296315,
 ];

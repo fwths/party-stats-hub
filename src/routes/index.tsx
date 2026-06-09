@@ -482,7 +482,7 @@ function CharacterCard({ member }: { member: PartyMember }) {
           {member.actions?.filter((a) => a.source === "class" && a.uses).length ? (
             <div className="mt-3">
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Class Resources
+                Resources
               </div>
               <div className="flex flex-col gap-1">
                 {member.actions

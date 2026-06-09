@@ -478,7 +478,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const saves = computeSaves(modifiers, abilities, pb);
     const { spellSlots, pactSlots } = computeSpellSlots(data);
     const defenses = computeDefenses(modifiers);
-    const actions = computeActions(data);
+    const actions = computeActions(data, abilities, pb);
     let exhaustion = 0;
     const conditions: string[] = [];
     if (Array.isArray(data.conditions)) {
@@ -572,7 +572,7 @@ function computeDefenses(modifiers: any[]): DefenseInfo[] {
   return out;
 }
 
-function computeActions(data: any): ActionInfo[] {
+function computeActions(data: any, abilities: AbilityScore[], pb: number): ActionInfo[] {
   const sources: Array<[string, any[]]> = [
     ["class", data?.actions?.class ?? []],
     ["race", data?.actions?.race ?? []],
@@ -596,9 +596,20 @@ function computeActions(data: any): ActionInfo[] {
           lu.resetType === 2 ? "long rest" :
           lu.resetType === 3 ? "day" :
           "rest";
+        // statModifierUsesId: 1=STR,2=DEX,3=CON,4=INT,5=WIS,6=CHA
+        // operator: 1 = add stat mod to maxUses, 2 = multiply maxUses by stat mod
+        let max = lu.maxUses;
+        const statId = lu.statModifierUsesId;
+        if (typeof statId === "number" && statId >= 1 && statId <= 6) {
+          const statMod = Math.max(1, abilities[statId - 1].modifier);
+          max = lu.operator === 2 ? lu.maxUses * statMod : lu.maxUses + statMod;
+        }
+        if (lu.useProficiencyBonus) {
+          max = lu.proficiencyBonusOperator === 2 ? max * pb : max + pb;
+        }
         info.uses = {
-          current: Math.max(0, lu.maxUses - (lu.numberUsed ?? 0)),
-          max: lu.maxUses,
+          current: Math.max(0, max - (lu.numberUsed ?? 0)),
+          max,
           reset,
         };
       }

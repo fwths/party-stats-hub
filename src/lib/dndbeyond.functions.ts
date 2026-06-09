@@ -20,6 +20,18 @@ export interface SenseInfo {
   value: number | null; // e.g. 60 (ft) or null for non-range senses
 }
 
+export interface SaveInfo {
+  ability: string; // STR/DEX/...
+  modifier: number;
+  proficiency: "none" | "proficient" | "expertise";
+}
+
+export interface SpellSlotLevel {
+  level: number; // 1-9 or 1-5 for pact
+  max: number;
+  used: number;
+}
+
 export interface PartyMember {
   id: number;
   name: string;
@@ -31,12 +43,17 @@ export interface PartyMember {
   hpCurrent: number;
   tempHp: number;
   passivePerception: number;
+  passiveInvestigation: number;
+  passiveInsight: number;
   armorClass: number;
   initiative: number;
   speed: number;
   proficiencyBonus: number;
   senses: SenseInfo[];
   skills: SkillInfo[];
+  saves: SaveInfo[];
+  spellSlots: SpellSlotLevel[];
+  pactSlots: SpellSlotLevel[];
   abilities: AbilityScore[];
   readonlyUrl: string;
   error?: string;
@@ -68,6 +85,122 @@ const SKILLS: Array<[string, string, number]> = [
   ["stealth", "Stealth", 1],
   ["survival", "Survival", 4],
 ];
+
+const ABILITY_LONG = [
+  "strength",
+  "dexterity",
+  "constitution",
+  "intelligence",
+  "wisdom",
+  "charisma",
+] as const;
+
+// Multiclass spell slot table, indexed by total caster level (1-20)
+// Each row is slots for levels 1..9
+const MULTI_SLOTS: number[][] = [
+  [], // 0
+  [2],
+  [3],
+  [4, 2],
+  [4, 3],
+  [4, 3, 2],
+  [4, 3, 3],
+  [4, 3, 3, 1],
+  [4, 3, 3, 2],
+  [4, 3, 3, 3, 1],
+  [4, 3, 3, 3, 2],
+  [4, 3, 3, 3, 2, 1],
+  [4, 3, 3, 3, 2, 1],
+  [4, 3, 3, 3, 2, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 2, 1, 1, 1, 1],
+  [4, 3, 3, 3, 3, 1, 1, 1, 1],
+  [4, 3, 3, 3, 3, 2, 1, 1, 1],
+  [4, 3, 3, 3, 3, 2, 2, 1, 1],
+];
+
+// Warlock pact magic table by warlock level → [slotLevel, count]
+const PACT_TABLE: Array<[number, number]> = [
+  [0, 0], [1, 1], [1, 2], [2, 2], [2, 2], [3, 2], [3, 2], [4, 2], [4, 2],
+  [5, 2], [5, 2], [5, 3], [5, 3], [5, 3], [5, 3], [5, 3], [5, 3], [5, 4],
+  [5, 4], [5, 4], [5, 4],
+];
+
+function casterLevelFor(className: string, level: number, subclass: string): number {
+  const n = className.toLowerCase();
+  if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(n)) return level;
+  if (n === "artificer") return Math.ceil(level / 2); // artificer rounds up
+  if (["paladin", "ranger"].includes(n)) return level >= 2 ? Math.floor(level / 2) : 0;
+  if (n === "fighter" && /eldritch knight/i.test(subclass)) return level >= 3 ? Math.floor(level / 3) : 0;
+  if (n === "rogue" && /arcane trickster/i.test(subclass)) return level >= 3 ? Math.floor(level / 3) : 0;
+  return 0;
+}
+
+function computeSpellSlots(data: any): { spellSlots: SpellSlotLevel[]; pactSlots: SpellSlotLevel[] } {
+  let casterLevel = 0;
+  let warlockLevel = 0;
+  for (const c of data.classes ?? []) {
+    const name = c.definition?.name ?? "";
+    const lvl = c.level ?? 0;
+    const sub = c.subclassDefinition?.name ?? "";
+    if (name.toLowerCase() === "warlock") warlockLevel += lvl;
+    else casterLevel += casterLevelFor(name, lvl, sub);
+  }
+  const usedByLevel = new Map<number, number>();
+  for (const s of data.spellSlots ?? []) usedByLevel.set(s.level, s.used ?? 0);
+  const pactUsedByLevel = new Map<number, number>();
+  for (const s of data.pactMagic ?? []) pactUsedByLevel.set(s.level, s.used ?? 0);
+
+  const slotRow = MULTI_SLOTS[Math.min(casterLevel, 20)] ?? [];
+  const spellSlots: SpellSlotLevel[] = slotRow.map((max, i) => ({
+    level: i + 1,
+    max,
+    used: usedByLevel.get(i + 1) ?? 0,
+  }));
+
+  const pactSlots: SpellSlotLevel[] = [];
+  if (warlockLevel > 0) {
+    const [pactLvl, pactCount] = PACT_TABLE[Math.min(warlockLevel, 20)];
+    if (pactCount > 0) {
+      pactSlots.push({
+        level: pactLvl,
+        max: pactCount,
+        used: pactUsedByLevel.get(pactLvl) ?? 0,
+      });
+    }
+  }
+  return { spellSlots, pactSlots };
+}
+
+function computeSaves(modifiers: any[], abilities: AbilityScore[], pb: number): SaveInfo[] {
+  return ABILITY_LONG.map((long, i) => {
+    const subType = `${long}-saving-throws`;
+    let prof: "none" | "proficient" | "expertise" = "none";
+    let bonus = 0;
+    for (const m of modifiers) {
+      if (m?.subType === subType) {
+        if (m.type === "expertise") prof = "expertise";
+        else if (m.type === "proficiency" && prof !== "expertise") prof = "proficient";
+        else if (m.type === "bonus" && typeof m.value === "number") bonus += m.value;
+      }
+      // Flat bonus to all saves (e.g. Cloak of Protection)
+      if (m?.subType === "saving-throws" && m?.type === "bonus" && typeof m?.value === "number") {
+        bonus += m.value;
+      }
+    }
+    const profBonus = prof === "expertise" ? pb * 2 : prof === "proficient" ? pb : 0;
+    return {
+      ability: ABILITY_NAMES[i],
+      modifier: abilities[i].modifier + profBonus + bonus,
+      proficiency: prof,
+    };
+  });
+}
+
+// Note: the all-saves "bonus" modifier gets added once per ability above because
+// the loop visits it for every iteration. Dedup by handling it outside:
 
 function mod(score: number): number {
   return Math.floor((score - 10) / 2);

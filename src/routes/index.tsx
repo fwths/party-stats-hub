@@ -40,7 +40,6 @@ function Index() {
           </div>
         </header>
         <Suspense fallback={<p className="text-muted-foreground">Summoning heroes…</p>}>
-          <PartySummary />
           <PartyGrid />
         </Suspense>
       </div>

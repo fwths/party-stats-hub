@@ -510,6 +510,66 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
   }
 }
 
+function titleCase(s: string): string {
+  return s.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function computeDefenses(modifiers: any[]): DefenseInfo[] {
+  const seen = new Set<string>();
+  const out: DefenseInfo[] = [];
+  for (const m of modifiers) {
+    let type: DefenseInfo["type"] | null = null;
+    if (m?.type === "resistance") type = "resistance";
+    else if (m?.type === "immunity") type = "immunity";
+    else if (m?.type === "vulnerability") type = "vulnerability";
+    if (!type) continue;
+    const raw = m?.friendlySubtypeName || m?.subType || "";
+    if (!raw) continue;
+    const damageType = titleCase(String(raw));
+    const key = `${type}:${damageType.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ type, damageType });
+  }
+  return out;
+}
+
+function computeActions(data: any): ActionInfo[] {
+  const sources: Array<[string, any[]]> = [
+    ["class", data?.actions?.class ?? []],
+    ["race", data?.actions?.race ?? []],
+    ["feat", data?.actions?.feat ?? []],
+    ["item", data?.actions?.item ?? []],
+  ];
+  const out: ActionInfo[] = [];
+  const seen = new Set<string>();
+  for (const [source, list] of sources) {
+    for (const a of list) {
+      const name = a?.name;
+      if (!name) continue;
+      const key = `${source}:${name}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const info: ActionInfo = { name, source };
+      const lu = a?.limitedUse;
+      if (lu && typeof lu.maxUses === "number" && lu.maxUses > 0) {
+        const reset =
+          lu.resetType === 1 ? "short rest" :
+          lu.resetType === 2 ? "long rest" :
+          lu.resetType === 3 ? "day" :
+          "rest";
+        info.uses = {
+          current: Math.max(0, lu.maxUses - (lu.numberUsed ?? 0)),
+          max: lu.maxUses,
+          reset,
+        };
+      }
+      out.push(info);
+    }
+  }
+  return out;
+}
+
 function errorMember(id: number, message: string): PartyMember {
   return {
     id,

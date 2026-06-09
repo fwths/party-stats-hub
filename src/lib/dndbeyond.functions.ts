@@ -55,6 +55,7 @@ export interface PartyMember {
   spellSlots: SpellSlotLevel[];
   pactSlots: SpellSlotLevel[];
   abilities: AbilityScore[];
+  conditions: string[];
   readonlyUrl: string;
   error?: string;
 }

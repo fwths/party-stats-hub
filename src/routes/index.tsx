@@ -405,7 +405,7 @@ function CharacterCard({ member }: { member: PartyMember }) {
                       ? "border-destructive/60 bg-destructive/15 text-destructive"
                       : "border-accent/50 bg-accent/10 text-accent";
                   const mark =
-                    d.type === "immunity" ? "IMM" : d.type === "vulnerability" ? "VUL" : "RES";
+                    d.type === "immunity" ? "Immunity" : d.type === "vulnerability" ? "Vulnerability" : "Resistance";
                   return (
                     <span
                       key={`${d.type}-${d.damageType}`}

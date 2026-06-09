@@ -7,6 +7,19 @@ export interface AbilityScore {
   modifier: number;
 }
 
+export interface SkillInfo {
+  key: string;
+  name: string;
+  ability: string; // STR/DEX/...
+  modifier: number;
+  proficiency: "none" | "half" | "proficient" | "expertise";
+}
+
+export interface SenseInfo {
+  name: string;
+  value: number | null; // e.g. 60 (ft) or null for non-range senses
+}
+
 export interface PartyMember {
   id: number;
   name: string;
@@ -18,6 +31,12 @@ export interface PartyMember {
   hpCurrent: number;
   tempHp: number;
   passivePerception: number;
+  armorClass: number;
+  initiative: number;
+  speed: number;
+  proficiencyBonus: number;
+  senses: SenseInfo[];
+  skills: SkillInfo[];
   abilities: AbilityScore[];
   readonlyUrl: string;
   error?: string;
@@ -26,6 +45,29 @@ export interface PartyMember {
 const ABILITY_NAMES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
 const ABILITY_ID_TO_INDEX: Record<number, number> = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5 };
 const WIS_INDEX = 4;
+const DEX_INDEX = 1;
+
+// Skill key -> [display name, ability index]
+const SKILLS: Array<[string, string, number]> = [
+  ["acrobatics", "Acrobatics", 1],
+  ["animal-handling", "Animal Handling", 4],
+  ["arcana", "Arcana", 3],
+  ["athletics", "Athletics", 0],
+  ["deception", "Deception", 5],
+  ["history", "History", 3],
+  ["insight", "Insight", 4],
+  ["intimidation", "Intimidation", 5],
+  ["investigation", "Investigation", 3],
+  ["medicine", "Medicine", 4],
+  ["nature", "Nature", 3],
+  ["perception", "Perception", 4],
+  ["performance", "Performance", 5],
+  ["persuasion", "Persuasion", 5],
+  ["religion", "Religion", 3],
+  ["sleight-of-hand", "Sleight of Hand", 1],
+  ["stealth", "Stealth", 1],
+  ["survival", "Survival", 4],
+];
 
 function mod(score: number): number {
   return Math.floor((score - 10) / 2);
@@ -71,6 +113,93 @@ function flattenModifiers(data: any): any[] {
     ...(m.feat ?? []),
     ...(m.condition ?? []),
   ];
+}
+
+function computeArmorClass(data: any, dexMod: number): number {
+  const inv: any[] = data.inventory ?? [];
+  const equippedArmor = inv.filter(
+    (i) => i.equipped && i.definition?.filterType === "Armor",
+  );
+  // armorTypeId: 1=light, 2=medium, 3=heavy, 4=shield
+  const body = equippedArmor.filter((i) => (i.definition?.armorTypeId ?? 0) <= 3);
+  const shields = equippedArmor.filter((i) => i.definition?.armorTypeId === 4);
+  let ac = 10 + dexMod;
+  if (body.length > 0) {
+    // pick the highest-base body armor
+    const best = body.reduce((a, b) =>
+      (b.definition.armorClass ?? 0) > (a.definition.armorClass ?? 0) ? b : a,
+    );
+    const base = best.definition.armorClass ?? 10;
+    const type = best.definition.armorTypeId;
+    if (type === 1) ac = base + dexMod;
+    else if (type === 2) ac = base + Math.min(dexMod, 2);
+    else ac = base; // heavy
+  }
+  if (shields.length > 0) {
+    const bestShield = shields.reduce((a, b) =>
+      (b.definition.armorClass ?? 0) > (a.definition.armorClass ?? 0) ? b : a,
+    );
+    ac += bestShield.definition.armorClass ?? 0;
+  }
+  return ac;
+}
+
+function computeSenses(modifiers: any[], customSenses: any[]): SenseInfo[] {
+  const map = new Map<string, number | null>();
+  for (const m of modifiers) {
+    if (m?.type === "set-base" || m?.type === "sense" || m?.type === "set") {
+      const name = m?.friendlySubtypeName;
+      const val = typeof m?.value === "number" ? m.value : null;
+      if (name && (m?.subType?.includes("darkvision") || m?.subType?.includes("vision") || m?.subType?.includes("sight") || m?.subType?.includes("sense"))) {
+        const prev = map.get(name);
+        if (prev == null || (val != null && val > (prev ?? 0))) map.set(name, val);
+      }
+    }
+  }
+  for (const c of customSenses ?? []) {
+    if (c?.name) map.set(c.name, typeof c.distance === "number" ? c.distance : null);
+  }
+  return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
+}
+
+function computeSkillProficiency(
+  modifiers: any[],
+  subType: string,
+): "none" | "half" | "proficient" | "expertise" {
+  let level: "none" | "half" | "proficient" | "expertise" = "none";
+  for (const m of modifiers) {
+    if (m?.subType !== subType) continue;
+    if (m.type === "expertise") return "expertise";
+    if (m.type === "proficiency" && level !== "expertise") level = "proficient";
+    if (m.type === "half-proficiency" && level === "none") level = "half";
+  }
+  return level;
+}
+
+function computeSkills(
+  modifiers: any[],
+  abilities: AbilityScore[],
+  pb: number,
+): SkillInfo[] {
+  return SKILLS.map(([key, name, abilityIdx]) => {
+    const prof = computeSkillProficiency(modifiers, key);
+    const profBonus =
+      prof === "expertise" ? pb * 2 : prof === "proficient" ? pb : prof === "half" ? Math.floor(pb / 2) : 0;
+    // Flat skill bonuses (rare)
+    let extra = 0;
+    for (const m of modifiers) {
+      if (m?.subType === key && m?.type === "bonus" && typeof m?.value === "number") {
+        extra += m.value;
+      }
+    }
+    return {
+      key,
+      name,
+      ability: ABILITY_NAMES[abilityIdx],
+      modifier: abilities[abilityIdx].modifier + profBonus + extra,
+      proficiency: prof,
+    };
+  });
 }
 
 async function fetchCharacter(id: number): Promise<PartyMember> {
@@ -122,6 +251,13 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const passivePerception =
       10 + wisMod + (perceptionExpertise ? pb * 2 : perceptionProficient ? pb : 0);
 
+    const dexMod = abilities[DEX_INDEX].modifier;
+    const armorClass = computeArmorClass(data, dexMod);
+    const initiative = dexMod;
+    const speed = data.race?.weightSpeeds?.normal?.walk ?? 30;
+    const senses = computeSenses(modifiers, data.customSenses ?? []);
+    const skills = computeSkills(modifiers, abilities, pb);
+
     return {
       id: data.id,
       name: data.name ?? "Unnamed",
@@ -133,6 +269,12 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       hpCurrent,
       tempHp,
       passivePerception,
+      armorClass,
+      initiative,
+      speed,
+      proficiencyBonus: pb,
+      senses,
+      skills,
       abilities,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
@@ -153,6 +295,12 @@ function errorMember(id: number, message: string): PartyMember {
     hpCurrent: 0,
     tempHp: 0,
     passivePerception: 0,
+    armorClass: 0,
+    initiative: 0,
+    speed: 0,
+    proficiencyBonus: 0,
+    senses: [],
+    skills: [],
     abilities: ABILITY_NAMES.map((name) => ({ name, score: 0, modifier: 0 })),
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,

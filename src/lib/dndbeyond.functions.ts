@@ -43,6 +43,11 @@ export interface ActionInfo {
   uses?: { current: number; max: number; reset: string };
 }
 
+export interface ConcentrationInfo {
+  modifier: number; // CON save modifier
+  advantage: boolean; // War Caster grants advantage
+}
+
 export interface DeathSaves {
   successes: number;
   failures: number;
@@ -80,6 +85,8 @@ export interface PartyMember {
   conditions: string[];
   defenses: DefenseInfo[];
   actions: ActionInfo[];
+  feats: string[];
+  concentration: ConcentrationInfo;
   readonlyUrl: string;
   error?: string;
 }

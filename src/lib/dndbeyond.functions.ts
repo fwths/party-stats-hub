@@ -43,12 +43,6 @@ export interface ActionInfo {
   uses?: { current: number; max: number; reset: string };
 }
 
-export interface HitDieInfo {
-  die: number; // d6/d8/d10/d12
-  max: number;
-  used: number;
-}
-
 export interface DeathSaves {
   successes: number;
   failures: number;
@@ -70,7 +64,6 @@ export interface PartyMember {
   inspiration: boolean;
   exhaustion: number;
   deathSaves: DeathSaves;
-  hitDice: HitDieInfo[];
   passivePerception: number;
   passiveInvestigation: number;
   passiveInsight: number;
@@ -500,14 +493,6 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       }
     }
 
-    const hitDice: HitDieInfo[] = (data.classes ?? [])
-      .map((c: any) => ({
-        die: c?.definition?.hitDice ?? 0,
-        max: c?.level ?? 0,
-        used: c?.hitDiceUsed ?? 0,
-      }))
-      .filter((h: HitDieInfo) => h.die > 0 && h.max > 0);
-
     const ds = data.deathSaves ?? {};
     const deathSaves: DeathSaves = {
       successes: ds.successCount ?? 0,
@@ -540,7 +525,6 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       inspiration: !!data.inspiration,
       exhaustion,
       deathSaves,
-      hitDice,
       passivePerception,
       passiveInvestigation,
       passiveInsight,
@@ -640,7 +624,6 @@ function errorMember(id: number, message: string): PartyMember {
     inspiration: false,
     exhaustion: 0,
     deathSaves: { successes: 0, failures: 0, stabilized: false },
-    hitDice: [],
     passivePerception: 0,
     passiveInvestigation: 0,
     passiveInsight: 0,

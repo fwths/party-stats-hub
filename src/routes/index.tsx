@@ -744,17 +744,8 @@ function ConditionsPanel({
   remoteConditions: string[];
   exhaustion: number;
 }) {
-  const { list, add, remove, tick } = useCharacterConditions(characterId);
-  const [picking, setPicking] = useState(false);
-  const [rounds, setRounds] = useState<string>("");
-
-  const remoteNames = new Set(remoteConditions.map((c) => c.toLowerCase()));
-  // Avoid duplicates between remote (D&D Beyond) and local conditions
-  const localOnly = list.filter((c) => !remoteNames.has(c.name.toLowerCase()));
-
-  const showAny =
-    remoteConditions.length > 0 || exhaustion > 0 || localOnly.length > 0;
-
+  void characterId;
+  if (remoteConditions.length === 0 && exhaustion <= 0) return null;
   return (
     <div className="mt-1.5">
       <div className="flex flex-wrap items-center gap-1">
@@ -769,81 +760,7 @@ function ConditionsPanel({
           const Icon = conditionIcon(c);
           return <ConditionChip key={`r-${c}`} name={c} Icon={Icon} readOnly />;
         })}
-        {localOnly.map((c) => {
-          const Icon = conditionIcon(c.name);
-          return (
-            <ConditionChip
-              key={`l-${c.name}`}
-              name={c.name}
-              Icon={Icon}
-              rounds={c.rounds}
-              onTick={c.rounds != null ? () => tick(c.name, -1) : undefined}
-              onRemove={() => remove(c.name)}
-            />
-          );
-        })}
-        <button
-          onClick={() => setPicking((p) => !p)}
-          title="Add condition"
-          className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
-            picking
-              ? "border-accent bg-accent/15 text-accent"
-              : "border-border bg-secondary/60 text-muted-foreground hover:border-accent/60 hover:text-accent"
-          }`}
-        >
-          <Plus size={10} />
-          {showAny ? "" : "Add"}
-        </button>
       </div>
-
-      {picking && (
-        <div className="mt-2 rounded border border-border bg-secondary/40 p-2">
-          <div className="mb-1.5 flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Rounds
-            </span>
-            <input
-              type="number"
-              min={1}
-              value={rounds}
-              onChange={(e) => setRounds(e.target.value)}
-              placeholder="∞"
-              className="w-16 rounded border border-border bg-background px-1.5 py-0.5 text-xs text-foreground outline-none focus:border-accent"
-            />
-            <span className="text-[10px] text-muted-foreground">
-              (blank = no timer)
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {CONDITION_DEFS.filter(
-              (d) => !remoteNames.has(d.name.toLowerCase()),
-            ).map(({ name, Icon }) => {
-              const active = list.some((c) => c.name === name);
-              return (
-                <button
-                  key={name}
-                  onClick={() => {
-                    if (active) {
-                      remove(name);
-                    } else {
-                      const n = parseInt(rounds, 10);
-                      add(name, Number.isFinite(n) && n > 0 ? n : null);
-                    }
-                  }}
-                  className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] ${
-                    active
-                      ? "border-destructive/70 bg-destructive/20 text-destructive"
-                      : "border-border bg-background/60 text-foreground hover:border-accent/60"
-                  }`}
-                >
-                  <Icon size={10} />
-                  {name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

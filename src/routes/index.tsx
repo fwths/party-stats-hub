@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 import { getParty, type PartyMember } from "@/lib/dndbeyond.functions";
 
 const partyQueryOptions = queryOptions({
   queryKey: ["party"],
   queryFn: () => getParty(),
-  staleTime: 60_000,
+  staleTime: 15_000,
+  refetchInterval: 30_000,
+  refetchOnWindowFocus: true,
 });
 
 export const Route = createFileRoute("/")({
@@ -26,20 +28,38 @@ function Index() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-6xl px-4 py-6">
-        <header className="mb-6 flex items-baseline justify-between border-b border-border pb-3">
+        <header className="mb-6 flex items-baseline justify-between gap-3 border-b border-border pb-3">
           <h1 className="text-2xl font-semibold tracking-wide text-accent">
             Mother of Bob <span className="text-muted-foreground">(MOB)</span>
           </h1>
-          <p className="text-xs text-muted-foreground">
-            Live from D&amp;D Beyond ·{" "}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <a className="underline hover:text-accent" href="/api/party">JSON</a>
-          </p>
+            <Suspense fallback={null}>
+              <RefreshButton />
+            </Suspense>
+          </div>
         </header>
         <Suspense fallback={<p className="text-muted-foreground">Summoning heroes…</p>}>
           <PartyGrid />
         </Suspense>
       </div>
     </main>
+  );
+}
+
+function RefreshButton() {
+  const qc = useQueryClient();
+  const { data, isFetching } = useSuspenseQuery(partyQueryOptions);
+  const fetchedAt = new Date(data.fetchedAt);
+  return (
+    <button
+      onClick={() => qc.invalidateQueries({ queryKey: ["party"] })}
+      disabled={isFetching}
+      className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60 disabled:opacity-50"
+      title={`Last fetched ${fetchedAt.toLocaleTimeString()}`}
+    >
+      {isFetching ? "Refreshing…" : "↻ Refresh"}
+    </button>
   );
 }
 

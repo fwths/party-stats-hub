@@ -43,6 +43,16 @@ export interface ActionInfo {
   uses?: { current: number; max: number; reset: string };
 }
 
+export interface InventoryItem {
+  name: string;
+  type: string; // Weapon / Armor / Wondrous item / Potion / ...
+  rarity: string | null; // Common, Uncommon, Rare, Very Rare, Legendary, Artifact, Mundane
+  magic: boolean;
+  equipped: boolean;
+  attuned: boolean;
+  quantity: number;
+}
+
 
 export interface DeathSaves {
   successes: number;
@@ -81,6 +91,7 @@ export interface PartyMember {
   conditions: string[];
   defenses: DefenseInfo[];
   actions: ActionInfo[];
+  inventory: InventoryItem[];
   readonlyUrl: string;
   error?: string;
 }
@@ -480,6 +491,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const { spellSlots, pactSlots } = computeSpellSlots(data);
     const defenses = computeDefenses(modifiers);
     const actions = computeActions(data, abilities, pb);
+    const inventory = computeInventory(data);
     let exhaustion = 0;
     const conditions: string[] = [];
     if (Array.isArray(data.conditions)) {
@@ -542,6 +554,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       conditions,
       defenses,
       actions,
+      inventory,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
   } catch (err: any) {
@@ -652,16 +665,63 @@ function errorMember(id: number, message: string): PartyMember {
     conditions: [],
     defenses: [],
     actions: [],
+    inventory: [],
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };
+}
+
+const RARITY_ORDER = ["Mundane", "Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact"];
+
+function computeInventory(data: any): InventoryItem[] {
+  const inv: any[] = data?.inventory ?? [];
+  const out: InventoryItem[] = [];
+  for (const i of inv) {
+    const def = i?.definition ?? {};
+    const name: string = def.name;
+    if (!name) continue;
+    const type: string = def.type ?? def.filterType ?? "Item";
+    const rarity: string | null = def.rarity ?? null;
+    const magic = !!def.magic || (!!rarity && rarity !== "Common" && rarity !== "Mundane");
+    out.push({
+      name,
+      type,
+      rarity,
+      magic,
+      equipped: !!i.equipped,
+      attuned: !!i.isAttuned,
+      quantity: i.quantity ?? 1,
+    });
+  }
+  // Sort: attuned > equipped magic > equipped > other magic > rest; within: by rarity desc, then name
+  out.sort((a, b) => {
+    const rank = (x: InventoryItem) =>
+      x.attuned ? 0 : x.equipped && x.magic ? 1 : x.equipped ? 2 : x.magic ? 3 : 4;
+    const ra = rank(a);
+    const rb = rank(b);
+    if (ra !== rb) return ra - rb;
+    const rIdx = (x: InventoryItem) => (x.rarity ? RARITY_ORDER.indexOf(x.rarity) : -1);
+    const ria = rIdx(a);
+    const rib = rIdx(b);
+    if (ria !== rib) return rib - ria;
+    return a.name.localeCompare(b.name);
+  });
+  return out;
 }
 
 export async function loadParty(ids: number[] = PARTY_CHARACTER_IDS): Promise<PartyMember[]> {
   return Promise.all(ids.map(fetchCharacter));
 }
 
-export const getParty = createServerFn({ method: "GET" }).handler(async () => {
-  const members = await loadParty();
-  return { members, fetchedAt: new Date().toISOString() };
-});
+export const getParty = createServerFn({ method: "GET" })
+  .inputValidator((input?: { ids?: number[] }) => {
+    const ids = Array.isArray(input?.ids)
+      ? input!.ids!.filter((n) => Number.isInteger(n) && n > 0).slice(0, 12)
+      : [];
+    return { ids };
+  })
+  .handler(async ({ data }) => {
+    const ids = data.ids.length > 0 ? data.ids : PARTY_CHARACTER_IDS;
+    const members = await loadParty(ids);
+    return { members, fetchedAt: new Date().toISOString() };
+  });

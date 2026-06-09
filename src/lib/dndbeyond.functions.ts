@@ -175,32 +175,31 @@ function computeSpellSlots(data: any): { spellSlots: SpellSlotLevel[]; pactSlots
 }
 
 function computeSaves(modifiers: any[], abilities: AbilityScore[], pb: number): SaveInfo[] {
+  // Flat bonus that applies to all saves (e.g. Cloak of Protection)
+  let allSavesBonus = 0;
+  for (const m of modifiers) {
+    if (m?.subType === "saving-throws" && m?.type === "bonus" && typeof m?.value === "number") {
+      allSavesBonus += m.value;
+    }
+  }
   return ABILITY_LONG.map((long, i) => {
     const subType = `${long}-saving-throws`;
     let prof: "none" | "proficient" | "expertise" = "none";
     let bonus = 0;
     for (const m of modifiers) {
-      if (m?.subType === subType) {
-        if (m.type === "expertise") prof = "expertise";
-        else if (m.type === "proficiency" && prof !== "expertise") prof = "proficient";
-        else if (m.type === "bonus" && typeof m.value === "number") bonus += m.value;
-      }
-      // Flat bonus to all saves (e.g. Cloak of Protection)
-      if (m?.subType === "saving-throws" && m?.type === "bonus" && typeof m?.value === "number") {
-        bonus += m.value;
-      }
+      if (m?.subType !== subType) continue;
+      if (m.type === "expertise") prof = "expertise";
+      else if (m.type === "proficiency" && prof !== "expertise") prof = "proficient";
+      else if (m.type === "bonus" && typeof m.value === "number") bonus += m.value;
     }
     const profBonus = prof === "expertise" ? pb * 2 : prof === "proficient" ? pb : 0;
     return {
       ability: ABILITY_NAMES[i],
-      modifier: abilities[i].modifier + profBonus + bonus,
+      modifier: abilities[i].modifier + profBonus + bonus + allSavesBonus,
       proficiency: prof,
     };
   });
 }
-
-// Note: the all-saves "bonus" modifier gets added once per ability above because
-// the loop visits it for every iteration. Dedup by handling it outside:
 
 function mod(score: number): number {
   return Math.floor((score - 10) / 2);

@@ -540,10 +540,333 @@ function CharacterCard({ member }: { member: PartyMember }) {
             </Section>
           ) : null}
 
+          {member.inventory.length > 0 && (
+            <Section title="Inventory" defaultOpen={false}>
+              <InventoryList items={member.inventory} />
+            </Section>
+          )}
 
         </>
       )}
     </article>
+  );
+}
+
+function InventoryList({ items }: { items: InventoryItem[] }) {
+  const equipped = items.filter((i) => i.equipped);
+  const magicCarried = items.filter((i) => !i.equipped && i.magic);
+  const other = items.filter((i) => !i.equipped && !i.magic);
+  return (
+    <div className="flex flex-col gap-2">
+      {equipped.length > 0 && (
+        <InventoryGroup label="Equipped" items={equipped} />
+      )}
+      {magicCarried.length > 0 && (
+        <InventoryGroup label="Magic Items" items={magicCarried} />
+      )}
+      {other.length > 0 && (
+        <InventoryGroup label="Carried" items={other} />
+      )}
+    </div>
+  );
+}
+
+function InventoryGroup({ label, items }: { label: string; items: InventoryItem[] }) {
+  return (
+    <div>
+      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {items.map((it, idx) => {
+          const styles = it.attuned
+            ? "border-gold/70 bg-[color-mix(in_oklab,var(--gold)_14%,var(--secondary))] text-gold shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_45%,transparent)]"
+            : it.magic
+            ? "border-accent/60 bg-accent/10 text-accent"
+            : "border-border bg-secondary/60 text-foreground";
+          const title =
+            `${it.name} — ${it.type}` +
+            (it.rarity ? ` (${it.rarity})` : "") +
+            (it.attuned ? " • attuned" : "") +
+            (it.quantity > 1 ? ` ×${it.quantity}` : "");
+          return (
+            <span
+              key={`${it.name}-${idx}`}
+              className={`rounded border px-1.5 py-0.5 text-[10px] ${styles}`}
+              title={title}
+            >
+              {it.attuned ? "✦ " : ""}
+              {it.name}
+              {it.quantity > 1 ? ` ×${it.quantity}` : ""}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const SKILL_ABILITY: Record<string, string> = {
+  Acrobatics: "DEX", "Animal Handling": "WIS", Arcana: "INT", Athletics: "STR",
+  Deception: "CHA", History: "INT", Insight: "WIS", Intimidation: "CHA",
+  Investigation: "INT", Medicine: "WIS", Nature: "INT", Perception: "WIS",
+  Performance: "CHA", Persuasion: "CHA", Religion: "INT",
+  "Sleight of Hand": "DEX", Stealth: "DEX", Survival: "WIS",
+};
+
+function PartyHighlights({ ids }: { ids: number[] }) {
+  const { data } = useSuspenseQuery(partyQueryOptions(ids));
+  const members = data.members.filter((m) => !m.error);
+
+  // Best at each skill
+  const skillNames = Object.keys(SKILL_ABILITY);
+  const bestBySkill = skillNames
+    .map((name) => {
+      let best: { member: PartyMember; mod: number } | null = null;
+      for (const m of members) {
+        const s = m.skills.find((k) => k.name === name);
+        if (!s) continue;
+        if (!best || s.modifier > best.mod) best = { member: m, mod: s.modifier };
+      }
+      return best ? { name, member: best.member, mod: best.mod } : null;
+    })
+    .filter((x): x is { name: string; member: PartyMember; mod: number } => !!x);
+
+  // Party-wide conditions/status overview
+  const afflicted = members.filter(
+    (m) => m.conditions.length > 0 || m.exhaustion > 0 || m.hpCurrent <= 0,
+  );
+
+  if (members.length === 0) return null;
+
+  return (
+    <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <details
+        open
+        className="group card-arcane rounded-lg border border-border p-3"
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-accent">
+          <span>Best at Each Skill</span>
+          <span className="ml-2 transition-transform group-open:rotate-90">›</span>
+        </summary>
+        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs sm:grid-cols-3">
+          {bestBySkill.map(({ name, member, mod }) => (
+            <div key={name} className="flex items-baseline justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate text-foreground">{name}</div>
+                <div className="truncate text-[10px] text-muted-foreground">
+                  {member.name}
+                </div>
+              </div>
+              <span className="font-mono text-accent">
+                {mod >= 0 ? `+${mod}` : mod}
+              </span>
+            </div>
+          ))}
+        </div>
+      </details>
+
+      <details
+        open
+        className="group card-arcane rounded-lg border border-border p-3"
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-accent">
+          <span>Party Status</span>
+          <span className="ml-2 transition-transform group-open:rotate-90">›</span>
+        </summary>
+        <div className="mt-2 flex flex-col gap-1.5 text-xs">
+          {afflicted.length === 0 ? (
+            <span className="text-muted-foreground">
+              No active conditions or status effects.
+            </span>
+          ) : (
+            afflicted.map((m) => (
+              <div
+                key={m.id}
+                className="flex flex-wrap items-center gap-1.5 rounded border border-border bg-secondary/40 px-2 py-1"
+              >
+                <span className="text-foreground font-semibold">{m.name}</span>
+                {m.hpCurrent <= 0 && (
+                  <span className="rounded-full border border-destructive/60 bg-destructive/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive">
+                    {m.deathSaves.stabilized ? "Stable" : "Down"}
+                  </span>
+                )}
+                {m.exhaustion > 0 && (
+                  <span className="rounded-full border border-destructive/60 bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive">
+                    Exhaustion {m.exhaustion}
+                  </span>
+                )}
+                {m.conditions.map((c) => (
+                  <span
+                    key={c}
+                    className="rounded-full border border-destructive/60 bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      </details>
+    </div>
+  );
+}
+
+function parseCharacterIdInput(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const match = trimmed.match(/(\d{4,})/);
+  if (!match) return null;
+  const n = Number(match[1]);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+function ManagePartyDialog({
+  ids,
+  onChange,
+  onClose,
+}: {
+  ids: number[];
+  onChange: (ids: number[]) => void;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const { data } = useSuspenseQuery(partyQueryOptions(ids));
+  const [input, setInput] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const byId = new Map(data.members.map((m) => [m.id, m]));
+
+  const add = () => {
+    const id = parseCharacterIdInput(input);
+    if (!id) {
+      setError("Paste a D&D Beyond character URL or ID.");
+      return;
+    }
+    if (ids.includes(id)) {
+      setError("Already in the party.");
+      return;
+    }
+    if (ids.length >= 12) {
+      setError("Maximum 12 characters.");
+      return;
+    }
+    setError(null);
+    setInput("");
+    onChange([...ids, id]);
+  };
+
+  const remove = (id: number) => {
+    onChange(ids.filter((x) => x !== id));
+  };
+
+  const reset = () => {
+    onChange([...PARTY_CHARACTER_IDS]);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="card-arcane w-full max-w-md rounded-lg border border-border bg-background p-4 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-accent">Manage Party</h2>
+          <button
+            onClick={onClose}
+            className="rounded border border-border bg-secondary/60 px-2 py-0.5 text-sm hover:border-accent/60"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mb-3 flex flex-col gap-1">
+          {ids.map((id) => {
+            const m = byId.get(id);
+            return (
+              <div
+                key={id}
+                className="flex items-center justify-between gap-2 rounded border border-border bg-secondary/40 px-2 py-1.5 text-sm"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  {m?.avatarUrl ? (
+                    <img src={m.avatarUrl} alt="" className="h-6 w-6 rounded border border-border object-cover" />
+                  ) : (
+                    <div className="h-6 w-6 rounded border border-border bg-muted" />
+                  )}
+                  <div className="min-w-0">
+                    <div className="truncate text-foreground">
+                      {m?.name ?? `Character ${id}`}
+                    </div>
+                    <div className="truncate text-[10px] text-muted-foreground">
+                      {id}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => remove(id)}
+                  className="rounded border border-destructive/60 bg-destructive/10 px-2 py-0.5 text-xs text-destructive hover:bg-destructive/20"
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
+          {ids.length === 0 && (
+            <p className="text-xs text-muted-foreground">No characters yet.</p>
+          )}
+        </div>
+
+        <div className="mb-2">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Add character (URL or ID)
+          </label>
+          <div className="mt-1 flex gap-2">
+            <input
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                setError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") add();
+              }}
+              placeholder="https://www.dndbeyond.com/characters/12345678"
+              className="flex-1 rounded border border-border bg-secondary/40 px-2 py-1 text-sm text-foreground outline-none focus:border-accent"
+            />
+            <button
+              onClick={add}
+              className="rounded border border-accent/60 bg-accent/15 px-3 py-1 text-sm text-accent hover:bg-accent/25"
+            >
+              Add
+            </button>
+          </div>
+          {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+        </div>
+
+        <div className="flex items-center justify-between border-t border-border pt-3 text-xs">
+          <button
+            onClick={reset}
+            className="text-muted-foreground underline hover:text-accent"
+          >
+            Reset to defaults
+          </button>
+          <button
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["party"] });
+              onClose();
+            }}
+            className="rounded border border-border bg-secondary/60 px-3 py-1 hover:border-accent/60"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

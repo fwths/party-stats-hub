@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  Eye, EyeOff, EarOff, Ghost, Hand, Ban, Snowflake, Mountain,
+  FlaskConical, ArrowDown, Lock, Zap, Moon, Brain, Heart, Flame,
+  HeartCrack, Skull, Sparkles, AlertCircle, Plus, X,
+} from "lucide-react";
 import { getParty, type PartyMember, type InventoryItem } from "@/lib/dndbeyond.functions";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 

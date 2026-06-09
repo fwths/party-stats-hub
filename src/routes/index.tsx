@@ -273,6 +273,44 @@ function CharacterCard({ member }: { member: PartyMember }) {
             </div>
           </div>
 
+          {member.hpCurrent <= 0 && (
+            <div className="mt-3 rounded border border-destructive/60 bg-destructive/10 px-2 py-2">
+              <div className="mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider">
+                <span className="text-destructive">
+                  {member.deathSaves.stabilized ? "Stabilized" : "Death Saves"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">Success</span>
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={`s-${i}`}
+                      className={`h-3 w-3 rotate-45 border ${
+                        i < member.deathSaves.successes
+                          ? "border-hp-good bg-hp-good shadow-[0_0_6px_color-mix(in_oklab,var(--hp-good)_70%,transparent)]"
+                          : "border-border bg-transparent"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-muted-foreground">Fail</span>
+                  {[0, 1, 2].map((i) => (
+                    <span
+                      key={`f-${i}`}
+                      className={`h-3 w-3 rotate-45 border ${
+                        i < member.deathSaves.failures
+                          ? "border-destructive bg-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_70%,transparent)]"
+                          : "border-border bg-transparent"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="mt-4 grid grid-cols-4 gap-1.5 text-center">
             <Stat label="AC" value={member.armorClass} />
             <Stat label="Initiative" value={fmt(member.initiative)} />
@@ -494,6 +532,62 @@ function CharacterCard({ member }: { member: PartyMember }) {
                     </span>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {member.hitDice.length > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Hit Dice
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {member.hitDice.map((h, i) => {
+                  const avail = h.max - h.used;
+                  return (
+                    <span
+                      key={`hd-${i}`}
+                      className="rounded border border-border bg-secondary/60 px-2 py-0.5 text-[10px] font-mono text-foreground"
+                      title={`${avail}/${h.max} d${h.die} remaining`}
+                    >
+                      <span className="text-accent">{avail}</span>
+                      <span className="text-muted-foreground">/{h.max}</span>
+                      <span className="ml-1 text-muted-foreground">d{h.die}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {member.actions.filter((a) => a.uses).length > 0 && (
+            <div className="mt-3">
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Resources
+              </div>
+              <div className="flex flex-col gap-1">
+                {member.actions
+                  .filter((a) => a.uses)
+                  .map((a) => {
+                    const u = a.uses!;
+                    const out = u.current <= 0;
+                    return (
+                      <div
+                        key={`${a.source}-${a.name}`}
+                        className="flex items-center justify-between gap-2 rounded border border-border bg-secondary/40 px-2 py-1 text-xs"
+                        title={`Resets on ${u.reset}`}
+                      >
+                        <span className="truncate text-foreground">{a.name}</span>
+                        <span
+                          className={`font-mono ${
+                            out ? "text-destructive" : "text-accent"
+                          }`}
+                        >
+                          {u.current}/{u.max}
+                        </span>
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           )}

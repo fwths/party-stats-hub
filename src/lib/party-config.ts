@@ -4,8 +4,8 @@
 // The character must have privacy set to "Public" on D&D Beyond.
 export const PARTY_CHARACTER_IDS: number[] = [
   97349530,
+  131296315,
   131593533,
   132900149,
   132940690,
-  131296315,
 ];

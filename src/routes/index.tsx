@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { getParty, type PartyMember } from "@/lib/dndbeyond.functions";
 
 const partyQueryOptions = queryOptions({
@@ -78,8 +78,35 @@ function CharacterCard({ member }: { member: PartyMember }) {
   const hpPct = member.hpMax > 0 ? Math.min(100, (member.hpCurrent / member.hpMax) * 100) : 0;
   const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const profSkills = member.skills.filter((s) => s.proficiency !== "none");
+  const hpColor =
+    hpPct > 60 ? "bg-hp-good" : hpPct > 25 ? "bg-hp-wounded" : "bg-hp-critical";
+  const hpGlow =
+    hpPct > 60
+      ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-good)_70%,transparent)]"
+      : hpPct > 25
+      ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
+      : "shadow-[0_0_10px_color-mix(in_oklab,var(--hp-critical)_80%,transparent)] animate-pulse";
+
+  // HP change indicator
+  const prevHpRef = useRef<number>(member.hpCurrent);
+  const [delta, setDelta] = useState<{ value: number; key: number } | null>(null);
+  useEffect(() => {
+    const prev = prevHpRef.current;
+    if (prev !== member.hpCurrent) {
+      const diff = member.hpCurrent - prev;
+      if (diff !== 0) setDelta({ value: diff, key: Date.now() });
+      prevHpRef.current = member.hpCurrent;
+    }
+  }, [member.hpCurrent]);
+
+  // Split classes string "Wizard 5 / Cleric 2" into chips
+  const classChips = member.classes
+    .split(/\s*\/\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   return (
-    <article className="rounded-lg border border-border bg-card p-4 shadow-md transition-colors hover:border-accent/60">
+    <article className="card-arcane relative overflow-hidden rounded-lg border border-border p-4 shadow-md transition-colors hover:border-accent/60">
       <div className="flex items-start gap-3">
         {member.avatarUrl ? (
           <img
@@ -100,8 +127,32 @@ function CharacterCard({ member }: { member: PartyMember }) {
             {member.name}
           </a>
           <p className="truncate text-xs text-muted-foreground">
-            {member.race} · {member.classes}
+            {member.race}
           </p>
+          {classChips.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {classChips.map((c) => (
+                <span
+                  key={c}
+                  className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+          )}
+          {member.conditions.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {member.conditions.map((c) => (
+                <span
+                  key={c}
+                  className="rounded-full border border-destructive/60 bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_60%,transparent)]"
+                >
+                  {c}
+                </span>
+              ))}
+            </div>
+          )}
           {member.error ? (
             <p className="mt-1 text-xs text-destructive">{member.error}</p>
           ) : null}
@@ -110,19 +161,31 @@ function CharacterCard({ member }: { member: PartyMember }) {
 
       {!member.error && (
         <>
-          <div className="mt-4">
+          <div className="mt-4 relative">
             <div className="mb-1 flex items-baseline justify-between text-xs">
               <span className="font-medium text-muted-foreground">HP</span>
-              <span className="font-mono text-foreground">
+              <span className="font-mono text-foreground relative">
                 {member.hpCurrent} / {member.hpMax}
                 {member.tempHp > 0 ? (
                   <span className="ml-1 text-accent">+{member.tempHp}</span>
                 ) : null}
+                {delta && (
+                  <span
+                    key={delta.key}
+                    className={`absolute -top-3 right-0 text-xs font-bold ${
+                      delta.value < 0
+                        ? "text-hp-critical hp-delta-damage"
+                        : "text-hp-good hp-delta-heal"
+                    }`}
+                  >
+                    {delta.value > 0 ? `+${delta.value}` : delta.value}
+                  </span>
+                )}
               </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-secondary">
               <div
-                className="h-full bg-primary transition-all"
+                className={`h-full transition-all ${hpColor} ${hpGlow}`}
                 style={{ width: `${hpPct}%` }}
               />
             </div>
@@ -136,22 +199,37 @@ function CharacterCard({ member }: { member: PartyMember }) {
           </div>
 
           <div className="mt-4 grid grid-cols-6 gap-1.5">
-            {member.abilities.map((a) => (
-              <div
-                key={a.name}
-                className="rounded border border-border bg-secondary/60 px-1 py-2 text-center"
-              >
-                <div className="text-[10px] font-semibold tracking-wider text-muted-foreground">
-                  {a.name}
+            {member.abilities.map((a) => {
+              const elite = a.score >= 16;
+              return (
+                <div
+                  key={a.name}
+                  className={`rounded border px-1 py-2 text-center transition-colors ${
+                    elite
+                      ? "border-gold/70 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_45%,transparent)]"
+                      : "border-border bg-secondary/60"
+                  }`}
+                >
+                  <div
+                    className={`text-[10px] font-semibold tracking-wider ${
+                      elite ? "text-gold" : "text-muted-foreground"
+                    }`}
+                  >
+                    {a.name}
+                  </div>
+                  <div
+                    className={`text-base font-bold leading-tight ${
+                      elite ? "text-gold" : "text-foreground"
+                    }`}
+                  >
+                    {a.score}
+                  </div>
+                  <div className="text-[10px] font-mono text-accent">
+                    {a.modifier >= 0 ? `+${a.modifier}` : a.modifier}
+                  </div>
                 </div>
-                <div className="text-base font-bold text-foreground leading-tight">
-                  {a.score}
-                </div>
-                <div className="text-[10px] font-mono text-accent">
-                  {a.modifier >= 0 ? `+${a.modifier}` : a.modifier}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
 

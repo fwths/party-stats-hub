@@ -63,26 +63,26 @@
 
 :root {
   --radius: 0.625rem;
-  /* Parchment / candlelit tavern palette */
-  --background: oklch(0.16 0.012 60);
-  --foreground: oklch(0.93 0.03 80);
-  --card: oklch(0.21 0.014 55);
-  --card-foreground: oklch(0.93 0.03 80);
-  --popover: oklch(0.21 0.014 55);
-  --popover-foreground: oklch(0.93 0.03 80);
-  --primary: oklch(0.68 0.16 35); /* warm ember red */
-  --primary-foreground: oklch(0.16 0.012 60);
-  --secondary: oklch(0.28 0.018 55);
-  --secondary-foreground: oklch(0.93 0.03 80);
-  --muted: oklch(0.25 0.014 55);
-  --muted-foreground: oklch(0.72 0.03 70);
-  --accent: oklch(0.78 0.14 75); /* gold */
-  --accent-foreground: oklch(0.16 0.012 60);
-  --destructive: oklch(0.6 0.22 25);
+  /* Ocean Deep — abyssal navy with teal arcane glow */
+  --background: oklch(0.18 0.04 245);   /* #0c2340 deep abyss */
+  --foreground: oklch(0.95 0.02 220);
+  --card: oklch(0.24 0.05 240);
+  --card-foreground: oklch(0.95 0.02 220);
+  --popover: oklch(0.24 0.05 240);
+  --popover-foreground: oklch(0.95 0.02 220);
+  --primary: oklch(0.62 0.1 215);       /* #2d8a9e tidal teal */
+  --primary-foreground: oklch(0.16 0.04 245);
+  --secondary: oklch(0.32 0.05 235);
+  --secondary-foreground: oklch(0.95 0.02 220);
+  --muted: oklch(0.28 0.04 240);
+  --muted-foreground: oklch(0.72 0.04 220);
+  --accent: oklch(0.78 0.1 195);        /* #5cbdb9 luminous cyan */
+  --accent-foreground: oklch(0.16 0.04 245);
+  --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.32 0.02 60);
-  --input: oklch(0.3 0.018 55);
-  --ring: oklch(0.78 0.14 75);
+  --border: oklch(0.38 0.06 225);
+  --input: oklch(0.32 0.05 235);
+  --ring: oklch(0.78 0.1 195);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);

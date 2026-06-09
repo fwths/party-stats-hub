@@ -43,6 +43,11 @@ export interface ActionInfo {
   uses?: { current: number; max: number; reset: string };
 }
 
+export interface ConcentrationInfo {
+  modifier: number; // CON save modifier
+  advantage: boolean; // War Caster grants advantage
+}
+
 export interface DeathSaves {
   successes: number;
   failures: number;
@@ -80,6 +85,8 @@ export interface PartyMember {
   conditions: string[];
   defenses: DefenseInfo[];
   actions: ActionInfo[];
+  feats: string[];
+  concentration: ConcentrationInfo;
   readonlyUrl: string;
   error?: string;
 }
@@ -479,6 +486,15 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const { spellSlots, pactSlots } = computeSpellSlots(data);
     const defenses = computeDefenses(modifiers);
     const actions = computeActions(data, abilities, pb);
+    const feats: string[] = (data.feats ?? [])
+      .map((f: any) => f?.definition?.name)
+      .filter((n: any): n is string => typeof n === "string" && n.length > 0);
+    const conSave = saves.find((s) => s.ability === "CON");
+    const warCaster = feats.some((n) => /war\s*caster/i.test(n));
+    const concentration: ConcentrationInfo = {
+      modifier: conSave?.modifier ?? abilities[2].modifier,
+      advantage: warCaster,
+    };
     let exhaustion = 0;
     const conditions: string[] = [];
     if (Array.isArray(data.conditions)) {
@@ -541,6 +557,8 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       conditions,
       defenses,
       actions,
+      feats,
+      concentration,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
   } catch (err: any) {
@@ -651,6 +669,8 @@ function errorMember(id: number, message: string): PartyMember {
     conditions: [],
     defenses: [],
     actions: [],
+    feats: [],
+    concentration: { modifier: 0, advantage: false },
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };

@@ -247,7 +247,7 @@ function flattenModifiers(data: any): any[] {
   ];
 }
 
-function computeArmorClass(data: any, dexMod: number): number {
+function computeArmorClass(data: any, dexMod: number, modifiers: any[]): number {
   const inv: any[] = data.inventory ?? [];
   const equippedArmor = inv.filter(
     (i) => i.equipped && i.definition?.filterType === "Armor",
@@ -272,6 +272,14 @@ function computeArmorClass(data: any, dexMod: number): number {
       (b.definition.armorClass ?? 0) > (a.definition.armorClass ?? 0) ? b : a,
     );
     ac += bestShield.definition.armorClass ?? 0;
+  }
+  // Add AC bonuses from magic items (+1 armor/shield enhancements,
+  // Cloak/Amulet/Ring of Protection, etc.). D&D Beyond lists these under
+  // modifiers.item for items the user has in inventory.
+  for (const m of modifiers) {
+    if (m?.subType === "armor-class" && m?.type === "bonus" && typeof m?.value === "number") {
+      ac += m.value;
+    }
   }
   return ac;
 }
@@ -384,7 +392,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       10 + wisMod + (perceptionExpertise ? pb * 2 : perceptionProficient ? pb : 0);
 
     const dexMod = abilities[DEX_INDEX].modifier;
-    const armorClass = computeArmorClass(data, dexMod);
+    const armorClass = computeArmorClass(data, dexMod, modifiers);
     const initiative = dexMod;
     const speed = data.race?.weightSpeeds?.normal?.walk ?? 30;
     const senses = computeSenses(modifiers, data.customSenses ?? []);

@@ -423,6 +423,13 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const classes = (data.classes ?? [])
       .map((c: any) => `${c.definition?.name ?? "?"} ${c.level ?? ""}`.trim())
       .join(" / ");
+    const subclasses: string[] = (data.classes ?? [])
+      .map((c: any) => {
+        const sub = c.subclassDefinition?.name;
+        const cls = c.definition?.name ?? "";
+        return sub ? `${cls}: ${sub}` : "";
+      })
+      .filter((s: string) => s.length > 0);
 
     const conMod = abilities[2].modifier;
     const baseHp = data.baseHitPoints ?? 0;
@@ -456,6 +463,8 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const skills = computeSkills(modifiers, abilities, pb, data.characterValues ?? []);
     const saves = computeSaves(modifiers, abilities, pb);
     const { spellSlots, pactSlots } = computeSpellSlots(data);
+    const defenses = computeDefenses(modifiers);
+    const actions = computeActions(data);
     const conditions: string[] = Array.isArray(data.conditions)
       ? data.conditions
           .map((c: any) => c?.definition?.name ?? c?.name)
@@ -473,6 +482,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       avatarUrl: data.decorations?.avatarUrl ?? null,
       race: data.race?.fullName ?? data.race?.baseName ?? "Unknown",
       classes: classes || "—",
+      subclasses,
       level: totalLevel,
       hpMax,
       hpCurrent,
@@ -491,6 +501,8 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       pactSlots,
       abilities,
       conditions,
+      defenses,
+      actions,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
   } catch (err: any) {
@@ -505,6 +517,7 @@ function errorMember(id: number, message: string): PartyMember {
     avatarUrl: null,
     race: "—",
     classes: "—",
+    subclasses: [],
     level: 0,
     hpMax: 0,
     hpCurrent: 0,
@@ -523,6 +536,8 @@ function errorMember(id: number, message: string): PartyMember {
     pactSlots: [],
     abilities: ABILITY_NAMES.map((name) => ({ name, score: 0, modifier: 0 })),
     conditions: [],
+    defenses: [],
+    actions: [],
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };

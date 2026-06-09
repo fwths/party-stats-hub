@@ -479,30 +479,6 @@ function CharacterCard({ member }: { member: PartyMember }) {
             </div>
           )}
 
-          {member.hitDice.length > 0 && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Hit Dice
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {member.hitDice.map((h, i) => {
-                  const avail = h.max - h.used;
-                  return (
-                    <span
-                      key={`hd-${i}`}
-                      className="rounded border border-border bg-secondary/60 px-2 py-0.5 text-[10px] font-mono text-foreground"
-                      title={`${avail}/${h.max} d${h.die} remaining`}
-                    >
-                      <span className="text-accent">{avail}</span>
-                      <span className="text-muted-foreground">/{h.max}</span>
-                      <span className="ml-1 text-muted-foreground">d{h.die}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {member.actions.filter((a) => a.uses).length > 0 && (
             <div className="mt-3">
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

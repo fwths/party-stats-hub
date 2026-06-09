@@ -389,6 +389,13 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const speed = data.race?.weightSpeeds?.normal?.walk ?? 30;
     const senses = computeSenses(modifiers, data.customSenses ?? []);
     const skills = computeSkills(modifiers, abilities, pb);
+    const saves = computeSaves(modifiers, abilities, pb);
+    const { spellSlots, pactSlots } = computeSpellSlots(data);
+
+    const investigationSkill = skills.find((s) => s.key === "investigation");
+    const insightSkill = skills.find((s) => s.key === "insight");
+    const passiveInvestigation = 10 + (investigationSkill?.modifier ?? abilities[3].modifier);
+    const passiveInsight = 10 + (insightSkill?.modifier ?? abilities[WIS_INDEX].modifier);
 
     return {
       id: data.id,
@@ -401,12 +408,17 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       hpCurrent,
       tempHp,
       passivePerception,
+      passiveInvestigation,
+      passiveInsight,
       armorClass,
       initiative,
       speed,
       proficiencyBonus: pb,
       senses,
       skills,
+      saves,
+      spellSlots,
+      pactSlots,
       abilities,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
@@ -427,12 +439,17 @@ function errorMember(id: number, message: string): PartyMember {
     hpCurrent: 0,
     tempHp: 0,
     passivePerception: 0,
+    passiveInvestigation: 0,
+    passiveInsight: 0,
     armorClass: 0,
     initiative: 0,
     speed: 0,
     proficiencyBonus: 0,
     senses: [],
     skills: [],
+    saves: [],
+    spellSlots: [],
+    pactSlots: [],
     abilities: ABILITY_NAMES.map((name) => ({ name, score: 0, modifier: 0 })),
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,

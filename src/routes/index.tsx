@@ -853,6 +853,7 @@ function ConditionChip({
   Icon,
   rounds,
   intense,
+  readOnly,
   onTick,
   onRemove,
 }: {
@@ -860,11 +861,14 @@ function ConditionChip({
   Icon: React.ComponentType<{ size?: number; className?: string }>;
   rounds?: number | null;
   intense?: boolean;
+  readOnly?: boolean;
   onTick?: () => void;
   onRemove?: () => void;
 }) {
   const base = intense
     ? "border-destructive bg-destructive/25 text-destructive shadow-[0_0_8px_color-mix(in_oklab,var(--destructive)_70%,transparent)]"
+    : readOnly
+    ? "border-border bg-secondary/60 text-muted-foreground"
     : "border-destructive/60 bg-destructive/15 text-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_55%,transparent)]";
   return (
     <span

@@ -27,10 +27,11 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-6xl px-4 py-6">
-        <header className="mb-6 flex items-baseline justify-between gap-3 border-b border-border pb-3">
-          <h1 className="text-2xl font-semibold tracking-wide text-accent">
-            Mother of Bob <span className="text-muted-foreground">(MOB)</span>
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <header className="mb-8 flex items-baseline justify-between gap-3 pb-4 relative">
+          <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+          <h1 className="font-display text-2xl font-bold tracking-wide text-accent drop-shadow-[0_0_12px_color-mix(in_oklab,var(--accent)_50%,transparent)]">
+            Mother of Bob <span className="text-muted-foreground font-sans font-normal">(MOB)</span>
           </h1>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <a className="underline hover:text-accent" href="/api/party">JSON</a>
@@ -106,35 +107,42 @@ function CharacterCard({ member }: { member: PartyMember }) {
     .filter(Boolean);
 
   return (
-    <article className="card-arcane relative overflow-hidden rounded-lg border border-border p-4 shadow-md transition-colors hover:border-accent/60">
-      <div className="flex items-start gap-3">
-        {member.avatarUrl ? (
-          <img
-            src={member.avatarUrl}
-            alt={member.name}
-            className="h-16 w-16 flex-shrink-0 rounded-md border border-border object-cover"
-          />
-        ) : (
-          <div className="h-16 w-16 flex-shrink-0 rounded-md border border-border bg-muted" />
-        )}
+    <article className="card-arcane relative overflow-hidden rounded-3xl border border-accent/20 p-5 shadow-[0_0_40px_color-mix(in_oklab,var(--accent)_15%,transparent)] transition-all hover:border-accent/50 hover:shadow-[0_0_50px_color-mix(in_oklab,var(--accent)_25%,transparent)]">
+      {/* Top aura */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-accent/10 to-transparent" />
+      {/* Bottom decorative trim */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+
+      <div className="relative flex items-center gap-4">
+        <div className="relative flex-shrink-0">
+          {member.avatarUrl ? (
+            <img
+              src={member.avatarUrl}
+              alt={member.name}
+              className="h-20 w-20 rounded-2xl border-2 border-accent/40 object-cover shadow-[0_0_15px_color-mix(in_oklab,var(--accent)_40%,transparent)]"
+            />
+          ) : (
+            <div className="h-20 w-20 rounded-2xl border-2 border-accent/40 bg-muted shadow-[0_0_15px_color-mix(in_oklab,var(--accent)_40%,transparent)]" />
+          )}
+        </div>
         <div className="min-w-0 flex-1">
           <a
             href={member.readonlyUrl}
             target="_blank"
             rel="noreferrer"
-            className="block truncate text-lg font-semibold text-accent hover:underline"
+            className="font-display block truncate text-xl font-bold leading-tight tracking-wide text-foreground hover:text-accent"
           >
             {member.name}
           </a>
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.22em] text-accent/80">
             {member.race}
           </p>
           {classChips.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
+            <div className="mt-2 flex flex-wrap gap-1">
               {classChips.map((c) => (
                 <span
                   key={c}
-                  className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent"
+                  className="rounded border border-accent/40 bg-accent/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent"
                 >
                   {c}
                 </span>
@@ -161,11 +169,12 @@ function CharacterCard({ member }: { member: PartyMember }) {
 
       {!member.error && (
         <>
-          <div className="mt-4 relative">
-            <div className="mb-1 flex items-baseline justify-between text-xs">
-              <span className="font-medium text-muted-foreground">HP</span>
-              <span className="font-mono text-foreground relative">
-                {member.hpCurrent} / {member.hpMax}
+          <div className="relative mt-5">
+            <div className="mb-1.5 flex items-baseline justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-accent/80">Hit Points</span>
+              <span className="relative font-mono text-sm">
+                <span className="font-bold text-primary tabular-nums">{member.hpCurrent}</span>
+                <span className="text-muted-foreground"> / {member.hpMax}</span>
                 {member.tempHp > 0 ? (
                   <span className="ml-1 text-accent">+{member.tempHp}</span>
                 ) : null}
@@ -183,35 +192,38 @@ function CharacterCard({ member }: { member: PartyMember }) {
                 )}
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-secondary">
+            <div className="h-2.5 overflow-hidden rounded-full border border-accent/20 bg-secondary/60 p-[2px]">
               <div
-                className={`h-full transition-all ${hpColor} ${hpGlow}`}
+                className={`h-full rounded-full transition-all ${hpColor} ${hpGlow}`}
                 style={{ width: `${hpPct}%` }}
               />
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-4 gap-1.5 text-center">
+          <div className="mt-5 grid grid-cols-4 gap-2 text-center">
             <Stat label="AC" value={member.armorClass} />
             <Stat label="Initiative" value={fmt(member.initiative)} />
             <Stat label="Speed" value={`${member.speed}ft`} />
             <Stat label="Proficiency" value={fmt(member.proficiencyBonus)} />
           </div>
 
-          <div className="mt-4 grid grid-cols-6 gap-1.5">
+          <div className="mt-5 grid grid-cols-6 gap-1.5">
             {member.abilities.map((a) => {
               const elite = a.score >= 16;
               return (
                 <div
                   key={a.name}
-                  className={`rounded border px-1 py-2 text-center transition-colors ${
+                  className={`relative overflow-hidden rounded-lg border px-1 py-2 text-center transition-colors ${
                     elite
-                      ? "border-gold/70 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_45%,transparent)]"
-                      : "border-border bg-secondary/60"
+                      ? "border-gold/60 bg-[color-mix(in_oklab,var(--gold)_10%,var(--card))] shadow-[0_0_12px_color-mix(in_oklab,var(--gold)_30%,transparent)]"
+                      : "border-accent/15 bg-black/30"
                   }`}
                 >
+                  {elite && (
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
+                  )}
                   <div
-                    className={`text-[10px] font-semibold tracking-wider ${
+                    className={`text-[9px] font-bold uppercase tracking-wider ${
                       elite ? "text-gold" : "text-muted-foreground"
                     }`}
                   >
@@ -224,7 +236,7 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   >
                     {a.score}
                   </div>
-                  <div className="text-[10px] font-mono text-accent">
+                  <div className={`text-[10px] font-mono ${elite ? "text-gold/80" : "text-accent"}`}>
                     {a.modifier >= 0 ? `+${a.modifier}` : a.modifier}
                   </div>
                 </div>
@@ -234,10 +246,8 @@ function CharacterCard({ member }: { member: PartyMember }) {
 
 
           {member.saves.length > 0 && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Saving Throws
-              </div>
+            <div className="mt-5">
+              <h3 className="section-heading">Saving Throws</h3>
               <div className="grid grid-cols-6 gap-1">
                 {member.saves.map((s) => {
                   const marker =
@@ -245,10 +255,10 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   return (
                     <div
                       key={s.ability}
-                      className={`rounded border px-1 py-1 text-center ${
+                      className={`rounded-md border px-1 py-1 text-center ${
                         s.proficiency !== "none"
                           ? "border-accent/60 bg-accent/10"
-                          : "border-border bg-secondary/60"
+                          : "border-accent/15 bg-black/30"
                       }`}
                     >
                       <div className="text-[9px] font-semibold tracking-wider text-muted-foreground">
@@ -264,10 +274,8 @@ function CharacterCard({ member }: { member: PartyMember }) {
           )}
 
           {(member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Spell Slots
-              </div>
+            <div className="mt-5">
+              <h3 className="section-heading">Spell Slots</h3>
               <div className="flex flex-col gap-1.5">
                 {member.spellSlots.map((s) => {
                   const available = s.max - s.used;
@@ -336,10 +344,8 @@ function CharacterCard({ member }: { member: PartyMember }) {
           )}
 
           {(member.senses.length > 0 || member.passivePerception != null) && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Senses
-              </div>
+            <div className="mt-5">
+              <h3 className="section-heading">Senses</h3>
               <div className="flex flex-col gap-1">
                 {[
                   { label: "Passive Perception", value: member.passivePerception },
@@ -348,9 +354,9 @@ function CharacterCard({ member }: { member: PartyMember }) {
                 ].filter((p) => p.value != null).map((p) => (
                   <div
                     key={p.label}
-                    className="flex items-center gap-2 rounded border border-border bg-secondary/40 px-2 py-1"
+                    className="flex items-center gap-2 rounded-md border border-accent/15 bg-black/30 px-2 py-1.5"
                   >
-                    <span className="flex h-6 w-6 items-center justify-center rounded border border-accent/50 bg-accent/10 text-xs font-mono font-semibold text-foreground">
+                    <span className="flex h-6 w-6 items-center justify-center rounded border border-primary/40 bg-primary/10 text-xs font-mono font-bold text-primary">
                       {p.value}
                     </span>
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -359,7 +365,7 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   </div>
                 ))}
                 {member.senses.length > 0 && (
-                  <div className="mt-1 text-center text-xs text-muted-foreground">
+                  <div className="mt-1 text-center text-[10px] italic text-muted-foreground">
                     {member.senses.map((s) => `${s.name}${s.value != null ? ` ${s.value} ft.` : ""}`).join(" • ")}
                   </div>
                 )}
@@ -368,20 +374,22 @@ function CharacterCard({ member }: { member: PartyMember }) {
           )}
 
           {profSkills.length > 0 && (
-            <div className="mt-3">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Skills
-              </div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
-                {profSkills.map((s) => (
-                  <div key={s.key} className="flex items-baseline justify-between">
-                    <span className="truncate text-foreground">
-                      {s.proficiency === "expertise" ? "★ " : s.proficiency === "half" ? "◐ " : "● "}
-                      {s.name}
+            <div className="mt-5">
+              <h3 className="section-heading">Masteries</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {profSkills.map((s) => {
+                  const mark = s.proficiency === "expertise" ? "★" : s.proficiency === "half" ? "◐" : "●";
+                  return (
+                    <span
+                      key={s.key}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary"
+                    >
+                      <span className="text-primary/80">{mark}</span>
+                      <span>{s.name}</span>
+                      <span className="text-primary/70 font-mono">{fmt(s.modifier)}</span>
                     </span>
-                    <span className="font-mono text-accent">{fmt(s.modifier)}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -393,11 +401,11 @@ function CharacterCard({ member }: { member: PartyMember }) {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded border border-border bg-secondary/60 px-1 py-2">
-      <div className="text-[10px] font-semibold tracking-wider text-muted-foreground">
+    <div className="rounded-xl border border-accent/20 bg-black/40 px-1 py-2.5 ring-1 ring-inset ring-accent/5">
+      <div className="text-[9px] font-bold uppercase tracking-wider text-accent/70">
         {label}
       </div>
-      <div className="text-sm font-bold text-foreground leading-tight">{value}</div>
+      <div className="text-base font-bold text-foreground leading-tight">{value}</div>
     </div>
   );
 }

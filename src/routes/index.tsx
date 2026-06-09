@@ -320,17 +320,6 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   );
                 })}
               </div>
-              <div className="mt-2 flex items-center justify-between rounded border border-accent/40 bg-accent/10 px-2 py-1 text-xs">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Concentration
-                  {member.concentration.advantage && (
-                    <span className="ml-1 text-gold" title="War Caster: advantage on concentration saves">
-                      ★ ADV
-                    </span>
-                  )}
-                </span>
-                <span className="font-mono text-accent">{fmt(member.concentration.modifier)}</span>
-              </div>
             </Section>
           )}
 
@@ -504,20 +493,6 @@ function CharacterCard({ member }: { member: PartyMember }) {
             </Section>
           ) : null}
 
-          {member.feats.length > 0 && (
-            <Section title="Feats" defaultOpen={false}>
-              <div className="flex flex-wrap gap-1">
-                {member.feats.map((f) => (
-                  <span
-                    key={f}
-                    className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-foreground"
-                  >
-                    {f}
-                  </span>
-                ))}
-              </div>
-            </Section>
-          )}
 
         </>
       )}

@@ -220,18 +220,18 @@ function CharacterCard({ member }: { member: PartyMember }) {
               </div>
               <div className="flex flex-wrap gap-1">
                 {member.passivePerception != null && (
-                  <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] text-foreground">
-                    Passive Perception {member.passivePerception}
+                  <span className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[11px] text-foreground">
+                    👁 PP {member.passivePerception}
                   </span>
                 )}
                 {member.passiveInvestigation != null && (
-                  <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] text-foreground">
-                    Passive Investigation {member.passiveInvestigation}
+                  <span className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[11px] text-foreground">
+                    🔍 PI {member.passiveInvestigation}
                   </span>
                 )}
                 {member.passiveInsight != null && (
-                  <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] text-foreground">
-                    Passive Insight {member.passiveInsight}
+                  <span className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[11px] text-foreground">
+                    💡 PIns {member.passiveInsight}
                   </span>
                 )}
                 {member.senses.map((s) => (

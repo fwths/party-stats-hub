@@ -211,25 +211,11 @@ function CharacterCard({ member }: { member: PartyMember }) {
               {member.subclasses.join(" • ")}
             </p>
           )}
-          {member.conditions.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {member.conditions.map((c) => (
-                <span
-                  key={c}
-                  className="rounded-full border border-destructive/60 bg-destructive/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_60%,transparent)]"
-                >
-                  {c}
-                </span>
-              ))}
-            </div>
-          )}
-          {member.exhaustion > 0 && (
-            <div className="mt-1">
-              <span className="rounded-full border border-destructive bg-destructive/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-destructive shadow-[0_0_8px_color-mix(in_oklab,var(--destructive)_70%,transparent)]">
-                Exhaustion {member.exhaustion}
-              </span>
-            </div>
-          )}
+          <ConditionsPanel
+            characterId={member.id}
+            remoteConditions={member.conditions}
+            exhaustion={member.exhaustion}
+          />
           {member.error ? (
             <p className="mt-1 text-xs text-destructive">{member.error}</p>
           ) : null}

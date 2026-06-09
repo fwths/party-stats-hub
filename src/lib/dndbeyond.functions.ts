@@ -426,8 +426,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const subclasses: string[] = (data.classes ?? [])
       .map((c: any) => {
         const sub = c.subclassDefinition?.name;
-        const cls = c.definition?.name ?? "";
-        return sub ? `${cls}: ${sub}` : "";
+        return sub ?? "";
       })
       .filter((s: string) => s.length > 0);
 

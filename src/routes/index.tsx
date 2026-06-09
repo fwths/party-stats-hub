@@ -190,25 +190,69 @@ function CharacterCard({ member }: { member: PartyMember }) {
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Spell Slots
               </div>
-              <div className="flex flex-wrap gap-1">
-                {member.spellSlots.map((s) => (
-                  <span
-                    key={`s-${s.level}`}
-                    className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[11px] font-mono text-foreground"
-                    title={`Level ${s.level}: ${s.max - s.used}/${s.max} remaining`}
-                  >
-                    L{s.level}: {s.max - s.used}/{s.max}
-                  </span>
-                ))}
-                {member.pactSlots.map((s) => (
-                  <span
-                    key={`p-${s.level}`}
-                    className="rounded border border-accent/60 bg-accent/10 px-1.5 py-0.5 text-[11px] font-mono text-foreground"
-                    title={`Pact (L${s.level}): ${s.max - s.used}/${s.max} remaining`}
-                  >
-                    Pact L{s.level}: {s.max - s.used}/{s.max}
-                  </span>
-                ))}
+              <div className="flex flex-col gap-1.5">
+                {member.spellSlots.map((s) => {
+                  const available = s.max - s.used;
+                  return (
+                    <div key={`s-${s.level}`} className="flex items-center gap-2">
+                      <span className="w-6 text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+                        L{s.level}
+                      </span>
+                      <div
+                        className="flex flex-wrap gap-1"
+                        title={`Level ${s.level}: ${available}/${s.max} remaining`}
+                      >
+                        {Array.from({ length: s.max }).map((_, i) => {
+                          const filled = i < available;
+                          return (
+                            <span
+                              key={i}
+                              className={
+                                filled
+                                  ? "h-3 w-3 rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/60"
+                                  : "h-3 w-3 rounded-full border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="ml-auto text-[10px] font-mono text-muted-foreground">
+                        {available}/{s.max}
+                      </span>
+                    </div>
+                  );
+                })}
+                {member.pactSlots.map((s) => {
+                  const available = s.max - s.used;
+                  return (
+                    <div key={`p-${s.level}`} className="flex items-center gap-2">
+                      <span className="w-6 text-[10px] font-mono font-semibold uppercase tracking-wider text-accent">
+                        P{s.level}
+                      </span>
+                      <div
+                        className="flex flex-wrap gap-1"
+                        title={`Pact (L${s.level}): ${available}/${s.max} remaining`}
+                      >
+                        {Array.from({ length: s.max }).map((_, i) => {
+                          const filled = i < available;
+                          return (
+                            <span
+                              key={i}
+                              className={
+                                filled
+                                  ? "h-3 w-3 rotate-45 bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-accent/70"
+                                  : "h-3 w-3 rotate-45 border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="ml-auto text-[10px] font-mono text-muted-foreground">
+                        {available}/{s.max}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

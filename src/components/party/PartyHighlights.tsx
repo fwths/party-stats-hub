@@ -215,10 +215,10 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
           </div>
           <div className="grid grid-cols-2 gap-3.5 text-center text-xs sm:grid-cols-3 md:grid-cols-5">
             {/* Total Wealth */}
-            <div className="relative overflow-hidden rounded-lg border border-gold/25 bg-gold/5 p-3 transition-all duration-300 hover:border-gold/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-gold/5">
+            <div className="group/wealth relative overflow-hidden rounded-lg border border-gold/25 bg-gold/5 p-3 transition-all duration-300 hover:border-gold/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-gold/10">
               <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-gold/12 blur-xl pointer-events-none" />
-              <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                <Coins size={11} className="text-gold/90" />
+              <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                <Coins size={11} className="text-gold/90 transition-transform duration-300 group-hover/wealth:animate-jingle" />
                 <span>Total Wealth</span>
               </div>
               <div className="font-heading text-xl font-extrabold text-gold leading-tight drop-shadow-sm mt-1.5">
@@ -228,10 +228,10 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
 
             {/* AC */}
             {bestAc && (
-              <div className="relative overflow-hidden rounded-lg border border-primary/25 bg-primary/5 p-3 transition-all duration-300 hover:border-primary/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
-                <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-primary/12 blur-xl pointer-events-none" />
-                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <Shield size={11} className="text-primary/95" />
+              <div className="group/ac relative overflow-hidden rounded-lg border border-blue-500/25 bg-blue-500/5 p-3 transition-all duration-300 hover:border-blue-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-500/10">
+                <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-blue-500/12 blur-xl pointer-events-none" />
+                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                  <Shield size={11} className="text-blue-400 transition-all duration-300 group-hover/ac:scale-120 group-hover/ac:rotate-12" />
                   <span>Highest AC</span>
                 </div>
                 <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">
@@ -248,10 +248,10 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
 
             {/* Initiative */}
             {bestInit && (
-              <div className="relative overflow-hidden rounded-lg border border-primary/25 bg-primary/5 p-3 transition-all duration-300 hover:border-primary/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
-                <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-primary/12 blur-xl pointer-events-none" />
-                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <Zap size={11} className="text-primary/95" />
+              <div className="group/init relative overflow-hidden rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 transition-all duration-300 hover:border-amber-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-amber-500/10">
+                <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-amber-500/12 blur-xl pointer-events-none" />
+                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                  <Zap size={11} className="text-amber-400 transition-all duration-300 group-hover/init:scale-120 group-hover/init:-rotate-12" />
                   <span>Highest Initiative</span>
                 </div>
                 <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">
@@ -268,10 +268,10 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
 
             {/* Spell DC */}
             {bestDc && (
-              <div className="relative overflow-hidden rounded-lg border border-primary/25 bg-primary/5 p-3 transition-all duration-300 hover:border-primary/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
-                <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-primary/12 blur-xl pointer-events-none" />
-                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <Sparkles size={11} className="text-primary/95" />
+              <div className="group/dc relative overflow-hidden rounded-lg border border-purple-500/25 bg-purple-500/5 p-3 transition-all duration-300 hover:border-purple-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-purple-500/10">
+                <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-purple-500/12 blur-xl pointer-events-none" />
+                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                  <Sparkles size={11} className="text-purple-400 transition-all duration-300 group-hover/dc:scale-120 group-hover/dc:animate-pulse" />
                   <span>Highest Spell DC</span>
                 </div>
                 <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">
@@ -288,10 +288,10 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
 
             {/* Max HP */}
             {bestHp && (
-              <div className="relative overflow-hidden rounded-lg border border-primary/25 bg-primary/5 p-3 transition-all duration-300 hover:border-primary/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5 col-span-2 sm:col-span-1 md:col-span-1">
-                <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-primary/12 blur-xl pointer-events-none" />
-                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <Heart size={11} className="text-primary/95" />
+              <div className="group/hp relative overflow-hidden rounded-lg border border-rose-500/25 bg-rose-500/5 p-3 transition-all duration-300 hover:border-rose-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-rose-500/10 col-span-2 sm:col-span-1 md:col-span-1">
+                <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-rose-500/12 blur-xl pointer-events-none" />
+                <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                  <Heart size={11} className="text-rose-400 fill-rose-500 transition-transform duration-300 group-hover/hp:animate-heartbeat" />
                   <span>Highest Max HP</span>
                 </div>
                 <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">
@@ -315,22 +315,24 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
           </div>
           <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 md:grid-cols-6">
             {bestByAbility.map(({ name, members: bestM, score }) => {
-              const Icon = name === "STR" ? Dumbbell :
-                           name === "DEX" ? Zap :
-                           name === "CON" ? Shield :
-                           name === "INT" ? BookOpen :
-                           name === "WIS" ? Compass : Crown;
+              const details = name === "STR" ? { icon: Dumbbell, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
+                              name === "DEX" ? { icon: Zap, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
+                              name === "CON" ? { icon: Heart, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
+                              name === "INT" ? { icon: BookOpen, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
+                              name === "WIS" ? { icon: Compass, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
+                                               { icon: Crown, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" };
+              const Icon = details.icon;
               const fullName = ABILITY_FULL_NAME[name] || name;
               return (
                 <div 
                   key={name} 
-                  className="relative overflow-hidden rounded-lg border border-border/30 bg-secondary/15 p-3 transition-all duration-300 hover:border-accent/35 hover:-translate-y-0.5 flex items-center justify-between gap-3 min-h-[76px]"
+                  className={`group relative overflow-hidden rounded-lg border bg-secondary/15 p-3 transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-between gap-3 min-h-[76px] ${details.borderClass}`}
                 >
                   {/* Subtle layout glow */}
-                  <div className="absolute -right-3 -bottom-3 h-10 w-10 rounded-full bg-gold/5 blur-lg pointer-events-none" />
+                  <div className={`absolute -right-3 -bottom-3 h-10 w-10 rounded-full blur-lg pointer-events-none ${details.glowClass}`} />
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-accent/10 text-accent">
-                      <Icon size={15} />
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded ${details.colorClass}`}>
+                      <Icon size={15} className="transition-transform duration-300 group-hover:scale-120 group-hover:rotate-6" />
                     </div>
                     <div className="min-w-0">
                       <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{fullName}</div>

@@ -212,11 +212,16 @@ function computeSpellSlots(data: any): { spellSlots: SpellSlotLevel[]; pactSlots
 }
 
 function computeSaves(modifiers: any[], abilities: AbilityScore[], pb: number): SaveInfo[] {
-  // Flat bonus that applies to all saves (e.g. Cloak of Protection)
+  // Flat bonus that applies to all saves (e.g. Cloak of Protection, Aura of Protection)
   let allSavesBonus = 0;
   for (const m of modifiers) {
-    if (m?.subType === "saving-throws" && m?.type === "bonus" && typeof m?.value === "number") {
-      allSavesBonus += m.value;
+    if (m?.subType === "saving-throws" && m?.type === "bonus") {
+      if (typeof m.value === "number") {
+        allSavesBonus += m.value;
+      }
+      if (typeof m.statId === "number" && m.statId >= 1 && m.statId <= 6) {
+        allSavesBonus += abilities[m.statId - 1].modifier;
+      }
     }
   }
   return ABILITY_LONG.map((long, i) => {
@@ -284,7 +289,7 @@ function flattenModifiers(data: any): any[] {
   ];
 }
 
-function computeArmorClass(data: any, dexMod: number, modifiers: any[]): number {
+function computeArmorClass(data: any, dexMod: number, modifiers: any[], abilities: AbilityScore[]): number {
   const inv: any[] = data.inventory ?? [];
   const equippedArmor = inv.filter(
     (i) => i.equipped && i.definition?.filterType === "Armor",
@@ -292,32 +297,79 @@ function computeArmorClass(data: any, dexMod: number, modifiers: any[]): number 
   // armorTypeId: 1=light, 2=medium, 3=heavy, 4=shield
   const body = equippedArmor.filter((i) => (i.definition?.armorTypeId ?? 0) <= 3);
   const shields = equippedArmor.filter((i) => i.definition?.armorTypeId === 4);
-  let ac = 10 + dexMod;
+  
+  let baseAc = 10;
+  let dexLimit = Infinity;
+  let hasArmor = false;
+
   if (body.length > 0) {
-    // pick the highest-base body armor
+    hasArmor = true;
     const best = body.reduce((a, b) =>
       (b.definition.armorClass ?? 0) > (a.definition.armorClass ?? 0) ? b : a,
     );
-    const base = best.definition.armorClass ?? 10;
+    baseAc = best.definition.armorClass ?? 10;
     const type = best.definition.armorTypeId;
-    if (type === 1) ac = base + dexMod;
-    else if (type === 2) ac = base + Math.min(dexMod, 2);
-    else ac = base; // heavy
+    if (type === 2) dexLimit = 2; // Medium
+    if (type === 3) dexLimit = 0; // Heavy
   }
+
+  // Handle Unarmored base sets (e.g. Draconic Resilience, Mage Armor)
+  if (!hasArmor) {
+    let bestUnarmoredBase = baseAc;
+    for (const m of modifiers) {
+      if (m?.type === "set-base" && (m?.subType === "unarmored-armor-class" || m?.subType === "armor-class")) {
+         if (typeof m.value === "number" && m.value > bestUnarmoredBase) {
+           bestUnarmoredBase = m.value;
+         }
+      }
+    }
+    baseAc = bestUnarmoredBase;
+  }
+
+  let ac = baseAc + Math.min(dexMod, dexLimit);
+
+  // Handle Unarmored Defense bonuses (e.g. Monk/Barbarian)
+  if (!hasArmor) {
+    let unarmoredBonus = 0;
+    for (const m of modifiers) {
+      if ((m?.type === "bonus" || m?.type === "set") && m?.subType === "unarmored-armor-class") {
+        if (typeof m.statId === "number" && m.statId >= 1 && m.statId <= 6) {
+          unarmoredBonus = Math.max(unarmoredBonus, abilities[m.statId - 1].modifier);
+        } else if (typeof m.value === "number") {
+          unarmoredBonus = Math.max(unarmoredBonus, m.value);
+        }
+      }
+    }
+    ac += unarmoredBonus;
+  }
+
   if (shields.length > 0) {
     const bestShield = shields.reduce((a, b) =>
       (b.definition.armorClass ?? 0) > (a.definition.armorClass ?? 0) ? b : a,
     );
     ac += bestShield.definition.armorClass ?? 0;
   }
-  // Add AC bonuses from magic items (+1 armor/shield enhancements,
-  // Cloak/Amulet/Ring of Protection, etc.). D&D Beyond lists these under
-  // modifiers.item for items the user has in inventory.
+
+  // Add AC bonuses from magic items / traits
   for (const m of modifiers) {
     if (m?.subType === "armor-class" && m?.type === "bonus" && typeof m?.value === "number") {
       ac += m.value;
     }
   }
+
+  // Handle explicit AC set modifiers (e.g. Barkskin)
+  for (const m of modifiers) {
+    if (m?.subType === "armor-class" && m?.type === "set" && typeof m?.value === "number") {
+      if (m.value > ac) ac = m.value; // set AC overrides if higher
+    }
+  }
+
+  // Handle character manual overrides
+  const cvOverride = data.characterValues?.find((cv: any) => cv.typeId === 1);
+  if (cvOverride && typeof cvOverride.value === "number") {
+    ac = cvOverride.value;
+  }
+
   return ac;
 }
 
@@ -347,6 +399,10 @@ function computeSkillProficiency(
   let level: "none" | "half" | "proficient" = "none";
   for (const m of modifiers) {
     const modSub = String(m?.subType ?? "").toLowerCase().replace(/\s+/g, "-");
+    // Jack of All Trades gives half-proficiency to all ability checks
+    if (modSub === "ability-checks" && m.type === "half-proficiency" && level === "none") {
+      level = "half";
+    }
     if (modSub !== target) continue;
     if (m.type === "expertise") return "expertise";
     if (m.type === "proficiency") level = "proficient";
@@ -442,6 +498,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     });
 
     const totalLevel = (data.classes ?? []).reduce((sum: number, c: any) => sum + (c.level ?? 0), 0);
+    const pb = Math.ceil((totalLevel || 1) / 4) + 1;
     const classes = (data.classes ?? [])
       .map((c: any) => `${c.definition?.name ?? "?"} ${c.level ?? ""}`.trim())
       .join(" / ");
@@ -463,28 +520,57 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const overrideHp = data.overrideHitPoints;
     const removedHp = data.removedHitPoints ?? 0;
     const tempHp = data.temporaryHitPoints ?? 0;
+    
+    let hpPerLevelBonus = 0;
+    for (const m of modifiers) {
+      if (m?.type === "bonus" && m?.subType === "hit-points-per-level" && typeof m?.value === "number") {
+        hpPerLevelBonus += m.value;
+      }
+    }
+
     const hpMax =
       typeof overrideHp === "number" && overrideHp > 0
         ? overrideHp
-        : baseHp + bonusHp + conMod * totalLevel;
+        : baseHp + bonusHp + (conMod + hpPerLevelBonus) * totalLevel;
     const hpCurrent = Math.max(0, hpMax - removedHp);
 
-    // Passive perception: 10 + WIS mod + (proficient in Perception ? prof bonus : 0)
-    const wisMod = abilities[WIS_INDEX].modifier;
-    const pb = proficiencyBonus(totalLevel);
-    const perceptionProficient = modifiers.some(
-      (m) => m?.type === "proficiency" && m?.subType === "perception",
-    );
-    const perceptionExpertise = modifiers.some(
-      (m) => m?.type === "expertise" && m?.subType === "perception",
-    );
-    const passivePerception =
-      10 + wisMod + (perceptionExpertise ? pb * 2 : perceptionProficient ? pb : 0);
+    // Passive skills are calculated at the end after computeSkills
 
     const dexMod = abilities[DEX_INDEX].modifier;
-    const armorClass = computeArmorClass(data, dexMod, modifiers);
-    const initiative = dexMod;
-    const speed = data.race?.weightSpeeds?.normal?.walk ?? 30;
+    const armorClass = computeArmorClass(data, dexMod, modifiers, abilities);
+    
+    // Calculate Initiative
+    let initiative = dexMod;
+    let initBonus = 0;
+    for (const m of modifiers) {
+      if (m?.subType === "initiative") {
+        if (m?.type === "bonus") {
+          if (typeof m.value === "number") initBonus += m.value;
+          if (typeof m.statId === "number" && m.statId >= 1 && m.statId <= 6) {
+            initBonus += abilities[m.statId - 1].modifier;
+          }
+        } else if (m?.type === "half-proficiency") {
+          initBonus += Math.floor(pb / 2);
+        } else if (m?.type === "proficiency") {
+          initBonus += pb;
+        }
+      }
+    }
+    initiative += initBonus;
+
+    // Calculate Speed
+    let speed = data.race?.weightSpeeds?.normal?.walk ?? 30;
+    let speedBonus = 0;
+    for (const m of modifiers) {
+      if (m?.type === "bonus" && (m?.subType === "speed" || m?.subType === "unarmored-movement" || m?.subType === "innate-speed-walking")) {
+        if (typeof m.value === "number") speedBonus += m.value;
+      }
+      if (m?.type === "set" && m?.subType === "innate-speed-walking" && typeof m.value === "number") {
+        if (m.value > speed) speed = m.value;
+      }
+    }
+    speed += speedBonus;
+
     const senses = computeSenses(modifiers, data.customSenses ?? []);
     const skills = computeSkills(modifiers, abilities, pb, data.characterValues ?? []);
     const saves = computeSaves(modifiers, abilities, pb);
@@ -518,10 +604,25 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       data.background?.customBackground?.name ??
       "";
 
+    const perceptionSkill = skills.find((s) => s.key === "perception");
     const investigationSkill = skills.find((s) => s.key === "investigation");
     const insightSkill = skills.find((s) => s.key === "insight");
-    const passiveInvestigation = 10 + (investigationSkill?.modifier ?? abilities[3].modifier);
-    const passiveInsight = 10 + (insightSkill?.modifier ?? abilities[WIS_INDEX].modifier);
+
+    let passivePerceptionBonus = 0;
+    let passiveInvestigationBonus = 0;
+    let passiveInsightBonus = 0;
+
+    for (const m of modifiers) {
+      if (m?.type === "bonus" && typeof m?.value === "number") {
+        if (m.subType === "passive-perception") passivePerceptionBonus += m.value;
+        if (m.subType === "passive-investigation") passiveInvestigationBonus += m.value;
+        if (m.subType === "passive-insight") passiveInsightBonus += m.value;
+      }
+    }
+
+    const passivePerception = 10 + (perceptionSkill?.modifier ?? abilities[WIS_INDEX].modifier) + passivePerceptionBonus;
+    const passiveInvestigation = 10 + (investigationSkill?.modifier ?? abilities[3].modifier) + passiveInvestigationBonus;
+    const passiveInsight = 10 + (insightSkill?.modifier ?? abilities[WIS_INDEX].modifier) + passiveInsightBonus;
 
     return {
       id: data.id,

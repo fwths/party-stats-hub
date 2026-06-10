@@ -1,0 +1,31 @@
+import { 
+  Eye, EyeOff, EarOff, Ghost, Hand, Ban, Snowflake, Mountain, 
+  FlaskConical, ArrowDown, Lock, Zap, Moon, Brain, Heart, Flame, 
+  HeartCrack, Skull, Sparkles, AlertCircle 
+} from "lucide-react";
+
+export const CONDITION_BY_NAME = new Map<string, { Icon: any }>([
+  ["blinded", { Icon: EyeOff }],
+  ["charmed", { Icon: Heart }],
+  ["deafened", { Icon: EarOff }],
+  ["exhaustion", { Icon: HeartCrack }],
+  ["frightened", { Icon: Ghost }],
+  ["grappled", { Icon: Hand }],
+  ["incapacitated", { Icon: Ban }],
+  ["invisible", { Icon: Eye }],
+  ["paralyzed", { Icon: Snowflake }],
+  ["petrified", { Icon: Mountain }],
+  ["poisoned", { Icon: FlaskConical }],
+  ["prone", { Icon: ArrowDown }],
+  ["restrained", { Icon: Lock }],
+  ["stunned", { Icon: Zap }],
+  ["unconscious", { Icon: Moon }],
+]);
+
+export const SKILL_ABILITY: Record<string, string> = {
+  Acrobatics: "DEX", "Animal Handling": "WIS", Arcana: "INT", Athletics: "STR",
+  Deception: "CHA", History: "INT", Insight: "WIS", Intimidation: "CHA",
+  Investigation: "INT", Medicine: "WIS", Nature: "INT", Perception: "WIS",
+  Performance: "CHA", Persuasion: "CHA", Religion: "INT",
+  "Sleight of Hand": "DEX", Stealth: "DEX", Survival: "WIS",
+};

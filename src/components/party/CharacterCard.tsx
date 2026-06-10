@@ -4,6 +4,7 @@ import { Eye, EyeOff, EarOff, Ghost, Hand, Ban, Snowflake, Mountain, FlaskConica
 import { PartyMember, InventoryItem } from "@/lib/dndbeyond.functions";
 import { CONDITION_BY_NAME, SKILL_ABILITY } from "@/lib/constants";
 import { X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 const ABILITY_DETAILS: Record<
   string,
@@ -602,13 +603,25 @@ export function CharacterCard({ member }: { member: PartyMember }) {
     <article className="card-arcane group relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-accent/50 hover:shadow-2xl hover:shadow-primary/20">
       <div className="flex items-start gap-3">
         {member.avatarUrl ? (
-          <img
-            src={member.avatarUrl}
-            alt={member.name}
-            className="h-16 w-16 flex-shrink-0 rounded-md border border-border object-cover"
-          />
+          <Link
+            to="/character/$id"
+            params={{ id: String(member.id) }}
+            className="block h-16 w-16 flex-shrink-0 rounded-md border border-border overflow-hidden transition-all duration-200 hover:border-accent hover:shadow-[0_0_10px_color-mix(in_oklab,var(--accent)_40%,transparent)]"
+            title="View character details"
+          >
+            <img
+              src={member.avatarUrl}
+              alt={member.name}
+              className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
+            />
+          </Link>
         ) : (
-          <div className="h-16 w-16 flex-shrink-0 rounded-md border border-border bg-muted" />
+          <Link
+            to="/character/$id"
+            params={{ id: String(member.id) }}
+            className="h-16 w-16 flex-shrink-0 rounded-md border border-border bg-muted hover:border-accent"
+            title="View character details"
+          />
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">

@@ -5,9 +5,9 @@ import { CharacterCard } from "./CharacterCard";
 
 export function PartyGridSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <article key={i} className="card-arcane relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg">
+    <div className="flex flex-wrap justify-center gap-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <article key={i} className="card-arcane relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-10.67px)] 2xl:w-[calc(20%-12.8px)]">
           <div className="flex gap-3">
             <Skeleton className="h-16 w-16 rounded-md" />
             <div className="space-y-2 flex-1 pt-1">
@@ -26,7 +26,7 @@ export function PartyGridSkeleton() {
             </div>
             <Skeleton className="h-2 w-full" />
           </div>
-          <div className="grid grid-cols-4 gap-1.5 mt-6">
+          <div className="grid grid-cols-4 2xl:grid-cols-2 gap-1.5 mt-6">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
@@ -46,9 +46,11 @@ export function PartyGridSkeleton() {
 export function PartyGrid({ ids }: { ids: number[] }) {
   const { data } = useSuspenseQuery(partyQueryOptions(ids));
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-wrap justify-center gap-4">
       {data.members.map((m) => (
-        <CharacterCard key={m.id} member={m} />
+        <div key={m.id} className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-10.67px)] 2xl:w-[calc(20%-12.8px)]">
+          <CharacterCard member={m} />
+        </div>
       ))}
     </div>
   );

@@ -781,7 +781,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
           )}
 
           <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
-          <div className="grid grid-cols-4 gap-1.5 text-center">
+          <div className="grid grid-cols-4 2xl:grid-cols-2 gap-1.5 text-center">
             <Stat
               label="AC"
               icon={Shield}
@@ -1179,7 +1179,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
 
           {displaySkills.length > 0 && (
             <Section title="Skills" defaultOpen={false}>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
+              <div className="grid grid-cols-2 2xl:grid-cols-1 gap-x-3 gap-y-0.5 text-xs">
                 {displaySkills.map((s) => {
                   const abilityAbl = SKILL_ABILITY[s.name] || "STR";
                   const details = ABILITY_DETAILS[abilityAbl];

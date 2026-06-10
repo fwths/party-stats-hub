@@ -40,6 +40,7 @@ export const Route = createFileRoute("/character/$id")({
 });
 
 function CharacterDetail() {
+  const { id } = Route.useParams();
   return (
     <main className="min-h-screen text-foreground">
       <div className="bg-particles" />
@@ -53,6 +54,8 @@ function CharacterDetail() {
             >
               <ArrowLeft size={14} /> Back to party
             </Link>
+            
+
           </header>
           <Suspense fallback={<PartyGridSkeleton />}>
             <CharacterDetailInner />

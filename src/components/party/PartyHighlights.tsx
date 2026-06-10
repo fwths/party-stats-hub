@@ -214,17 +214,6 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
             Combat & Assets
           </div>
           <div className="grid grid-cols-2 gap-3.5 text-center text-xs sm:grid-cols-3 md:grid-cols-5">
-            {/* Total Wealth */}
-            <div className="group/wealth relative overflow-hidden rounded-lg border border-gold/25 bg-gold/5 p-3 transition-all duration-300 hover:border-gold/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-gold/10">
-              <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-gold/12 blur-xl pointer-events-none" />
-              <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-                <Coins size={11} className="text-gold/90 transition-transform duration-300 group-hover/wealth:animate-jingle" />
-                <span>Total Wealth</span>
-              </div>
-              <div className="font-heading text-xl font-extrabold text-gold leading-tight drop-shadow-sm mt-1.5">
-                {totalGold.toLocaleString()} gp
-              </div>
-            </div>
 
             {/* AC */}
             {bestAc && (
@@ -305,6 +294,18 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
                 </div>
               </div>
             )}
+
+            {/* Total Wealth */}
+            <div className="group/wealth relative overflow-hidden rounded-lg border border-gold/25 bg-gold/5 p-3 transition-all duration-300 hover:border-gold/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-gold/10">
+              <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-gold/12 blur-xl pointer-events-none" />
+              <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                <Coins size={11} className="text-gold/90 transition-transform duration-300 group-hover/wealth:animate-jingle" />
+                <span>Total Wealth</span>
+              </div>
+              <div className="font-heading text-xl font-extrabold text-gold leading-tight drop-shadow-sm mt-1.5">
+                {totalGold.toLocaleString()} gp
+              </div>
+            </div>
           </div>
         </div>
 

@@ -94,6 +94,8 @@ export interface PartyMember {
   inventory: InventoryItem[];
   readonlyUrl: string;
   error?: string;
+  languages: string[];
+  tools: string[];
 }
 
 const ABILITY_NAMES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
@@ -580,6 +582,19 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const inventory = computeInventory(data);
     let exhaustion = 0;
     const conditions: string[] = [];
+    let languages: string[] = [];
+    let tools: string[] = [];
+    for (const m of modifiers) {
+      if (m?.type === "language" && m?.friendlySubtypeName) {
+        languages.push(m.friendlySubtypeName);
+      }
+      if (m?.type === "proficiency" && m?.friendlySubtypeName?.toLowerCase().includes("tool")) {
+        tools.push(m.friendlySubtypeName);
+      }
+    }
+    languages = Array.from(new Set(languages)).sort();
+    tools = Array.from(new Set(tools)).sort();
+
     if (Array.isArray(data.conditions)) {
       for (const c of data.conditions) {
         const name: string | undefined = c?.definition?.name ?? c?.name;
@@ -653,6 +668,8 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       pactSlots,
       abilities,
       conditions,
+      languages,
+      tools,
       defenses,
       actions,
       inventory,
@@ -767,6 +784,8 @@ function errorMember(id: number, message: string): PartyMember {
     defenses: [],
     actions: [],
     inventory: [],
+    languages: [],
+    tools: [],
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };

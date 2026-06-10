@@ -232,7 +232,17 @@ function InventoryList({ items }: { items: InventoryItem[] }) {
 export function CharacterCard({ member }: { member: PartyMember }) {
   const hpPct = member.hpMax > 0 ? Math.min(100, (member.hpCurrent / member.hpMax) * 100) : 0;
   const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
-  const profSkills = member.skills.filter((s) => s.proficiency !== "none");
+  const displaySkills = [...member.skills].sort((a, b) => {
+    const profRank = (p: string) => {
+      if (p === "expertise") return 3;
+      if (p === "proficient") return 2;
+      if (p === "half") return 1;
+      return 0;
+    };
+    const diff = profRank(b.proficiency) - profRank(a.proficiency);
+    if (diff !== 0) return diff;
+    return a.name.localeCompare(b.name);
+  });
   const hpColor =
     hpPct > 60 ? "bg-hp-good" : hpPct > 25 ? "bg-hp-wounded" : "bg-hp-critical";
   const hpGlow =
@@ -584,13 +594,13 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             </Section>
           )}
 
-          {profSkills.length > 0 && (
+          {displaySkills.length > 0 && (
             <Section title="Skills">
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
-                {profSkills.map((s) => (
-                  <div key={s.key} className="flex items-baseline justify-between">
+                {displaySkills.map((s) => (
+                  <div key={s.key} className={`flex items-baseline justify-between ${s.proficiency === "none" ? "opacity-60" : ""}`}>
                     <span className="truncate text-foreground">
-                      {s.proficiency === "expertise" ? "★ " : s.proficiency === "half" ? "◐ " : "● "}
+                      {s.proficiency === "expertise" ? "★ " : s.proficiency === "half" ? "◐ " : s.proficiency === "proficient" ? "● " : "○ "}
                       {s.name}
                     </span>
                     <span className="font-mono text-accent">{fmt(s.modifier)}</span>
@@ -624,6 +634,25 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     </Tooltip>
                   );
                 })}
+              </div>
+            </Section>
+          )}
+
+          {(member.languages.length > 0 || member.tools.length > 0) && (
+            <Section title="Proficiencies">
+              <div className="flex flex-col gap-2">
+                {member.languages.length > 0 && (
+                  <div>
+                    <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">Languages</span>
+                    <span className="text-xs text-foreground">{member.languages.join(", ")}</span>
+                  </div>
+                )}
+                {member.tools.length > 0 && (
+                  <div>
+                    <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">Tools</span>
+                    <span className="text-xs text-foreground">{member.tools.join(", ")}</span>
+                  </div>
+                )}
               </div>
             </Section>
           )}

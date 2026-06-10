@@ -592,10 +592,50 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       if (m?.type === "language" && m?.friendlySubtypeName) {
         languages.push(m.friendlySubtypeName);
       }
-      if (m?.type === "proficiency" && m?.friendlySubtypeName?.toLowerCase().includes("tool")) {
-        tools.push(m.friendlySubtypeName);
+      if (m?.type === "proficiency") {
+        const name = m?.friendlySubtypeName;
+        if (name) {
+          const isTool =
+            m?.entityTypeId === 2103445194 ||
+            name.toLowerCase().includes("tool") ||
+            name.toLowerCase().includes("kit") ||
+            name.toLowerCase().includes("supplies") ||
+            name.toLowerCase().includes("gaming set") ||
+            name.toLowerCase().includes("instruments") ||
+            name.toLowerCase().includes("instrument") ||
+            name.toLowerCase().includes("vehicles") ||
+            name.toLowerCase().includes("vehicle");
+          if (isTool) {
+            tools.push(name);
+          }
+        }
       }
     }
+
+    if (Array.isArray(data.customProficiencies)) {
+      for (const cp of data.customProficiencies) {
+        const name = cp?.name;
+        if (!name) continue;
+        const type = String(cp?.type ?? "").toLowerCase();
+        if (type === "language") {
+          languages.push(name);
+        } else if (
+          type === "tool" ||
+          type.includes("tool") ||
+          name.toLowerCase().includes("tool") ||
+          name.toLowerCase().includes("kit") ||
+          name.toLowerCase().includes("supplies") ||
+          name.toLowerCase().includes("gaming set") ||
+          name.toLowerCase().includes("instruments") ||
+          name.toLowerCase().includes("instrument") ||
+          name.toLowerCase().includes("vehicles") ||
+          name.toLowerCase().includes("vehicle")
+        ) {
+          tools.push(name);
+        }
+      }
+    }
+
     languages = Array.from(new Set(languages)).sort();
     tools = Array.from(new Set(tools)).sort();
 

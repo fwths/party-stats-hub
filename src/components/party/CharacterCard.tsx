@@ -1044,7 +1044,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                   <span>Combat & Spells</span>
                 </span>
               }
-              defaultOpen={true}
+              defaultOpen={false}
             >
               <div className="flex flex-col gap-3">
                 {/* Attacks List */}
@@ -1178,7 +1178,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
           )}
 
           {displaySkills.length > 0 && (
-            <Section title="Skills">
+            <Section title="Skills" defaultOpen={false}>
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
                 {displaySkills.map((s) => {
                   const abilityAbl = SKILL_ABILITY[s.name] || "STR";
@@ -1343,17 +1343,27 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             <Section title="Feats" defaultOpen={false}>
               <div className="flex flex-wrap gap-1.5">
                 {member.feats.map((f) => (
-                  <span
-                    key={f}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-secondary/20 px-2.5 py-0.5 text-[9px] font-bold text-foreground/90 uppercase tracking-wider transition-all duration-200 hover:border-accent/40 hover:scale-105 hover:bg-secondary/35 select-none"
-                  >
-                    <Award size={9} className="text-accent/80 shrink-0" />
-                    <span>{f}</span>
-                  </span>
+                  <Tooltip key={f.name}>
+                    <TooltipTrigger asChild>
+                      <span
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-secondary/20 px-2.5 py-0.5 text-[9px] font-bold text-foreground/90 uppercase tracking-wider transition-all duration-200 hover:border-accent/40 hover:scale-105 hover:bg-secondary/35 select-none cursor-help"
+                      >
+                        <Award size={9} className="text-accent/80 shrink-0" />
+                        <span>{f.name}{f.choices && f.choices.length > 0 ? ` (${f.choices.join(", ")})` : ""}</span>
+                      </span>
+                    </TooltipTrigger>
+                    {f.description && (
+                      <TooltipContent className="max-w-[240px] text-xs">
+                        {f.description.replace(/<[^>]*>/g, "")}
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
                 ))}
               </div>
             </Section>
           )}
+
+
 
         </>
       )}

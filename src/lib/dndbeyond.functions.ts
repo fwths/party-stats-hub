@@ -127,7 +127,7 @@ export interface PartyMember {
   tools: string[];
   spellcasting: SpellcastingInfo[];
   hitDice: string;
-  feats: string[];
+  feats: Array<{ name: string; description: string; choices: string[] }>;
   alignment: string | null;
   currencies: Currencies;
   weightCarried: number;
@@ -1117,11 +1117,41 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const passiveInsight = 10 + (insightSkill?.modifier ?? abilities[WIS_INDEX].modifier) + passiveInsightBonus;
 
     const hitDice = computeHitDice(data);
-    const feats: string[] = Array.from(new Set(
-      (data.feats ?? [])
-        .map((f: any) => (f.definition?.name ?? "").replace(/^\d+:\s*/, ""))
-        .filter((name: string) => name.length > 0)
-    )).sort() as string[];
+    const optionLabels = new Map<number, string>();
+    for (const def of data.choices?.choiceDefinitions ?? []) {
+      for (const opt of def.options ?? []) {
+        if (opt.id != null && opt.label) {
+          optionLabels.set(Number(opt.id), opt.label);
+        }
+      }
+    }
+
+    const featsMap = new Map<string, { name: string; description: string; choices: string[] }>();
+    for (const f of data.feats ?? []) {
+      const def = f.definition;
+      if (!def) continue;
+      const name = (def.name ?? "").replace(/^\d+:\s*/, "");
+      if (!name) continue;
+      const desc = def.snippet || def.description || "";
+      
+      const featChoices: string[] = [];
+      const featId = def.id;
+      if (data.choices?.feat) {
+        for (const choice of data.choices.feat) {
+          if (choice.componentId === featId && choice.optionValue != null) {
+            const label = optionLabels.get(Number(choice.optionValue));
+            if (label) {
+              const cleanLabel = label.endsWith(" Score") ? label.replace(" Score", "") : label;
+              featChoices.push(cleanLabel);
+            }
+          }
+        }
+      }
+      featsMap.set(name, { name, description: desc, choices: featChoices });
+    }
+    const feats = Array.from(featsMap.values())
+      .map(({ name, description, choices }) => ({ name, description, choices }))
+      .sort((a, b) => a.name.localeCompare(b.name));
 
     const alignment = ALIGNMENT_MAP[data.alignmentId ?? 0] ?? null;
 
@@ -1221,44 +1251,56 @@ function computeActions(data: any, abilities: AbilityScore[], pb: number): Actio
     ["feat", data?.actions?.feat ?? []],
     ["item", data?.actions?.item ?? []],
   ];
-  const out: ActionInfo[] = [];
-  const seen = new Set<string>();
+  
+  const actionsMap = new Map<string, { info: ActionInfo; id: number; componentId: number }>();
+  
   for (const [source, list] of sources) {
     for (const a of list) {
       const name = a?.name;
       if (!name) continue;
       const key = `${source}:${name}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const info: ActionInfo = { name, source };
-      const lu = a?.limitedUse;
-      if (lu && typeof lu.maxUses === "number" && lu.maxUses > 0) {
-        const reset =
-          lu.resetType === 1 ? "short rest" :
-          lu.resetType === 2 ? "long rest" :
-          lu.resetType === 3 ? "day" :
-          "rest";
-        // statModifierUsesId: 1=STR,2=DEX,3=CON,4=INT,5=WIS,6=CHA
-        // operator: 1 = add stat mod to maxUses, 2 = multiply maxUses by stat mod
-        let max = lu.maxUses;
-        const statId = lu.statModifierUsesId;
-        if (typeof statId === "number" && statId >= 1 && statId <= 6) {
-          const statMod = Math.max(1, abilities[statId - 1].modifier);
-          max = lu.operator === 2 ? lu.maxUses * statMod : lu.maxUses + statMod;
+      
+      const aId = Number(a?.id ?? 0);
+      const aCompId = Number(a?.componentId ?? 0);
+      
+      const existing = actionsMap.get(key);
+      const isNewer = !existing || aCompId > existing.componentId || aId > existing.id;
+      
+      if (!existing || isNewer) {
+        const info: ActionInfo = { name, source };
+        const lu = a?.limitedUse;
+        if (lu && typeof lu.maxUses === "number") {
+          // statModifierUsesId: 1=STR,2=DEX,3=CON,4=INT,5=WIS,6=CHA
+          // operator: 1 = add stat mod to maxUses, 2 = multiply maxUses by stat mod
+          let max = lu.maxUses;
+          const statId = lu.statModifierUsesId;
+          if (typeof statId === "number" && statId >= 1 && statId <= 6) {
+            const statMod = Math.max(1, abilities[statId - 1].modifier);
+            max = lu.operator === 2 ? lu.maxUses * statMod : lu.maxUses + statMod;
+          }
+          if (lu.useProficiencyBonus) {
+            max = lu.proficiencyBonusOperator === 2 ? max * pb : max + pb;
+          }
+          
+          if (max > 0) {
+            const reset =
+              lu.resetType === 1 ? "short rest" :
+              lu.resetType === 2 ? "long rest" :
+              lu.resetType === 3 ? "day" :
+              "rest";
+            info.uses = {
+              current: Math.max(0, max - (lu.numberUsed ?? 0)),
+              max,
+              reset,
+            };
+          }
         }
-        if (lu.useProficiencyBonus) {
-          max = lu.proficiencyBonusOperator === 2 ? max * pb : max + pb;
-        }
-        info.uses = {
-          current: Math.max(0, max - (lu.numberUsed ?? 0)),
-          max,
-          reset,
-        };
+        actionsMap.set(key, { info, id: aId, componentId: aCompId });
       }
-      out.push(info);
     }
   }
-  return out;
+  
+  return Array.from(actionsMap.values()).map(item => item.info);
 }
 
 function errorMember(id: number, message: string): PartyMember {

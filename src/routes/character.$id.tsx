@@ -1,0 +1,93 @@
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Suspense, useEffect, useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { CharacterCard } from "@/components/party/CharacterCard";
+import { PartyGridSkeleton } from "@/components/party/PartyGrid";
+import { partyQueryOptions, readStoredIds } from "@/lib/party";
+import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
+
+export const Route = createFileRoute("/character/$id")({
+  head: ({ params }) => ({
+    meta: [
+      { title: `Character ${params.id} — Mother of Bob` },
+      { name: "description", content: "Detailed character sheet view." },
+    ],
+  }),
+  component: CharacterDetail,
+  errorComponent: ({ error, reset }) => {
+    const router = useRouter();
+    return (
+      <main className="min-h-screen p-8 text-foreground">
+        <h1 className="text-2xl font-bold mb-2">Failed to load character</h1>
+        <p className="text-muted-foreground mb-4">{error.message}</p>
+        <button
+          onClick={() => { router.invalidate(); reset(); }}
+          className="rounded border border-border bg-secondary/60 px-3 py-1.5 hover:border-accent/60"
+        >
+          Retry
+        </button>
+      </main>
+    );
+  },
+  notFoundComponent: () => (
+    <main className="min-h-screen p-8 text-foreground">
+      <h1 className="text-2xl font-bold mb-2">Character not found</h1>
+      <Link to="/" className="underline text-accent">Back to party</Link>
+    </main>
+  ),
+});
+
+function CharacterDetail() {
+  return (
+    <main className="min-h-screen text-foreground">
+      <div className="bg-particles" />
+      <div className="bg-particles-2" />
+      <TooltipProvider delayDuration={100}>
+        <div className="mx-auto max-w-3xl px-4 py-6 relative z-10">
+          <header className="mb-6 flex items-center justify-between border-b border-border/50 pb-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-accent"
+            >
+              <ArrowLeft size={14} /> Back to party
+            </Link>
+          </header>
+          <Suspense fallback={<PartyGridSkeleton />}>
+            <CharacterDetailInner />
+          </Suspense>
+        </div>
+      </TooltipProvider>
+    </main>
+  );
+}
+
+function CharacterDetailInner() {
+  const { id } = Route.useParams();
+  const charId = Number(id);
+
+  // Resolve party ids from localStorage on the client, fall back to defaults.
+  const [ids, setIds] = useState<number[]>(PARTY_CHARACTER_IDS);
+  useEffect(() => {
+    const stored = readStoredIds();
+    if (stored) setIds(stored);
+  }, []);
+
+  const effectiveIds = ids.includes(charId) ? ids : [...ids, charId];
+  const { data } = useSuspenseQuery(partyQueryOptions(effectiveIds));
+  const member = data.members.find((m) => m.id === charId);
+
+  if (!member) {
+    return (
+      <div className="rounded-lg border border-border/50 bg-secondary/20 p-6 text-center">
+        <h2 className="text-lg font-bold">Character not found</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          No character with id {charId} is in the current party.
+        </p>
+      </div>
+    );
+  }
+
+  return <CharacterCard member={member} />;
+}

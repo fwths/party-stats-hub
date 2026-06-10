@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CharacterIdRouteImport } from './routes/character.$id'
 import { Route as ApiPartyRouteImport } from './routes/api/party'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CharacterIdRoute = CharacterIdRouteImport.update({
+  id: '/character/$id',
+  path: '/character/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPartyRoute = ApiPartyRouteImport.update({
@@ -26,27 +32,31 @@ const ApiPartyRoute = ApiPartyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/party': typeof ApiPartyRoute
+  '/character/$id': typeof CharacterIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/party': typeof ApiPartyRoute
+  '/character/$id': typeof CharacterIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/party': typeof ApiPartyRoute
+  '/character/$id': typeof CharacterIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/party'
+  fullPaths: '/' | '/api/party' | '/character/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/party'
-  id: '__root__' | '/' | '/api/party'
+  to: '/' | '/api/party' | '/character/$id'
+  id: '__root__' | '/' | '/api/party' | '/character/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiPartyRoute: typeof ApiPartyRoute
+  CharacterIdRoute: typeof CharacterIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/character/$id': {
+      id: '/character/$id'
+      path: '/character/$id'
+      fullPath: '/character/$id'
+      preLoaderRoute: typeof CharacterIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/party': {
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiPartyRoute: ApiPartyRoute,
+  CharacterIdRoute: CharacterIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

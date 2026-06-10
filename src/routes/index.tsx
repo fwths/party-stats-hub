@@ -8,6 +8,7 @@ import { RefreshButton } from "@/components/party/RefreshButton";
 import { PartyHighlights } from "@/components/party/PartyHighlights";
 import { PartyGrid, PartyGridSkeleton } from "@/components/party/PartyGrid";
 import { ManagePartyDialog } from "@/components/party/ManagePartyDialog";
+import { PartyVitals } from "@/components/party/PartyVitals";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -60,6 +61,7 @@ export default function Index() {
           </div>
         </header>
         <Suspense fallback={<PartyGridSkeleton />}>
+          {/* <PartyVitals ids={ids} /> */}
           <PartyHighlights ids={ids} />
           <PartyGrid ids={ids} />
         </Suspense>

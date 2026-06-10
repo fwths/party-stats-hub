@@ -67,6 +67,28 @@ export interface DeathSaves {
   stabilized: boolean;
 }
 
+export interface Currencies {
+  cp: number;
+  sp: number;
+  ep: number;
+  gp: number;
+  pp: number;
+}
+
+export interface AttackInfo {
+  name: string;
+  attackBonus: number;
+  damage: string;
+  damageType: string;
+  properties: string[];
+  isWeapon: boolean;
+}
+
+export interface PreparedSpell {
+  level: number;
+  name: string;
+}
+
 export interface PartyMember {
   id: number;
   name: string;
@@ -104,6 +126,15 @@ export interface PartyMember {
   languages: string[];
   tools: string[];
   spellcasting: SpellcastingInfo[];
+  hitDice: string;
+  feats: string[];
+  alignment: string | null;
+  currencies: Currencies;
+  weightCarried: number;
+  carryingCapacity: number;
+  attacks: AttackInfo[];
+  cantrips: string[];
+  preparedSpells: PreparedSpell[];
 }
 
 const ABILITY_NAMES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
@@ -491,6 +522,322 @@ function computeSkills(
   });
 }
 
+function computeHitDice(data: any): string {
+  const parts: string[] = [];
+  for (const c of data.classes ?? []) {
+    const total = c.level ?? 0;
+    const used = c.hitDiceUsed ?? 0;
+    const remaining = total - used;
+    const die = c.definition?.hitDice ?? 8;
+    if (total > 0) {
+      parts.push(`${remaining}/${total}d${die}`);
+    }
+  }
+  return parts.join(" + ");
+}
+
+const ALIGNMENT_MAP: Record<number, string> = {
+  1: "Lawful Good",
+  2: "Neutral Good",
+  3: "Chaotic Good",
+  4: "Lawful Neutral",
+  5: "True Neutral",
+  6: "Chaotic Neutral",
+  7: "Lawful Evil",
+  8: "Neutral Evil",
+  9: "Chaotic Evil",
+};
+
+function computeCarryingCapacity(strengthScore: number, modifiers: any[]): number {
+  let capacity = strengthScore * 15;
+  let multiplier = 1;
+  let bonus = 0;
+  for (const m of modifiers) {
+    if (m?.subType === "carrying-capacity") {
+      if (m.type === "bonus" && typeof m.value === "number") {
+        bonus += m.value;
+      }
+      if (m.type === "multiplier" && typeof m.value === "number") {
+        multiplier *= m.value;
+      }
+    } else if (m?.subType === "carrying-capacity-multiplier") {
+      if (typeof m.value === "number") {
+        multiplier *= m.value;
+      }
+    }
+  }
+  return (capacity + bonus) * multiplier;
+}
+
+function computeWeightCarried(inventory: any[]): number {
+  let total = 0;
+  for (const item of inventory ?? []) {
+    const weight = item?.definition?.weight ?? 0;
+    const qty = item?.quantity ?? 1;
+    total += weight * qty;
+  }
+  return Number(total.toFixed(1));
+}
+
+function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifiers: any[]): AttackInfo[] {
+  const strMod = abilities[0].modifier;
+  const dexMod = abilities[1].modifier;
+  const abilityModifiers = abilities.map(a => a.modifier);
+  
+  const attacks: AttackInfo[] = [];
+  const cvs = data.characterValues ?? [];
+
+  const getCvValue = (valId: number, typeId: number) => {
+    const cv = cvs.find((c: any) => String(c.valueId) === String(valId) && c.typeId === typeId);
+    return cv ? cv.value : undefined;
+  };
+
+  const getGeneralModifiers = (isWeapon: boolean, isRanged: boolean) => {
+    let attackBonus = 0;
+    let damageBonus = 0;
+    
+    for (const m of modifiers ?? []) {
+      if (m.type === "bonus") {
+        const sub = m.subType;
+        if (sub === "attacks" || sub === "weapon-attacks") {
+          if (isWeapon) {
+            if (typeof m.value === "number") attackBonus += m.value;
+          }
+        } else if (sub === "melee-attacks" || sub === "melee-weapon-attacks") {
+          if (isWeapon && !isRanged) {
+            if (typeof m.value === "number") attackBonus += m.value;
+          }
+        } else if (sub === "ranged-attacks" || sub === "ranged-weapon-attacks") {
+          if (isWeapon && isRanged) {
+            if (typeof m.value === "number") attackBonus += m.value;
+          }
+        }
+        
+        if (sub === "damage" || sub === "weapon-damage") {
+          if (isWeapon) {
+            if (typeof m.value === "number") damageBonus += m.value;
+          }
+        } else if (sub === "melee-damage" || sub === "melee-weapon-damage") {
+          if (isWeapon && !isRanged) {
+            if (typeof m.value === "number") damageBonus += m.value;
+          }
+        } else if (sub === "ranged-damage" || sub === "ranged-weapon-damage") {
+          if (isWeapon && isRanged) {
+            if (typeof m.value === "number") damageBonus += m.value;
+          }
+        }
+      }
+    }
+    return { attackBonus, damageBonus };
+  };
+
+  // 1. Equipped weapons in inventory
+  for (const item of data.inventory ?? []) {
+    if (!item.equipped) continue;
+    const def = item.definition ?? {};
+    if (def.filterType === "Weapon") {
+      const item_id = item.id;
+      
+      const nameOverride = getCvValue(item_id, 8);
+      const name = typeof nameOverride === "string" && nameOverride.trim() ? nameOverride : def.name;
+      
+      const props: string[] = (def.properties ?? []).map((p: any) => p.name);
+      const isFinesse = props.includes("Finesse");
+      const isRanged = def.attackType === 2;
+      
+      const useMod = isRanged ? dexMod : isFinesse ? Math.max(strMod, dexMod) : strMod;
+      let baseAtkBonus = useMod + pb;
+      
+      let magicBonus = 0;
+      for (const m of def.grantedModifiers ?? []) {
+        if (m.type === "bonus" && (m.subType === "magic" || m.subType === "attack-rolls")) {
+          if (typeof m.value === "number") {
+            magicBonus += m.value;
+          }
+        }
+      }
+      baseAtkBonus += magicBonus;
+
+      const genMods = getGeneralModifiers(true, isRanged);
+      baseAtkBonus += genMods.attackBonus;
+
+      const toHitOverride = getCvValue(item_id, 11);
+      const toHitBonus = getCvValue(item_id, 10);
+      
+      let atkBonus = baseAtkBonus;
+      if (typeof toHitOverride === "number") {
+        atkBonus = toHitOverride;
+      } else if (typeof toHitBonus === "number") {
+        atkBonus += toHitBonus;
+      }
+
+      const dmg = def.damage ?? {};
+      const diceStr = dmg.diceString;
+      let damageFormula = "None";
+      if (diceStr) {
+        let baseDmgBonus = useMod + magicBonus + genMods.damageBonus;
+        
+        const dmgOverride = getCvValue(item_id, 13);
+        const dmgBonusCv = getCvValue(item_id, 12);
+        
+        let dmgBonus = baseDmgBonus;
+        if (typeof dmgOverride === "number") {
+          dmgBonus = dmgOverride;
+        } else if (typeof dmgBonusCv === "number") {
+          dmgBonus += dmgBonusCv;
+        }
+
+        if (dmgBonus > 0) {
+          damageFormula = `${diceStr} + ${dmgBonus}`;
+        } else if (dmgBonus < 0) {
+          damageFormula = `${diceStr} - ${Math.abs(dmgBonus)}`;
+        } else {
+          damageFormula = diceStr;
+        }
+      }
+
+      attacks.push({
+        name,
+        attackBonus: atkBonus,
+        damage: damageFormula,
+        damageType: def.damageType ?? "Unknown",
+        properties: props,
+        isWeapon: true
+      });
+    }
+  }
+
+  // 2. Special attacks in actions
+  const sources = [
+    ["class", data?.actions?.class ?? []],
+    ["race", data?.actions?.race ?? []],
+    ["feat", data?.actions?.feat ?? []],
+    ["item", data?.actions?.item ?? []],
+  ] as const;
+
+  const DAMAGE_TYPES: Record<number, string> = {
+    1: "Bludgeoning", 2: "Piercing", 3: "Slashing", 4: "Acid", 5: "Cold", 6: "Fire",
+    7: "Lightning", 8: "Necrotic", 9: "Thunder", 10: "Force", 11: "Psychic", 12: "Poison", 13: "Radiant"
+  };
+
+  for (const [source, list] of sources) {
+    for (const a of list) {
+      const isAtk = !!(a.isAttack || a.displayAsAttack);
+      const hasAtkRoll = a.attackTypeRange !== null || a.abilityModifierStatId !== null || a.fixedToHit !== null;
+      if (isAtk && hasAtkRoll) {
+        const action_id = a.id;
+
+        const nameOverride = getCvValue(action_id, 8);
+        const name = typeof nameOverride === "string" && nameOverride.trim() ? nameOverride : a.name;
+        
+        const abilityId = a.abilityModifierStatId;
+        let useMod = 0;
+        if (typeof abilityId === "number" && abilityId >= 1 && abilityId <= 6) {
+          useMod = abilityModifiers[abilityId - 1];
+        } else {
+          useMod = strMod;
+        }
+
+        const isProf = !!a.isProficient;
+        const fixedToHit = a.fixedToHit;
+
+        let baseAtkBonus = typeof fixedToHit === "number" ? fixedToHit : ((isProf ? pb : 0) + useMod);
+
+        const toHitOverride = getCvValue(action_id, 11);
+        const toHitBonus = getCvValue(action_id, 10);
+        
+        let atkBonus = baseAtkBonus;
+        if (typeof toHitOverride === "number") {
+          atkBonus = toHitOverride;
+        } else if (typeof toHitBonus === "number") {
+          atkBonus += toHitBonus;
+        }
+
+        const dice = a.dice ?? {};
+        const diceStr = dice.diceString;
+        const dmgTypeId = a.damageTypeId;
+        const dmgType = DAMAGE_TYPES[dmgTypeId] ?? "Unknown";
+
+        let damageFormula = "None";
+        if (diceStr) {
+          const baseDmgBonus = useMod;
+          
+          const dmgOverride = getCvValue(action_id, 13);
+          const dmgBonusCv = getCvValue(action_id, 12);
+          
+          let dmgBonus = baseDmgBonus;
+          if (typeof dmgOverride === "number") {
+            dmgBonus = dmgOverride;
+          } else if (typeof dmgBonusCv === "number") {
+            dmgBonus += dmgBonusCv;
+          }
+
+          if (dmgBonus > 0) {
+            damageFormula = `${diceStr} + ${dmgBonus}`;
+          } else if (dmgBonus < 0) {
+            damageFormula = `${diceStr} - ${Math.abs(dmgBonus)}`;
+          } else {
+            damageFormula = diceStr;
+          }
+        }
+
+        attacks.push({
+          name: `${name} (${source.charAt(0).toUpperCase() + source.slice(1)})`,
+          attackBonus: atkBonus,
+          damage: damageFormula,
+          damageType: dmgType,
+          properties: [],
+          isWeapon: false
+        });
+      }
+    }
+  }
+
+  return attacks;
+}
+
+function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: PreparedSpell[] } {
+  const cantrips: string[] = [];
+  const preparedSpells: PreparedSpell[] = [];
+
+  const sources = ["race", "class", "background", "item", "feat"] as const;
+  for (const source of sources) {
+    const list = data?.spells?.[source] ?? [];
+    for (const s of list) {
+      const def = s.definition ?? {};
+      const name = def.name;
+      if (!name) continue;
+      const level = def.level ?? 0;
+      const isCantrip = level === 0;
+      const isPrep = !!(s.prepared || s.alwaysPrepared || source === "item" || source === "feat" || source === "race");
+
+      if (isCantrip) {
+        cantrips.push(name);
+      } else if (isPrep) {
+        preparedSpells.push({ level, name });
+      }
+    }
+  }
+
+  const uniqueCantrips = Array.from(new Set(cantrips)).sort();
+  
+  const seenSpells = new Set<string>();
+  const uniquePrepared: PreparedSpell[] = [];
+  for (const p of preparedSpells) {
+    if (!seenSpells.has(p.name)) {
+      seenSpells.add(p.name);
+      uniquePrepared.push(p);
+    }
+  }
+  
+  uniquePrepared.sort((a, b) => {
+    if (a.level !== b.level) return a.level - b.level;
+    return a.name.localeCompare(b.name);
+  });
+
+  return { cantrips: uniqueCantrips, preparedSpells: uniquePrepared };
+}
+
 async function fetchCharacter(id: number): Promise<PartyMember> {
   try {
     const res = await fetch(`https://character-service.dndbeyond.com/character/v5/character/${id}`, {
@@ -735,6 +1082,29 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const passiveInvestigation = 10 + (investigationSkill?.modifier ?? abilities[3].modifier) + passiveInvestigationBonus;
     const passiveInsight = 10 + (insightSkill?.modifier ?? abilities[WIS_INDEX].modifier) + passiveInsightBonus;
 
+    const hitDice = computeHitDice(data);
+    const feats: string[] = Array.from(new Set(
+      (data.feats ?? [])
+        .map((f: any) => (f.definition?.name ?? "").replace(/^\d+:\s*/, ""))
+        .filter((name: string) => name.length > 0)
+    )).sort() as string[];
+
+    const alignment = ALIGNMENT_MAP[data.alignmentId ?? 0] ?? null;
+
+    const currencies = {
+      cp: data.currencies?.cp ?? 0,
+      sp: data.currencies?.sp ?? 0,
+      ep: data.currencies?.ep ?? 0,
+      gp: data.currencies?.gp ?? 0,
+      pp: data.currencies?.pp ?? 0,
+    };
+
+    const weightCarried = computeWeightCarried(data.inventory);
+    const carryingCapacity = computeCarryingCapacity(abilities[0].score, modifiers);
+
+    const attacks = computeAttacks(data, abilities, pb, modifiers);
+    const { cantrips, preparedSpells } = computeSpellsList(data);
+
     return {
       id: data.id,
       name: data.name ?? "Unnamed",
@@ -767,6 +1137,15 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       languages,
       tools,
       spellcasting,
+      hitDice,
+      feats,
+      alignment,
+      currencies,
+      weightCarried,
+      carryingCapacity,
+      attacks,
+      cantrips,
+      preparedSpells,
       defenses,
       actions,
       inventory,
@@ -884,6 +1263,15 @@ function errorMember(id: number, message: string): PartyMember {
     languages: [],
     tools: [],
     spellcasting: [],
+    hitDice: "—",
+    feats: [],
+    alignment: null,
+    currencies: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+    weightCarried: 0,
+    carryingCapacity: 0,
+    attacks: [],
+    cantrips: [],
+    preparedSpells: [],
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };

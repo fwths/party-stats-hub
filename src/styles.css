@@ -26,6 +26,8 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: "Inter", sans-serif;
+  --font-heading: "Outfit", sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -148,23 +150,48 @@
 
   body {
     background-color: var(--color-background);
+    background-image: 
+      radial-gradient(ellipse at 15% 50%, color-mix(in oklab, var(--color-primary) 6%, transparent), transparent 40%),
+      radial-gradient(ellipse at 85% 30%, color-mix(in oklab, var(--color-accent) 6%, transparent), transparent 40%);
+    background-attachment: fixed;
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--color-accent) 30%, transparent);
+    border-radius: 5px;
+    border: 2px solid var(--color-background);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--color-accent) 50%, transparent);
   }
 }
 
 @utility card-arcane {
   position: relative;
+  background-color: color-mix(in oklab, var(--card) 40%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in oklab, var(--border) 50%, transparent);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   background-image:
-    radial-gradient(120% 80% at 0% 0%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 55%),
-    radial-gradient(100% 70% at 100% 100%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 60%),
-    linear-gradient(180deg, color-mix(in oklab, var(--card) 100%, transparent), color-mix(in oklab, var(--card) 88%, black));
+    radial-gradient(120% 80% at 0% 0%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 55%),
+    radial-gradient(100% 70% at 100% 100%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 60%);
   &::after {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    opacity: 0.06;
+    opacity: 0.05;
     mix-blend-mode: overlay;
     background-image: radial-gradient(currentColor 1px, transparent 1px);
     background-size: 3px 3px;
@@ -186,4 +213,46 @@
 }
 @utility hp-delta-heal {
   animation: hp-flash-heal 1.6s ease-out forwards;
+}
+
+@utility animate-fill-bar {
+  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes magical-float {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  50% { opacity: 0.6; transform: translateY(-50px) scale(1.1); }
+  100% { transform: translateY(-100px) scale(1); opacity: 0; }
+}
+
+@utility bg-particles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, var(--color-accent), transparent),
+    radial-gradient(2px 2px at 40px 70px, var(--color-primary), transparent),
+    radial-gradient(2px 2px at 50px 160px, var(--color-gold), transparent),
+    radial-gradient(2px 2px at 90px 40px, var(--color-accent), transparent),
+    radial-gradient(2px 2px at 130px 80px, var(--color-primary), transparent),
+    radial-gradient(2px 2px at 160px 120px, var(--color-gold), transparent);
+  background-size: 200px 200px;
+  animation: magical-float 15s linear infinite;
+  opacity: 0.3;
+}
+
+@utility bg-particles-2 {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image: 
+    radial-gradient(2px 2px at 10px 150px, var(--color-accent), transparent),
+    radial-gradient(2px 2px at 80px 20px, var(--color-primary), transparent),
+    radial-gradient(2px 2px at 120px 180px, var(--color-gold), transparent);
+  background-size: 250px 250px;
+  animation: magical-float 10s linear infinite;
+  animation-delay: 5s;
+  opacity: 0.2;
 }

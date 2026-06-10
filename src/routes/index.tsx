@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { getParty, type PartyMember, type InventoryItem } from "@/lib/dndbeyond.functions";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const STORAGE_KEY = "mob.partyIds.v1";
 
@@ -64,11 +66,14 @@ function Index() {
   }, [ids]);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-6xl px-4 py-6">
-        <header className="mb-6 flex items-baseline justify-between gap-3 border-b border-border pb-3">
-          <h1 className="text-2xl font-semibold tracking-wide text-accent">
-            Mother of Bob <span className="text-muted-foreground">(MOB)</span>
+    <main className="min-h-screen text-foreground">
+      <div className="bg-particles" />
+      <div className="bg-particles-2" />
+      <TooltipProvider delayDuration={100}>
+        <div className="mx-auto max-w-6xl px-4 py-6 relative z-10">
+        <header className="mb-6 flex items-baseline justify-between gap-3 border-b border-border/50 pb-4">
+          <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent">
+            Mother of Bob <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
           </h1>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <button
@@ -83,7 +88,7 @@ function Index() {
             </Suspense>
           </div>
         </header>
-        <Suspense fallback={<p className="text-muted-foreground">Summoning heroes…</p>}>
+        <Suspense fallback={<PartyGridSkeleton />}>
           <PartyHighlights ids={ids} />
           <PartyGrid ids={ids} />
         </Suspense>
@@ -94,8 +99,49 @@ function Index() {
             onChange={setIds}
           />
         )}
-      </div>
+        </div>
+      </TooltipProvider>
     </main>
+  );
+}
+
+function PartyGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <article key={i} className="card-arcane relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg">
+          <div className="flex gap-3">
+            <Skeleton className="h-16 w-16 rounded-md" />
+            <div className="space-y-2 flex-1 pt-1">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+              <div className="flex gap-1 mt-2">
+                <Skeleton className="h-4 w-12" />
+                <Skeleton className="h-4 w-12" />
+              </div>
+            </div>
+          </div>
+          <div className="mt-8 space-y-2">
+            <div className="flex justify-between">
+              <Skeleton className="h-3 w-4" />
+              <Skeleton className="h-3 w-12" />
+            </div>
+            <Skeleton className="h-2 w-full" />
+          </div>
+          <div className="grid grid-cols-4 gap-1.5 mt-6">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+          <div className="grid grid-cols-6 gap-1.5 mt-4">
+            {Array.from({ length: 6 }).map((_, j) => (
+              <Skeleton key={j} className="h-14 w-full" />
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }
 
@@ -139,6 +185,12 @@ function CharacterCard({ member }: { member: PartyMember }) {
       ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
       : "shadow-[0_0_10px_color-mix(in_oklab,var(--hp-critical)_80%,transparent)] animate-pulse";
 
+  const [animHpPct, setAnimHpPct] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setAnimHpPct(hpPct), 50);
+    return () => clearTimeout(t);
+  }, [hpPct]);
+
   // HP change indicator
   const prevHpRef = useRef<number>(member.hpCurrent);
   const [delta, setDelta] = useState<{ value: number; key: number } | null>(null);
@@ -158,7 +210,7 @@ function CharacterCard({ member }: { member: PartyMember }) {
     .filter(Boolean);
 
   return (
-    <article className="card-arcane relative overflow-hidden rounded-lg border border-border p-4 shadow-md transition-colors hover:border-accent/60">
+    <article className="card-arcane group relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-accent/50 hover:shadow-2xl hover:shadow-primary/20">
       <div className="flex items-start gap-3">
         {member.avatarUrl ? (
           <img
@@ -175,17 +227,19 @@ function CharacterCard({ member }: { member: PartyMember }) {
               href={member.readonlyUrl}
               target="_blank"
               rel="noreferrer"
-              className="block truncate text-lg font-semibold text-accent hover:underline"
+              className="font-heading block truncate text-xl font-bold text-foreground drop-shadow-sm transition-colors group-hover:text-accent hover:underline"
             >
               {member.name}
             </a>
             {member.inspiration && (
-              <span
-                title="Inspiration"
-                className="text-gold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_80%,transparent)] animate-pulse"
-              >
-                ★
-              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-gold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_80%,transparent)] animate-pulse cursor-help">
+                    ★
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Inspiration</TooltipContent>
+              </Tooltip>
             )}
           </div>
           <p className="truncate text-xs text-muted-foreground">
@@ -248,8 +302,8 @@ function CharacterCard({ member }: { member: PartyMember }) {
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-secondary">
               <div
-                className={`h-full transition-all ${hpColor} ${hpGlow}`}
-                style={{ width: `${hpPct}%` }}
+                className={`h-full animate-fill-bar ${hpColor} ${hpGlow}`}
+                style={{ width: `${animHpPct}%` }}
               />
             </div>
           </div>
@@ -305,10 +359,10 @@ function CharacterCard({ member }: { member: PartyMember }) {
               return (
                 <div
                   key={a.name}
-                  className={`rounded border px-1 py-2 text-center transition-colors ${
+                  className={`rounded border px-1 py-2 text-center transition-all duration-300 hover:scale-105 ${
                     elite
-                      ? "border-gold/70 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_45%,transparent)]"
-                      : "border-border bg-secondary/60"
+                      ? "border-gold/60 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] shadow-[0_0_12px_color-mix(in_oklab,var(--gold)_45%,transparent)]"
+                      : "border-border/40 bg-secondary/30 hover:border-accent/40 hover:bg-secondary/60"
                   }`}
                 >
                   <div
@@ -319,7 +373,7 @@ function CharacterCard({ member }: { member: PartyMember }) {
                     {a.name}
                   </div>
                   <div
-                    className={`text-base font-bold leading-tight ${
+                    className={`font-heading text-lg font-bold leading-tight drop-shadow-sm ${
                       elite ? "text-gold" : "text-foreground"
                     }`}
                   >
@@ -371,24 +425,26 @@ function CharacterCard({ member }: { member: PartyMember }) {
                       <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
                         Level {s.level}
                       </span>
-                      <div
-                        className="flex flex-wrap gap-1"
-                        title={`Level ${s.level}: ${available}/${s.max} remaining`}
-                      >
-                        {Array.from({ length: s.max }).map((_, i) => {
-                          const filled = i < available;
-                          return (
-                            <span
-                              key={i}
-                              className={
-                                filled
-                                  ? "h-3 w-3 rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/60"
-                                  : "h-3 w-3 rounded-full border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
-                              }
-                            />
-                          );
-                        })}
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-wrap gap-1 cursor-help">
+                            {Array.from({ length: s.max }).map((_, i) => {
+                              const filled = i < available;
+                              return (
+                                <span
+                                  key={i}
+                                  className={
+                                    filled
+                                      ? "h-3 w-3 rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/60"
+                                      : "h-3 w-3 rounded-full border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+                                  }
+                                />
+                              );
+                            })}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>Level {s.level}: {available}/{s.max} remaining</TooltipContent>
+                      </Tooltip>
                       <span className="ml-auto text-[10px] font-mono text-muted-foreground">
                         {available}/{s.max}
                       </span>
@@ -402,24 +458,26 @@ function CharacterCard({ member }: { member: PartyMember }) {
                       <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-accent">
                         Pact {s.level}
                       </span>
-                      <div
-                        className="flex flex-wrap gap-1"
-                        title={`Pact (L${s.level}): ${available}/${s.max} remaining`}
-                      >
-                        {Array.from({ length: s.max }).map((_, i) => {
-                          const filled = i < available;
-                          return (
-                            <span
-                              key={i}
-                              className={
-                                filled
-                                  ? "h-3 w-3 rotate-45 bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-accent/70"
-                                  : "h-3 w-3 rotate-45 border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
-                              }
-                            />
-                          );
-                        })}
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex flex-wrap gap-1 cursor-help">
+                            {Array.from({ length: s.max }).map((_, i) => {
+                              const filled = i < available;
+                              return (
+                                <span
+                                  key={i}
+                                  className={
+                                    filled
+                                      ? "h-3 w-3 rotate-45 bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-accent/70"
+                                      : "h-3 w-3 rotate-45 border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+                                  }
+                                />
+                              );
+                            })}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>Pact (L{s.level}): {available}/{s.max} remaining</TooltipContent>
+                      </Tooltip>
                       <span className="ml-auto text-[10px] font-mono text-muted-foreground">
                         {available}/{s.max}
                       </span>
@@ -488,14 +546,15 @@ function CharacterCard({ member }: { member: PartyMember }) {
                   const mark =
                     d.type === "immunity" ? "Immunity" : d.type === "vulnerability" ? "Vulnerability" : "Resistance";
                   return (
-                    <span
-                      key={`${d.type}-${d.damageType}`}
-                      className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${styles}`}
-                      title={`${d.type}: ${d.damageType}`}
-                    >
-                      <span className="opacity-70 mr-1">{mark}</span>
-                      {d.damageType}
-                    </span>
+                    <Tooltip key={`${d.type}-${d.damageType}`}>
+                      <TooltipTrigger asChild>
+                        <span className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider cursor-help ${styles}`}>
+                          <span className="opacity-70 mr-1">{mark}</span>
+                          {d.damageType}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>{d.type}: {d.damageType}</TooltipContent>
+                    </Tooltip>
                   );
                 })}
               </div>
@@ -997,11 +1056,11 @@ function Section({
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded border border-border bg-secondary/60 px-1 py-2">
+    <div className="rounded border border-border/40 bg-secondary/30 px-1 py-2 transition-colors hover:border-accent/40 hover:bg-secondary/60">
       <div className="text-[10px] font-semibold tracking-wider text-muted-foreground">
         {label}
       </div>
-      <div className="text-sm font-bold text-foreground leading-tight">{value}</div>
+      <div className="font-heading text-lg font-bold text-foreground leading-tight drop-shadow-sm">{value}</div>
     </div>
   );
 }

@@ -77,13 +77,15 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <details open={defaultOpen} className="group mt-3">
-      <summary className="mb-1 flex cursor-pointer list-none items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-accent">
-        <span>{title}</span>
-        <span className="ml-2 transition-transform group-open:rotate-90">›</span>
-      </summary>
-      {children}
-    </details>
+    <div className="mt-3.5 border-t border-border/45 pt-3">
+      <details open={defaultOpen} className="group">
+        <summary className="mb-1 flex cursor-pointer list-none items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-accent">
+          <span>{title}</span>
+          <span className="ml-2 transition-transform group-open:rotate-90">›</span>
+        </summary>
+        {children}
+      </details>
+    </div>
   );
 }
 
@@ -701,7 +703,8 @@ export function CharacterCard({ member }: { member: PartyMember }) {
 
       {!member.error && (
         <>
-          <div className="mt-4 relative">
+          <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
+          <div className="relative">
             <div className="mb-1 flex items-baseline justify-between text-xs">
               <span className="flex items-center gap-1 font-medium text-muted-foreground group/hp select-none">
                 <Heart size={11} className="text-rose-500 drop-shadow-[0_0_3px_rgba(244,63,94,0.4)] transition-transform duration-300 group-hover/hp:animate-heartbeat" />
@@ -777,7 +780,8 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             </div>
           )}
 
-          <div className="mt-4 grid grid-cols-4 gap-1.5 text-center">
+          <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
+          <div className="grid grid-cols-4 gap-1.5 text-center">
             <Stat
               label="AC"
               icon={Shield}
@@ -828,7 +832,8 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-6 gap-1.5">
+          <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
+          <div className="grid grid-cols-6 gap-1.5">
             {member.abilities.map((a) => {
               const elite = a.score >= 16;
               const details = ABILITY_DETAILS[a.name];

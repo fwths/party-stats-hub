@@ -800,6 +800,7 @@ function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: Pre
   const cantrips: string[] = [];
   const preparedSpells: PreparedSpell[] = [];
 
+  // 1. Process data.spells (race, background, item, feat, and subclass/class always-prepared)
   const sources = ["race", "class", "background", "item", "feat"] as const;
   for (const source of sources) {
     const list = data?.spells?.[source] ?? [];
@@ -814,6 +815,39 @@ function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: Pre
       if (isCantrip) {
         cantrips.push(name);
       } else if (isPrep) {
+        preparedSpells.push({ level, name });
+      }
+    }
+  }
+
+  // 2. Process data.classSpells (spellbook/prepared list/known list)
+  const classSpellsList = data?.classSpells ?? [];
+  for (const cs of classSpellsList) {
+    // Find corresponding class definition
+    const klass = data.classes?.find((c: any) => c.id === cs.characterClassId);
+    const isPreparedCaster = klass?.definition?.spellPrepareType != null;
+
+    const spells = cs.spells ?? [];
+    for (const s of spells) {
+      const def = s.definition ?? {};
+      const name = def.name;
+      if (!name) continue;
+      const level = def.level ?? 0;
+      const isCantrip = level === 0;
+
+      // Available if:
+      // - Cantrip (level === 0)
+      // - Or level > 0 and (prepared || alwaysPrepared)
+      // - Or level > 0 and (not a prepared caster and countsAsKnownSpell is true)
+      const isAvailable =
+        isCantrip ||
+        !!s.prepared ||
+        !!s.alwaysPrepared ||
+        (!isPreparedCaster && !!s.countsAsKnownSpell);
+
+      if (isCantrip) {
+        cantrips.push(name);
+      } else if (isAvailable) {
         preparedSpells.push({ level, name });
       }
     }

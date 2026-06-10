@@ -366,10 +366,14 @@ function computeArmorClass(data: any, dexMod: number, modifiers: any[], abilitie
     }
   }
 
-  // Handle character manual overrides
+  // Handle character manual overrides and bonuses
   const cvOverride = data.characterValues?.find((cv: any) => cv.typeId === 1);
   if (cvOverride && typeof cvOverride.value === "number") {
     ac = cvOverride.value;
+  }
+  const cvBonus = data.characterValues?.find((cv: any) => cv.typeId === 2);
+  if (cvBonus && typeof cvBonus.value === "number") {
+    ac += cvBonus.value;
   }
 
   return ac;

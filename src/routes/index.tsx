@@ -26,6 +26,8 @@ export const Route = createFileRoute("/")({
 export default function Index() {
   const [ids, setIds] = useState<number[]>(() => readStoredIds() ?? PARTY_CHARACTER_IDS);
   const [managing, setManaging] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
 
   useEffect(() => {
     try {
@@ -36,6 +38,37 @@ export default function Index() {
       else localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
     } catch {}
   }, [ids]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+    if (
+      typeof window !== "undefined" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        (navigator as any).standalone)
+    ) {
+      setShowInstallBtn(false);
+    }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to install prompt: ${outcome}`);
+    setDeferredPrompt(null);
+    setShowInstallBtn(false);
+  };
 
   return (
     <main className="min-h-screen text-foreground">
@@ -48,6 +81,14 @@ export default function Index() {
             Mother of Bob <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
           </h1>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {showInstallBtn && (
+              <button
+                onClick={handleInstallClick}
+                className="rounded border border-accent bg-accent/15 hover:bg-accent/25 px-2 py-1 text-accent font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-accent/10 active:scale-95"
+              >
+                📥 Install App
+              </button>
+            )}
             <button
               onClick={() => setManaging(true)}
               className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60"

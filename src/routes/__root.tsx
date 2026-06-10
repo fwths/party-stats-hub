@@ -80,6 +80,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Mother of Bob (MOB) — Party Stats" },
       { name: "description", content: "Live D&D party stats for the Mother of Bob (MOB) campaign, pulled from D&D Beyond." },
       { name: "author", content: "Lovable" },
+      { name: "theme-color", content: "#09090b" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "MOB Stats" },
       { property: "og:title", content: "Mother of Bob (MOB) — Party Stats" },
       { property: "og:description", content: "Live D&D party stats for the Mother of Bob (MOB) campaign." },
       { property: "og:type", content: "website" },
@@ -109,6 +113,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         type: "image/png",
         href: "/favicon.png",
       },
+      {
+        rel: "manifest",
+        href: "/manifest.webmanifest",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/pwa-192x192.png",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -133,6 +145,21 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js", { scope: "/" })
+          .then((reg) => {
+            console.log("Service Worker registered successfully with scope:", reg.scope);
+          })
+          .catch((err) => {
+            console.error("Service Worker registration failed:", err);
+          });
+      });
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

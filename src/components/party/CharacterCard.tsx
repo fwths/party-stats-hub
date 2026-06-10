@@ -491,76 +491,119 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               </div>
             </Section>
           )}
-
-          {(member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
-            <Section title="Spell Slots">
-              <div className="flex flex-col gap-1.5">
-                {member.spellSlots.map((s) => {
-                  const available = s.max - s.used;
-                  return (
-                    <div key={`s-${s.level}`} className="flex items-center gap-2">
-                      <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
-                        Level {s.level}
-                      </span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-wrap gap-1 cursor-help">
-                            {Array.from({ length: s.max }).map((_, i) => {
-                              const filled = i < available;
-                              return (
-                                <span
-                                  key={i}
-                                  className={
-                                    filled
-                                      ? "h-3 w-3 rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/60"
-                                      : "h-3 w-3 rounded-full border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
-                                  }
-                                />
-                              );
-                            })}
+          {(member.spellcasting?.length > 0 || member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
+            <Section title="Spellcasting">
+              <div className="flex flex-col gap-3">
+                {member.spellcasting && member.spellcasting.length > 0 && (
+                  <div className="flex flex-col gap-3">
+                    {member.spellcasting.map((sc) => {
+                      const abilityMod = member.abilities.find((a) => a.name === sc.ability)?.modifier ?? 0;
+                      return (
+                        <div key={sc.className} className="rounded-lg border border-border/40 bg-secondary/20 p-3">
+                          <div className="mb-3 text-center text-[10px] font-semibold uppercase tracking-wider text-accent/90">
+                            {sc.className} ({sc.ability})
                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent>Level {s.level}: {available}/{s.max} remaining</TooltipContent>
-                      </Tooltip>
-                      <span className="ml-auto text-[10px] font-mono text-muted-foreground">
-                        {available}/{s.max}
-                      </span>
-                    </div>
-                  );
-                })}
-                {member.pactSlots.map((s) => {
-                  const available = s.max - s.used;
-                  return (
-                    <div key={`p-${s.level}`} className="flex items-center gap-2">
-                      <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-accent">
-                        Pact {s.level}
-                      </span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex flex-wrap gap-1 cursor-help">
-                            {Array.from({ length: s.max }).map((_, i) => {
-                              const filled = i < available;
-                              return (
-                                <span
-                                  key={i}
-                                  className={
-                                    filled
-                                      ? "h-3 w-3 rotate-45 bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-accent/70"
-                                      : "h-3 w-3 rotate-45 border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
-                                  }
-                                />
-                              );
-                            })}
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                              <div className="font-heading text-xl font-bold text-foreground leading-tight drop-shadow-sm">
+                                {fmt(abilityMod)}
+                              </div>
+                              <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
+                                Modifier
+                              </div>
+                            </div>
+                            <div>
+                              <div className="font-heading text-xl font-bold text-foreground leading-tight drop-shadow-sm">
+                                {fmt(sc.attackBonus)}
+                              </div>
+                              <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
+                                Spell Attack
+                              </div>
+                            </div>
+                            <div>
+                              <div className="font-heading text-xl font-bold text-foreground leading-tight drop-shadow-sm">
+                                {sc.saveDc}
+                              </div>
+                              <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
+                                Save DC
+                              </div>
+                            </div>
                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent>Pact (L{s.level}): {available}/{s.max} remaining</TooltipContent>
-                      </Tooltip>
-                      <span className="ml-auto text-[10px] font-mono text-muted-foreground">
-                        {available}/{s.max}
-                      </span>
-                    </div>
-                  );
-                })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {(member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
+                  <div className="flex flex-col gap-1.5 border-t border-border/30 pt-2">
+                    {member.spellSlots.map((s) => {
+                      const available = s.max - s.used;
+                      return (
+                        <div key={`s-${s.level}`} className="flex items-center gap-2">
+                          <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+                            Level {s.level}
+                          </span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-wrap gap-1 cursor-help">
+                                {Array.from({ length: s.max }).map((_, i) => {
+                                  const filled = i < available;
+                                  return (
+                                    <span
+                                      key={i}
+                                      className={
+                                        filled
+                                          ? "h-3 w-3 rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/60"
+                                          : "h-3 w-3 rounded-full border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+                                      }
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Level {s.level}: {available}/{s.max} remaining</TooltipContent>
+                          </Tooltip>
+                          <span className="ml-auto text-[10px] font-mono text-muted-foreground">
+                            {available}/{s.max}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {member.pactSlots.map((s) => {
+                      const available = s.max - s.used;
+                      return (
+                        <div key={`p-${s.level}`} className="flex items-center gap-2">
+                          <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-accent">
+                            Pact {s.level}
+                          </span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-wrap gap-1 cursor-help">
+                                {Array.from({ length: s.max }).map((_, i) => {
+                                  const filled = i < available;
+                                  return (
+                                    <span
+                                      key={i}
+                                      className={
+                                        filled
+                                          ? "h-3 w-3 rotate-45 bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-accent/70"
+                                          : "h-3 w-3 rotate-45 border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+                                      }
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>Pact (L{s.level}): {available}/{s.max} remaining</TooltipContent>
+                          </Tooltip>
+                          <span className="ml-auto text-[10px] font-mono text-muted-foreground">
+                            {available}/{s.max}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </Section>
           )}

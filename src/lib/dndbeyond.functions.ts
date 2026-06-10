@@ -32,6 +32,13 @@ export interface SpellSlotLevel {
   used: number;
 }
 
+export interface SpellcastingInfo {
+  className: string;
+  ability: string; // e.g. INT, WIS, CHA
+  saveDc: number;
+  attackBonus: number;
+}
+
 export interface DefenseInfo {
   type: "resistance" | "immunity" | "vulnerability";
   damageType: string;
@@ -96,6 +103,7 @@ export interface PartyMember {
   error?: string;
   languages: string[];
   tools: string[];
+  spellcasting: SpellcastingInfo[];
 }
 
 const ABILITY_NAMES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
@@ -581,6 +589,50 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const skills = computeSkills(modifiers, abilities, pb, data.characterValues ?? []);
     const saves = computeSaves(modifiers, abilities, pb);
     const { spellSlots, pactSlots } = computeSpellSlots(data);
+
+    // Calculate Spellcasting Save DC and Attack Modifiers
+    let spellSaveDcBonus = 0;
+    let spellAttackBonus = 0;
+    let spellSaveDcSet: number | null = null;
+    let spellAttackSet: number | null = null;
+
+    for (const m of modifiers) {
+      if (m?.subType === "spell-save-dc" && typeof m?.value === "number") {
+        if (m.type === "bonus") spellSaveDcBonus += m.value;
+        else if (m.type === "set") spellSaveDcSet = m.value;
+      }
+      if (m?.subType === "spell-attacks" && typeof m?.value === "number") {
+        if (m.type === "bonus") spellAttackBonus += m.value;
+        else if (m.type === "set") spellAttackSet = m.value;
+      }
+    }
+
+    const spellcasting: SpellcastingInfo[] = [];
+    for (const c of data.classes ?? []) {
+      const isCaster = 
+        c.definition?.canCastSpells || 
+        c.subclassDefinition?.canCastSpells || 
+        (c.definition?.spellCastingAbilityId != null && c.definition.spellCastingAbilityId > 0) || 
+        (c.subclassDefinition?.spellCastingAbilityId != null && c.subclassDefinition.spellCastingAbilityId > 0);
+      
+      if (!isCaster) continue;
+
+      const abilityId = c.definition?.spellCastingAbilityId || c.subclassDefinition?.spellCastingAbilityId;
+      if (typeof abilityId === "number" && abilityId >= 1 && abilityId <= 6) {
+        const abilityIndex = abilityId - 1;
+        const abilityName = ABILITY_NAMES[abilityIndex];
+        const abilityMod = abilities[abilityIndex].modifier;
+        const saveDc = spellSaveDcSet !== null ? spellSaveDcSet : (8 + pb + abilityMod + spellSaveDcBonus);
+        const attackBonus = spellAttackSet !== null ? spellAttackSet : (pb + abilityMod + spellAttackBonus);
+        spellcasting.push({
+          className: c.definition?.name ?? "Caster",
+          ability: abilityName,
+          saveDc,
+          attackBonus,
+        });
+      }
+    }
+
     const defenses = computeDefenses(modifiers);
     const actions = computeActions(data, abilities, pb);
     const inventory = computeInventory(data);
@@ -714,6 +766,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       conditions,
       languages,
       tools,
+      spellcasting,
       defenses,
       actions,
       inventory,
@@ -830,6 +883,7 @@ function errorMember(id: number, message: string): PartyMember {
     inventory: [],
     languages: [],
     tools: [],
+    spellcasting: [],
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
   };

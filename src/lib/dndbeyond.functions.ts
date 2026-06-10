@@ -1130,6 +1130,12 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     for (const f of data.feats ?? []) {
       const def = f.definition;
       if (!def) continue;
+
+      // Filter out internal system placeholder / disguise feats (starting with double underscore)
+      const categories = def.categories ?? [];
+      const isHidden = categories.some((c: any) => c.tagName && c.tagName.startsWith("__"));
+      if (isHidden) continue;
+
       const name = (def.name ?? "").replace(/^\d+:\s*/, "");
       if (!name) continue;
       const desc = def.snippet || def.description || "";

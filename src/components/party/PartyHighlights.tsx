@@ -291,7 +291,7 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
               <div className="group/hp relative overflow-hidden rounded-lg border border-rose-500/25 bg-rose-500/5 p-3 transition-all duration-300 hover:border-rose-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-rose-500/10 col-span-2 sm:col-span-1 md:col-span-1">
                 <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-rose-500/12 blur-xl pointer-events-none" />
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-                  <Heart size={11} className="text-rose-400 fill-rose-500 transition-transform duration-300 group-hover/hp:animate-heartbeat" />
+                  <Heart size={11} className="text-rose-400 transition-transform duration-300 group-hover/hp:animate-heartbeat" />
                   <span>Highest Max HP</span>
                 </div>
                 <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">

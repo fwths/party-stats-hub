@@ -691,7 +691,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
           <div className="mt-4 relative">
             <div className="mb-1 flex items-baseline justify-between text-xs">
               <span className="flex items-center gap-1 font-medium text-muted-foreground group/hp select-none">
-                <Heart size={11} className="text-rose-500 fill-rose-500 drop-shadow-[0_0_3px_rgba(244,63,94,0.5)] transition-transform duration-300 group-hover/hp:animate-heartbeat" />
+                <Heart size={11} className="text-rose-500 drop-shadow-[0_0_3px_rgba(244,63,94,0.4)] transition-transform duration-300 group-hover/hp:animate-heartbeat" />
                 <span>HP</span>
                 {member.hitDice && member.hitDice !== "—" && (
                   <span className="ml-1 font-mono text-[9px] text-muted-foreground/75">

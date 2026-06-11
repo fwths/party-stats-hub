@@ -6,7 +6,7 @@ import { CONDITION_BY_NAME, SKILL_ABILITY } from "@/lib/constants";
 import { X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
-const ABILITY_DETAILS: Record<
+export const ABILITY_DETAILS: Record<
   string,
   {
     Icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -67,7 +67,7 @@ const ABILITY_DETAILS: Record<
   },
 };
 
-function Section({
+export function Section({
   title,
   defaultOpen = true,
   children,
@@ -89,7 +89,7 @@ function Section({
   );
 }
 
-function Stat({ 
+export function Stat({ 
   label, 
   value, 
   icon: Icon,
@@ -120,7 +120,7 @@ function conditionIcon(name: string) {
   return CONDITION_BY_NAME.get(name.toLowerCase())?.Icon ?? AlertCircle;
 }
 
-type LocalCondition = { name: string; rounds: number | null };
+export type LocalCondition = { name: string; rounds: number | null };
 
 const CONDITIONS_KEY = "mob.conditions.v1";
 
@@ -136,7 +136,7 @@ function readAllConditions(): Record<string, LocalCondition[]> {
   }
 }
 
-function useCharacterConditions(characterId: number) {
+export function useCharacterConditions(characterId: number) {
   const [all, setAll] = useState<Record<string, LocalCondition[]>>(() => readAllConditions());
   const key = String(characterId);
   const list = all[key] ?? [];
@@ -225,7 +225,7 @@ function ConditionChip({
 }
 
 
-function getModifiedStats(member: PartyMember, localConditions: LocalCondition[]) {
+export function getModifiedStats(member: PartyMember, localConditions: LocalCondition[]) {
   let ac = member.armorClass;
   let speed = member.speed;
   const acNotes: string[] = [];
@@ -279,7 +279,7 @@ function getModifiedStats(member: PartyMember, localConditions: LocalCondition[]
   return { ac, speed, acNotes, speedNotes };
 }
 
-function ConditionsPanel({
+export function ConditionsPanel({
   characterId,
   remoteConditions,
   exhaustion,
@@ -441,7 +441,7 @@ function InventoryGroup({ label, items }: { label: string; items: InventoryItem[
   );
 }
 
-function InventoryList({
+export function InventoryList({
   items,
   currencies,
   weightCarried,

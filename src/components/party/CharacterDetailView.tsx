@@ -21,7 +21,7 @@ import {
   Package,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PartyMember, PreparedSpell } from "@/lib/dndbeyond.functions";
+import { PartyMember, PreparedSpell, SpellSlotLevel } from "@/lib/dndbeyond.functions";
 import { SKILL_ABILITY } from "@/lib/constants";
 import {
   ABILITY_DETAILS,
@@ -846,6 +846,52 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     .map(Number)
     .sort((a, b) => a - b);
 
+  const renderSlotsInline = (s: SpellSlotLevel, isPact = false) => {
+    const available = s.max - s.used;
+    return (
+      <div className="flex items-center gap-1.5 select-none">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex cursor-help flex-wrap gap-1">
+              {Array.from({ length: s.max }).map((_, i) => {
+                const filled = i < available;
+                if (isPact) {
+                  return (
+                    <span
+                      key={i}
+                      className={
+                        filled
+                          ? "h-2.5 w-2.5 rotate-45 bg-primary shadow-[0_0_5px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-accent/70"
+                          : "h-2.5 w-2.5 rotate-45 border border-accent/70 bg-transparent shadow-[0_0_4px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+                      }
+                    />
+                  );
+                } else {
+                  return (
+                    <span
+                      key={i}
+                      className={
+                        filled
+                          ? "h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_5px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/60"
+                          : "h-2.5 w-2.5 rounded-full border border-accent/70 bg-transparent shadow-[0_0_4px_color-mix(in_oklab,var(--accent)_45%,transparent)]"
+                      }
+                    />
+                  );
+                }
+              })}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="text-xs">
+            {isPact ? "Pact" : "Level"} {s.level} Slots: {available} / {s.max} remaining
+          </TooltipContent>
+        </Tooltip>
+        <span className="font-mono text-[9px] text-muted-foreground">
+          ({available}/{s.max})
+        </span>
+      </div>
+    );
+  };
+
   const expandedSpellbook = (member.cantrips.length > 0 || member.preparedSpells.length > 0) && (
     <Panel title="Spellbook" icon={Sparkles}>
       <div className="flex flex-col gap-4">
@@ -879,12 +925,18 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
         {levels.map((lvl) => {
           const list = spellsByLevel[lvl];
           const suffix = lvl === 1 ? "st" : lvl === 2 ? "nd" : lvl === 3 ? "rd" : "th";
+          const slot = member.spellSlots.find((s) => s.level === lvl);
+          const pact = member.pactSlots.find((s) => s.level === lvl);
           return (
             <div key={lvl} className="rounded-lg border border-border/30 bg-secondary/15 p-3">
-              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-foreground/90 select-none">
-                {lvl}
-                {suffix} Level
-              </h4>
+              <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-border/10 pb-1.5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/90 select-none">
+                  {lvl}
+                  {suffix} Level
+                </h4>
+                {slot && renderSlotsInline(slot, false)}
+                {pact && renderSlotsInline(pact, true)}
+              </div>
               <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
                 {list.map((spell) => (
                   <Tooltip key={spell.name}>

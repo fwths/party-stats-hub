@@ -3,7 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { CharacterCard } from "@/components/party/CharacterCard";
+import { CharacterDetailView } from "@/components/party/CharacterDetailView";
 import { PartyGridSkeleton } from "@/components/party/PartyGrid";
 import { partyQueryOptions, readStoredIds } from "@/lib/party";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
@@ -46,7 +46,7 @@ function CharacterDetail() {
       <div className="bg-particles" />
       <div className="bg-particles-2" />
       <TooltipProvider delayDuration={100}>
-        <div className="mx-auto max-w-3xl px-4 py-6 relative z-10">
+        <div className="mx-auto max-w-6xl px-4 py-6 relative z-10">
           <header className="mb-6 flex items-center justify-between border-b border-border/50 pb-4">
             <Link
               to="/"
@@ -92,5 +92,5 @@ function CharacterDetailInner() {
     );
   }
 
-  return <CharacterCard member={member} />;
+  return <CharacterDetailView member={member} />;
 }

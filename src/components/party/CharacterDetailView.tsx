@@ -21,7 +21,7 @@ import {
   Package,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember, PreparedSpell } from "@/lib/dndbeyond.functions";
 import { SKILL_ABILITY } from "@/lib/constants";
 import {
   ABILITY_DETAILS,
@@ -789,12 +789,18 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
             </div>
             <div className="flex flex-wrap gap-1">
               {member.cantrips.map((c) => (
-                <span
-                  key={c}
-                  className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent"
-                >
-                  {c}
-                </span>
+                <Tooltip key={c.name}>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent">
+                      {c.name}
+                    </span>
+                  </TooltipTrigger>
+                  {c.description && (
+                    <TooltipContent className="max-w-[280px] text-xs">
+                      {c.description.replace(/<[^>]*>/g, "")}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               ))}
             </div>
           </div>
@@ -806,17 +812,99 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
             </div>
             <div className="flex flex-wrap gap-1">
               {member.preparedSpells.map((s) => (
-                <span
-                  key={s.name}
-                  className="rounded border border-border bg-secondary/50 px-1.5 py-0.5 text-[10px] text-foreground"
-                >
-                  <span className="mr-1 font-mono text-[9px] text-accent">L{s.level}</span>
-                  {s.name}
-                </span>
+                <Tooltip key={s.name}>
+                  <TooltipTrigger asChild>
+                    <span className="cursor-help rounded border border-border bg-secondary/50 px-1.5 py-0.5 text-[10px] text-foreground">
+                      <span className="mr-1 font-mono text-[9px] text-accent">L{s.level}</span>
+                      {s.name}
+                    </span>
+                  </TooltipTrigger>
+                  {s.description && (
+                    <TooltipContent className="max-w-[280px] text-xs">
+                      {s.description.replace(/<[^>]*>/g, "")}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
               ))}
             </div>
           </div>
         )}
+      </div>
+    </Panel>
+  );
+
+  // === EXPANDED SPELLBOOK (for tabbed view) ===
+  const spellsByLevel: Record<number, PreparedSpell[]> = {};
+  member.preparedSpells.forEach((s) => {
+    if (!spellsByLevel[s.level]) {
+      spellsByLevel[s.level] = [];
+    }
+    spellsByLevel[s.level].push(s);
+  });
+
+  const levels = Object.keys(spellsByLevel)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  const expandedSpellbook = (member.cantrips.length > 0 || member.preparedSpells.length > 0) && (
+    <Panel title="Spellbook" icon={Sparkles}>
+      <div className="flex flex-col gap-4">
+        {/* Cantrips Section */}
+        {member.cantrips.length > 0 && (
+          <div className="rounded-lg border border-border/30 bg-secondary/10 p-3">
+            <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-accent select-none">
+              Cantrips
+            </h4>
+            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+              {member.cantrips.map((c) => (
+                <Tooltip key={c.name}>
+                  <TooltipTrigger asChild>
+                    <div className="cursor-help flex items-center gap-2 rounded-md border border-accent/20 bg-accent/5 px-2.5 py-1.5 text-xs text-foreground transition-all duration-200 hover:border-accent/40 hover:bg-accent/10">
+                      <Sparkles size={10} className="text-accent shrink-0" />
+                      <span>{c.name}</span>
+                    </div>
+                  </TooltipTrigger>
+                  {c.description && (
+                    <TooltipContent className="max-w-[280px] text-xs">
+                      {c.description.replace(/<[^>]*>/g, "")}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Leveled Spells grouped by Level */}
+        {levels.map((lvl) => {
+          const list = spellsByLevel[lvl];
+          const suffix = lvl === 1 ? "st" : lvl === 2 ? "nd" : lvl === 3 ? "rd" : "th";
+          return (
+            <div key={lvl} className="rounded-lg border border-border/30 bg-secondary/15 p-3">
+              <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-foreground/90 select-none">
+                {lvl}
+                {suffix} Level
+              </h4>
+              <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+                {list.map((spell) => (
+                  <Tooltip key={spell.name}>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help flex items-center gap-2 rounded-md border border-border/50 bg-secondary/45 px-2.5 py-1.5 text-xs text-foreground transition-all duration-200 hover:border-accent/30 hover:bg-secondary/60">
+                        <BookOpen size={10} className="text-muted-foreground shrink-0" />
+                        <span>{spell.name}</span>
+                      </div>
+                    </TooltipTrigger>
+                    {spell.description && (
+                      <TooltipContent className="max-w-[280px] text-xs">
+                        {spell.description.replace(/<[^>]*>/g, "")}
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </Panel>
   );
@@ -1070,9 +1158,16 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
           )}
           {activeTab === "spells" && (
             <div className="flex flex-col gap-4">
-              {spellcastingPanel}
-              {spellLists}
-              {!spellcastingPanel && !spellLists && (
+              {spellcastingPanel && expandedSpellbook ? (
+                <div className="grid gap-4 lg:grid-cols-[1.2fr_2.8fr]">
+                  <div className="flex flex-col gap-4">{spellcastingPanel}</div>
+                  <div>{expandedSpellbook}</div>
+                </div>
+              ) : spellcastingPanel ? (
+                <div>{spellcastingPanel}</div>
+              ) : expandedSpellbook ? (
+                <div>{expandedSpellbook}</div>
+              ) : (
                 <Panel>
                   <p className="py-8 text-center text-sm text-muted-foreground">
                     No spellcasting capabilities.

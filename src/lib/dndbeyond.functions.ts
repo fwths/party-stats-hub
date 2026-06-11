@@ -86,6 +86,7 @@ export interface AttackInfo {
 export interface PreparedSpell {
   level: number;
   name: string;
+  description?: string;
 }
 
 export interface PartyMember {
@@ -132,7 +133,7 @@ export interface PartyMember {
   weightCarried: number;
   carryingCapacity: number;
   attacks: AttackInfo[];
-  cantrips: string[];
+  cantrips: PreparedSpell[];
   preparedSpells: PreparedSpell[];
 }
 
@@ -861,8 +862,11 @@ function computeAttacks(
   return attacks;
 }
 
-function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: PreparedSpell[] } {
-  const cantrips: string[] = [];
+function computeSpellsList(data: any): {
+  cantrips: PreparedSpell[];
+  preparedSpells: PreparedSpell[];
+} {
+  const cantrips: PreparedSpell[] = [];
   const preparedSpells: PreparedSpell[] = [];
 
   // 1. Process data.spells (race, background, item, feat, and subclass/class always-prepared)
@@ -884,9 +888,9 @@ function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: Pre
       );
 
       if (isCantrip) {
-        cantrips.push(name);
+        cantrips.push({ level: 0, name, description: def.description });
       } else if (isPrep) {
-        preparedSpells.push({ level, name });
+        preparedSpells.push({ level, name, description: def.description });
       }
     }
   }
@@ -917,14 +921,22 @@ function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: Pre
         (!isPreparedCaster && !!s.countsAsKnownSpell);
 
       if (isCantrip) {
-        cantrips.push(name);
+        cantrips.push({ level: 0, name, description: def.description });
       } else if (isAvailable) {
-        preparedSpells.push({ level, name });
+        preparedSpells.push({ level, name, description: def.description });
       }
     }
   }
 
-  const uniqueCantrips = Array.from(new Set(cantrips)).sort();
+  const seenCantrips = new Set<string>();
+  const uniqueCantrips: PreparedSpell[] = [];
+  for (const c of cantrips) {
+    if (!seenCantrips.has(c.name)) {
+      seenCantrips.add(c.name);
+      uniqueCantrips.push(c);
+    }
+  }
+  uniqueCantrips.sort((a, b) => a.name.localeCompare(b.name));
 
   const seenSpells = new Set<string>();
   const uniquePrepared: PreparedSpell[] = [];

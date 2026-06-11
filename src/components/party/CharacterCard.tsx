@@ -1149,12 +1149,18 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {member.cantrips.map((c) => (
-                            <span
-                              key={c}
-                              className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent"
-                            >
-                              {c}
-                            </span>
+                            <Tooltip key={c.name}>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent">
+                                  {c.name}
+                                </span>
+                              </TooltipTrigger>
+                              {c.description && (
+                                <TooltipContent className="max-w-[280px] text-xs">
+                                  {c.description.replace(/<[^>]*>/g, "")}
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
                           ))}
                         </div>
                       </div>
@@ -1167,15 +1173,21 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {member.preparedSpells.map((s) => (
-                            <span
-                              key={s.name}
-                              className="rounded border border-border bg-secondary/50 px-1.5 py-0.5 text-[10px] text-foreground"
-                            >
-                              <span className="text-accent mr-1 font-mono text-[9px]">
-                                L{s.level}
-                              </span>
-                              {s.name}
-                            </span>
+                            <Tooltip key={s.name}>
+                              <TooltipTrigger asChild>
+                                <span className="cursor-help rounded border border-border bg-secondary/50 px-1.5 py-0.5 text-[10px] text-foreground">
+                                  <span className="text-accent mr-1 font-mono text-[9px]">
+                                    L{s.level}
+                                  </span>
+                                  {s.name}
+                                </span>
+                              </TooltipTrigger>
+                              {s.description && (
+                                <TooltipContent className="max-w-[280px] text-xs">
+                                  {s.description.replace(/<[^>]*>/g, "")}
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
                           ))}
                         </div>
                       </div>

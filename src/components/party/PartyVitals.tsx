@@ -53,48 +53,58 @@ export function PartyVitals({ ids }: { ids: number[] }) {
   const hpPct = totalHpMax > 0 ? Math.min(100, (totalHpCurrent / totalHpMax) * 100) : 0;
 
   const hpBarColor = hpPct > 60 ? "bg-hp-good" : hpPct > 25 ? "bg-hp-wounded" : "bg-hp-critical";
-  const hpGlow = hpPct > 60 
-    ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-good)_70%,transparent)]" 
-    : hpPct > 25 
-    ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]" 
-    : "shadow-[0_0_10px_color-mix(in_oklab,var(--hp-critical)_80%,transparent)] animate-pulse";
+  const hpGlow =
+    hpPct > 60
+      ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-good)_70%,transparent)]"
+      : hpPct > 25
+        ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
+        : "shadow-[0_0_10px_color-mix(in_oklab,var(--hp-critical)_80%,transparent)] animate-pulse";
 
   return (
     <div className="card-arcane mb-6 rounded-xl border border-border p-4.5 shadow-xl transition-all duration-300 hover:border-accent/40">
       {/* Title & Average Stats Header */}
-      <div className={`flex flex-wrap items-center justify-between gap-3 ${isOpen ? "border-b border-border/30 pb-3 mb-4" : ""}`}>
-        <button 
+      <div
+        className={`flex flex-wrap items-center justify-between gap-3 ${isOpen ? "border-b border-border/30 pb-3 mb-4" : ""}`}
+      >
+        <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 text-left hover:opacity-80 transition-opacity cursor-pointer select-none"
           title={isOpen ? "Collapse dashboard" : "Expand dashboard"}
         >
-          <Heart size={16} className={`text-rose-500 fill-rose-500/10 ${hpPct <= 25 ? "animate-heartbeat" : ""}`} />
+          <Heart
+            size={16}
+            className={`text-rose-500 fill-rose-500/10 ${hpPct <= 25 ? "animate-heartbeat" : ""}`}
+          />
           <h3 className="font-heading text-sm font-extrabold uppercase tracking-wider text-accent flex items-center gap-1.5">
             <span>Party Vitals</span>
-            <ChevronDown 
-              size={14} 
-              className={`transition-transform duration-300 ${isOpen ? "" : "-rotate-90"} text-accent/70`} 
+            <ChevronDown
+              size={14}
+              className={`transition-transform duration-300 ${isOpen ? "" : "-rotate-90"} text-accent/70`}
             />
           </h3>
         </button>
-        
+
         <div className="flex flex-wrap gap-2 text-xs select-none">
           {/* Average AC Capsule */}
-          <span 
+          <span
             className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 font-semibold text-primary transition-all duration-200 hover:bg-primary/10"
             title="Average Armor Class"
           >
             <Shield size={12} className="text-primary/95 shrink-0" />
-            <span>Avg AC: <strong className="text-foreground font-mono">{avgAc}</strong></span>
+            <span>
+              Avg AC: <strong className="text-foreground font-mono">{avgAc}</strong>
+            </span>
           </span>
-          
+
           {/* Average Perception Capsule */}
-          <span 
+          <span
             className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/5 px-2.5 py-1 font-semibold text-accent transition-all duration-200 hover:bg-accent/10"
             title="Average Passive Perception"
           >
             <Eye size={12} className="text-accent/95 shrink-0" />
-            <span>Avg Perception: <strong className="text-foreground font-mono">{avgPerception}</strong></span>
+            <span>
+              Avg Perception: <strong className="text-foreground font-mono">{avgPerception}</strong>
+            </span>
           </span>
         </div>
       </div>
@@ -108,7 +118,10 @@ export function PartyVitals({ ids }: { ids: number[] }) {
                 Collective Party Health Pool
               </span>
               <span className="font-mono text-foreground font-bold text-[13px]">
-                {totalHpCurrent} / {totalHpMax} HP <span className="text-muted-foreground/80 font-normal text-xs">({hpPct.toFixed(0)}%)</span>
+                {totalHpCurrent} / {totalHpMax} HP{" "}
+                <span className="text-muted-foreground/80 font-normal text-xs">
+                  ({hpPct.toFixed(0)}%)
+                </span>
               </span>
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-secondary/60 border border-border/20 p-[1px]">
@@ -121,7 +134,6 @@ export function PartyVitals({ ids }: { ids: number[] }) {
 
           {/* Dynamic Status Lists Grid */}
           <div className="grid grid-cols-1 gap-3.5 border-t border-border/20 pt-4.5 sm:grid-cols-3 text-xs">
-            
             {/* Downed / unconscious list */}
             {downedList.length > 0 ? (
               <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 shadow-sm hover:bg-destructive/8 transition-colors duration-200">
@@ -147,7 +159,10 @@ export function PartyVitals({ ids }: { ids: number[] }) {
             {inspirationList.length > 0 ? (
               <div className="rounded-xl border border-gold/40 bg-[color-mix(in_oklab,var(--gold)_8%,var(--secondary))] p-3 shadow-sm hover:bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] transition-colors duration-200">
                 <div className="flex items-center gap-1.5 font-bold text-gold uppercase tracking-wider text-[10px] mb-1.5">
-                  <Star size={12} className="text-gold fill-gold drop-shadow-[0_0_4px_rgba(255,215,0,0.5)] animate-pulse shrink-0" />
+                  <Star
+                    size={12}
+                    className="text-gold fill-gold drop-shadow-[0_0_4px_rgba(255,215,0,0.5)] animate-pulse shrink-0"
+                  />
                   <span>⭐ Has Inspiration</span>
                 </div>
                 <div className="text-foreground font-extrabold text-sm drop-shadow-sm">
@@ -156,7 +171,9 @@ export function PartyVitals({ ids }: { ids: number[] }) {
               </div>
             ) : (
               <div className="rounded-xl border border-border/30 bg-secondary/15 p-3 text-center flex flex-col justify-center items-center hover:bg-secondary/25 transition-colors duration-200 min-h-[72px] select-none">
-                <div className="font-bold text-muted-foreground/60 uppercase tracking-wider text-[10px] mb-0.5">Inspiration</div>
+                <div className="font-bold text-muted-foreground/60 uppercase tracking-wider text-[10px] mb-0.5">
+                  Inspiration
+                </div>
                 <div className="text-muted-foreground/50 text-[10px]">No inspiration active</div>
               </div>
             )}
@@ -172,12 +189,18 @@ export function PartyVitals({ ids }: { ids: number[] }) {
                   {Array.from(conditionMap.entries()).map(([cond, names]) => {
                     const Icon = CONDITION_BY_NAME.get(cond.toLowerCase())?.Icon ?? AlertCircle;
                     return (
-                      <div key={cond} className="flex items-center justify-between text-[11px] gap-2">
+                      <div
+                        key={cond}
+                        className="flex items-center justify-between text-[11px] gap-2"
+                      >
                         <span className="inline-flex items-center gap-1 rounded bg-accent/15 border border-accent/20 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wider text-accent shrink-0">
                           <Icon size={9} className="shrink-0" />
                           <span>{cond}</span>
                         </span>
-                        <span className="text-foreground font-bold text-right truncate" title={names.join(", ")}>
+                        <span
+                          className="text-foreground font-bold text-right truncate"
+                          title={names.join(", ")}
+                        >
                           {names.join(", ")}
                         </span>
                       </div>
@@ -187,11 +210,12 @@ export function PartyVitals({ ids }: { ids: number[] }) {
               </div>
             ) : (
               <div className="rounded-xl border border-border/30 bg-secondary/15 p-3 text-center flex flex-col justify-center items-center hover:bg-secondary/25 transition-colors duration-200 min-h-[72px] select-none">
-                <div className="font-bold text-muted-foreground/60 uppercase tracking-wider text-[10px] mb-0.5">Conditions</div>
+                <div className="font-bold text-muted-foreground/60 uppercase tracking-wider text-[10px] mb-0.5">
+                  Conditions
+                </div>
                 <div className="text-muted-foreground/50 text-[10px]">No active status effects</div>
               </div>
             )}
-
           </div>
         </div>
       )}

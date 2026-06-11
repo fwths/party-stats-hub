@@ -14,6 +14,11 @@ import {
   Star,
   Swords,
   Zap,
+  LayoutGrid,
+  Columns2,
+  Columns3,
+  Layers,
+  Package,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PartyMember } from "@/lib/dndbeyond.functions";
@@ -57,6 +62,13 @@ function Panel({
 }
 
 export function CharacterDetailView({ member }: { member: PartyMember }) {
+  const [activeLayout, setActiveLayout] = useState<"classic" | "sticky" | "tabbed" | "widescreen">(
+    "classic",
+  );
+  const [activeTab, setActiveTab] = useState<"combat" | "spells" | "skills" | "gear" | "feats">(
+    "combat",
+  );
+
   const {
     list: localConditions,
     add: addLocalCondition,
@@ -67,14 +79,13 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
   const { ac, speed, acNotes, speedNotes } = getModifiedStats(member, localConditions);
 
   const hpPct = member.hpMax > 0 ? Math.min(100, (member.hpCurrent / member.hpMax) * 100) : 0;
-  const hpColor =
-    hpPct > 60 ? "bg-hp-good" : hpPct > 25 ? "bg-hp-wounded" : "bg-hp-critical";
+  const hpColor = hpPct > 60 ? "bg-hp-good" : hpPct > 25 ? "bg-hp-wounded" : "bg-hp-critical";
   const hpGlow =
     hpPct > 60
       ? "shadow-[0_0_10px_color-mix(in_oklab,var(--hp-good)_70%,transparent)]"
       : hpPct > 25
-      ? "shadow-[0_0_10px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
-      : "shadow-[0_0_14px_color-mix(in_oklab,var(--hp-critical)_80%,transparent)] animate-pulse";
+        ? "shadow-[0_0_10px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
+        : "shadow-[0_0_14px_color-mix(in_oklab,var(--hp-critical)_80%,transparent)] animate-pulse";
 
   const [animHpPct, setAnimHpPct] = useState(0);
   useEffect(() => {
@@ -156,8 +167,12 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {member.race}
-            {member.background ? <span className="text-muted-foreground/70"> • {member.background}</span> : null}
-            {member.alignment ? <span className="text-muted-foreground/70"> • {member.alignment}</span> : null}
+            {member.background ? (
+              <span className="text-muted-foreground/70"> • {member.background}</span>
+            ) : null}
+            {member.alignment ? (
+              <span className="text-muted-foreground/70"> • {member.alignment}</span>
+            ) : null}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {classChips.map((c) => (
@@ -251,7 +266,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                 <span
                   key={delta.key}
                   className={`absolute -top-4 right-0 text-sm font-bold ${
-                    delta.value < 0 ? "text-hp-critical hp-delta-damage" : "text-hp-good hp-delta-heal"
+                    delta.value < 0
+                      ? "text-hp-critical hp-delta-damage"
+                      : "text-hp-good hp-delta-heal"
                   }`}
                 >
                   {delta.value > 0 ? `+${delta.value}` : delta.value}
@@ -386,7 +403,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                 )}
                 <span>{a.name}</span>
               </div>
-              <div className={`font-heading text-2xl font-bold leading-tight ${elite ? "text-gold" : "text-foreground"}`}>
+              <div
+                className={`font-heading text-2xl font-bold leading-tight ${elite ? "text-gold" : "text-foreground"}`}
+              >
                 {a.score}
               </div>
               <div className="mt-0.5 font-mono text-xs font-semibold text-muted-foreground/80">
@@ -426,9 +445,13 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                 )}
                 <span>{s.ability}</span>
                 {s.proficiency === "expertise" && <span className="text-gold">★</span>}
-                {s.proficiency === "proficient" && <span className="text-accent text-[8px]">●</span>}
+                {s.proficiency === "proficient" && (
+                  <span className="text-accent text-[8px]">●</span>
+                )}
               </div>
-              <div className="mt-0.5 font-mono text-sm font-bold text-foreground">{fmt(s.modifier)}</div>
+              <div className="mt-0.5 font-mono text-sm font-bold text-foreground">
+                {fmt(s.modifier)}
+              </div>
             </div>
           );
         })}
@@ -451,14 +474,14 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
           const iconColor = isExpert
             ? "text-gold drop-shadow-[0_0_3px_color-mix(in_oklab,var(--gold)_55%,transparent)]"
             : isProf
-            ? "text-accent/80"
-            : "text-muted-foreground/25";
+              ? "text-accent/80"
+              : "text-muted-foreground/25";
 
           const nameColor = isExpert
             ? "text-gold font-semibold"
             : isProf
-            ? "text-foreground font-medium"
-            : "text-muted-foreground";
+              ? "text-foreground font-medium"
+              : "text-muted-foreground";
 
           return (
             <div
@@ -475,7 +498,11 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
               </span>
               <span
                 className={`shrink-0 pl-1 font-mono text-xs ${
-                  isExpert ? "text-gold font-bold" : isProf ? "text-accent font-semibold" : "text-muted-foreground/60"
+                  isExpert
+                    ? "text-gold font-bold"
+                    : isProf
+                      ? "text-accent font-semibold"
+                      : "text-muted-foreground/60"
                 }`}
               >
                 {fmt(s.modifier)}
@@ -549,10 +576,14 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
             d.type === "immunity"
               ? "border-gold/60 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] text-gold"
               : d.type === "vulnerability"
-              ? "border-destructive/60 bg-destructive/15 text-destructive"
-              : "border-accent/50 bg-accent/10 text-accent";
+                ? "border-destructive/60 bg-destructive/15 text-destructive"
+                : "border-accent/50 bg-accent/10 text-accent";
           const mark =
-            d.type === "immunity" ? "Immunity" : d.type === "vulnerability" ? "Vulnerability" : "Resistance";
+            d.type === "immunity"
+              ? "Immunity"
+              : d.type === "vulnerability"
+                ? "Vulnerability"
+                : "Resistance";
           return (
             <Tooltip key={`${d.type}-${d.damageType}`}>
               <TooltipTrigger asChild>
@@ -579,13 +610,17 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
       <div className="flex flex-col gap-2">
         {member.languages.length > 0 && (
           <div>
-            <span className="mr-2 text-[10px] font-semibold uppercase text-muted-foreground">Languages</span>
+            <span className="mr-2 text-[10px] font-semibold uppercase text-muted-foreground">
+              Languages
+            </span>
             <span className="text-sm text-foreground">{member.languages.join(", ")}</span>
           </div>
         )}
         {member.tools.length > 0 && (
           <div>
-            <span className="mr-2 text-[10px] font-semibold uppercase text-muted-foreground">Tools</span>
+            <span className="mr-2 text-[10px] font-semibold uppercase text-muted-foreground">
+              Tools
+            </span>
             <span className="text-sm text-foreground">{member.tools.join(", ")}</span>
           </div>
         )}
@@ -605,7 +640,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
             <div className="flex flex-col">
               <span className="font-semibold text-foreground">{atk.name}</span>
               {atk.properties && atk.properties.length > 0 && (
-                <span className="mt-0.5 text-[9px] text-muted-foreground">{atk.properties.join(", ")}</span>
+                <span className="mt-0.5 text-[9px] text-muted-foreground">
+                  {atk.properties.join(", ")}
+                </span>
               )}
             </div>
             <div className="flex items-center gap-2 font-mono">
@@ -623,120 +660,123 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
   );
 
   // === SPELLCASTING ===
-  const spellcastingPanel =
-    (member.spellcasting?.length > 0 || member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
-      <Panel title="Spellcasting" icon={Sparkles}>
-        <div className="flex flex-col gap-3">
-          {member.spellcasting?.map((sc) => {
-            const abilityMod = member.abilities.find((a) => a.name === sc.ability)?.modifier ?? 0;
-            return (
-              <div
-                key={sc.className}
-                className="relative overflow-hidden rounded-xl border border-accent/25 bg-gradient-to-br from-accent/5 to-secondary/30 p-3 shadow-md"
-              >
-                <div className="mb-3 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-accent select-none">
-                  <Sparkles size={11} className="animate-pulse text-accent/80" />
-                  <span>
-                    {sc.className} ({sc.ability})
-                  </span>
+  const spellcastingPanel = (member.spellcasting?.length > 0 ||
+    member.spellSlots.length > 0 ||
+    member.pactSlots.length > 0) && (
+    <Panel title="Spellcasting" icon={Sparkles}>
+      <div className="flex flex-col gap-3">
+        {member.spellcasting?.map((sc) => {
+          const abilityMod = member.abilities.find((a) => a.name === sc.ability)?.modifier ?? 0;
+          return (
+            <div
+              key={sc.className}
+              className="relative overflow-hidden rounded-xl border border-accent/25 bg-gradient-to-br from-accent/5 to-secondary/30 p-3 shadow-md"
+            >
+              <div className="mb-3 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-accent select-none">
+                <Sparkles size={11} className="animate-pulse text-accent/80" />
+                <span>
+                  {sc.className} ({sc.ability})
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 divide-x divide-border/20 text-center">
+                <div>
+                  <div className="font-heading text-xl font-extrabold leading-tight text-foreground">
+                    {fmt(abilityMod)}
+                  </div>
+                  <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                    Modifier
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 divide-x divide-border/20 text-center">
-                  <div>
-                    <div className="font-heading text-xl font-extrabold leading-tight text-foreground">
-                      {fmt(abilityMod)}
-                    </div>
-                    <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                      Modifier
-                    </div>
+                <div className="pl-1">
+                  <div className="font-heading text-xl font-extrabold leading-tight text-foreground">
+                    {fmt(sc.attackBonus)}
                   </div>
-                  <div className="pl-1">
-                    <div className="font-heading text-xl font-extrabold leading-tight text-foreground">
-                      {fmt(sc.attackBonus)}
-                    </div>
-                    <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                      Spell Attack
-                    </div>
+                  <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                    Spell Attack
                   </div>
-                  <div className="pl-1">
-                    <div className="font-heading text-xl font-extrabold leading-tight text-gold">{sc.saveDc}</div>
-                    <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                      Save DC
-                    </div>
+                </div>
+                <div className="pl-1">
+                  <div className="font-heading text-xl font-extrabold leading-tight text-gold">
+                    {sc.saveDc}
+                  </div>
+                  <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                    Save DC
                   </div>
                 </div>
               </div>
-            );
-          })}
-          {(member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
-            <div className="flex flex-col gap-1.5 border-t border-border/30 pt-2">
-              {member.spellSlots.map((s) => {
-                const available = s.max - s.used;
-                return (
-                  <div key={`s-${s.level}`} className="flex items-center gap-2">
-                    <span className="min-w-[3rem] font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Level {s.level}
-                    </span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex cursor-help flex-wrap gap-1">
-                          {Array.from({ length: s.max }).map((_, i) => {
-                            const filled = i < available;
-                            return (
-                              <span
-                                key={i}
-                                className={
-                                  filled
-                                    ? "h-3 w-3 rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/60"
-                                    : "h-3 w-3 rounded-full border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
-                                }
-                              />
-                            );
-                          })}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Level {s.level}: {available}/{s.max} remaining
-                      </TooltipContent>
-                    </Tooltip>
-                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">
-                      {available}/{s.max}
-                    </span>
-                  </div>
-                );
-              })}
-              {member.pactSlots.map((s) => {
-                const available = s.max - s.used;
-                return (
-                  <div key={`p-${s.level}`} className="flex items-center gap-2">
-                    <span className="min-w-[3rem] font-mono text-[10px] font-semibold uppercase tracking-wider text-accent">
-                      Pact {s.level}
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {Array.from({ length: s.max }).map((_, i) => {
-                        const filled = i < available;
-                        return (
-                          <span
-                            key={i}
-                            className={
-                              filled
-                                ? "h-3 w-3 rotate-45 bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-accent/70"
-                                : "h-3 w-3 rotate-45 border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
-                            }
-                          />
-                        );
-                      })}
-                    </div>
-                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">
-                      {available}/{s.max}
-                    </span>
-                  </div>
-                );
-              })}
             </div>
-          )}
-        </div>
-      </Panel>
-    );
+          );
+        })}
+        {(member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
+          <div className="flex flex-col gap-1.5 border-t border-border/30 pt-2">
+            {member.spellSlots.map((s) => {
+              const available = s.max - s.used;
+              return (
+                <div key={`s-${s.level}`} className="flex items-center gap-2">
+                  <span className="min-w-[3rem] font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Level {s.level}
+                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex cursor-help flex-wrap gap-1">
+                        {Array.from({ length: s.max }).map((_, i) => {
+                          const filled = i < available;
+                          return (
+                            <span
+                              key={i}
+                              className={
+                                filled
+                                  ? "h-3 w-3 rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/60"
+                                  : "h-3 w-3 rounded-full border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Level {s.level}: {available}/{s.max} remaining
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                    {available}/{s.max}
+                  </span>
+                </div>
+              );
+            })}
+            {member.pactSlots.map((s) => {
+              const available = s.max - s.used;
+              return (
+                <div key={`p-${s.level}`} className="flex items-center gap-2">
+                  <span className="min-w-[3rem] font-mono text-[10px] font-semibold uppercase tracking-wider text-accent">
+                    Pact {s.level}
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {Array.from({ length: s.max }).map((_, i) => {
+                      const filled = i < available;
+                      return (
+                        <span
+                          key={i}
+                          className={
+                            filled
+                              ? "h-3 w-3 rotate-45 bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-accent/70"
+                              : "h-3 w-3 rotate-45 border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                  <span className="ml-auto font-mono text-[10px] text-muted-foreground">
+                    {available}/{s.max}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </Panel>
+  );
 
   // === CANTRIPS & PREPARED ===
   const spellLists = (member.cantrips.length > 0 || member.preparedSpells.length > 0) && (
@@ -744,7 +784,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
       <div className="flex flex-col gap-2">
         {member.cantrips.length > 0 && (
           <div>
-            <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Cantrips</div>
+            <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Cantrips
+            </div>
             <div className="flex flex-wrap gap-1">
               {member.cantrips.map((c) => (
                 <span
@@ -797,7 +839,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
             >
               <div className="flex items-center justify-between text-xs font-semibold text-foreground">
                 <span>{a.name}</span>
-                <span className={`font-mono text-[10px] ${out ? "text-destructive" : "text-accent"}`}>
+                <span
+                  className={`font-mono text-[10px] ${out ? "text-destructive" : "text-accent"}`}
+                >
                   {u.current} / {u.max}
                 </span>
               </div>
@@ -870,17 +914,85 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     </Panel>
   );
 
-  return (
-    <div className="flex flex-col gap-4">
-      {hero}
-      {vitals}
+  // === LAYOUT SWITCHER ===
+  const layoutSwitcher = (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/40 bg-secondary/15 p-2.5 backdrop-blur-md">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none pl-1">
+        Sheet Layout
+      </span>
+      <div className="flex flex-wrap gap-1">
+        {(
+          [
+            { id: "classic", label: "Classic", icon: LayoutGrid },
+            { id: "sticky", label: "Sticky Sidebar", icon: Columns2 },
+            { id: "tabbed", label: "Tabbed", icon: Layers },
+            { id: "widescreen", label: "Widescreen", icon: Columns3 },
+          ] as const
+        ).map((opt) => {
+          const ActiveIcon = opt.icon;
+          const isActive = activeLayout === opt.id;
+          return (
+            <button
+              key={opt.id}
+              onClick={() => setActiveLayout(opt.id)}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer ${
+                isActive
+                  ? "border-accent bg-accent/15 text-accent shadow-[0_0_10px_color-mix(in_oklab,var(--accent)_35%,transparent)]"
+                  : "border-border/30 bg-secondary/35 text-muted-foreground hover:border-accent/40 hover:text-accent hover:bg-secondary/60"
+              }`}
+            >
+              <ActiveIcon size={12} className={isActive ? "animate-pulse" : ""} />
+              <span>{opt.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // === TAB NAVIGATION FOR TABBED VIEW ===
+  const tabNavigation = activeLayout === "tabbed" && (
+    <div className="flex flex-wrap gap-1 border-b border-border/30 pb-2">
+      {(
+        [
+          { id: "combat", label: "Combat & Actions", icon: Swords },
+          { id: "spells", label: "Spellbook", icon: Sparkles },
+          { id: "skills", label: "Skills & Stats", icon: BookOpen },
+          { id: "gear", label: "Inventory", icon: Package },
+          { id: "feats", label: "Feats", icon: Award },
+        ] as const
+      ).map((tab) => {
+        const TabIcon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition-all duration-150 cursor-pointer ${
+              isActive
+                ? "border-accent text-accent font-bold"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <TabIcon size={12} className={isActive ? "text-accent" : "text-muted-foreground"} />
+            <span>{tab.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  // Define layout structures
+  let content = null;
+
+  if (activeLayout === "classic") {
+    content = (
       <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
         {/* LEFT COLUMN */}
         <div className="flex flex-col gap-4">
           {abilityScores}
           {savingThrows}
           {senses}
-          {spellcastingPanel}
           {skills}
           {defenses}
           {proficiencies}
@@ -888,12 +1000,134 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
         {/* RIGHT COLUMN */}
         <div className="flex flex-col gap-4">
           {attacks}
+          {spellcastingPanel}
           {spellLists}
           {resourcesPanel}
           {inventoryPanel}
           {featsPanel}
         </div>
       </div>
+    );
+  } else if (activeLayout === "sticky") {
+    content = (
+      <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
+        {/* LEFT COLUMN - STICKY */}
+        <div className="lg:sticky lg:top-4 flex flex-col gap-4 self-start">
+          {abilityScores}
+          {savingThrows}
+          {senses}
+          {defenses}
+        </div>
+        {/* RIGHT COLUMN - SCROLLING */}
+        <div className="flex flex-col gap-4">
+          {attacks}
+          {spellcastingPanel}
+          {spellLists}
+          {resourcesPanel}
+          {skills}
+          {inventoryPanel}
+          {featsPanel}
+          {proficiencies}
+        </div>
+      </div>
+    );
+  } else if (activeLayout === "widescreen") {
+    content = (
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_1.3fr_1.1fr]">
+        {/* COLUMN 1: CORE STATS & SAVES */}
+        <div className="flex flex-col gap-4">
+          {abilityScores}
+          {savingThrows}
+          {senses}
+          {defenses}
+          {proficiencies}
+        </div>
+        {/* COLUMN 2: COMBAT & SPELLS */}
+        <div className="flex flex-col gap-4">
+          {attacks}
+          {spellcastingPanel}
+          {spellLists}
+          {resourcesPanel}
+        </div>
+        {/* COLUMN 3: SKILLS, INVENTORY, FEATS */}
+        <div className="flex flex-col gap-4">
+          {skills}
+          {inventoryPanel}
+          {featsPanel}
+        </div>
+      </div>
+    );
+  } else if (activeLayout === "tabbed") {
+    content = (
+      <div className="flex flex-col gap-4">
+        {tabNavigation}
+        <div className="min-h-[300px]">
+          {activeTab === "combat" && (
+            <div className="flex flex-col gap-4">
+              {attacks}
+              {resourcesPanel}
+            </div>
+          )}
+          {activeTab === "spells" && (
+            <div className="flex flex-col gap-4">
+              {spellcastingPanel}
+              {spellLists}
+              {!spellcastingPanel && !spellLists && (
+                <Panel>
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    No spellcasting capabilities.
+                  </p>
+                </Panel>
+              )}
+            </div>
+          )}
+          {activeTab === "skills" && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="flex flex-col gap-4">
+                {abilityScores}
+                {savingThrows}
+                {senses}
+              </div>
+              <div className="flex flex-col gap-4">
+                {skills}
+                {defenses}
+                {proficiencies}
+              </div>
+            </div>
+          )}
+          {activeTab === "gear" && (
+            <div>
+              {inventoryPanel || (
+                <Panel>
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    No items in inventory.
+                  </p>
+                </Panel>
+              )}
+            </div>
+          )}
+          {activeTab === "feats" && (
+            <div>
+              {featsPanel || (
+                <Panel>
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    No feats trained.
+                  </p>
+                </Panel>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {hero}
+      {vitals}
+      {layoutSwitcher}
+      {content}
     </div>
   );
 }

@@ -7,7 +7,10 @@ export function PartyGridSkeleton() {
   return (
     <div className="flex flex-wrap justify-center gap-4">
       {Array.from({ length: 5 }).map((_, i) => (
-        <article key={i} className="card-arcane relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-10.67px)] 2xl:w-[calc(20%-12.8px)]">
+        <article
+          key={i}
+          className="card-arcane relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-10.67px)] 2xl:w-[calc(20%-12.8px)]"
+        >
           <div className="flex gap-3">
             <Skeleton className="h-16 w-16 rounded-md" />
             <div className="space-y-2 flex-1 pt-1">
@@ -48,7 +51,10 @@ export function PartyGrid({ ids }: { ids: number[] }) {
   return (
     <div className="flex flex-wrap justify-center gap-4">
       {data.members.map((m) => (
-        <div key={m.id} className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-10.67px)] 2xl:w-[calc(20%-12.8px)]">
+        <div
+          key={m.id}
+          className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-10.67px)] 2xl:w-[calc(20%-12.8px)]"
+        >
           <CharacterCard member={m} />
         </div>
       ))}

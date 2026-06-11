@@ -1,7 +1,24 @@
-import { 
-  Eye, EyeOff, EarOff, Ghost, Hand, Ban, Snowflake, Mountain, 
-  FlaskConical, ArrowDown, Lock, Zap, Moon, Brain, Heart, Flame, 
-  HeartCrack, Skull, Sparkles, AlertCircle 
+import {
+  Eye,
+  EyeOff,
+  EarOff,
+  Ghost,
+  Hand,
+  Ban,
+  Snowflake,
+  Mountain,
+  FlaskConical,
+  ArrowDown,
+  Lock,
+  Zap,
+  Moon,
+  Brain,
+  Heart,
+  Flame,
+  HeartCrack,
+  Skull,
+  Sparkles,
+  AlertCircle,
 } from "lucide-react";
 
 export const CONDITION_BY_NAME = new Map<string, { Icon: any }>([
@@ -23,9 +40,22 @@ export const CONDITION_BY_NAME = new Map<string, { Icon: any }>([
 ]);
 
 export const SKILL_ABILITY: Record<string, string> = {
-  Acrobatics: "DEX", "Animal Handling": "WIS", Arcana: "INT", Athletics: "STR",
-  Deception: "CHA", History: "INT", Insight: "WIS", Intimidation: "CHA",
-  Investigation: "INT", Medicine: "WIS", Nature: "INT", Perception: "WIS",
-  Performance: "CHA", Persuasion: "CHA", Religion: "INT",
-  "Sleight of Hand": "DEX", Stealth: "DEX", Survival: "WIS",
+  Acrobatics: "DEX",
+  "Animal Handling": "WIS",
+  Arcana: "INT",
+  Athletics: "STR",
+  Deception: "CHA",
+  History: "INT",
+  Insight: "WIS",
+  Intimidation: "CHA",
+  Investigation: "INT",
+  Medicine: "WIS",
+  Nature: "INT",
+  Perception: "WIS",
+  Performance: "CHA",
+  Persuasion: "CHA",
+  Religion: "INT",
+  "Sleight of Hand": "DEX",
+  Stealth: "DEX",
+  Survival: "WIS",
 };

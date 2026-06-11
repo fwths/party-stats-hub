@@ -1,6 +1,39 @@
 import { useState, useEffect, useRef } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Eye, EyeOff, EarOff, Ghost, Hand, Ban, Snowflake, Mountain, FlaskConical, ArrowDown, Lock, Zap, Moon, Brain, Heart, Flame, HeartCrack, Skull, Sparkles, AlertCircle, Swords, Shield, Search, Coins, Dumbbell, Package, Award, BookOpen, Compass, Crown, Star, Plus } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  EarOff,
+  Ghost,
+  Hand,
+  Ban,
+  Snowflake,
+  Mountain,
+  FlaskConical,
+  ArrowDown,
+  Lock,
+  Zap,
+  Moon,
+  Brain,
+  Heart,
+  Flame,
+  HeartCrack,
+  Skull,
+  Sparkles,
+  AlertCircle,
+  Swords,
+  Shield,
+  Search,
+  Coins,
+  Dumbbell,
+  Package,
+  Award,
+  BookOpen,
+  Compass,
+  Crown,
+  Star,
+  Plus,
+} from "lucide-react";
 import { PartyMember, InventoryItem } from "@/lib/dndbeyond.functions";
 import { CONDITION_BY_NAME, SKILL_ABILITY } from "@/lib/constants";
 import { X } from "lucide-react";
@@ -89,14 +122,14 @@ export function Section({
   );
 }
 
-export function Stat({ 
-  label, 
-  value, 
+export function Stat({
+  label,
+  value,
   icon: Icon,
-  iconClassName
-}: { 
-  label: string; 
-  value: React.ReactNode; 
+  iconClassName,
+}: {
+  label: string;
+  value: React.ReactNode;
   icon?: React.ComponentType<{ size?: number; className?: string }>;
   iconClassName?: string;
 }) {
@@ -104,14 +137,16 @@ export function Stat({
     <div className="group rounded-lg border border-border/40 bg-secondary/35 px-1.5 py-2 transition-all duration-300 hover:border-accent/40 hover:bg-secondary/60 relative overflow-hidden flex flex-col justify-between min-h-[58px] hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
       <div className="flex items-center justify-center gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground select-none">
         {Icon && (
-          <Icon 
-            size={8} 
-            className={`shrink-0 transition-all duration-300 group-hover:scale-125 group-hover:rotate-12 ${iconClassName || "text-accent/85"}`} 
+          <Icon
+            size={8}
+            className={`shrink-0 transition-all duration-300 group-hover:scale-125 group-hover:rotate-12 ${iconClassName || "text-accent/85"}`}
           />
         )}
         <span>{label}</span>
       </div>
-      <div className="font-heading text-lg font-extrabold text-foreground leading-tight drop-shadow-sm mt-1">{value}</div>
+      <div className="font-heading text-lg font-extrabold text-foreground leading-tight drop-shadow-sm mt-1">
+        {value}
+      </div>
     </div>
   );
 }
@@ -160,11 +195,7 @@ export function useCharacterConditions(characterId: number) {
     persist({
       ...all,
       [key]: list
-        .map((c) =>
-          c.name === name && c.rounds != null
-            ? { ...c, rounds: c.rounds + delta }
-            : c,
-        )
+        .map((c) => (c.name === name && c.rounds != null ? { ...c, rounds: c.rounds + delta } : c))
         .filter((c) => c.rounds == null || c.rounds > 0),
     });
   };
@@ -192,12 +223,14 @@ function ConditionChip({
   const base = intense
     ? "border-destructive bg-destructive/25 text-destructive shadow-[0_0_8px_color-mix(in_oklab,var(--destructive)_70%,transparent)]"
     : readOnly
-    ? "border-border bg-secondary/60 text-muted-foreground"
-    : "border-destructive/60 bg-destructive/15 text-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_55%,transparent)]";
+      ? "border-border bg-secondary/60 text-muted-foreground"
+      : "border-destructive/60 bg-destructive/15 text-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_55%,transparent)]";
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${base}`}
-      title={rounds != null ? `${name} — ${rounds} round${rounds === 1 ? "" : "s"} remaining` : name}
+      title={
+        rounds != null ? `${name} — ${rounds} round${rounds === 1 ? "" : "s"} remaining` : name
+      }
     >
       <Icon size={10} />
       <span>{name}</span>
@@ -212,18 +245,13 @@ function ConditionChip({
         </button>
       )}
       {onRemove && (
-        <button
-          onClick={onRemove}
-          className="ml-0.5 rounded hover:text-foreground"
-          title="Remove"
-        >
+        <button onClick={onRemove} className="ml-0.5 rounded hover:text-foreground" title="Remove">
           <X size={10} />
         </button>
       )}
     </span>
   );
 }
-
 
 export function getModifiedStats(member: PartyMember, localConditions: LocalCondition[]) {
   let ac = member.armorClass;
@@ -233,8 +261,8 @@ export function getModifiedStats(member: PartyMember, localConditions: LocalCond
 
   // Combine remote and local conditions for checks
   const allConditions = [
-    ...member.conditions.map(c => c.toLowerCase()),
-    ...localConditions.map(c => c.name.toLowerCase())
+    ...member.conditions.map((c) => c.toLowerCase()),
+    ...localConditions.map((c) => c.name.toLowerCase()),
   ];
 
   // 1. Check Exhaustion
@@ -247,11 +275,20 @@ export function getModifiedStats(member: PartyMember, localConditions: LocalCond
   }
 
   // 2. Check Restraining Conditions (Speed becomes 0)
-  const zeroSpeedConditions = ["grappled", "restrained", "paralyzed", "petrified", "stunned", "unconscious"];
-  const activeZeroSpeed = zeroSpeedConditions.filter(c => allConditions.includes(c));
+  const zeroSpeedConditions = [
+    "grappled",
+    "restrained",
+    "paralyzed",
+    "petrified",
+    "stunned",
+    "unconscious",
+  ];
+  const activeZeroSpeed = zeroSpeedConditions.filter((c) => allConditions.includes(c));
   if (activeZeroSpeed.length > 0) {
     speed = 0;
-    speedNotes.push(`Speed 0 from ${activeZeroSpeed.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(", ")}`);
+    speedNotes.push(
+      `Speed 0 from ${activeZeroSpeed.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(", ")}`,
+    );
   }
 
   // 3. Check Shield Spell (+5 AC)
@@ -313,11 +350,7 @@ export function ConditionsPanel({
     <div className="mt-1.5 flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-1">
         {exhaustion > 0 && (
-          <ConditionChip
-            name={`Exhaustion ${exhaustion}`}
-            Icon={HeartCrack}
-            intense
-          />
+          <ConditionChip name={`Exhaustion ${exhaustion}`} Icon={HeartCrack} intense />
         )}
         {remoteConditions.map((c) => {
           const Icon = conditionIcon(c);
@@ -336,7 +369,7 @@ export function ConditionsPanel({
             />
           );
         })}
-        
+
         {/* Add Buff Button */}
         <div className="relative inline-block">
           <button
@@ -346,7 +379,7 @@ export function ConditionsPanel({
             <Plus size={8} className="shrink-0" />
             <span>Add Effect</span>
           </button>
-          
+
           {isOpen && (
             <div className="absolute left-0 top-6 z-50 w-48 rounded-md border border-border bg-popover p-2 shadow-lg">
               <div className="mb-1.5 text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -375,7 +408,9 @@ export function ConditionsPanel({
                   }}
                 />
                 <div className="mt-1 flex items-center justify-between gap-1">
-                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground">Duration (Rounds)</span>
+                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground">
+                    Duration (Rounds)
+                  </span>
                   <input
                     type="number"
                     value={rounds}
@@ -409,8 +444,8 @@ function InventoryGroup({ label, items }: { label: string; items: InventoryItem[
           const styles = it.attuned
             ? "border-gold/50 bg-[color-mix(in_oklab,var(--gold)_8%,var(--secondary))] text-gold shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_30%,transparent)] font-bold"
             : it.magic
-            ? "border-accent/50 bg-accent/10 text-accent font-semibold"
-            : "border-border/30 bg-secondary/20 hover:border-accent/30 text-foreground/90";
+              ? "border-accent/50 bg-accent/10 text-accent font-semibold"
+              : "border-border/30 bg-secondary/20 hover:border-accent/30 text-foreground/90";
           const title =
             `${it.name} — ${it.type}` +
             (it.rarity ? ` (${it.rarity})` : "") +
@@ -464,19 +499,22 @@ export function InventoryList({
     { key: "sp", label: "SP", color: "text-slate-300 bg-slate-400/10 border-slate-400/30" },
     { key: "cp", label: "CP", color: "text-amber-600 bg-amber-700/10 border-amber-700/30" },
   ] as const;
-  
-  const activeCoins = coinTypes.filter(c => currencies[c.key] > 0);
+
+  const activeCoins = coinTypes.filter((c) => currencies[c.key] > 0);
   if (activeCoins.length === 0) {
     activeCoins.push({ key: "gp", label: "GP", color: "text-gold bg-gold/10 border-gold/30" });
   }
 
-  const weightPct = carryingCapacity > 0 ? Math.min(100, (weightCarried / carryingCapacity) * 100) : 0;
-  const weightColor = weightPct > 90 ? "bg-hp-critical" : weightPct > 75 ? "bg-hp-wounded" : "bg-primary";
-  const weightGlow = weightPct > 90 
-    ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-critical)_70%,transparent)] animate-pulse" 
-    : weightPct > 75 
-    ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]" 
-    : "shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)]";
+  const weightPct =
+    carryingCapacity > 0 ? Math.min(100, (weightCarried / carryingCapacity) * 100) : 0;
+  const weightColor =
+    weightPct > 90 ? "bg-hp-critical" : weightPct > 75 ? "bg-hp-wounded" : "bg-primary";
+  const weightGlow =
+    weightPct > 90
+      ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-critical)_70%,transparent)] animate-pulse"
+      : weightPct > 75
+        ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
+        : "shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)]";
 
   return (
     <div className="flex flex-col gap-3">
@@ -485,7 +523,10 @@ export function InventoryList({
         <div className="group/wealth flex flex-wrap items-center gap-1.5 rounded-lg border border-border/40 bg-secondary/20 p-2 relative overflow-hidden">
           <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-gold/5 blur-lg pointer-events-none" />
           <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-            <Coins size={10} className="text-gold/90 transition-transform duration-300 group-hover/wealth:animate-jingle" />
+            <Coins
+              size={10}
+              className="text-gold/90 transition-transform duration-300 group-hover/wealth:animate-jingle"
+            />
             <span>Wealth:</span>
           </div>
           <div className="flex flex-wrap gap-1">
@@ -527,20 +568,12 @@ export function InventoryList({
           <Sparkles size={10} className="text-gold/90 animate-pulse" />
           <span>Attunement Slots</span>
         </span>
-        <span className="font-mono text-xs font-bold text-gold">
-          {attunedCount} / 3
-        </span>
+        <span className="font-mono text-xs font-bold text-gold">{attunedCount} / 3</span>
       </div>
 
-      {equipped.length > 0 && (
-        <InventoryGroup label="Equipped" items={equipped} />
-      )}
-      {magicCarried.length > 0 && (
-        <InventoryGroup label="Magic Items" items={magicCarried} />
-      )}
-      {other.length > 0 && (
-        <InventoryGroup label="Carried" items={other} />
-      )}
+      {equipped.length > 0 && <InventoryGroup label="Equipped" items={equipped} />}
+      {magicCarried.length > 0 && <InventoryGroup label="Magic Items" items={magicCarried} />}
+      {other.length > 0 && <InventoryGroup label="Carried" items={other} />}
     </div>
   );
 }
@@ -568,14 +601,13 @@ export function CharacterCard({ member }: { member: PartyMember }) {
     if (diff !== 0) return diff;
     return a.name.localeCompare(b.name);
   });
-  const hpColor =
-    hpPct > 60 ? "bg-hp-good" : hpPct > 25 ? "bg-hp-wounded" : "bg-hp-critical";
+  const hpColor = hpPct > 60 ? "bg-hp-good" : hpPct > 25 ? "bg-hp-wounded" : "bg-hp-critical";
   const hpGlow =
     hpPct > 60
       ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-good)_70%,transparent)]"
       : hpPct > 25
-      ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
-      : "shadow-[0_0_10px_color-mix(in_oklab,var(--hp-critical)_80%,transparent)] animate-pulse";
+        ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
+        : "shadow-[0_0_10px_color-mix(in_oklab,var(--hp-critical)_80%,transparent)] animate-pulse";
 
   const [animHpPct, setAnimHpPct] = useState(0);
   useEffect(() => {
@@ -639,9 +671,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="cursor-help shrink-0">
-                    <Star 
-                      size={12} 
-                      className="text-gold fill-gold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_80%,transparent)] animate-pulse" 
+                    <Star
+                      size={12}
+                      className="text-gold fill-gold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_80%,transparent)] animate-pulse"
                     />
                   </span>
                 </TooltipTrigger>
@@ -696,7 +728,8 @@ export function CharacterCard({ member }: { member: PartyMember }) {
           <Lock className="mb-2 h-8 w-8 text-muted-foreground/50" />
           <h3 className="font-heading text-lg font-bold text-foreground">Private Character</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            This character sheet is set to private. Go to D&amp;D Beyond and set its privacy to <strong>Public</strong> to view stats here.
+            This character sheet is set to private. Go to D&amp;D Beyond and set its privacy to{" "}
+            <strong>Public</strong> to view stats here.
           </p>
         </div>
       )}
@@ -707,7 +740,10 @@ export function CharacterCard({ member }: { member: PartyMember }) {
           <div className="relative">
             <div className="mb-1 flex items-baseline justify-between text-xs">
               <span className="flex items-center gap-1 font-medium text-muted-foreground group/hp select-none">
-                <Heart size={11} className="text-rose-500 drop-shadow-[0_0_3px_rgba(244,63,94,0.4)] transition-transform duration-300 group-hover/hp:animate-heartbeat" />
+                <Heart
+                  size={11}
+                  className="text-rose-500 drop-shadow-[0_0_3px_rgba(244,63,94,0.4)] transition-transform duration-300 group-hover/hp:animate-heartbeat"
+                />
                 <span>HP</span>
                 {member.hitDice && member.hitDice !== "—" && (
                   <span className="ml-1 font-mono text-[9px] text-muted-foreground/75">
@@ -801,11 +837,11 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                 )
               }
             />
-            <Stat 
-              label="Initiative" 
-              icon={Zap} 
+            <Stat
+              label="Initiative"
+              icon={Zap}
               iconClassName="text-primary/90 drop-shadow-[0_0_3px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
-              value={fmt(member.initiative)} 
+              value={fmt(member.initiative)}
             />
             <Stat
               label="Speed"
@@ -815,9 +851,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                 speed !== member.speed ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="text-accent font-bold cursor-help">
-                        {speed}ft
-                      </span>
+                      <span className="text-accent font-bold cursor-help">{speed}ft</span>
                     </TooltipTrigger>
                     <TooltipContent>{speedNotes.join(", ")}</TooltipContent>
                   </Tooltip>
@@ -826,10 +860,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                 )
               }
             />
-            <Stat 
-              label="Proficiency" 
-              value={fmt(member.proficiencyBonus)} 
-            />
+            <Stat label="Proficiency" value={fmt(member.proficiencyBonus)} />
           </div>
 
           <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
@@ -854,11 +885,11 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     }`}
                   >
                     {Icon && (
-                      <Icon 
-                        size={7.5} 
+                      <Icon
+                        size={7.5}
                         className={`shrink-0 transition-transform duration-300 group-hover:scale-120 ${
                           elite ? "text-gold" : details?.colorClass || "text-accent/80"
-                        }`} 
+                        }`}
                       />
                     )}
                     <span>{a.name}</span>
@@ -877,7 +908,6 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               );
             })}
           </div>
-
 
           {member.saves.length > 0 && (
             <Section title="Saving Throws">
@@ -898,37 +928,57 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     >
                       <div className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-center gap-1 select-none">
                         {Icon && (
-                          <Icon 
-                            size={7} 
+                          <Icon
+                            size={7}
                             className={`shrink-0 transition-transform duration-300 group-hover:scale-120 ${
-                              isProf ? "text-accent" : details?.colorClass || "text-muted-foreground/45"
-                            }`} 
+                              isProf
+                                ? "text-accent"
+                                : details?.colorClass || "text-muted-foreground/45"
+                            }`}
                           />
                         )}
                         <span>{s.ability}</span>
-                        {s.proficiency === "expertise" && <span className="text-gold" title="Expertise">★</span>}
-                        {s.proficiency === "proficient" && <span className="text-accent text-[8px]" title="Proficient">●</span>}
+                        {s.proficiency === "expertise" && (
+                          <span className="text-gold" title="Expertise">
+                            ★
+                          </span>
+                        )}
+                        {s.proficiency === "proficient" && (
+                          <span className="text-accent text-[8px]" title="Proficient">
+                            ●
+                          </span>
+                        )}
                       </div>
-                      <div className="text-xs font-mono font-bold text-foreground mt-0.5">{fmt(s.modifier)}</div>
+                      <div className="text-xs font-mono font-bold text-foreground mt-0.5">
+                        {fmt(s.modifier)}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </Section>
           )}
-          {(member.spellcasting?.length > 0 || member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
+          {(member.spellcasting?.length > 0 ||
+            member.spellSlots.length > 0 ||
+            member.pactSlots.length > 0) && (
             <Section title="Spellcasting">
               <div className="flex flex-col gap-3">
                 {member.spellcasting && member.spellcasting.length > 0 && (
                   <div className="flex flex-col gap-3">
                     {member.spellcasting.map((sc) => {
-                      const abilityMod = member.abilities.find((a) => a.name === sc.ability)?.modifier ?? 0;
+                      const abilityMod =
+                        member.abilities.find((a) => a.name === sc.ability)?.modifier ?? 0;
                       return (
-                        <div key={sc.className} className="relative overflow-hidden rounded-xl border border-accent/25 bg-gradient-to-br from-accent/5 to-secondary/30 p-3 shadow-md">
+                        <div
+                          key={sc.className}
+                          className="relative overflow-hidden rounded-xl border border-accent/25 bg-gradient-to-br from-accent/5 to-secondary/30 p-3 shadow-md"
+                        >
                           <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-accent/8 blur-xl pointer-events-none" />
                           <div className="mb-3 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-accent select-none">
                             <Sparkles size={11} className="text-accent/80 animate-pulse" />
-                            <span>{sc.className} ({sc.ability})</span>
+                            <span>
+                              {sc.className} ({sc.ability})
+                            </span>
                           </div>
                           <div className="grid grid-cols-3 gap-2 text-center divide-x divide-border/20">
                             <div>
@@ -988,7 +1038,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                                 })}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent>Level {s.level}: {available}/{s.max} remaining</TooltipContent>
+                            <TooltipContent>
+                              Level {s.level}: {available}/{s.max} remaining
+                            </TooltipContent>
                           </Tooltip>
                           <span className="ml-auto text-[10px] font-mono text-muted-foreground">
                             {available}/{s.max}
@@ -1021,7 +1073,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                                 })}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent>Pact (L{s.level}): {available}/{s.max} remaining</TooltipContent>
+                            <TooltipContent>
+                              Pact (L{s.level}): {available}/{s.max} remaining
+                            </TooltipContent>
                           </Tooltip>
                           <span className="ml-auto text-[10px] font-mono text-muted-foreground">
                             {available}/{s.max}
@@ -1036,7 +1090,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
           )}
 
           {/* Combat Actions & Spells Section */}
-          {(member.attacks.length > 0 || member.cantrips.length > 0 || member.preparedSpells.length > 0) && (
+          {(member.attacks.length > 0 ||
+            member.cantrips.length > 0 ||
+            member.preparedSpells.length > 0) && (
             <Section
               title={
                 <span className="flex items-center gap-1.5 font-semibold text-accent/90">
@@ -1072,9 +1128,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                               {atk.attackBonus >= 0 ? `+${atk.attackBonus}` : atk.attackBonus}
                             </span>
                             <span className="text-muted-foreground text-[10px]">to hit</span>
-                            <span className="text-foreground font-semibold">
-                              {atk.damage}
-                            </span>
+                            <span className="text-foreground font-semibold">{atk.damage}</span>
                             <span className="text-muted-foreground text-[10px]">
                               {atk.damageType}
                             </span>
@@ -1117,7 +1171,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                               key={s.name}
                               className="rounded border border-border bg-secondary/50 px-1.5 py-0.5 text-[10px] text-foreground"
                             >
-                              <span className="text-accent mr-1 font-mono text-[9px]">L{s.level}</span>
+                              <span className="text-accent mr-1 font-mono text-[9px]">
+                                L{s.level}
+                              </span>
                               {s.name}
                             </span>
                           ))}
@@ -1135,39 +1191,48 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               <div className="flex flex-col gap-1.5">
                 {[
                   { label: "Passive Perception", value: member.passivePerception, icon: Eye },
-                  { label: "Passive Investigation", value: member.passiveInvestigation, icon: Search },
+                  {
+                    label: "Passive Investigation",
+                    value: member.passiveInvestigation,
+                    icon: Search,
+                  },
                   { label: "Passive Insight", value: member.passiveInsight, icon: Brain },
-                ].filter((p) => p.value != null).map((p) => {
-                  const Icon = p.icon;
-                  return (
-                    <div
-                      key={p.label}
-                      className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/20 px-2.5 py-1.5 transition-colors hover:border-accent/40"
-                    >
-                      <div className="flex items-center gap-2 select-none">
-                        <Icon size={9.5} className="shrink-0 text-accent/80" />
-                        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                          {p.label}
+                ]
+                  .filter((p) => p.value != null)
+                  .map((p) => {
+                    const Icon = p.icon;
+                    return (
+                      <div
+                        key={p.label}
+                        className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/20 px-2.5 py-1.5 transition-colors hover:border-accent/40"
+                      >
+                        <div className="flex items-center gap-2 select-none">
+                          <Icon size={9.5} className="shrink-0 text-accent/80" />
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                            {p.label}
+                          </span>
+                        </div>
+                        <span className="flex h-6 w-6 items-center justify-center rounded border border-accent/40 bg-accent/10 text-xs font-mono font-bold text-foreground shadow-[0_0_6px_color-mix(in_oklab,var(--accent)_20%,transparent)]">
+                          {p.value}
                         </span>
                       </div>
-                      <span className="flex h-6 w-6 items-center justify-center rounded border border-accent/40 bg-accent/10 text-xs font-mono font-bold text-foreground shadow-[0_0_6px_color-mix(in_oklab,var(--accent)_20%,transparent)]">
-                        {p.value}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
                 {member.senses.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-1.5 mt-2">
                     {member.senses.map((s) => {
                       const isDarkvision = s.name.toLowerCase().includes("darkvision");
                       const SenseIcon = isDarkvision ? Moon : Eye;
                       return (
-                        <span 
-                          key={s.name} 
+                        <span
+                          key={s.name}
                           className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-0.5 text-[9px] font-bold text-primary uppercase tracking-wider select-none"
                         >
                           <SenseIcon size={10} className="text-primary/90" />
-                          <span>{s.name}{s.value != null ? ` ${s.value}ft` : ""}</span>
+                          <span>
+                            {s.name}
+                            {s.value != null ? ` ${s.value}ft` : ""}
+                          </span>
                         </span>
                       );
                     })}
@@ -1191,32 +1256,45 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                   const iconColor = isExpert
                     ? "text-gold drop-shadow-[0_0_3px_color-mix(in_oklab,var(--gold)_55%,transparent)]"
                     : isProf
-                    ? "text-accent/80"
-                    : "text-muted-foreground/25";
+                      ? "text-accent/80"
+                      : "text-muted-foreground/25";
 
-                  const nameColor = isExpert 
-                    ? "text-gold font-semibold" 
-                    : isProf 
-                    ? "text-foreground font-medium" 
-                    : "text-muted-foreground";
+                  const nameColor = isExpert
+                    ? "text-gold font-semibold"
+                    : isProf
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground";
 
                   return (
-                    <div 
-                      key={s.key} 
+                    <div
+                      key={s.key}
                       className={`group/skill flex items-center justify-between transition-colors py-0.5 hover:bg-secondary/15 rounded px-1 -mx-1 ${isProf ? "" : "opacity-60"}`}
                     >
                       <span className={`truncate flex items-center gap-1.5 min-w-0 ${nameColor}`}>
                         {Icon && (
-                          <Icon 
-                            size={8} 
-                            className={`shrink-0 transition-transform duration-300 group-hover/skill:scale-120 group-hover/skill:rotate-6 ${iconColor}`} 
+                          <Icon
+                            size={8}
+                            className={`shrink-0 transition-transform duration-300 group-hover/skill:scale-120 group-hover/skill:rotate-6 ${iconColor}`}
                           />
                         )}
                         <span className="truncate">{s.name}</span>
-                        {isExpert && <span className="text-gold text-[7px] shrink-0" title="Expertise">★</span>}
-                        {isHalf && <span className="text-accent/70 text-[7px] shrink-0" title="Half Proficient">◐</span>}
+                        {isExpert && (
+                          <span className="text-gold text-[7px] shrink-0" title="Expertise">
+                            ★
+                          </span>
+                        )}
+                        {isHalf && (
+                          <span
+                            className="text-accent/70 text-[7px] shrink-0"
+                            title="Half Proficient"
+                          >
+                            ◐
+                          </span>
+                        )}
                       </span>
-                      <span className={`font-mono text-xs shrink-0 pl-1 ${isExpert ? "text-gold font-bold" : isProf ? "text-accent font-semibold" : "text-muted-foreground/60"}`}>
+                      <span
+                        className={`font-mono text-xs shrink-0 pl-1 ${isExpert ? "text-gold font-bold" : isProf ? "text-accent font-semibold" : "text-muted-foreground/60"}`}
+                      >
                         {fmt(s.modifier)}
                       </span>
                     </div>
@@ -1234,19 +1312,27 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     d.type === "immunity"
                       ? "border-gold/60 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] text-gold"
                       : d.type === "vulnerability"
-                      ? "border-destructive/60 bg-destructive/15 text-destructive"
-                      : "border-accent/50 bg-accent/10 text-accent";
+                        ? "border-destructive/60 bg-destructive/15 text-destructive"
+                        : "border-accent/50 bg-accent/10 text-accent";
                   const mark =
-                    d.type === "immunity" ? "Immunity" : d.type === "vulnerability" ? "Vulnerability" : "Resistance";
+                    d.type === "immunity"
+                      ? "Immunity"
+                      : d.type === "vulnerability"
+                        ? "Vulnerability"
+                        : "Resistance";
                   return (
                     <Tooltip key={`${d.type}-${d.damageType}`}>
                       <TooltipTrigger asChild>
-                        <span className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider cursor-help ${styles}`}>
+                        <span
+                          className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider cursor-help ${styles}`}
+                        >
                           <span className="opacity-70 mr-1">{mark}</span>
                           {d.damageType}
                         </span>
                       </TooltipTrigger>
-                      <TooltipContent>{d.type}: {d.damageType}</TooltipContent>
+                      <TooltipContent>
+                        {d.type}: {d.damageType}
+                      </TooltipContent>
                     </Tooltip>
                   );
                 })}
@@ -1259,13 +1345,17 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               <div className="flex flex-col gap-2">
                 {member.languages.length > 0 && (
                   <div>
-                    <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">Languages</span>
+                    <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">
+                      Languages
+                    </span>
                     <span className="text-xs text-foreground">{member.languages.join(", ")}</span>
                   </div>
                 )}
                 {member.tools.length > 0 && (
                   <div>
-                    <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">Tools</span>
+                    <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">
+                      Tools
+                    </span>
                     <span className="text-xs text-foreground">{member.tools.join(", ")}</span>
                   </div>
                 )}
@@ -1283,7 +1373,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     const out = u.current <= 0;
                     const ratio = u.max > 0 ? u.current / u.max : 0;
                     const isSmallMax = u.max <= 6;
-                    
+
                     return (
                       <div
                         key={`${a.source}-${a.name}`}
@@ -1292,11 +1382,13 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                       >
                         <div className="flex items-center justify-between text-xs font-semibold text-foreground">
                           <span>{a.name}</span>
-                          <span className={`font-mono text-[10px] ${out ? "text-destructive" : "text-accent"}`}>
+                          <span
+                            className={`font-mono text-[10px] ${out ? "text-destructive" : "text-accent"}`}
+                          >
                             {u.current} / {u.max}
                           </span>
                         </div>
-                        
+
                         {isSmallMax ? (
                           <div className="flex gap-1 mt-0.5">
                             {Array.from({ length: u.max }).map((_, i) => {
@@ -1305,8 +1397,8 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                                 <span
                                   key={i}
                                   className={`h-2 w-2 rounded-full transition-all duration-300 ${
-                                    active 
-                                      ? "bg-accent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_60%,transparent)]" 
+                                    active
+                                      ? "bg-accent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_60%,transparent)]"
                                       : "border border-accent/40 bg-transparent"
                                   }`}
                                 />
@@ -1315,7 +1407,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                           </div>
                         ) : (
                           <div className="h-1 w-full overflow-hidden rounded-full bg-secondary mt-0.5">
-                            <div 
+                            <div
                               className="h-full bg-accent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_60%,transparent)] transition-all duration-500"
                               style={{ width: `${ratio * 100}%` }}
                             />
@@ -1345,11 +1437,12 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                 {member.feats.map((f) => (
                   <Tooltip key={f.name}>
                     <TooltipTrigger asChild>
-                      <span
-                        className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-secondary/20 px-2.5 py-0.5 text-[9px] font-bold text-foreground/90 uppercase tracking-wider transition-all duration-200 hover:border-accent/40 hover:scale-105 hover:bg-secondary/35 select-none cursor-help"
-                      >
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-secondary/20 px-2.5 py-0.5 text-[9px] font-bold text-foreground/90 uppercase tracking-wider transition-all duration-200 hover:border-accent/40 hover:scale-105 hover:bg-secondary/35 select-none cursor-help">
                         <Award size={9} className="text-accent/80 shrink-0" />
-                        <span>{f.name}{f.choices && f.choices.length > 0 ? ` (${f.choices.join(", ")})` : ""}</span>
+                        <span>
+                          {f.name}
+                          {f.choices && f.choices.length > 0 ? ` (${f.choices.join(", ")})` : ""}
+                        </span>
                       </span>
                     </TooltipTrigger>
                     {f.description && (
@@ -1362,9 +1455,6 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               </div>
             </Section>
           )}
-
-
-
         </>
       )}
     </article>

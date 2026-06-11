@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require("fs");
 const ids = [97349530, 131296315, 131593533, 132900149, 132940690];
 (async () => {
   for (const id of ids) {

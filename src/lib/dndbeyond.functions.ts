@@ -60,7 +60,6 @@ export interface InventoryItem {
   quantity: number;
 }
 
-
 export interface DeathSaves {
   successes: number;
   failures: number;
@@ -201,9 +200,27 @@ const MULTI_SLOTS: number[][] = [
 
 // Warlock pact magic table by warlock level → [slotLevel, count]
 const PACT_TABLE: Array<[number, number]> = [
-  [0, 0], [1, 1], [1, 2], [2, 2], [2, 2], [3, 2], [3, 2], [4, 2], [4, 2],
-  [5, 2], [5, 2], [5, 3], [5, 3], [5, 3], [5, 3], [5, 3], [5, 3], [5, 4],
-  [5, 4], [5, 4], [5, 4],
+  [0, 0],
+  [1, 1],
+  [1, 2],
+  [2, 2],
+  [2, 2],
+  [3, 2],
+  [3, 2],
+  [4, 2],
+  [4, 2],
+  [5, 2],
+  [5, 2],
+  [5, 3],
+  [5, 3],
+  [5, 3],
+  [5, 3],
+  [5, 3],
+  [5, 3],
+  [5, 4],
+  [5, 4],
+  [5, 4],
+  [5, 4],
 ];
 
 function casterLevelFor(className: string, level: number, subclass: string): number {
@@ -211,12 +228,17 @@ function casterLevelFor(className: string, level: number, subclass: string): num
   if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(n)) return level;
   if (n === "artificer") return Math.ceil(level / 2); // artificer rounds up
   if (["paladin", "ranger"].includes(n)) return level >= 2 ? Math.floor(level / 2) : 0;
-  if (n === "fighter" && /eldritch knight/i.test(subclass)) return level >= 3 ? Math.floor(level / 3) : 0;
-  if (n === "rogue" && /arcane trickster/i.test(subclass)) return level >= 3 ? Math.floor(level / 3) : 0;
+  if (n === "fighter" && /eldritch knight/i.test(subclass))
+    return level >= 3 ? Math.floor(level / 3) : 0;
+  if (n === "rogue" && /arcane trickster/i.test(subclass))
+    return level >= 3 ? Math.floor(level / 3) : 0;
   return 0;
 }
 
-function computeSpellSlots(data: any): { spellSlots: SpellSlotLevel[]; pactSlots: SpellSlotLevel[] } {
+function computeSpellSlots(data: any): {
+  spellSlots: SpellSlotLevel[];
+  pactSlots: SpellSlotLevel[];
+} {
   let casterLevel = 0;
   let warlockLevel = 0;
   for (const c of data.classes ?? []) {
@@ -305,7 +327,9 @@ function computeFinalScore(
   const base = baseStats?.find((s) => s.id === id)?.value ?? 10;
   const bonus = bonusStats?.find((s) => s.id === id)?.value ?? 0;
   // Look for "bonus" modifiers that grant +N to a stat (subType "<ability>-score")
-  const subType = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"][abilityIndex] + "-score";
+  const subType =
+    ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"][abilityIndex] +
+    "-score";
   let modBonus = 0;
   for (const m of modifiers) {
     if (m?.type === "bonus" && m?.subType === subType && typeof m?.value === "number") {
@@ -330,15 +354,18 @@ function flattenModifiers(data: any): any[] {
   ];
 }
 
-function computeArmorClass(data: any, dexMod: number, modifiers: any[], abilities: AbilityScore[]): number {
+function computeArmorClass(
+  data: any,
+  dexMod: number,
+  modifiers: any[],
+  abilities: AbilityScore[],
+): number {
   const inv: any[] = data.inventory ?? [];
-  const equippedArmor = inv.filter(
-    (i) => i.equipped && i.definition?.filterType === "Armor",
-  );
+  const equippedArmor = inv.filter((i) => i.equipped && i.definition?.filterType === "Armor");
   // armorTypeId: 1=light, 2=medium, 3=heavy, 4=shield
   const body = equippedArmor.filter((i) => (i.definition?.armorTypeId ?? 0) <= 3);
   const shields = equippedArmor.filter((i) => i.definition?.armorTypeId === 4);
-  
+
   let baseAc = 10;
   let dexLimit = Infinity;
   let hasArmor = false;
@@ -358,10 +385,13 @@ function computeArmorClass(data: any, dexMod: number, modifiers: any[], abilitie
   if (!hasArmor) {
     let bestUnarmoredBase = baseAc;
     for (const m of modifiers) {
-      if (m?.type === "set-base" && (m?.subType === "unarmored-armor-class" || m?.subType === "armor-class")) {
-         if (typeof m.value === "number" && m.value > bestUnarmoredBase) {
-           bestUnarmoredBase = m.value;
-         }
+      if (
+        m?.type === "set-base" &&
+        (m?.subType === "unarmored-armor-class" || m?.subType === "armor-class")
+      ) {
+        if (typeof m.value === "number" && m.value > bestUnarmoredBase) {
+          bestUnarmoredBase = m.value;
+        }
       }
     }
     baseAc = bestUnarmoredBase;
@@ -424,7 +454,13 @@ function computeSenses(modifiers: any[], customSenses: any[]): SenseInfo[] {
     if (m?.type === "set-base" || m?.type === "sense" || m?.type === "set") {
       const name = m?.friendlySubtypeName;
       const val = typeof m?.value === "number" ? m.value : null;
-      if (name && (m?.subType?.includes("darkvision") || m?.subType?.includes("vision") || m?.subType?.includes("sight") || m?.subType?.includes("sense"))) {
+      if (
+        name &&
+        (m?.subType?.includes("darkvision") ||
+          m?.subType?.includes("vision") ||
+          m?.subType?.includes("sight") ||
+          m?.subType?.includes("sense"))
+      ) {
         const prev = map.get(name);
         if (prev == null || (val != null && val > (prev ?? 0))) map.set(name, val);
       }
@@ -443,7 +479,9 @@ function computeSkillProficiency(
   const target = subType.toLowerCase().replace(/\s+/g, "-");
   let level: "none" | "half" | "proficient" = "none";
   for (const m of modifiers) {
-    const modSub = String(m?.subType ?? "").toLowerCase().replace(/\s+/g, "-");
+    const modSub = String(m?.subType ?? "")
+      .toLowerCase()
+      .replace(/\s+/g, "-");
     // Jack of All Trades gives half-proficiency to all ability checks
     if (modSub === "ability-checks" && m.type === "half-proficiency" && level === "none") {
       level = "half";
@@ -503,11 +541,19 @@ function computeSkills(
     const prof: "none" | "half" | "proficient" | "expertise" =
       override && rank[override] > rank[modProf] ? override : modProf;
     const profBonus =
-      prof === "expertise" ? pb * 2 : prof === "proficient" ? pb : prof === "half" ? Math.floor(pb / 2) : 0;
+      prof === "expertise"
+        ? pb * 2
+        : prof === "proficient"
+          ? pb
+          : prof === "half"
+            ? Math.floor(pb / 2)
+            : 0;
     // Flat skill bonuses (rare)
     let extra = 0;
     for (const m of modifiers) {
-      const modSub = String(m?.subType ?? "").toLowerCase().replace(/\s+/g, "-");
+      const modSub = String(m?.subType ?? "")
+        .toLowerCase()
+        .replace(/\s+/g, "-");
       if (modSub === key && m?.type === "bonus" && typeof m?.value === "number") {
         extra += m.value;
       }
@@ -579,11 +625,16 @@ function computeWeightCarried(inventory: any[]): number {
   return Number(total.toFixed(1));
 }
 
-function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifiers: any[]): AttackInfo[] {
+function computeAttacks(
+  data: any,
+  abilities: AbilityScore[],
+  pb: number,
+  modifiers: any[],
+): AttackInfo[] {
   const strMod = abilities[0].modifier;
   const dexMod = abilities[1].modifier;
-  const abilityModifiers = abilities.map(a => a.modifier);
-  
+  const abilityModifiers = abilities.map((a) => a.modifier);
+
   const attacks: AttackInfo[] = [];
   const cvs = data.characterValues ?? [];
 
@@ -595,7 +646,7 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
   const getGeneralModifiers = (isWeapon: boolean, isRanged: boolean) => {
     let attackBonus = 0;
     let damageBonus = 0;
-    
+
     for (const m of modifiers ?? []) {
       if (m.type === "bonus") {
         const sub = m.subType;
@@ -612,7 +663,7 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
             if (typeof m.value === "number") attackBonus += m.value;
           }
         }
-        
+
         if (sub === "damage" || sub === "weapon-damage") {
           if (isWeapon) {
             if (typeof m.value === "number") damageBonus += m.value;
@@ -637,17 +688,18 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
     const def = item.definition ?? {};
     if (def.filterType === "Weapon") {
       const item_id = item.id;
-      
+
       const nameOverride = getCvValue(item_id, 8);
-      const name = typeof nameOverride === "string" && nameOverride.trim() ? nameOverride : def.name;
-      
+      const name =
+        typeof nameOverride === "string" && nameOverride.trim() ? nameOverride : def.name;
+
       const props: string[] = (def.properties ?? []).map((p: any) => p.name);
       const isFinesse = props.includes("Finesse");
       const isRanged = def.attackType === 2;
-      
+
       const useMod = isRanged ? dexMod : isFinesse ? Math.max(strMod, dexMod) : strMod;
       let baseAtkBonus = useMod + pb;
-      
+
       let magicBonus = 0;
       for (const m of def.grantedModifiers ?? []) {
         if (m.type === "bonus" && (m.subType === "magic" || m.subType === "attack-rolls")) {
@@ -663,7 +715,7 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
 
       const toHitOverride = getCvValue(item_id, 11);
       const toHitBonus = getCvValue(item_id, 10);
-      
+
       let atkBonus = baseAtkBonus;
       if (typeof toHitOverride === "number") {
         atkBonus = toHitOverride;
@@ -676,10 +728,10 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
       let damageFormula = "None";
       if (diceStr) {
         let baseDmgBonus = useMod + magicBonus + genMods.damageBonus;
-        
+
         const dmgOverride = getCvValue(item_id, 13);
         const dmgBonusCv = getCvValue(item_id, 12);
-        
+
         let dmgBonus = baseDmgBonus;
         if (typeof dmgOverride === "number") {
           dmgBonus = dmgOverride;
@@ -702,7 +754,7 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
         damage: damageFormula,
         damageType: def.damageType ?? "Unknown",
         properties: props,
-        isWeapon: true
+        isWeapon: true,
       });
     }
   }
@@ -716,20 +768,33 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
   ] as const;
 
   const DAMAGE_TYPES: Record<number, string> = {
-    1: "Bludgeoning", 2: "Piercing", 3: "Slashing", 4: "Acid", 5: "Cold", 6: "Fire",
-    7: "Lightning", 8: "Necrotic", 9: "Thunder", 10: "Force", 11: "Psychic", 12: "Poison", 13: "Radiant"
+    1: "Bludgeoning",
+    2: "Piercing",
+    3: "Slashing",
+    4: "Acid",
+    5: "Cold",
+    6: "Fire",
+    7: "Lightning",
+    8: "Necrotic",
+    9: "Thunder",
+    10: "Force",
+    11: "Psychic",
+    12: "Poison",
+    13: "Radiant",
   };
 
   for (const [source, list] of sources) {
     for (const a of list) {
       const isAtk = !!(a.isAttack || a.displayAsAttack);
-      const hasAtkRoll = a.attackTypeRange !== null || a.abilityModifierStatId !== null || a.fixedToHit !== null;
+      const hasAtkRoll =
+        a.attackTypeRange !== null || a.abilityModifierStatId !== null || a.fixedToHit !== null;
       if (isAtk && hasAtkRoll) {
         const action_id = a.id;
 
         const nameOverride = getCvValue(action_id, 8);
-        const name = typeof nameOverride === "string" && nameOverride.trim() ? nameOverride : a.name;
-        
+        const name =
+          typeof nameOverride === "string" && nameOverride.trim() ? nameOverride : a.name;
+
         const abilityId = a.abilityModifierStatId;
         let useMod = 0;
         if (typeof abilityId === "number" && abilityId >= 1 && abilityId <= 6) {
@@ -741,11 +806,11 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
         const isProf = !!a.isProficient;
         const fixedToHit = a.fixedToHit;
 
-        let baseAtkBonus = typeof fixedToHit === "number" ? fixedToHit : ((isProf ? pb : 0) + useMod);
+        let baseAtkBonus = typeof fixedToHit === "number" ? fixedToHit : (isProf ? pb : 0) + useMod;
 
         const toHitOverride = getCvValue(action_id, 11);
         const toHitBonus = getCvValue(action_id, 10);
-        
+
         let atkBonus = baseAtkBonus;
         if (typeof toHitOverride === "number") {
           atkBonus = toHitOverride;
@@ -761,10 +826,10 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
         let damageFormula = "None";
         if (diceStr) {
           const baseDmgBonus = useMod;
-          
+
           const dmgOverride = getCvValue(action_id, 13);
           const dmgBonusCv = getCvValue(action_id, 12);
-          
+
           let dmgBonus = baseDmgBonus;
           if (typeof dmgOverride === "number") {
             dmgBonus = dmgOverride;
@@ -787,7 +852,7 @@ function computeAttacks(data: any, abilities: AbilityScore[], pb: number, modifi
           damage: damageFormula,
           damageType: dmgType,
           properties: [],
-          isWeapon: false
+          isWeapon: false,
         });
       }
     }
@@ -810,7 +875,13 @@ function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: Pre
       if (!name) continue;
       const level = def.level ?? 0;
       const isCantrip = level === 0;
-      const isPrep = !!(s.prepared || s.alwaysPrepared || source === "item" || source === "feat" || source === "race");
+      const isPrep = !!(
+        s.prepared ||
+        s.alwaysPrepared ||
+        source === "item" ||
+        source === "feat" ||
+        source === "race"
+      );
 
       if (isCantrip) {
         cantrips.push(name);
@@ -854,7 +925,7 @@ function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: Pre
   }
 
   const uniqueCantrips = Array.from(new Set(cantrips)).sort();
-  
+
   const seenSpells = new Set<string>();
   const uniquePrepared: PreparedSpell[] = [];
   for (const p of preparedSpells) {
@@ -863,7 +934,7 @@ function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: Pre
       uniquePrepared.push(p);
     }
   }
-  
+
   uniquePrepared.sort((a, b) => {
     if (a.level !== b.level) return a.level - b.level;
     return a.name.localeCompare(b.name);
@@ -874,9 +945,12 @@ function computeSpellsList(data: any): { cantrips: string[]; preparedSpells: Pre
 
 async function fetchCharacter(id: number): Promise<PartyMember> {
   try {
-    const res = await fetch(`https://character-service.dndbeyond.com/character/v5/character/${id}`, {
-      headers: { Accept: "application/json" },
-    });
+    const res = await fetch(
+      `https://character-service.dndbeyond.com/character/v5/character/${id}`,
+      {
+        headers: { Accept: "application/json" },
+      },
+    );
     if (!res.ok) {
       return errorMember(id, `D&D Beyond returned ${res.status}`);
     }
@@ -888,11 +962,20 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const modifiers = flattenModifiers(data);
 
     const abilities: AbilityScore[] = ABILITY_NAMES.map((name, i) => {
-      const score = computeFinalScore(data.stats, data.bonusStats, data.overrideStats, modifiers, i);
+      const score = computeFinalScore(
+        data.stats,
+        data.bonusStats,
+        data.overrideStats,
+        modifiers,
+        i,
+      );
       return { name, score, modifier: mod(score) };
     });
 
-    const totalLevel = (data.classes ?? []).reduce((sum: number, c: any) => sum + (c.level ?? 0), 0);
+    const totalLevel = (data.classes ?? []).reduce(
+      (sum: number, c: any) => sum + (c.level ?? 0),
+      0,
+    );
     const pb = Math.ceil((totalLevel || 1) / 4) + 1;
     const classes = (data.classes ?? [])
       .map((c: any) => `${c.definition?.name ?? "?"} ${c.level ?? ""}`.trim())
@@ -915,10 +998,14 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const overrideHp = data.overrideHitPoints;
     const removedHp = data.removedHitPoints ?? 0;
     const tempHp = data.temporaryHitPoints ?? 0;
-    
+
     let hpPerLevelBonus = 0;
     for (const m of modifiers) {
-      if (m?.type === "bonus" && m?.subType === "hit-points-per-level" && typeof m?.value === "number") {
+      if (
+        m?.type === "bonus" &&
+        m?.subType === "hit-points-per-level" &&
+        typeof m?.value === "number"
+      ) {
         hpPerLevelBonus += m.value;
       }
     }
@@ -933,7 +1020,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
 
     const dexMod = abilities[DEX_INDEX].modifier;
     const armorClass = computeArmorClass(data, dexMod, modifiers, abilities);
-    
+
     // Calculate Initiative
     let initiative = dexMod;
     let initBonus = 0;
@@ -957,10 +1044,19 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     let speed = data.race?.weightSpeeds?.normal?.walk ?? 30;
     let speedBonus = 0;
     for (const m of modifiers) {
-      if (m?.type === "bonus" && (m?.subType === "speed" || m?.subType === "unarmored-movement" || m?.subType === "innate-speed-walking")) {
+      if (
+        m?.type === "bonus" &&
+        (m?.subType === "speed" ||
+          m?.subType === "unarmored-movement" ||
+          m?.subType === "innate-speed-walking")
+      ) {
         if (typeof m.value === "number") speedBonus += m.value;
       }
-      if (m?.type === "set" && m?.subType === "innate-speed-walking" && typeof m.value === "number") {
+      if (
+        m?.type === "set" &&
+        m?.subType === "innate-speed-walking" &&
+        typeof m.value === "number"
+      ) {
         if (m.value > speed) speed = m.value;
       }
     }
@@ -990,21 +1086,25 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
 
     const spellcasting: SpellcastingInfo[] = [];
     for (const c of data.classes ?? []) {
-      const isCaster = 
-        c.definition?.canCastSpells || 
-        c.subclassDefinition?.canCastSpells || 
-        (c.definition?.spellCastingAbilityId != null && c.definition.spellCastingAbilityId > 0) || 
-        (c.subclassDefinition?.spellCastingAbilityId != null && c.subclassDefinition.spellCastingAbilityId > 0);
-      
+      const isCaster =
+        c.definition?.canCastSpells ||
+        c.subclassDefinition?.canCastSpells ||
+        (c.definition?.spellCastingAbilityId != null && c.definition.spellCastingAbilityId > 0) ||
+        (c.subclassDefinition?.spellCastingAbilityId != null &&
+          c.subclassDefinition.spellCastingAbilityId > 0);
+
       if (!isCaster) continue;
 
-      const abilityId = c.definition?.spellCastingAbilityId || c.subclassDefinition?.spellCastingAbilityId;
+      const abilityId =
+        c.definition?.spellCastingAbilityId || c.subclassDefinition?.spellCastingAbilityId;
       if (typeof abilityId === "number" && abilityId >= 1 && abilityId <= 6) {
         const abilityIndex = abilityId - 1;
         const abilityName = ABILITY_NAMES[abilityIndex];
         const abilityMod = abilities[abilityIndex].modifier;
-        const saveDc = spellSaveDcSet !== null ? spellSaveDcSet : (8 + pb + abilityMod + spellSaveDcBonus);
-        const attackBonus = spellAttackSet !== null ? spellAttackSet : (pb + abilityMod + spellAttackBonus);
+        const saveDc =
+          spellSaveDcSet !== null ? spellSaveDcSet : 8 + pb + abilityMod + spellSaveDcBonus;
+        const attackBonus =
+          spellAttackSet !== null ? spellAttackSet : pb + abilityMod + spellAttackBonus;
         spellcasting.push({
           className: c.definition?.name ?? "Caster",
           ability: abilityName,
@@ -1092,9 +1192,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     };
 
     const background =
-      data.background?.definition?.name ??
-      data.background?.customBackground?.name ??
-      "";
+      data.background?.definition?.name ?? data.background?.customBackground?.name ?? "";
 
     const perceptionSkill = skills.find((s) => s.key === "perception");
     const investigationSkill = skills.find((s) => s.key === "investigation");
@@ -1112,9 +1210,12 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       }
     }
 
-    const passivePerception = 10 + (perceptionSkill?.modifier ?? abilities[WIS_INDEX].modifier) + passivePerceptionBonus;
-    const passiveInvestigation = 10 + (investigationSkill?.modifier ?? abilities[3].modifier) + passiveInvestigationBonus;
-    const passiveInsight = 10 + (insightSkill?.modifier ?? abilities[WIS_INDEX].modifier) + passiveInsightBonus;
+    const passivePerception =
+      10 + (perceptionSkill?.modifier ?? abilities[WIS_INDEX].modifier) + passivePerceptionBonus;
+    const passiveInvestigation =
+      10 + (investigationSkill?.modifier ?? abilities[3].modifier) + passiveInvestigationBonus;
+    const passiveInsight =
+      10 + (insightSkill?.modifier ?? abilities[WIS_INDEX].modifier) + passiveInsightBonus;
 
     const hitDice = computeHitDice(data);
     const optionLabels = new Map<number, string>();
@@ -1139,7 +1240,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       const name = (def.name ?? "").replace(/^\d+:\s*/, "");
       if (!name) continue;
       const desc = def.snippet || def.description || "";
-      
+
       const featChoices: string[] = [];
       const featId = def.id;
       if (data.choices?.feat) {
@@ -1257,21 +1358,21 @@ function computeActions(data: any, abilities: AbilityScore[], pb: number): Actio
     ["feat", data?.actions?.feat ?? []],
     ["item", data?.actions?.item ?? []],
   ];
-  
+
   const actionsMap = new Map<string, { info: ActionInfo; id: number; componentId: number }>();
-  
+
   for (const [source, list] of sources) {
     for (const a of list) {
       const name = a?.name;
       if (!name) continue;
       const key = `${source}:${name}`;
-      
+
       const aId = Number(a?.id ?? 0);
       const aCompId = Number(a?.componentId ?? 0);
-      
+
       const existing = actionsMap.get(key);
       const isNewer = !existing || aCompId > existing.componentId || aId > existing.id;
-      
+
       if (!existing || isNewer) {
         const info: ActionInfo = { name, source };
         const lu = a?.limitedUse;
@@ -1287,13 +1388,16 @@ function computeActions(data: any, abilities: AbilityScore[], pb: number): Actio
           if (lu.useProficiencyBonus) {
             max = lu.proficiencyBonusOperator === 2 ? max * pb : max + pb;
           }
-          
+
           if (max > 0) {
             const reset =
-              lu.resetType === 1 ? "short rest" :
-              lu.resetType === 2 ? "long rest" :
-              lu.resetType === 3 ? "day" :
-              "rest";
+              lu.resetType === 1
+                ? "short rest"
+                : lu.resetType === 2
+                  ? "long rest"
+                  : lu.resetType === 3
+                    ? "day"
+                    : "rest";
             info.uses = {
               current: Math.max(0, max - (lu.numberUsed ?? 0)),
               max,
@@ -1305,8 +1409,8 @@ function computeActions(data: any, abilities: AbilityScore[], pb: number): Actio
       }
     }
   }
-  
-  return Array.from(actionsMap.values()).map(item => item.info);
+
+  return Array.from(actionsMap.values()).map((item) => item.info);
 }
 
 function errorMember(id: number, message: string): PartyMember {
@@ -1359,7 +1463,15 @@ function errorMember(id: number, message: string): PartyMember {
   };
 }
 
-const RARITY_ORDER = ["Mundane", "Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact"];
+const RARITY_ORDER = [
+  "Mundane",
+  "Common",
+  "Uncommon",
+  "Rare",
+  "Very Rare",
+  "Legendary",
+  "Artifact",
+];
 
 function computeInventory(data: any): InventoryItem[] {
   const inv: any[] = data?.inventory ?? [];

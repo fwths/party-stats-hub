@@ -5,6 +5,7 @@ Make `/character/$id` feel like a real character sheet rather than the same comp
 ## Approach
 
 Refactor `CharacterCard.tsx` so its internal sections become reusable building blocks, then compose two layouts:
+
 - `CharacterCard` — current compact layout for the party grid (unchanged visually)
 - `CharacterDetailView` — new expanded layout used only on `/character/$id`
 
@@ -23,12 +24,13 @@ This avoids forking logic (conditions hook, HP delta, modified stats) into two f
    - `InventoryBlock` (keep existing `InventoryGroup` / `InventoryList`)
    - `FeatsBlock`
    - Keep `ConditionsPanel` where it is and just re-export it.
-   
+
    Each section takes `member` (and any locally-derived props like `localConditions` or `modifiedStats`) and contains only the JSX currently inside `CharacterCard`. No behavior change.
 
 2. **Slim down `CharacterCard`** to compose those sections in the existing compact order, producing identical output to today's card. Verify the party grid looks unchanged.
 
 3. **Create `src/components/party/CharacterDetailView.tsx`** that composes the same sections in an expanded layout:
+
    ```text
    ┌──────────────────────────────────────────────────────┐
    │  HERO: 128px portrait │ name (3xl) │ class chips     │
@@ -48,6 +50,7 @@ This avoids forking logic (conditions hook, HP delta, modified stats) into two f
    │                        │  FeatsBlock                 │
    └────────────────────────┴─────────────────────────────┘
    ```
+
    - Container: `max-w-6xl` (vs. card's narrow `max-w-3xl` today).
    - Use `grid lg:grid-cols-[1fr_1.4fr] gap-6` so the right column (combat/spells/inventory) is wider.
    - Keep the same `card-arcane` token styling for visual continuity, but as separate panels rather than one card.

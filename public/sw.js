@@ -4,7 +4,7 @@ const ASSETS_TO_CACHE = [
   "/favicon.png",
   "/pwa-192x192.png",
   "/pwa-512x512.png",
-  "/manifest.webmanifest"
+  "/manifest.webmanifest",
 ];
 
 // Install Event - Precache core shell
@@ -13,7 +13,7 @@ self.addEventListener("install", (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       console.log("[Service Worker] Precaching app shell");
       return cache.addAll(ASSETS_TO_CACHE);
-    })
+    }),
   );
   self.skipWaiting();
 });
@@ -28,9 +28,9 @@ self.addEventListener("activate", (event) => {
             console.log("[Service Worker] Removing old cache", cache);
             return caches.delete(cache);
           }
-        })
+        }),
       );
-    })
+    }),
   );
   self.clients.claim();
 });
@@ -57,7 +57,7 @@ self.addEventListener("fetch", (event) => {
         .catch(() => {
           // If offline, return cached response
           return caches.match(event.request);
-        })
+        }),
     );
     return;
   }
@@ -85,6 +85,6 @@ self.addEventListener("fetch", (event) => {
         });
 
       return cachedResponse || fetchPromise;
-    })
+    }),
   );
 });

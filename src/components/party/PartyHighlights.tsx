@@ -2,20 +2,20 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { partyQueryOptions } from "@/lib/party";
 import { PartyMember } from "@/lib/dndbeyond.functions";
 import { SKILL_ABILITY } from "@/lib/constants";
-import { 
-  Eye, 
-  Search, 
-  Brain, 
-  Coins, 
-  Shield, 
-  Zap, 
-  Sparkles, 
-  Heart, 
+import {
+  Eye,
+  Search,
+  Brain,
+  Coins,
+  Shield,
+  Zap,
+  Sparkles,
+  Heart,
   ChevronDown,
   Dumbbell,
   BookOpen,
   Compass,
-  Crown
+  Crown,
 } from "lucide-react";
 
 const ABILITY_FULL_NAME: Record<string, string> = {
@@ -66,22 +66,26 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
     { name: "Passive Perception", key: "passivePerception" },
     { name: "Passive Investigation", key: "passiveInvestigation" },
     { name: "Passive Insight", key: "passiveInsight" },
-  ].map((p) => {
-    let maxVal = -Infinity;
-    let bestMembers: PartyMember[] = [];
-    for (const m of members) {
-      const val = m[p.key as keyof PartyMember] as number;
-      if (typeof val === "number") {
-        if (val > maxVal) {
-          maxVal = val;
-          bestMembers = [m];
-        } else if (val === maxVal) {
-          bestMembers.push(m);
+  ]
+    .map((p) => {
+      let maxVal = -Infinity;
+      let bestMembers: PartyMember[] = [];
+      for (const m of members) {
+        const val = m[p.key as keyof PartyMember] as number;
+        if (typeof val === "number") {
+          if (val > maxVal) {
+            maxVal = val;
+            bestMembers = [m];
+          } else if (val === maxVal) {
+            bestMembers.push(m);
+          }
         }
       }
-    }
-    return bestMembers.length > 0 ? { name: p.name, key: p.key, members: bestMembers, val: maxVal } : null;
-  }).filter((x): x is { name: string; key: string; members: PartyMember[]; val: number } => !!x);
+      return bestMembers.length > 0
+        ? { name: p.name, key: p.key, members: bestMembers, val: maxVal }
+        : null;
+    })
+    .filter((x): x is { name: string; key: string; members: PartyMember[]; val: number } => !!x);
 
   // Find combat and wealth highlights
   let maxAc = -Infinity;
@@ -119,11 +123,12 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
     }
 
     if (m.currencies) {
-      totalGold += (m.currencies.gp ?? 0) + 
-                  (m.currencies.pp ?? 0) * 10 + 
-                  (m.currencies.ep ?? 0) * 0.5 + 
-                  (m.currencies.sp ?? 0) * 0.1 + 
-                  (m.currencies.cp ?? 0) * 0.01;
+      totalGold +=
+        (m.currencies.gp ?? 0) +
+        (m.currencies.pp ?? 0) * 10 +
+        (m.currencies.ep ?? 0) * 0.5 +
+        (m.currencies.sp ?? 0) * 0.1 +
+        (m.currencies.cp ?? 0) * 0.01;
     }
   }
   totalGold = Math.round(totalGold * 10) / 10;
@@ -170,9 +175,12 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
           <Sparkles size={14} className="text-accent animate-pulse" />
           <span>Party Highlights</span>
         </span>
-        <ChevronDown size={15} className="transition-transform duration-300 group-open:rotate-180 text-accent/80 group-hover:text-accent" />
+        <ChevronDown
+          size={15}
+          className="transition-transform duration-300 group-open:rotate-180 text-accent/80 group-hover:text-accent"
+        />
       </summary>
-      
+
       <div className="mt-5 space-y-6">
         {/* Passive Senses Highlights */}
         <div>
@@ -181,10 +189,11 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
           </div>
           <div className="grid grid-cols-3 gap-3.5 text-center text-xs">
             {passiveHighlights.map(({ name, key, members: bestM, val }) => {
-              const Icon = key === "passivePerception" ? Eye : key === "passiveInvestigation" ? Search : Brain;
+              const Icon =
+                key === "passivePerception" ? Eye : key === "passiveInvestigation" ? Search : Brain;
               return (
-                <div 
-                  key={name} 
+                <div
+                  key={name}
                   className="relative overflow-hidden rounded-lg border border-accent/20 bg-accent/5 p-3 transition-all duration-300 hover:border-accent/40 hover:-translate-y-0.5 hover:shadow-md hover:shadow-accent/5"
                 >
                   {/* Neon Glow Circle */}
@@ -196,11 +205,11 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
                   <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">
                     {val}
                   </div>
-                  <div 
-                    className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight" 
-                    title={bestM.map(m => m.name).join(", ")}
+                  <div
+                    className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight"
+                    title={bestM.map((m) => m.name).join(", ")}
                   >
-                    {bestM.map(m => getShortName(m.name)).join(", ")}
+                    {bestM.map((m) => getShortName(m.name)).join(", ")}
                   </div>
                 </div>
               );
@@ -214,23 +223,25 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
             Combat & Assets
           </div>
           <div className="grid grid-cols-2 gap-3.5 text-center text-xs sm:grid-cols-3 md:grid-cols-5">
-
             {/* AC */}
             {bestAc && (
               <div className="group/ac relative overflow-hidden rounded-lg border border-blue-500/25 bg-blue-500/5 p-3 transition-all duration-300 hover:border-blue-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-500/10">
                 <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-blue-500/12 blur-xl pointer-events-none" />
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-                  <Shield size={11} className="text-blue-400 transition-all duration-300 group-hover/ac:scale-120 group-hover/ac:rotate-12" />
+                  <Shield
+                    size={11}
+                    className="text-blue-400 transition-all duration-300 group-hover/ac:scale-120 group-hover/ac:rotate-12"
+                  />
                   <span>Highest AC</span>
                 </div>
                 <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">
                   {bestAc.val}
                 </div>
-                <div 
-                  className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight" 
-                  title={bestAc.members.map(m => m.name).join(", ")}
+                <div
+                  className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight"
+                  title={bestAc.members.map((m) => m.name).join(", ")}
                 >
-                  {bestAc.members.map(m => getShortName(m.name)).join(", ")}
+                  {bestAc.members.map((m) => getShortName(m.name)).join(", ")}
                 </div>
               </div>
             )}
@@ -240,17 +251,20 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
               <div className="group/init relative overflow-hidden rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 transition-all duration-300 hover:border-amber-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-amber-500/10">
                 <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-amber-500/12 blur-xl pointer-events-none" />
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-                  <Zap size={11} className="text-amber-400 transition-all duration-300 group-hover/init:scale-120 group-hover/init:-rotate-12" />
+                  <Zap
+                    size={11}
+                    className="text-amber-400 transition-all duration-300 group-hover/init:scale-120 group-hover/init:-rotate-12"
+                  />
                   <span>Highest Initiative</span>
                 </div>
                 <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">
                   {bestInit.val >= 0 ? `+${bestInit.val}` : bestInit.val}
                 </div>
-                <div 
-                  className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight" 
-                  title={bestInit.members.map(m => m.name).join(", ")}
+                <div
+                  className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight"
+                  title={bestInit.members.map((m) => m.name).join(", ")}
                 >
-                  {bestInit.members.map(m => getShortName(m.name)).join(", ")}
+                  {bestInit.members.map((m) => getShortName(m.name)).join(", ")}
                 </div>
               </div>
             )}
@@ -260,17 +274,20 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
               <div className="group/dc relative overflow-hidden rounded-lg border border-purple-500/25 bg-purple-500/5 p-3 transition-all duration-300 hover:border-purple-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-purple-500/10">
                 <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-purple-500/12 blur-xl pointer-events-none" />
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-                  <Sparkles size={11} className="text-purple-400 transition-all duration-300 group-hover/dc:scale-120 group-hover/dc:animate-pulse" />
+                  <Sparkles
+                    size={11}
+                    className="text-purple-400 transition-all duration-300 group-hover/dc:scale-120 group-hover/dc:animate-pulse"
+                  />
                   <span>Highest Spell DC</span>
                 </div>
                 <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">
                   {bestDc.val}
                 </div>
-                <div 
-                  className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight" 
-                  title={bestDc.members.map(m => m.name).join(", ")}
+                <div
+                  className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight"
+                  title={bestDc.members.map((m) => m.name).join(", ")}
                 >
-                  {bestDc.members.map(m => getShortName(m.name)).join(", ")}
+                  {bestDc.members.map((m) => getShortName(m.name)).join(", ")}
                 </div>
               </div>
             )}
@@ -280,17 +297,20 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
               <div className="group/hp relative overflow-hidden rounded-lg border border-rose-500/25 bg-rose-500/5 p-3 transition-all duration-300 hover:border-rose-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-rose-500/10 col-span-2 sm:col-span-1 md:col-span-1">
                 <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-rose-500/12 blur-xl pointer-events-none" />
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-                  <Heart size={11} className="text-rose-400 transition-transform duration-300 group-hover/hp:animate-heartbeat" />
+                  <Heart
+                    size={11}
+                    className="text-rose-400 transition-transform duration-300 group-hover/hp:animate-heartbeat"
+                  />
                   <span>Highest Max HP</span>
                 </div>
                 <div className="font-heading text-2xl font-extrabold text-foreground leading-tight drop-shadow-sm mt-1.5">
                   {bestHp.val}
                 </div>
-                <div 
-                  className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight" 
-                  title={bestHp.members.map(m => m.name).join(", ")}
+                <div
+                  className="text-[11px] text-accent mt-1.5 font-semibold break-words leading-tight"
+                  title={bestHp.members.map((m) => m.name).join(", ")}
                 >
-                  {bestHp.members.map(m => getShortName(m.name)).join(", ")}
+                  {bestHp.members.map((m) => getShortName(m.name)).join(", ")}
                 </div>
               </div>
             )}
@@ -299,7 +319,10 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
             <div className="group/wealth relative overflow-hidden rounded-lg border border-gold/25 bg-gold/5 p-3 transition-all duration-300 hover:border-gold/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-gold/10">
               <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-gold/12 blur-xl pointer-events-none" />
               <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-                <Coins size={11} className="text-gold/90 transition-transform duration-300 group-hover/wealth:animate-jingle" />
+                <Coins
+                  size={11}
+                  className="text-gold/90 transition-transform duration-300 group-hover/wealth:animate-jingle"
+                />
                 <span>Total Wealth</span>
               </div>
               <div className="font-heading text-xl font-extrabold text-gold leading-tight drop-shadow-sm mt-1.5">
@@ -316,32 +339,77 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
           </div>
           <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 md:grid-cols-6">
             {bestByAbility.map(({ name, members: bestM, score }) => {
-              const details = name === "STR" ? { icon: Dumbbell, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
-                              name === "DEX" ? { icon: Zap, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
-                              name === "CON" ? { icon: Heart, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
-                              name === "INT" ? { icon: BookOpen, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
-                              name === "WIS" ? { icon: Compass, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" } :
-                                               { icon: Crown, colorClass: "text-accent/90 bg-accent/10", borderClass: "border-border/30 hover:border-accent/40", glowClass: "bg-accent/5" };
+              const details =
+                name === "STR"
+                  ? {
+                      icon: Dumbbell,
+                      colorClass: "text-accent/90 bg-accent/10",
+                      borderClass: "border-border/30 hover:border-accent/40",
+                      glowClass: "bg-accent/5",
+                    }
+                  : name === "DEX"
+                    ? {
+                        icon: Zap,
+                        colorClass: "text-accent/90 bg-accent/10",
+                        borderClass: "border-border/30 hover:border-accent/40",
+                        glowClass: "bg-accent/5",
+                      }
+                    : name === "CON"
+                      ? {
+                          icon: Heart,
+                          colorClass: "text-accent/90 bg-accent/10",
+                          borderClass: "border-border/30 hover:border-accent/40",
+                          glowClass: "bg-accent/5",
+                        }
+                      : name === "INT"
+                        ? {
+                            icon: BookOpen,
+                            colorClass: "text-accent/90 bg-accent/10",
+                            borderClass: "border-border/30 hover:border-accent/40",
+                            glowClass: "bg-accent/5",
+                          }
+                        : name === "WIS"
+                          ? {
+                              icon: Compass,
+                              colorClass: "text-accent/90 bg-accent/10",
+                              borderClass: "border-border/30 hover:border-accent/40",
+                              glowClass: "bg-accent/5",
+                            }
+                          : {
+                              icon: Crown,
+                              colorClass: "text-accent/90 bg-accent/10",
+                              borderClass: "border-border/30 hover:border-accent/40",
+                              glowClass: "bg-accent/5",
+                            };
               const Icon = details.icon;
               const fullName = ABILITY_FULL_NAME[name] || name;
               return (
-                <div 
-                  key={name} 
+                <div
+                  key={name}
                   className={`group relative overflow-hidden rounded-lg border bg-secondary/15 p-3 transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-between gap-3 min-h-[76px] ${details.borderClass}`}
                 >
                   {/* Subtle layout glow */}
-                  <div className={`absolute -right-3 -bottom-3 h-10 w-10 rounded-full blur-lg pointer-events-none ${details.glowClass}`} />
+                  <div
+                    className={`absolute -right-3 -bottom-3 h-10 w-10 rounded-full blur-lg pointer-events-none ${details.glowClass}`}
+                  />
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded ${details.colorClass}`}>
-                      <Icon size={15} className="transition-transform duration-300 group-hover:scale-120 group-hover:rotate-6" />
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded ${details.colorClass}`}
+                    >
+                      <Icon
+                        size={15}
+                        className="transition-transform duration-300 group-hover:scale-120 group-hover:rotate-6"
+                      />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{fullName}</div>
-                      <div 
-                        className="text-xs font-bold text-accent mt-1.5 break-words leading-tight" 
-                        title={bestM.map(m => m.name).join(", ")}
+                      <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {fullName}
+                      </div>
+                      <div
+                        className="text-xs font-bold text-accent mt-1.5 break-words leading-tight"
+                        title={bestM.map((m) => m.name).join(", ")}
                       >
-                        {bestM.map(m => getShortName(m.name)).join(", ")}
+                        {bestM.map((m) => getShortName(m.name)).join(", ")}
                       </div>
                     </div>
                   </div>
@@ -363,20 +431,22 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
           {/* Skill Highlights Grid */}
           <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 md:grid-cols-4">
             {bestBySkill.map(({ name, members: bestM, mod }) => (
-              <div 
-                key={name} 
+              <div
+                key={name}
                 className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/10 px-3 py-2 transition-all duration-200 hover:border-accent/40 hover:bg-secondary/35"
               >
                 <div className="min-w-0 pr-1">
                   <div className="truncate text-xs font-semibold text-foreground">{name}</div>
-                  <div 
-                    className="text-[10px] text-muted-foreground break-words leading-tight mt-1" 
-                    title={bestM.map(m => m.name).join(", ")}
+                  <div
+                    className="text-[10px] text-muted-foreground break-words leading-tight mt-1"
+                    title={bestM.map((m) => m.name).join(", ")}
                   >
-                    {bestM.map(m => getShortName(m.name)).join(", ")}
+                    {bestM.map((m) => getShortName(m.name)).join(", ")}
                   </div>
                 </div>
-                <span className="font-mono text-accent font-semibold text-xs shrink-0">{mod >= 0 ? `+${mod}` : mod}</span>
+                <span className="font-mono text-accent font-semibold text-xs shrink-0">
+                  {mod >= 0 ? `+${mod}` : mod}
+                </span>
               </div>
             ))}
           </div>

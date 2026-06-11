@@ -14,7 +14,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Mother of Bob (MOB) — Party Stats" },
-      { name: "description", content: "Live stats for the Mother of Bob (MOB) party, pulled from D&D Beyond." },
+      {
+        name: "description",
+        content: "Live stats for the Mother of Bob (MOB) party, pulled from D&D Beyond.",
+      },
       { property: "og:title", content: "Mother of Bob (MOB)" },
       { property: "og:description", content: "Live D&D party stats for MOB." },
     ],
@@ -50,8 +53,7 @@ export default function Index() {
 
     if (
       typeof window !== "undefined" &&
-      (window.matchMedia("(display-mode: standalone)").matches ||
-        (navigator as any).standalone)
+      (window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone)
     ) {
       setShowInstallBtn(false);
     }
@@ -76,43 +78,42 @@ export default function Index() {
       <div className="bg-particles-2" />
       <TooltipProvider delayDuration={100}>
         <div className="mx-auto max-w-6xl 2xl:max-w-[1600px] px-4 py-6 relative z-10">
-        <header className="mb-6 flex items-baseline justify-between gap-3 border-b border-border/50 pb-4">
-          <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent">
-            Mother of Bob <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
-          </h1>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {showInstallBtn && (
+          <header className="mb-6 flex items-baseline justify-between gap-3 border-b border-border/50 pb-4">
+            <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent">
+              Mother of Bob{" "}
+              <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
+            </h1>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              {showInstallBtn && (
+                <button
+                  onClick={handleInstallClick}
+                  className="rounded border border-accent bg-accent/15 hover:bg-accent/25 px-2 py-1 text-accent font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-accent/10 active:scale-95"
+                >
+                  📥 Install App
+                </button>
+              )}
               <button
-                onClick={handleInstallClick}
-                className="rounded border border-accent bg-accent/15 hover:bg-accent/25 px-2 py-1 text-accent font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-accent/10 active:scale-95"
+                onClick={() => setManaging(true)}
+                className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60"
               >
-                📥 Install App
+                ⚙ Manage
               </button>
-            )}
-            <button
-              onClick={() => setManaging(true)}
-              className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60"
-            >
-              ⚙ Manage
-            </button>
-            <a className="underline hover:text-accent" href="/api/party">JSON</a>
-            <Suspense fallback={null}>
-              <RefreshButton ids={ids} />
-            </Suspense>
-          </div>
-        </header>
-        <Suspense fallback={<PartyGridSkeleton />}>
-          {/* <PartyVitals ids={ids} /> */}
-          <PartyHighlights ids={ids} />
-          <PartyGrid ids={ids} />
-        </Suspense>
-        {managing && (
-          <ManagePartyDialog
-            ids={ids}
-            onClose={() => setManaging(false)}
-            onChange={setIds}
-          />
-        )}
+              <a className="underline hover:text-accent" href="/api/party">
+                JSON
+              </a>
+              <Suspense fallback={null}>
+                <RefreshButton ids={ids} />
+              </Suspense>
+            </div>
+          </header>
+          <Suspense fallback={<PartyGridSkeleton />}>
+            {/* <PartyVitals ids={ids} /> */}
+            <PartyHighlights ids={ids} />
+            <PartyGrid ids={ids} />
+          </Suspense>
+          {managing && (
+            <ManagePartyDialog ids={ids} onClose={() => setManaging(false)} onChange={setIds} />
+          )}
         </div>
       </TooltipProvider>
     </main>

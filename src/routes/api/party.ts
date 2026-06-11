@@ -6,16 +6,13 @@ export const Route = createFileRoute("/api/party")({
     handlers: {
       GET: async () => {
         const members = await loadParty();
-        return new Response(
-          JSON.stringify({ members, fetchedAt: new Date().toISOString() }),
-          {
-            headers: {
-              "Content-Type": "application/json",
-              "Cache-Control": "public, max-age=10",
-              "Access-Control-Allow-Origin": "*",
-            },
+        return new Response(JSON.stringify({ members, fetchedAt: new Date().toISOString() }), {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "public, max-age=10",
+            "Access-Control-Allow-Origin": "*",
           },
-        );
+        });
       },
     },
   },

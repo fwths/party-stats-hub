@@ -8,8 +8,6 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    plugins: [
-      visualizer({ open: false, filename: "bundle-stats.html" })
-    ],
-  }
+    plugins: [visualizer({ open: false, filename: "bundle-stats.html" })],
+  },
 });

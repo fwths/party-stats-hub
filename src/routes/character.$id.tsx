@@ -23,7 +23,10 @@ export const Route = createFileRoute("/character/$id")({
         <h1 className="text-2xl font-bold mb-2">Failed to load character</h1>
         <p className="text-muted-foreground mb-4">{error.message}</p>
         <button
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="rounded border border-border bg-secondary/60 px-3 py-1.5 hover:border-accent/60"
         >
           Retry
@@ -34,7 +37,9 @@ export const Route = createFileRoute("/character/$id")({
   notFoundComponent: () => (
     <main className="min-h-screen p-8 text-foreground">
       <h1 className="text-2xl font-bold mb-2">Character not found</h1>
-      <Link to="/" className="underline text-accent">Back to party</Link>
+      <Link to="/" className="underline text-accent">
+        Back to party
+      </Link>
     </main>
   ),
 });
@@ -54,8 +59,6 @@ function CharacterDetail() {
             >
               <ArrowLeft size={14} /> Back to party
             </Link>
-            
-
           </header>
           <Suspense fallback={<PartyGridSkeleton />}>
             <CharacterDetailInner />

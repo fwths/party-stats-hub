@@ -86,17 +86,17 @@ export function ManagePartyDialog({
               >
                 <div className="flex min-w-0 items-center gap-2">
                   {m?.avatarUrl ? (
-                    <img src={m.avatarUrl} alt="" className="h-6 w-6 rounded border border-border object-cover" />
+                    <img
+                      src={m.avatarUrl}
+                      alt=""
+                      className="h-6 w-6 rounded border border-border object-cover"
+                    />
                   ) : (
                     <div className="h-6 w-6 rounded border border-border bg-muted" />
                   )}
                   <div className="min-w-0">
-                    <div className="truncate text-foreground">
-                      {m?.name ?? `Character ${id}`}
-                    </div>
-                    <div className="truncate text-[10px] text-muted-foreground">
-                      {id}
-                    </div>
+                    <div className="truncate text-foreground">{m?.name ?? `Character ${id}`}</div>
+                    <div className="truncate text-[10px] text-muted-foreground">{id}</div>
                   </div>
                 </div>
                 <button
@@ -108,9 +108,7 @@ export function ManagePartyDialog({
               </div>
             );
           })}
-          {ids.length === 0 && (
-            <p className="text-xs text-muted-foreground">No characters yet.</p>
-          )}
+          {ids.length === 0 && <p className="text-xs text-muted-foreground">No characters yet.</p>}
         </div>
 
         <div className="mb-2">
@@ -141,10 +139,7 @@ export function ManagePartyDialog({
         </div>
 
         <div className="flex items-center justify-between border-t border-border pt-3 text-xs">
-          <button
-            onClick={reset}
-            className="text-muted-foreground underline hover:text-accent"
-          >
+          <button onClick={reset} className="text-muted-foreground underline hover:text-accent">
             Reset to defaults
           </button>
           <button

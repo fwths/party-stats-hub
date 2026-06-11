@@ -70,23 +70,23 @@
 :root {
   --radius: 0.625rem;
   /* Abyssal Void — black depths, teal power, purple mystic glow */
-  --background: oklch(0.14 0.03 265);   /* near-black with deep violet undertone */
+  --background: oklch(0.14 0.03 265); /* near-black with deep violet undertone */
   --foreground: oklch(0.95 0.02 260);
-  --card: oklch(0.20 0.04 260);
+  --card: oklch(0.2 0.04 260);
   --card-foreground: oklch(0.95 0.02 260);
-  --popover: oklch(0.20 0.04 260);
+  --popover: oklch(0.2 0.04 260);
   --popover-foreground: oklch(0.95 0.02 260);
-  --primary: oklch(0.58 0.11 200);       /* tidal teal */
+  --primary: oklch(0.58 0.11 200); /* tidal teal */
   --primary-foreground: oklch(0.14 0.03 265);
   --secondary: oklch(0.26 0.05 270);
   --secondary-foreground: oklch(0.95 0.02 260);
   --muted: oklch(0.24 0.04 265);
   --muted-foreground: oklch(0.68 0.05 270);
-  --accent: oklch(0.65 0.14 300);        /* mystic violet */
+  --accent: oklch(0.65 0.14 300); /* mystic violet */
   --accent-foreground: oklch(0.14 0.03 265);
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --hp-good: oklch(0.70 0.17 155);
+  --hp-good: oklch(0.7 0.17 155);
   --hp-wounded: oklch(0.78 0.16 80);
   --hp-critical: oklch(0.62 0.22 25);
   --gold: oklch(0.82 0.15 85);
@@ -150,9 +150,17 @@
 
   body {
     background-color: var(--color-background);
-    background-image: 
-      radial-gradient(ellipse at 15% 50%, color-mix(in oklab, var(--color-primary) 6%, transparent), transparent 40%),
-      radial-gradient(ellipse at 85% 30%, color-mix(in oklab, var(--color-accent) 6%, transparent), transparent 40%);
+    background-image:
+      radial-gradient(
+        ellipse at 15% 50%,
+        color-mix(in oklab, var(--color-primary) 6%, transparent),
+        transparent 40%
+      ),
+      radial-gradient(
+        ellipse at 85% 30%,
+        color-mix(in oklab, var(--color-accent) 6%, transparent),
+        transparent 40%
+      );
     background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
@@ -183,8 +191,16 @@
   border: 1px solid color-mix(in oklab, var(--border) 50%, transparent);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   background-image:
-    radial-gradient(120% 80% at 0% 0%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 55%),
-    radial-gradient(100% 70% at 100% 100%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 60%);
+    radial-gradient(
+      120% 80% at 0% 0%,
+      color-mix(in oklab, var(--accent) 12%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      100% 70% at 100% 100%,
+      color-mix(in oklab, var(--primary) 10%, transparent),
+      transparent 60%
+    );
   &::after {
     content: "";
     position: absolute;
@@ -199,14 +215,32 @@
 }
 
 @keyframes hp-flash-damage {
-  0% { opacity: 0; transform: translateY(-4px); }
-  15% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-10px); }
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
 }
 @keyframes hp-flash-heal {
-  0% { opacity: 0; transform: translateY(4px); }
-  15% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-6px); }
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 @utility hp-delta-damage {
   animation: hp-flash-damage 1.6s ease-out forwards;
@@ -220,9 +254,18 @@
 }
 
 @keyframes magical-float {
-  0% { transform: translateY(0) scale(1); opacity: 0; }
-  50% { opacity: 0.6; transform: translateY(-50px) scale(1.1); }
-  100% { transform: translateY(-100px) scale(1); opacity: 0; }
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateY(-50px) scale(1.1);
+  }
+  100% {
+    transform: translateY(-100px) scale(1);
+    opacity: 0;
+  }
 }
 
 @utility bg-particles {
@@ -230,7 +273,7 @@
   inset: 0;
   pointer-events: none;
   z-index: -1;
-  background-image: 
+  background-image:
     radial-gradient(2px 2px at 20px 30px, var(--color-accent), transparent),
     radial-gradient(2px 2px at 40px 70px, var(--color-primary), transparent),
     radial-gradient(2px 2px at 50px 160px, var(--color-gold), transparent),
@@ -247,7 +290,7 @@
   inset: 0;
   pointer-events: none;
   z-index: -1;
-  background-image: 
+  background-image:
     radial-gradient(2px 2px at 10px 150px, var(--color-accent), transparent),
     radial-gradient(2px 2px at 80px 20px, var(--color-primary), transparent),
     radial-gradient(2px 2px at 120px 180px, var(--color-gold), transparent);
@@ -258,18 +301,38 @@
 }
 
 @keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  25% { transform: scale(1.15); }
-  40% { transform: scale(1.05); }
-  55% { transform: scale(1.2); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.15);
+  }
+  40% {
+    transform: scale(1.05);
+  }
+  55% {
+    transform: scale(1.2);
+  }
 }
 
 @keyframes jingle {
-  0%, 100% { transform: rotate(0deg) scale(1); }
-  20% { transform: rotate(-12deg) scale(1.1); }
-  40% { transform: rotate(10deg) scale(1.1); }
-  60% { transform: rotate(-8deg) scale(1.05); }
-  80% { transform: rotate(6deg) scale(1.05); }
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+  20% {
+    transform: rotate(-12deg) scale(1.1);
+  }
+  40% {
+    transform: rotate(10deg) scale(1.1);
+  }
+  60% {
+    transform: rotate(-8deg) scale(1.05);
+  }
+  80% {
+    transform: rotate(6deg) scale(1.05);
+  }
 }
 
 @utility animate-heartbeat {
@@ -279,4 +342,3 @@
 @utility animate-jingle {
   animation: jingle 0.6s ease-in-out infinite;
 }
-

@@ -78,14 +78,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Mother of Bob (MOB) — Party Stats" },
-      { name: "description", content: "Live D&D party stats for the Mother of Bob (MOB) campaign, pulled from D&D Beyond." },
+      {
+        name: "description",
+        content:
+          "Live D&D party stats for the Mother of Bob (MOB) campaign, pulled from D&D Beyond.",
+      },
       { name: "author", content: "Lovable" },
       { name: "theme-color", content: "#09090b" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "apple-mobile-web-app-title", content: "MOB Stats" },
       { property: "og:title", content: "Mother of Bob (MOB) — Party Stats" },
-      { property: "og:description", content: "Live D&D party stats for the Mother of Bob (MOB) campaign." },
+      {
+        property: "og:description",
+        content: "Live D&D party stats for the Mother of Bob (MOB) campaign.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },

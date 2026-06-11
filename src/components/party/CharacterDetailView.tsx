@@ -879,15 +879,15 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
         <div className="flex flex-col gap-4">
           {abilityScores}
           {savingThrows}
-          {skills}
           {senses}
+          {spellcastingPanel}
+          {skills}
           {defenses}
           {proficiencies}
         </div>
         {/* RIGHT COLUMN */}
         <div className="flex flex-col gap-4">
           {attacks}
-          {spellcastingPanel}
           {spellLists}
           {resourcesPanel}
           {inventoryPanel}

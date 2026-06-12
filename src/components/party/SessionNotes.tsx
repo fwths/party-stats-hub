@@ -624,7 +624,7 @@ export default function SessionNotes() {
                       value={notionParentId}
                       onChange={(e) => setNotionParentId(e.target.value)}
                       placeholder="32-character ID"
-                      required={notionParentType !== "workspace"}
+                      required
                       className="w-full rounded bg-secondary/35 border border-border/40 px-2 py-1.5 text-xs text-foreground placeholder-muted-foreground/35 focus:outline-none focus:border-gold/50"
                     />
                   </div>

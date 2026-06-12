@@ -458,14 +458,16 @@ function computeFinalScore(
     ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"][abilityIndex] +
     "-score";
   let modBonus = 0;
+  let setValue: number | undefined;
   for (const m of modifiers) {
     if (m?.type === "bonus" && m?.subType === subType && typeof m?.value === "number") {
       modBonus += m.value;
     }
     if (m?.type === "set" && m?.subType === subType && typeof m?.value === "number") {
-      return m.value;
+      setValue = setValue !== undefined ? Math.max(setValue, m.value) : m.value;
     }
   }
+  if (setValue !== undefined) return setValue;
   return base + bonus + modBonus;
 }
 
@@ -528,17 +530,22 @@ function computeArmorClass(
 
   // Handle Unarmored Defense bonuses (e.g. Monk/Barbarian)
   if (!hasArmor) {
-    let unarmoredBonus = 0;
+    let unarmoredSetBonus = 0;
+    let unarmoredFlatBonus = 0;
     for (const m of modifiers) {
-      if ((m?.type === "bonus" || m?.type === "set") && m?.subType === "unarmored-armor-class") {
-        if (typeof m.statId === "number" && m.statId >= 1 && m.statId <= 6) {
-          unarmoredBonus = Math.max(unarmoredBonus, abilities[m.statId - 1].modifier);
-        } else if (typeof m.value === "number") {
-          unarmoredBonus = Math.max(unarmoredBonus, m.value);
+      if (m?.subType === "unarmored-armor-class") {
+        if (m?.type === "set") {
+          if (typeof m.statId === "number" && m.statId >= 1 && m.statId <= 6) {
+            unarmoredSetBonus = Math.max(unarmoredSetBonus, abilities[m.statId - 1].modifier);
+          } else if (typeof m.value === "number") {
+            unarmoredSetBonus = Math.max(unarmoredSetBonus, m.value);
+          }
+        } else if (m?.type === "bonus" && typeof m.value === "number") {
+          unarmoredFlatBonus += m.value;
         }
       }
     }
-    ac += unarmoredBonus;
+    ac += unarmoredSetBonus + unarmoredFlatBonus;
   }
 
   if (shields.length > 0) {
@@ -656,9 +663,9 @@ function computeSkills(
     const key = SKILL_ID_TO_KEY[String(cv.valueId)];
     if (!key) continue;
     const v = cv.value;
-    if (v === 4) overrides[key] = "expertise";
-    else if (v === 3) overrides[key] = "proficient";
-    else if (v === 2) overrides[key] = "half";
+    if (v === 3) overrides[key] = "expertise";
+    else if (v === 2) overrides[key] = "proficient";
+    else if (v === 1) overrides[key] = "half";
   }
   return SKILLS.map(([key, name, abilityIdx]) => {
     const modProf = computeSkillProficiency(modifiers, key);
@@ -1250,7 +1257,7 @@ function parseCharacterPayload(id: number, payload: any): PartyMember {
     }
 
     const hpMax =
-      typeof overrideHp === "number" && overrideHp > 0
+      typeof overrideHp === "number"
         ? overrideHp
         : baseHp + bonusHp + (conMod + hpPerLevelBonus) * totalLevel;
     const hpCurrent = Math.max(0, hpMax - removedHp);

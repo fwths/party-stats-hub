@@ -109,6 +109,7 @@ export const Route = createFileRoute("/api/notion")({
           const token = url.searchParams.get("token") || "ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU";
           const pageId = url.searchParams.get("pageId");
           const parentId = url.searchParams.get("parentId");
+          const parentType = url.searchParams.get("parentType");
 
           if (!token) {
             return new Response(JSON.stringify({ error: "Missing token parameter." }), {

@@ -70,8 +70,8 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
         } catch {}
       }
       member.actions?.forEach((a) => {
-        if (a.uses && a.reset) {
-          const resetType = a.reset.toLowerCase();
+        if (a.uses && a.uses.reset) {
+          const resetType = a.uses.reset.toLowerCase();
           if (
             resetType.includes("short") ||
             resetType === "rest" ||

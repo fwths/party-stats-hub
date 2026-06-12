@@ -552,7 +552,7 @@ function InventoryGroup({ label, items }: { label: string; items: InventoryItem[
       </div>
       <div className="flex flex-wrap gap-1.5">
         {items.map((it, idx) => {
-          const rarityClass = getItemRarityClass(it.rarity);
+          const rarityClass = getItemRarityClass(it.rarity || undefined);
           const styles = it.attuned
             ? `${rarityClass} ring-1 ring-gold/45 shadow-[0_0_10px_color-mix(in_oklab,var(--gold)_40%,transparent)]`
             : rarityClass;
@@ -610,10 +610,8 @@ export function InventoryList({
     { key: "cp", label: "CP", color: "text-amber-600 bg-amber-700/10 border-amber-700/30" },
   ] as const;
 
-  const activeCoins = coinTypes.filter((c) => currencies[c.key] > 0);
-  if (activeCoins.length === 0) {
-    activeCoins.push({ key: "gp", label: "GP", color: "text-gold bg-gold/10 border-gold/30" });
-  }
+  const activeCoins = coinTypes.filter((c) => (currencies?.[c.key] ?? 0) > 0);
+  const displayedCoins = activeCoins.length > 0 ? activeCoins : [coinTypes[1]];
 
   const weightPct =
     carryingCapacity > 0 ? Math.min(100, (weightCarried / carryingCapacity) * 100) : 0;
@@ -640,12 +638,12 @@ export function InventoryList({
             <span>Wealth:</span>
           </div>
           <div className="flex flex-wrap gap-1">
-            {activeCoins.map((c) => (
+            {displayedCoins.map((c) => (
               <span
                 key={c.key}
                 className={`inline-flex items-center gap-0.5 rounded border px-1 py-0.5 text-[9px] font-mono font-bold ${c.color}`}
               >
-                <span>{currencies[c.key]}</span>
+                <span>{currencies?.[c.key] ?? 0}</span>
                 <span className="text-[8px] uppercase font-semibold">{c.label}</span>
               </span>
             ))}

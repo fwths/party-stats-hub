@@ -241,16 +241,20 @@ export function getFullyModifiedStats(member: PartyMember) {
   if (allConditions.includes("haste")) {
     ac += 2;
     acNotes.push("+2 from Haste spell");
-    speed = speed * 2;
-    speedNotes.push("Speed doubled from Haste spell");
+    if (speed > 0) {
+      speed = speed * 2;
+      speedNotes.push("Speed doubled from Haste spell");
+    }
   }
 
   // 5. Check Slow Spell (-2 AC, half Speed)
   if (allConditions.includes("slow")) {
     ac = Math.max(0, ac - 2);
     acNotes.push("-2 from Slow spell");
-    speed = Math.floor(speed / 2);
-    speedNotes.push("Speed halved from Slow spell");
+    if (speed > 0) {
+      speed = Math.floor(speed / 2);
+      speedNotes.push("Speed halved from Slow spell");
+    }
   }
 
   // Bladesong (+INT modifier to AC [min +1], +10 ft speed)

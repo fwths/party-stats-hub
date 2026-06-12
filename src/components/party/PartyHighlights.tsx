@@ -3,6 +3,7 @@ import { partyQueryOptions } from "@/lib/party";
 import { PartyMember } from "@/lib/dndbeyond.functions";
 import { SKILL_ABILITY } from "@/lib/constants";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
+import { getShortName } from "@/lib/utils";
 import {
 
   Eye,
@@ -28,16 +29,6 @@ const ABILITY_FULL_NAME: Record<string, string> = {
   WIS: "Wisdom",
   CHA: "Charisma",
 };
-
-function getShortName(fullName: string): string {
-  const matchQuote = fullName.match(/["']([^"']+)["']/);
-  if (matchQuote && matchQuote[1]) {
-    return matchQuote[1].trim();
-  }
-  const nameWithoutYear = fullName.replace(/^\d+\s+/, "");
-  const firstWord = nameWithoutYear.split(/\s+/)[0];
-  return firstWord || fullName;
-}
 
 export function PartyHighlights({ ids }: { ids: number[] }) {
   const { data } = useSuspenseQuery(partyQueryOptions(ids));

@@ -431,3 +431,41 @@
 @utility animate-jingle {
   animation: jingle 0.6s ease-in-out infinite;
 }
+
+@keyframes damage-flash {
+  0%, 100% {
+    border-color: var(--color-border);
+    background-color: transparent;
+  }
+  50% {
+    border-color: var(--color-destructive);
+    background-color: color-mix(in oklab, var(--color-destructive) 15%, transparent);
+    box-shadow: 0 0 15px color-mix(in oklab, var(--color-destructive) 40%, transparent);
+  }
+}
+
+@keyframes roll-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px color-mix(in oklab, var(--color-gold) 20%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 20px color-mix(in oklab, var(--color-gold) 60%, transparent);
+    border-color: var(--color-gold);
+  }
+}
+
+@utility animate-damage-flash {
+  animation: damage-flash 1s ease-in-out infinite;
+}
+
+@utility animate-roll-glow {
+  animation: roll-glow 1.5s ease-in-out infinite;
+}
+
+.text-glow-accent {
+  text-shadow: 0 0 8px color-mix(in oklab, var(--color-accent) 50%, transparent);
+}
+
+.text-glow-gold {
+  text-shadow: 0 0 8px color-mix(in oklab, var(--color-gold) 50%, transparent);
+}

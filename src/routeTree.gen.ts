@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CharacterIdRouteImport } from './routes/character.$id'
 import { Route as ApiPartyRouteImport } from './routes/api/party'
+import { Route as ApiNotionRouteImport } from './routes/api/notion'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,33 +29,42 @@ const ApiPartyRoute = ApiPartyRouteImport.update({
   path: '/api/party',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiNotionRoute = ApiNotionRouteImport.update({
+  id: '/api/notion',
+  path: '/api/notion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/notion': typeof ApiNotionRoute
   '/api/party': typeof ApiPartyRoute
   '/character/$id': typeof CharacterIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/notion': typeof ApiNotionRoute
   '/api/party': typeof ApiPartyRoute
   '/character/$id': typeof CharacterIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/notion': typeof ApiNotionRoute
   '/api/party': typeof ApiPartyRoute
   '/character/$id': typeof CharacterIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/party' | '/character/$id'
+  fullPaths: '/' | '/api/notion' | '/api/party' | '/character/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/party' | '/character/$id'
-  id: '__root__' | '/' | '/api/party' | '/character/$id'
+  to: '/' | '/api/notion' | '/api/party' | '/character/$id'
+  id: '__root__' | '/' | '/api/notion' | '/api/party' | '/character/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiNotionRoute: typeof ApiNotionRoute
   ApiPartyRoute: typeof ApiPartyRoute
   CharacterIdRoute: typeof CharacterIdRoute
 }
@@ -82,11 +92,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPartyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/notion': {
+      id: '/api/notion'
+      path: '/api/notion'
+      fullPath: '/api/notion'
+      preLoaderRoute: typeof ApiNotionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiNotionRoute: ApiNotionRoute,
   ApiPartyRoute: ApiPartyRoute,
   CharacterIdRoute: CharacterIdRoute,
 }

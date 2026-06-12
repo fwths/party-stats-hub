@@ -1128,6 +1128,10 @@ function computeSpellsList(data: any): {
 }
 
 async function fetchCharacter(id: number): Promise<PartyMember> {
+  let payload: any = null;
+  let source: "live" | "cache" = "live";
+  let fetchError = "";
+
   try {
     const res = await fetch(
       `https://character-service.dndbeyond.com/character/v5/character/${id}`,
@@ -1135,13 +1139,64 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
         headers: { Accept: "application/json" },
       },
     );
-    if (!res.ok) {
-      return errorMember(id, `D&D Beyond returned ${res.status}`);
+    if (res.ok) {
+      payload = await res.json();
+      if (payload?.success && payload?.data) {
+        if (typeof window === "undefined") {
+          try {
+            const fs = await import("node:fs/promises");
+            const path = await import("node:path");
+            const filePath = path.join(process.cwd(), `char-${id}.json`);
+            await fs.writeFile(filePath, JSON.stringify(payload, null, 2), "utf-8");
+          } catch (e) {
+            console.warn(`Failed to write local cache for character ${id}:`, e);
+          }
+        }
+      } else {
+        fetchError = payload?.message || "Character payload was unsuccessful";
+      }
+    } else {
+      fetchError = `D&D Beyond returned status ${res.status}`;
     }
-    const payload = (await res.json()) as any;
-    if (!payload?.success || !payload?.data) {
-      return errorMember(id, payload?.message || "Character not found or not public");
+  } catch (err: any) {
+    fetchError = err?.message ?? "Fetch failed";
+  }
+
+  if (!payload?.success || !payload?.data) {
+    if (typeof window === "undefined") {
+      try {
+        const fs = await import("node:fs/promises");
+        const path = await import("node:path");
+        const filePath = path.join(process.cwd(), `char-${id}.json`);
+        const content = await fs.readFile(filePath, "utf-8");
+        const cachedPayload = JSON.parse(content);
+        if (cachedPayload?.success && cachedPayload?.data) {
+          payload = cachedPayload;
+          source = "cache";
+        }
+      } catch (e) {
+        console.warn(`Failed to read local cache for character ${id}:`, e);
+      }
     }
+  }
+
+  if (!payload?.success || !payload?.data) {
+    return errorMember(id, fetchError || "Character not found or not public");
+  }
+
+  try {
+    const member = parseCharacterPayload(id, payload);
+    if (source === "cache") {
+      member.error = "Loaded from offline cache (Character is private or D&D Beyond is offline)";
+    }
+    return member;
+  } catch (err: any) {
+    return errorMember(id, err?.message ?? "Failed to parse character payload");
+  }
+}
+
+function parseCharacterPayload(id: number, payload: any): PartyMember {
+  try {
     const data = payload.data;
     const modifiers = flattenModifiers(data);
 

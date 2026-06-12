@@ -3,12 +3,20 @@ import { Suspense, useEffect, useState } from "react";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { readStoredIds, partyQueryOptions, STORAGE_KEY } from "@/lib/party";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Users, Activity, Package, Swords, BookOpen, Info } from "lucide-react";
 
 import { RefreshButton } from "@/components/party/RefreshButton";
 import { PartyHighlights } from "@/components/party/PartyHighlights";
 import { PartyGrid, PartyGridSkeleton } from "@/components/party/PartyGrid";
 import { ManagePartyDialog } from "@/components/party/ManagePartyDialog";
 import { ThemeSelector } from "@/components/party/ThemeSelector";
+import { CombatDashboard } from "@/components/party/CombatDashboard";
+import { GroupDiceRoller } from "@/components/party/GroupDiceRoller";
+import { SharedInventory } from "@/components/party/SharedInventory";
+import { AmbientAudio } from "@/components/party/AmbientAudio";
+import SessionNotes from "@/components/party/SessionNotes";
+import RulesReference from "@/components/party/RulesReference";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -81,17 +89,18 @@ export default function Index() {
   };
 
   return (
-    <main className="min-h-screen text-foreground">
+    <main className="min-h-screen text-foreground animate-fade-in">
       <div className="bg-particles" />
       <div className="bg-particles-2" />
       <TooltipProvider delayDuration={100}>
         <div className="mx-auto max-w-6xl 2xl:max-w-[1600px] px-4 py-6 relative z-10">
-          <header className="mb-6 flex items-baseline justify-between gap-3 border-b border-border/50 pb-4">
-            <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent">
+          <header className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-4">
+            <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent select-none">
               Mother of Bob{" "}
               <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
             </h1>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <AmbientAudio />
               <ThemeSelector />
               {showInstallBtn && (
                 <button
@@ -103,11 +112,11 @@ export default function Index() {
               )}
               <button
                 onClick={() => setManaging(true)}
-                className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60"
+                className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60 cursor-pointer"
               >
                 ⚙ Manage
               </button>
-              <a className="underline hover:text-accent" href="/api/party">
+              <a className="underline hover:text-accent font-medium" href="/api/party">
                 JSON
               </a>
               <Suspense fallback={null}>
@@ -115,15 +124,139 @@ export default function Index() {
               </Suspense>
             </div>
           </header>
+          
           <Suspense fallback={<PartyGridSkeleton />}>
-            <PartyHighlights ids={ids} />
-            <PartyGrid ids={ids} />
+            <PartyDashboard ids={ids} />
           </Suspense>
+
           {managing && (
             <ManagePartyDialog ids={ids} onClose={() => setManaging(false)} onChange={setIds} />
           )}
         </div>
       </TooltipProvider>
     </main>
+  );
+}
+
+function PartyDashboard({ ids }: { ids: number[] }) {
+  const { data } = useSuspenseQuery(partyQueryOptions(ids));
+  const [activeTab, setActiveTab] = useState<"grid" | "combat" | "inventory" | "roller" | "notes" | "rules">("grid");
+
+  const validMembers = data.members.filter((m) => !m.error);
+
+  return (
+    <div className="space-y-6">
+      {/* Navigation tabs */}
+      <div className="flex flex-wrap gap-2 border-b border-border/30 pb-3 select-none">
+        <button
+          onClick={() => setActiveTab("grid")}
+          className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+            activeTab === "grid"
+              ? "border border-accent/40 bg-accent/15 text-accent shadow-sm"
+              : "border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Users size={12} />
+          <span>Party Cards</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("combat")}
+          disabled={validMembers.length === 0}
+          className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none ${
+            activeTab === "combat"
+              ? "border border-accent/40 bg-accent/15 text-accent shadow-sm"
+              : "border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Activity size={12} />
+          <span>Combat Health</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("inventory")}
+          disabled={validMembers.length === 0}
+          className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none ${
+            activeTab === "inventory"
+              ? "border border-accent/40 bg-accent/15 text-accent shadow-sm"
+              : "border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Package size={12} />
+          <span>Shared Bags</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("roller")}
+          disabled={validMembers.length === 0}
+          className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none ${
+            activeTab === "roller"
+              ? "border border-accent/40 bg-accent/15 text-accent shadow-sm"
+              : "border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Swords size={12} />
+          <span>Dice Roller</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("notes")}
+          className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+            activeTab === "notes"
+              ? "border border-accent/40 bg-accent/15 text-accent shadow-sm"
+              : "border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <BookOpen size={12} />
+          <span>Session Log</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("rules")}
+          className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+            activeTab === "rules"
+              ? "border border-accent/40 bg-accent/15 text-accent shadow-sm"
+              : "border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Info size={12} />
+          <span>Rules Ref</span>
+        </button>
+      </div>
+
+      <div className="transition-all duration-300">
+        {activeTab === "grid" && (
+          <div className="space-y-6 animate-fade-in">
+            <PartyHighlights ids={ids} />
+            <PartyGrid ids={ids} />
+          </div>
+        )}
+
+        {activeTab === "combat" && (
+          <div className="animate-fade-in">
+            <CombatDashboard members={data.members} />
+          </div>
+        )}
+
+        {activeTab === "inventory" && (
+          <div className="animate-fade-in">
+            <SharedInventory members={data.members} />
+          </div>
+        )}
+
+        {activeTab === "roller" && (
+          <div className="animate-fade-in">
+            <GroupDiceRoller members={data.members} />
+          </div>
+        )}
+
+        {activeTab === "notes" && (
+          <div className="animate-fade-in">
+            <SessionNotes />
+          </div>
+        )}
+
+        {activeTab === "rules" && (
+          <div className="animate-fade-in">
+            <RulesReference />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

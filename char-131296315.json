@@ -41,7 +41,9 @@
         "raceId": null,
         "subRaceId": null,
         "classId": 5,
-        "tags": ["Class Themes"],
+        "tags": [
+          "Class Themes"
+        ],
         "decorationKey": "436"
       }
     },
@@ -186,7 +188,11 @@
         "detailsBackgroundAvatarUrl": "https://www.dndbeyond.com/avatars/56704/706/639148029282728925.jpeg",
         "moreDetailsUrl": "/backgrounds/406475-acolyte",
         "suggestedCharacteristicsDescription": "",
-        "primaryAbilities": [4, 5, 6],
+        "primaryAbilities": [
+          4,
+          5,
+          6
+        ],
         "suggestedProficiencies": null,
         "suggestedLanguages": null,
         "organization": null,
@@ -209,18 +215,24 @@
         "featList": {
           "id": 16307,
           "name": "Magic Initiate",
-          "featIds": [1789163]
+          "featIds": [
+            1789163
+          ]
         },
         "grantedFeats": [
           {
             "id": 16307,
             "name": "Magic Initiate",
-            "featIds": [1789163]
+            "featIds": [
+              1789163
+            ]
           },
           {
             "id": 16308,
             "name": "Ability Scores",
-            "featIds": [1789099]
+            "featIds": [
+              1789099
+            ]
           }
         ]
       },
@@ -996,7 +1008,10 @@
           "filterType": "Weapon",
           "cost": 2,
           "isPack": false,
-          "tags": ["Damage", "Combat"],
+          "tags": [
+            "Damage",
+            "Combat"
+          ],
           "grantedModifiers": [],
           "subType": null,
           "isConsumable": false,
@@ -1117,7 +1132,10 @@
           "filterType": "Weapon",
           "cost": 2,
           "isPack": false,
-          "tags": ["Damage", "Combat"],
+          "tags": [
+            "Damage",
+            "Combat"
+          ],
           "grantedModifiers": [],
           "subType": null,
           "isConsumable": false,
@@ -1238,7 +1256,10 @@
           "filterType": "Weapon",
           "cost": 1,
           "isPack": false,
-          "tags": ["Damage", "Combat"],
+          "tags": [
+            "Damage",
+            "Combat"
+          ],
           "grantedModifiers": [],
           "subType": null,
           "isConsumable": false,
@@ -1341,7 +1362,11 @@
           "filterType": "Other Gear",
           "cost": 5,
           "isPack": false,
-          "tags": ["Communication", "Social", "Utility"],
+          "tags": [
+            "Communication",
+            "Social",
+            "Utility"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -1431,7 +1456,12 @@
           "filterType": "Other Gear",
           "cost": 0.1,
           "isPack": false,
-          "tags": ["Communication", "Social", "Utility", "Consumable"],
+          "tags": [
+            "Communication",
+            "Social",
+            "Utility",
+            "Consumable"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -1521,7 +1551,9 @@
           "filterType": "Other Gear",
           "cost": 2,
           "isPack": false,
-          "tags": ["Container"],
+          "tags": [
+            "Container"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -1611,7 +1643,9 @@
           "filterType": "Other Gear",
           "cost": 10,
           "isPack": false,
-          "tags": ["Utility"],
+          "tags": [
+            "Utility"
+          ],
           "grantedModifiers": [],
           "subType": null,
           "isConsumable": false,
@@ -1791,7 +1825,9 @@
           "filterType": "Other Gear",
           "cost": 0,
           "isPack": false,
-          "tags": ["Utility"],
+          "tags": [
+            "Utility"
+          ],
           "grantedModifiers": [],
           "subType": "Holy Symbol",
           "isConsumable": false,
@@ -1881,7 +1917,9 @@
           "filterType": "Other Gear",
           "cost": 20,
           "isPack": false,
-          "tags": ["Utility"],
+          "tags": [
+            "Utility"
+          ],
           "grantedModifiers": [],
           "subType": "Arcane Focus",
           "isConsumable": false,
@@ -2331,7 +2369,11 @@
           "filterType": "Other Gear",
           "cost": 0.1,
           "isPack": false,
-          "tags": ["Damage", "Utility", "Combat"],
+          "tags": [
+            "Damage",
+            "Utility",
+            "Combat"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -2421,7 +2463,12 @@
           "filterType": "Other Gear",
           "cost": 0.1,
           "isPack": false,
-          "tags": ["Communication", "Social", "Utility", "Consumable"],
+          "tags": [
+            "Communication",
+            "Social",
+            "Utility",
+            "Consumable"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -2511,7 +2558,11 @@
           "filterType": "Other Gear",
           "cost": 0.5,
           "isPack": false,
-          "tags": ["Social", "Utility", "Consumable"],
+          "tags": [
+            "Social",
+            "Utility",
+            "Consumable"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -2691,7 +2742,10 @@
           "filterType": "Other Gear",
           "cost": 0.5,
           "isPack": false,
-          "tags": ["Utility", "Exploration"],
+          "tags": [
+            "Utility",
+            "Exploration"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -2781,7 +2835,12 @@
           "filterType": "Other Gear",
           "cost": 0.01,
           "isPack": false,
-          "tags": ["Damage", "Utility", "Exploration", "Combat"],
+          "tags": [
+            "Damage",
+            "Utility",
+            "Exploration",
+            "Combat"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -2871,7 +2930,9 @@
           "filterType": "Other Gear",
           "cost": 0.2,
           "isPack": false,
-          "tags": ["Container"],
+          "tags": [
+            "Container"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -2961,7 +3022,11 @@
           "filterType": "Other Gear",
           "cost": 1,
           "isPack": false,
-          "tags": ["Damage", "Movement", "Combat"],
+          "tags": [
+            "Damage",
+            "Movement",
+            "Combat"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -3051,7 +3116,10 @@
           "filterType": "Other Gear",
           "cost": 2,
           "isPack": false,
-          "tags": ["Utility", "Exploration"],
+          "tags": [
+            "Utility",
+            "Exploration"
+          ],
           "grantedModifiers": [],
           "subType": "Adventuring Gear",
           "isConsumable": false,
@@ -3323,38 +3391,290 @@
           "sourcePageNumber": 138,
           "subclassDefinition": null,
           "isHomebrew": false,
-          "primaryAbilities": [6],
+          "primaryAbilities": [
+            6
+          ],
           "spellRules": {
             "multiClassSpellSlotDivisor": 1,
             "isRitualSpellCaster": true,
             "levelCantripsKnownMaxes": [
-              0, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6
+              0,
+              4,
+              4,
+              4,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
             ],
             "levelSpellKnownMaxes": [
-              0, 2, 4, 6, 7, 9, 10, 11, 12, 14, 15, 16, 16, 17, 17, 18, 18, 19, 20, 21, 22
+              0,
+              2,
+              4,
+              6,
+              7,
+              9,
+              10,
+              11,
+              12,
+              14,
+              15,
+              16,
+              16,
+              17,
+              17,
+              18,
+              18,
+              19,
+              20,
+              21,
+              22
             ],
             "levelSpellSlots": [
-              [0, 0, 0, 0, 0, 0, 0, 0, 0],
-              [2, 0, 0, 0, 0, 0, 0, 0, 0],
-              [3, 0, 0, 0, 0, 0, 0, 0, 0],
-              [4, 2, 0, 0, 0, 0, 0, 0, 0],
-              [4, 3, 0, 0, 0, 0, 0, 0, 0],
-              [4, 3, 2, 0, 0, 0, 0, 0, 0],
-              [4, 3, 3, 0, 0, 0, 0, 0, 0],
-              [4, 3, 3, 1, 0, 0, 0, 0, 0],
-              [4, 3, 3, 2, 0, 0, 0, 0, 0],
-              [4, 3, 3, 3, 1, 0, 0, 0, 0],
-              [4, 3, 3, 3, 2, 0, 0, 0, 0],
-              [4, 3, 3, 3, 2, 1, 0, 0, 0],
-              [4, 3, 3, 3, 2, 1, 0, 0, 0],
-              [4, 3, 3, 3, 2, 1, 1, 0, 0],
-              [4, 3, 3, 3, 2, 1, 1, 0, 0],
-              [4, 3, 3, 3, 2, 1, 1, 1, 0],
-              [4, 3, 3, 3, 2, 1, 1, 1, 0],
-              [4, 3, 3, 3, 2, 1, 1, 1, 1],
-              [4, 3, 3, 3, 3, 1, 1, 1, 1],
-              [4, 3, 3, 3, 3, 2, 1, 1, 1],
-              [4, 3, 3, 3, 3, 2, 2, 1, 1]
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                3,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                2,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                2,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                2,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                1,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                2,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                2,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                2,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                2,
+                1,
+                1,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                2,
+                1,
+                1,
+                0,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                2,
+                1,
+                1,
+                1,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                2,
+                1,
+                1,
+                1,
+                0
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                2,
+                1,
+                1,
+                1,
+                1
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                3,
+                1,
+                1,
+                1,
+                1
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                3,
+                2,
+                1,
+                1,
+                1
+              ],
+              [
+                4,
+                3,
+                3,
+                3,
+                3,
+                2,
+                2,
+                1,
+                1
+              ]
             ],
             "multiClassSpellSlotRounding": 1,
             "levelPreparedSpellMaxes": []
@@ -5218,7 +5538,7 @@
       },
       {
         "typeId": 8,
-        "value": "The Whomping Willow",
+        "value": "Haunted Willow",
         "notes": null,
         "valueId": "5487816",
         "valueTypeId": "420821570",
@@ -5326,8 +5646,35 @@
       }
     ],
     "activeSourceCategories": [
-      1, 2, 10, 15, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37,
-      38, 39, 40, 41, 42
+      1,
+      2,
+      10,
+      15,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42
     ],
     "spells": {
       "race": [
@@ -5364,7 +5711,10 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2],
+            "components": [
+              1,
+              2
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": null,
             "healing": null,
@@ -5466,7 +5816,10 @@
             "ritual": true,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2],
+            "components": [
+              1,
+              2
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": null,
             "healing": null,
@@ -5493,7 +5846,9 @@
             },
             "modifiers": [],
             "conditions": [],
-            "tags": ["Detection"],
+            "tags": [
+              "Detection"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -5580,7 +5935,10 @@
             "ritual": true,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2],
+            "components": [
+              1,
+              2
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": null,
             "healing": null,
@@ -5607,7 +5965,9 @@
             },
             "modifiers": [],
             "conditions": [],
-            "tags": ["Detection"],
+            "tags": [
+              "Detection"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -5694,7 +6054,9 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1],
+            "components": [
+              1
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": null,
             "healing": null,
@@ -5721,7 +6083,9 @@
             },
             "modifiers": [],
             "conditions": [],
-            "tags": ["Teleportation"],
+            "tags": [
+              "Teleportation"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -5796,7 +6160,9 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1],
+            "components": [
+              1
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": null,
             "healing": null,
@@ -5823,7 +6189,9 @@
             },
             "modifiers": [],
             "conditions": [],
-            "tags": ["Teleportation"],
+            "tags": [
+              "Teleportation"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -5900,7 +6268,10 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2],
+            "components": [
+              1,
+              2
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": 1,
             "healing": null,
@@ -5999,7 +6370,10 @@
               }
             ],
             "conditions": [],
-            "tags": ["Damage", "Control"],
+            "tags": [
+              "Damage",
+              "Control"
+            ],
             "castingTimeDescription": "",
             "scaleType": "spellscale",
             "sources": [
@@ -6074,7 +6448,10 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2],
+            "components": [
+              1,
+              2
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": 6,
             "healing": null,
@@ -6116,7 +6493,9 @@
                 "exception": ""
               }
             ],
-            "tags": ["Social"],
+            "tags": [
+              "Social"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -6191,7 +6570,11 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2, 3],
+            "components": [
+              1,
+              2,
+              3
+            ],
             "componentsDescription": "1 Copper Piece",
             "saveDcAbilityId": 5,
             "healing": null,
@@ -6218,7 +6601,10 @@
             },
             "modifiers": [],
             "conditions": [],
-            "tags": ["Social", "Detection"],
+            "tags": [
+              "Social",
+              "Detection"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -6293,7 +6679,9 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1],
+            "components": [
+              1
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": 5,
             "healing": null,
@@ -6379,7 +6767,10 @@
               }
             ],
             "conditions": [],
-            "tags": ["Damage", "Control"],
+            "tags": [
+              "Damage",
+              "Control"
+            ],
             "castingTimeDescription": "",
             "scaleType": "spellscale",
             "sources": [
@@ -6454,7 +6845,9 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1],
+            "components": [
+              1
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": 4,
             "healing": null,
@@ -6566,7 +6959,10 @@
               }
             ],
             "conditions": [],
-            "tags": ["Damage", "Debuff"],
+            "tags": [
+              "Damage",
+              "Debuff"
+            ],
             "castingTimeDescription": "",
             "scaleType": "characterlevel",
             "sources": [
@@ -6641,7 +7037,11 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2, 3],
+            "components": [
+              1,
+              2,
+              3
+            ],
             "componentsDescription": "a pickled tentacle",
             "saveDcAbilityId": 2,
             "healing": null,
@@ -6765,7 +7165,10 @@
                 "exception": "Any creature fully within the area"
               }
             ],
-            "tags": ["Damage", "Control"],
+            "tags": [
+              "Damage",
+              "Control"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -6840,7 +7243,11 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2, 3],
+            "components": [
+              1,
+              2,
+              3
+            ],
             "componentsDescription": "a copper wire",
             "saveDcAbilityId": null,
             "healing": null,
@@ -6867,7 +7274,9 @@
             },
             "modifiers": [],
             "conditions": [],
-            "tags": ["Communication"],
+            "tags": [
+              "Communication"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -6942,7 +7351,11 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2, 3],
+            "components": [
+              1,
+              2,
+              3
+            ],
             "componentsDescription": "a tentacle",
             "saveDcAbilityId": 1,
             "healing": null,
@@ -7022,7 +7435,10 @@
                 "exception": ""
               }
             ],
-            "tags": ["Damage", "Control"],
+            "tags": [
+              "Damage",
+              "Control"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -7097,7 +7513,11 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2, 3],
+            "components": [
+              1,
+              2,
+              3
+            ],
             "componentsDescription": "a pickled tentacle and an eyeball in a platinum-inlaid vial worth 400+ GP",
             "saveDcAbilityId": null,
             "healing": null,
@@ -7132,7 +7552,9 @@
             },
             "modifiers": [],
             "conditions": [],
-            "tags": ["Summoning"],
+            "tags": [
+              "Summoning"
+            ],
             "castingTimeDescription": "",
             "scaleType": "spelllevel",
             "sources": [
@@ -7211,7 +7633,10 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2],
+            "components": [
+              1,
+              2
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": null,
             "healing": null,
@@ -7283,7 +7708,9 @@
               }
             ],
             "conditions": [],
-            "tags": ["Buff"],
+            "tags": [
+              "Buff"
+            ],
             "castingTimeDescription": "",
             "scaleType": "characterlevel",
             "sources": [
@@ -7358,7 +7785,9 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1],
+            "components": [
+              1
+            ],
             "componentsDescription": "",
             "saveDcAbilityId": null,
             "healing": null,
@@ -7385,7 +7814,9 @@
             },
             "modifiers": [],
             "conditions": [],
-            "tags": ["Control"],
+            "tags": [
+              "Control"
+            ],
             "castingTimeDescription": "",
             "scaleType": null,
             "sources": [
@@ -7472,7 +7903,11 @@
             "ritual": false,
             "rangeArea": null,
             "damageEffect": null,
-            "components": [1, 2, 3],
+            "components": [
+              1,
+              2,
+              3
+            ],
             "componentsDescription": "a Holy Symbol worth 5+ GP",
             "saveDcAbilityId": null,
             "healing": null,
@@ -7684,7 +8119,9 @@
               }
             ],
             "conditions": [],
-            "tags": ["Buff"],
+            "tags": [
+              "Buff"
+            ],
             "castingTimeDescription": "",
             "scaleType": "spellscale",
             "sources": [
@@ -7768,11 +8205,11 @@
           "componentId": 10292361,
           "componentTypeId": 12168134,
           "definition": {
-            "id": 4496867,
+            "id": 4496864,
             "entityTypeId": 258900837,
-            "name": "Transmuted Spell",
-            "description": "<p><em>Cost: 1 Sorcery Point</em></p>\r\n<p>When you cast a spell that deals a type of damage from the following list, you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.</p>",
-            "snippet": "When you cast a spell that deals a type of damage from the following list you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.",
+            "name": "Quickened Spell",
+            "description": "<p><em>Cost: 2 Sorcery Points</em></p>\r\n<p>When you cast a spell that has a casting time of an action, you can spend 2 Sorcery Points to change the casting time to a Bonus Action for this casting. You can’t modify a spell in this way if you’ve already cast a level 1+ spell on the current turn, nor can you cast a level 1+ spell on this turn after modifying a spell in this way.</p>",
+            "snippet": "When you cast a spell with a casting time of an action, you can spend 2 Sorcery Points to change the casting time to a Bonus Action for this casting. You can’t modify a spell in this way if you’ve already cast a level 1+ spell on the current turn, nor can you cast a level 1+ spell on the current turn after modifying a spell in this way.",
             "activation": null,
             "sourceId": 148,
             "sourcePageNumber": null,
@@ -7784,11 +8221,11 @@
           "componentId": 10292361,
           "componentTypeId": 12168134,
           "definition": {
-            "id": 4496864,
+            "id": 4496867,
             "entityTypeId": 258900837,
-            "name": "Quickened Spell",
-            "description": "<p><em>Cost: 2 Sorcery Points</em></p>\r\n<p>When you cast a spell that has a casting time of an action, you can spend 2 Sorcery Points to change the casting time to a Bonus Action for this casting. You can’t modify a spell in this way if you’ve already cast a level 1+ spell on the current turn, nor can you cast a level 1+ spell on this turn after modifying a spell in this way.</p>",
-            "snippet": "When you cast a spell with a casting time of an action, you can spend 2 Sorcery Points to change the casting time to a Bonus Action for this casting. You can’t modify a spell in this way if you’ve already cast a level 1+ spell on the current turn, nor can you cast a level 1+ spell on the current turn after modifying a spell in this way.",
+            "name": "Transmuted Spell",
+            "description": "<p><em>Cost: 1 Sorcery Point</em></p>\r\n<p>When you cast a spell that deals a type of damage from the following list, you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.</p>",
+            "snippet": "When you cast a spell that deals a type of damage from the following list you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.",
             "activation": null,
             "sourceId": 148,
             "sourcePageNumber": null,
@@ -7851,7 +8288,11 @@
           "displayOrder": 1,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [3727511, 3727512, 3727513],
+          "optionIds": [
+            3727511,
+            3727512,
+            3727513
+          ],
           "tagConstraints": []
         },
         {
@@ -7869,7 +8310,11 @@
           "displayOrder": 1,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [3727517, 3727518, 3727519],
+          "optionIds": [
+            3727517,
+            3727518,
+            3727519
+          ],
           "tagConstraints": []
         },
         {
@@ -7888,11 +8333,56 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            1989, 2026, 2057, 2103, 2166, 2173, 2187, 2188, 2191, 2208, 2213, 2226, 2250, 2287,
-            2307, 2308, 2373, 2374, 2382, 2383, 2394, 2397, 2401, 2410, 2411, 2412, 2413, 14615,
-            14878, 718568, 2618834, 2618844, 2618875, 2618890, 2618893, 2618924, 2618930, 2618931,
-            2618965, 2618986, 2618996, 2619008, 2619033, 2619034, 2619037, 2619039, 2619058,
-            2619179, 2619188, 2619204
+            1989,
+            2026,
+            2057,
+            2103,
+            2166,
+            2173,
+            2187,
+            2188,
+            2191,
+            2208,
+            2213,
+            2226,
+            2250,
+            2287,
+            2307,
+            2308,
+            2373,
+            2374,
+            2382,
+            2383,
+            2394,
+            2397,
+            2401,
+            2410,
+            2411,
+            2412,
+            2413,
+            14615,
+            14878,
+            718568,
+            2618834,
+            2618844,
+            2618875,
+            2618890,
+            2618893,
+            2618924,
+            2618930,
+            2618931,
+            2618965,
+            2618986,
+            2618996,
+            2619008,
+            2619033,
+            2619034,
+            2619037,
+            2619039,
+            2619058,
+            2619179,
+            2619188,
+            2619204
           ],
           "tagConstraints": []
         },
@@ -7911,7 +8401,10 @@
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [3727523, 3727524],
+          "optionIds": [
+            3727523,
+            3727524
+          ],
           "tagConstraints": []
         },
         {
@@ -7929,7 +8422,11 @@
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [6324, 6325, 6326],
+          "optionIds": [
+            6324,
+            6325,
+            6326
+          ],
           "tagConstraints": []
         },
         {
@@ -7948,8 +8445,33 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            6164, 6165, 6166, 6167, 6168, 6169, 6170, 6171, 6172, 6173, 6862, 6863, 6864, 6865,
-            6866, 6867, 6868, 6869, 6870, 6871, 6872, 6873, 6874, 6875, 6876, 6877, 6878
+            6164,
+            6165,
+            6166,
+            6167,
+            6168,
+            6169,
+            6170,
+            6171,
+            6172,
+            6173,
+            6862,
+            6863,
+            6864,
+            6865,
+            6866,
+            6867,
+            6868,
+            6869,
+            6870,
+            6871,
+            6872,
+            6873,
+            6874,
+            6875,
+            6876,
+            6877,
+            6878
           ],
           "tagConstraints": []
         },
@@ -7969,8 +8491,33 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            6164, 6165, 6166, 6167, 6168, 6169, 6170, 6171, 6172, 6173, 6862, 6863, 6864, 6865,
-            6866, 6867, 6868, 6869, 6870, 6871, 6872, 6873, 6874, 6875, 6876, 6877, 6878
+            6164,
+            6165,
+            6166,
+            6167,
+            6168,
+            6169,
+            6170,
+            6171,
+            6172,
+            6173,
+            6862,
+            6863,
+            6864,
+            6865,
+            6866,
+            6867,
+            6868,
+            6869,
+            6870,
+            6871,
+            6872,
+            6873,
+            6874,
+            6875,
+            6876,
+            6877,
+            6878
           ],
           "tagConstraints": []
         }
@@ -7991,7 +8538,9 @@
           "displayOrder": 1,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [4496858],
+          "optionIds": [
+            4496858
+          ],
           "tagConstraints": []
         },
         {
@@ -8010,7 +8559,15 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            4496859, 4496860, 4496861, 4496862, 4496863, 4496865, 4496866, 4496868, 4496864
+            4496859,
+            4496860,
+            4496861,
+            4496862,
+            4496863,
+            4496865,
+            4496866,
+            4496868,
+            4496864
           ],
           "tagConstraints": []
         },
@@ -8030,7 +8587,15 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            4496859, 4496860, 4496861, 4496862, 4496863, 4496865, 4496866, 4496868, 4496867
+            4496859,
+            4496860,
+            4496861,
+            4496862,
+            4496863,
+            4496865,
+            4496866,
+            4496868,
+            4496867
           ],
           "tagConstraints": []
         },
@@ -8067,7 +8632,14 @@
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [6174, 6175, 6176, 6177, 6178, 6179],
+          "optionIds": [
+            6174,
+            6175,
+            6176,
+            6177,
+            6178,
+            6179
+          ],
           "tagConstraints": []
         },
         {
@@ -8085,7 +8657,14 @@
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [6174, 6175, 6176, 6177, 6178, 6179],
+          "optionIds": [
+            6174,
+            6175,
+            6176,
+            6177,
+            6178,
+            6179
+          ],
           "tagConstraints": []
         },
         {
@@ -8119,13 +8698,31 @@
           "label": "Choose a Skill",
           "isOptional": false,
           "isInfinite": false,
-          "defaultSubtypes": ["Insight"],
+          "defaultSubtypes": [
+            "Insight"
+          ],
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            3783, 3784, 3785, 3786, 3787, 3788, 3789, 3790, 3791, 3792, 3793, 3794, 3795, 3796,
-            3797, 3798, 3799, 3800
+            3783,
+            3784,
+            3785,
+            3786,
+            3787,
+            3788,
+            3789,
+            3790,
+            3791,
+            3792,
+            3793,
+            3794,
+            3795,
+            3796,
+            3797,
+            3798,
+            3799,
+            3800
           ],
           "tagConstraints": []
         },
@@ -8140,13 +8737,31 @@
           "label": "Choose a Skill",
           "isOptional": false,
           "isInfinite": false,
-          "defaultSubtypes": ["Religion"],
+          "defaultSubtypes": [
+            "Religion"
+          ],
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            3783, 3784, 3785, 3786, 3787, 3788, 3789, 3790, 3791, 3792, 3793, 3794, 3795, 3796,
-            3797, 3798, 3799, 3800
+            3783,
+            3784,
+            3785,
+            3786,
+            3787,
+            3788,
+            3789,
+            3790,
+            3791,
+            3792,
+            3793,
+            3794,
+            3795,
+            3796,
+            3797,
+            3798,
+            3799,
+            3800
           ],
           "tagConstraints": []
         },
@@ -8161,15 +8776,69 @@
           "label": "Choose a Tool",
           "isOptional": false,
           "isInfinite": false,
-          "defaultSubtypes": ["Calligrapher's Supplies"],
+          "defaultSubtypes": [
+            "Calligrapher's Supplies"
+          ],
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            3930, 3931, 3932, 3933, 3934, 3935, 3936, 3937, 3938, 3939, 3940, 3941, 3942, 3943,
-            3944, 3945, 3946, 3947, 3948, 3949, 3950, 3951, 3952, 3953, 3954, 3955, 3956, 3957,
-            3958, 3959, 3960, 3961, 3962, 3963, 3964, 4345, 4346, 4378, 4377, 5888, 6563, 6564,
-            6565, 6566, 6567, 6568, 6569, 6754, 6759, 6822, 7132, 7133, 7134, 7135, 7195, 7194
+            3930,
+            3931,
+            3932,
+            3933,
+            3934,
+            3935,
+            3936,
+            3937,
+            3938,
+            3939,
+            3940,
+            3941,
+            3942,
+            3943,
+            3944,
+            3945,
+            3946,
+            3947,
+            3948,
+            3949,
+            3950,
+            3951,
+            3952,
+            3953,
+            3954,
+            3955,
+            3956,
+            3957,
+            3958,
+            3959,
+            3960,
+            3961,
+            3962,
+            3963,
+            3964,
+            4345,
+            4346,
+            4378,
+            4377,
+            5888,
+            6563,
+            6564,
+            6565,
+            6566,
+            6567,
+            6568,
+            6569,
+            6754,
+            6759,
+            6822,
+            7132,
+            7133,
+            7134,
+            7135,
+            7195,
+            7194
           ],
           "tagConstraints": []
         }
@@ -8191,7 +8860,10 @@
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [4496684, 4496685],
+          "optionIds": [
+            4496684,
+            4496685
+          ],
           "tagConstraints": []
         },
         {
@@ -8209,7 +8881,11 @@
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [6200, 6201, 6202],
+          "optionIds": [
+            6200,
+            6201,
+            6202
+          ],
           "tagConstraints": []
         },
         {
@@ -8227,7 +8903,11 @@
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [6203, 6204, 6205],
+          "optionIds": [
+            6203,
+            6204,
+            6205
+          ],
           "tagConstraints": []
         },
         {
@@ -8245,7 +8925,11 @@
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [4496763, 4496764, 4496765],
+          "optionIds": [
+            4496763,
+            4496764,
+            4496765
+          ],
           "tagConstraints": []
         },
         {
@@ -8264,7 +8948,15 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            2618947, 2618967, 2618971, 2618996, 2619033, 2619067, 2619174, 2619188, 2619217
+            2618947,
+            2618967,
+            2618971,
+            2618996,
+            2619033,
+            2619067,
+            2619174,
+            2619188,
+            2619217
           ],
           "tagConstraints": []
         },
@@ -8284,7 +8976,15 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            2618947, 2618967, 2618971, 2618996, 2619033, 2619067, 2619174, 2619188, 2619217
+            2618947,
+            2618967,
+            2618971,
+            2618996,
+            2619033,
+            2619067,
+            2619174,
+            2619188,
+            2619217
           ],
           "tagConstraints": []
         },
@@ -8304,8 +9004,23 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            14760, 2618900, 2618912, 2618917, 2618933, 2618985, 2619003, 2619020, 2619074, 2619079,
-            2619090, 2619093, 2619097, 2619136, 2619143, 2619181, 3078518
+            14760,
+            2618900,
+            2618912,
+            2618917,
+            2618933,
+            2618985,
+            2619003,
+            2619020,
+            2619074,
+            2619079,
+            2619090,
+            2619093,
+            2619097,
+            2619136,
+            2619143,
+            2619181,
+            3078518
           ],
           "tagConstraints": []
         },
@@ -8324,7 +9039,14 @@
           "displayOrder": null,
           "itemDefinitionKey": null,
           "options": [],
-          "optionIds": [3520, 3521, 3522, 3523, 3524, 3525],
+          "optionIds": [
+            3520,
+            3521,
+            3522,
+            3523,
+            3524,
+            3525
+          ],
           "tagConstraints": []
         },
         {
@@ -8343,8 +9065,24 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            3783, 3784, 3785, 3786, 3787, 3788, 3789, 3790, 3791, 3792, 3793, 3794, 3795, 3796,
-            3797, 3798, 3799, 3800
+            3783,
+            3784,
+            3785,
+            3786,
+            3787,
+            3788,
+            3789,
+            3790,
+            3791,
+            3792,
+            3793,
+            3794,
+            3795,
+            3796,
+            3797,
+            3798,
+            3799,
+            3800
           ],
           "tagConstraints": []
         },
@@ -8364,8 +9102,24 @@
           "itemDefinitionKey": null,
           "options": [],
           "optionIds": [
-            6087, 6088, 6089, 6090, 6091, 6092, 6093, 6094, 6095, 6096, 6097, 6098, 6099, 6100,
-            6101, 6102, 6103, 6104
+            6087,
+            6088,
+            6089,
+            6090,
+            6091,
+            6092,
+            6093,
+            6094,
+            6095,
+            6096,
+            6097,
+            6098,
+            6099,
+            6100,
+            6101,
+            6102,
+            6103,
+            6104
           ],
           "tagConstraints": []
         }
@@ -10351,6 +11105,88 @@
           "ammunition": null
         },
         {
+          "componentId": 10292932,
+          "componentTypeId": 12168134,
+          "id": "9414618",
+          "entityTypeId": "222216831",
+          "limitedUse": null,
+          "name": "Telepathic Speech",
+          "description": "<p>You can form a telepathic connection between your mind and the mind of another. As a Bonus Action, choose one creature you can see within 30 feet of yourself. You and the chosen creature can communicate telepathically with each other while the two of you are within a number of miles of each other equal to your Charisma modifier (minimum of 1 mile). To understand each other, you each must mentally use a language the other knows.</p>\r\n<p>The telepathic connection lasts for a number of minutes equal to your Sorcerer level. It ends early if you use this ability to form a connection with a different creature.</p>",
+          "snippet": "Choose one creature you can see within 30 ft., you and the chosen creature can communicate with each other while the two of you are within {{modifier:cha@min:1#unsigned}} miles. To understand each other, you must mentally share a language. The telepathic connection lasts for {{classlevel}} minutes and ends early if you use this ability to form a connection with another creature.",
+          "abilityModifierStatId": null,
+          "onMissDescription": "",
+          "saveFailDescription": "",
+          "saveSuccessDescription": "",
+          "saveStatId": null,
+          "fixedSaveDc": null,
+          "attackTypeRange": null,
+          "actionType": 3,
+          "attackSubtype": null,
+          "dice": null,
+          "value": null,
+          "damageTypeId": null,
+          "isMartialArts": false,
+          "isProficient": false,
+          "spellRangeType": null,
+          "displayAsAttack": null,
+          "range": {
+            "range": null,
+            "longRange": null,
+            "aoeType": null,
+            "aoeSize": null,
+            "hasAoeSpecialDescription": false,
+            "minimumRange": null
+          },
+          "activation": {
+            "activationTime": null,
+            "activationType": 3
+          },
+          "numberOfTargets": null,
+          "fixedToHit": null,
+          "ammunition": null
+        },
+        {
+          "componentId": 10292933,
+          "componentTypeId": 12168134,
+          "id": "9414619",
+          "entityTypeId": "222216831",
+          "limitedUse": null,
+          "name": "Psionic Sorcery",
+          "description": "<p>When you cast any level 1+ spell from your Psionic Spells feature, you can cast it by expending a spell slot as normal or by spending a number of Sorcery Points equal to the spell&rsquo;s level. If you cast the spell using Sorcery Points, it requires no Verbal or Somatic components, and it requires no Material components unless they are consumed by the spell or have a cost specified in it.</p>",
+          "snippet": "When you cast any level 1+ spell from your Psionic Spells feature, you can cast it by expending a spell slot as normal, or by spending a number of Sorcery Points equal to the spell’s level. If you cast the spell using Sorcery Points, it requires no Verbal or Somatic components, and doesn’t require Material components unless they’re consumed by the spell or have a cost specified in it.",
+          "abilityModifierStatId": null,
+          "onMissDescription": "",
+          "saveFailDescription": "",
+          "saveSuccessDescription": "",
+          "saveStatId": null,
+          "fixedSaveDc": null,
+          "attackTypeRange": null,
+          "actionType": 3,
+          "attackSubtype": null,
+          "dice": null,
+          "value": null,
+          "damageTypeId": null,
+          "isMartialArts": false,
+          "isProficient": false,
+          "spellRangeType": null,
+          "displayAsAttack": null,
+          "range": {
+            "range": null,
+            "longRange": null,
+            "aoeType": null,
+            "aoeSize": null,
+            "hasAoeSpecialDescription": false,
+            "minimumRange": null
+          },
+          "activation": {
+            "activationTime": null,
+            "activationType": 8
+          },
+          "numberOfTargets": null,
+          "fixedToHit": null,
+          "ammunition": null
+        },
+        {
           "componentId": 12373811,
           "componentTypeId": 12168134,
           "id": "11522184",
@@ -10687,88 +11523,6 @@
           "name": "Metamagic: Transmuted Spell",
           "description": "<p><em>Cost: 1 Sorcery Point</em></p>\r\n<p>When you cast a spell that deals a type of damage from the following list, you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.</p>",
           "snippet": "When you cast a spell that deals a type of damage from the following list, you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.",
-          "abilityModifierStatId": null,
-          "onMissDescription": "",
-          "saveFailDescription": "",
-          "saveSuccessDescription": "",
-          "saveStatId": null,
-          "fixedSaveDc": null,
-          "attackTypeRange": null,
-          "actionType": 3,
-          "attackSubtype": null,
-          "dice": null,
-          "value": null,
-          "damageTypeId": null,
-          "isMartialArts": false,
-          "isProficient": false,
-          "spellRangeType": null,
-          "displayAsAttack": null,
-          "range": {
-            "range": null,
-            "longRange": null,
-            "aoeType": null,
-            "aoeSize": null,
-            "hasAoeSpecialDescription": false,
-            "minimumRange": null
-          },
-          "activation": {
-            "activationTime": null,
-            "activationType": 8
-          },
-          "numberOfTargets": null,
-          "fixedToHit": null,
-          "ammunition": null
-        },
-        {
-          "componentId": 10292932,
-          "componentTypeId": 12168134,
-          "id": "9414618",
-          "entityTypeId": "222216831",
-          "limitedUse": null,
-          "name": "Telepathic Speech",
-          "description": "<p>You can form a telepathic connection between your mind and the mind of another. As a Bonus Action, choose one creature you can see within 30 feet of yourself. You and the chosen creature can communicate telepathically with each other while the two of you are within a number of miles of each other equal to your Charisma modifier (minimum of 1 mile). To understand each other, you each must mentally use a language the other knows.</p>\r\n<p>The telepathic connection lasts for a number of minutes equal to your Sorcerer level. It ends early if you use this ability to form a connection with a different creature.</p>",
-          "snippet": "Choose one creature you can see within 30 ft., you and the chosen creature can communicate with each other while the two of you are within {{modifier:cha@min:1#unsigned}} miles. To understand each other, you must mentally share a language. The telepathic connection lasts for {{classlevel}} minutes and ends early if you use this ability to form a connection with another creature.",
-          "abilityModifierStatId": null,
-          "onMissDescription": "",
-          "saveFailDescription": "",
-          "saveSuccessDescription": "",
-          "saveStatId": null,
-          "fixedSaveDc": null,
-          "attackTypeRange": null,
-          "actionType": 3,
-          "attackSubtype": null,
-          "dice": null,
-          "value": null,
-          "damageTypeId": null,
-          "isMartialArts": false,
-          "isProficient": false,
-          "spellRangeType": null,
-          "displayAsAttack": null,
-          "range": {
-            "range": null,
-            "longRange": null,
-            "aoeType": null,
-            "aoeSize": null,
-            "hasAoeSpecialDescription": false,
-            "minimumRange": null
-          },
-          "activation": {
-            "activationTime": null,
-            "activationType": 3
-          },
-          "numberOfTargets": null,
-          "fixedToHit": null,
-          "ammunition": null
-        },
-        {
-          "componentId": 10292933,
-          "componentTypeId": 12168134,
-          "id": "9414619",
-          "entityTypeId": "222216831",
-          "limitedUse": null,
-          "name": "Psionic Sorcery",
-          "description": "<p>When you cast any level 1+ spell from your Psionic Spells feature, you can cast it by expending a spell slot as normal or by spending a number of Sorcery Points equal to the spell&rsquo;s level. If you cast the spell using Sorcery Points, it requires no Verbal or Somatic components, and it requires no Material components unless they are consumed by the spell or have a cost specified in it.</p>",
-          "snippet": "When you cast any level 1+ spell from your Psionic Spells feature, you can cast it by expending a spell slot as normal, or by spending a number of Sorcery Points equal to the spell’s level. If you cast the spell using Sorcery Points, it requires no Verbal or Somatic components, and doesn’t require Material components unless they’re consumed by the spell or have a cost specified in it.",
           "abilityModifierStatId": null,
           "onMissDescription": "",
           "saveFailDescription": "",
@@ -11408,7 +12162,10 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2],
+              "components": [
+                1,
+                2
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": null,
               "healing": null,
@@ -11435,7 +12192,9 @@
               },
               "modifiers": [],
               "conditions": [],
-              "tags": ["Utility"],
+              "tags": [
+                "Utility"
+              ],
               "castingTimeDescription": "",
               "scaleType": null,
               "sources": [
@@ -11510,7 +12269,10 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2],
+              "components": [
+                1,
+                2
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": null,
               "healing": null,
@@ -11666,7 +12428,9 @@
                 }
               ],
               "conditions": [],
-              "tags": ["Damage"],
+              "tags": [
+                "Damage"
+              ],
               "castingTimeDescription": "",
               "scaleType": "characterlevel",
               "sources": [
@@ -11741,7 +12505,11 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2, 3],
+              "components": [
+                1,
+                2,
+                3
+              ],
               "componentsDescription": "a piece of cured leather",
               "saveDcAbilityId": null,
               "healing": null,
@@ -11813,7 +12581,10 @@
                 }
               ],
               "conditions": [],
-              "tags": ["Buff", "Warding"],
+              "tags": [
+                "Buff",
+                "Warding"
+              ],
               "castingTimeDescription": "",
               "scaleType": null,
               "sources": [
@@ -11888,7 +12659,10 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2],
+              "components": [
+                1,
+                2
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": null,
               "healing": null,
@@ -11960,7 +12734,9 @@
                 }
               ],
               "conditions": [],
-              "tags": ["Warding"],
+              "tags": [
+                "Warding"
+              ],
               "castingTimeDescription": "which you take when you are hit by an attack roll or targeted by the Magic Missile spell",
               "scaleType": null,
               "sources": [
@@ -12035,7 +12811,10 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2],
+              "components": [
+                1,
+                2
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": null,
               "healing": null,
@@ -12115,7 +12894,9 @@
                 }
               ],
               "conditions": [],
-              "tags": ["Damage"],
+              "tags": [
+                "Damage"
+              ],
               "castingTimeDescription": "",
               "scaleType": "spellscale",
               "sources": [
@@ -12190,7 +12971,10 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2],
+              "components": [
+                1,
+                2
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": null,
               "healing": null,
@@ -12881,7 +13665,11 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2, 3],
+              "components": [
+                1,
+                2,
+                3
+              ],
               "componentsDescription": "a bit of phosphorus",
               "saveDcAbilityId": null,
               "healing": null,
@@ -12908,7 +13696,9 @@
               },
               "modifiers": [],
               "conditions": [],
-              "tags": ["Utility"],
+              "tags": [
+                "Utility"
+              ],
               "castingTimeDescription": "",
               "scaleType": "characterlevel",
               "sources": [
@@ -12983,7 +13773,10 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2],
+              "components": [
+                1,
+                2
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": null,
               "healing": null,
@@ -13010,7 +13803,9 @@
               },
               "modifiers": [],
               "conditions": [],
-              "tags": ["Utility"],
+              "tags": [
+                "Utility"
+              ],
               "castingTimeDescription": "",
               "scaleType": "characterlevel",
               "sources": [
@@ -13085,7 +13880,11 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2, 3],
+              "components": [
+                1,
+                2,
+                3
+              ],
               "componentsDescription": "an eyelash in gum arabic",
               "saveDcAbilityId": null,
               "healing": null,
@@ -13128,7 +13927,9 @@
                   "exception": "Until spell ends"
                 }
               ],
-              "tags": ["Buff"],
+              "tags": [
+                "Buff"
+              ],
               "castingTimeDescription": "",
               "scaleType": "spellscale",
               "sources": [
@@ -13203,7 +14004,9 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1],
+              "components": [
+                1
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": 4,
               "healing": null,
@@ -13358,7 +14161,10 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2],
+              "components": [
+                1,
+                2
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": null,
               "healing": null,
@@ -13385,7 +14191,10 @@
               },
               "modifiers": [],
               "conditions": [],
-              "tags": ["Deception", "Warding"],
+              "tags": [
+                "Deception",
+                "Warding"
+              ],
               "castingTimeDescription": "",
               "scaleType": null,
               "sources": [
@@ -13460,7 +14269,11 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2, 3],
+              "components": [
+                1,
+                2,
+                3
+              ],
               "componentsDescription": "a feather",
               "saveDcAbilityId": null,
               "healing": null,
@@ -13540,7 +14353,9 @@
                 }
               ],
               "conditions": [],
-              "tags": ["Movement"],
+              "tags": [
+                "Movement"
+              ],
               "castingTimeDescription": "",
               "scaleType": "spellscale",
               "sources": [
@@ -13615,7 +14430,11 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2, 3],
+              "components": [
+                1,
+                2,
+                3
+              ],
               "componentsDescription": "a bit of fur and a crystal rod",
               "saveDcAbilityId": 2,
               "healing": null,
@@ -13701,7 +14520,9 @@
                 }
               ],
               "conditions": [],
-              "tags": ["Damage"],
+              "tags": [
+                "Damage"
+              ],
               "castingTimeDescription": "",
               "scaleType": "spellscale",
               "sources": [
@@ -13776,7 +14597,10 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2],
+              "components": [
+                1,
+                2
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": null,
               "healing": null,
@@ -13937,7 +14761,10 @@
               "ritual": false,
               "rangeArea": null,
               "damageEffect": null,
-              "components": [1, 2],
+              "components": [
+                1,
+                2
+              ],
               "componentsDescription": "",
               "saveDcAbilityId": 3,
               "healing": null,
@@ -14145,7 +14972,7 @@
         "affectedClassFeatureDefinitionKey": null
       }
     ],
-    "dateModified": "2026-06-11T08:40:56.829Z",
+    "dateModified": "2026-06-11T22:41:12.747Z",
     "providedFrom": "storage",
     "canEdit": false,
     "status": 0,

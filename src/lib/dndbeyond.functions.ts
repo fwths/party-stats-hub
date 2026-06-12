@@ -47,6 +47,11 @@ export interface DefenseInfo {
 export interface ActionInfo {
   name: string;
   source: string; // class / race / feat / item
+  description?: string;
+  activation?: {
+    activationType: number;
+    activationTime: number | null;
+  };
   uses?: { current: number; max: number; reset: string };
 }
 
@@ -87,6 +92,115 @@ export interface PreparedSpell {
   level: number;
   name: string;
   description?: string;
+  school?: string;
+  activation?: {
+    activationTime: number;
+    activationType: number;
+  };
+  range?: {
+    origin: string;
+    rangeValue: number | null;
+    aoeType: string | null;
+    aoeValue: number | null;
+  };
+  duration?: {
+    durationType: string;
+    durationInterval: number | null;
+    durationUnit: string | null;
+  };
+  components?: number[];
+  componentsDescription?: string;
+  concentration?: boolean;
+  ritual?: boolean;
+}
+
+export interface FeatureInfo {
+  name: string;
+  description: string;
+  source: "class" | "race" | "background" | "other" | "feat";
+  sourceName: string;
+  level?: number;
+  isUnlocked?: boolean;
+}
+
+export interface CharacterCharacteristics {
+  personalityTraits: string;
+  ideals: string;
+  bonds: string;
+  flaws: string;
+  appearance: string;
+  gender?: string;
+  age?: string;
+  height?: string;
+  weight?: string;
+  eyes?: string;
+  skin?: string;
+  hair?: string;
+  backstory?: string;
+  allies?: string;
+  enemies?: string;
+  organizations?: string;
+  otherNotes?: string;
+}
+
+export interface CreatureMovement {
+  movementId: number;
+  speed: number;
+  notes: string;
+}
+
+export interface CreatureStat {
+  statId: number;
+  name: string | null;
+  value: number;
+}
+
+export interface CreatureSense {
+  senseId: number;
+  notes: string;
+}
+
+export interface CreatureSkill {
+  name: string;
+  value: number;
+}
+
+export interface CreatureSavingThrow {
+  name: string;
+  value: number;
+}
+
+export interface CreatureInfo {
+  id: number;
+  name: string | null;
+  description: string | null;
+  isActive: boolean;
+  removedHitPoints: number;
+  temporaryHitPoints: number | null;
+  definition: {
+    id: number;
+    name: string;
+    armorClass: number;
+    armorClassDescription: string | null;
+    averageHitPoints: number;
+    hitPointDice: {
+      diceCount: number;
+      diceValue: number;
+      diceString: string;
+    } | null;
+    movements: CreatureMovement[];
+    passivePerception: number;
+    avatarUrl: string | null;
+    stats: CreatureStat[];
+    senses: CreatureSense[];
+    specialTraitsDescription: string;
+    actionsDescription: string;
+    reactionsDescription: string;
+    bonusActionsDescription: string;
+    characteristicsDescription: string;
+    skills: CreatureSkill[];
+    savingThrows: CreatureSavingThrow[];
+  };
 }
 
 export interface PartyMember {
@@ -125,6 +239,9 @@ export interface PartyMember {
   error?: string;
   languages: string[];
   tools: string[];
+  armorProficiencies: string[];
+  weaponProficiencies: string[];
+  specialSpeeds: Array<{ type: string; value: number }>;
   spellcasting: SpellcastingInfo[];
   hitDice: string;
   feats: Array<{ name: string; description: string; choices: string[] }>;
@@ -135,6 +252,15 @@ export interface PartyMember {
   attacks: AttackInfo[];
   cantrips: PreparedSpell[];
   preparedSpells: PreparedSpell[];
+  features: FeatureInfo[];
+  characteristics: CharacterCharacteristics;
+  activeArmorModel: string | null;
+  activeInfusions: string[];
+  infusions: Array<{ name: string; description: string }>;
+  metamagic: Array<{ name: string; description: string }>;
+  totemAspects: Array<{ name: string; description: string }>;
+  weaponMasteries: Array<{ name: string; description: string }>;
+  creatures: CreatureInfo[];
 }
 
 const ABILITY_NAMES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
@@ -749,12 +875,18 @@ function computeAttacks(
         }
       }
 
+      const weaponProps = [...props];
+      if (!isRanged) {
+        weaponProps.push("Melee");
+      } else {
+        weaponProps.push("Ranged");
+      }
       attacks.push({
         name,
         attackBonus: atkBonus,
         damage: damageFormula,
         damageType: def.damageType ?? "Unknown",
-        properties: props,
+        properties: weaponProps,
         isWeapon: true,
       });
     }
@@ -847,12 +979,18 @@ function computeAttacks(
           }
         }
 
+        const actionProps: string[] = [];
+        if (a.attackSubtype === 1) {
+          actionProps.push("Melee");
+        } else if (a.attackSubtype === 2) {
+          actionProps.push("Ranged");
+        }
         attacks.push({
           name: `${name} (${source.charAt(0).toUpperCase() + source.slice(1)})`,
           attackBonus: atkBonus,
           damage: damageFormula,
           damageType: dmgType,
-          properties: [],
+          properties: actionProps,
           isWeapon: false,
         });
       }
@@ -860,6 +998,40 @@ function computeAttacks(
   }
 
   return attacks;
+}
+
+function mapSpell(def: any, level: number): PreparedSpell {
+  return {
+    level,
+    name: def.name,
+    description: def.description,
+    school: def.school || undefined,
+    activation: def.activation
+      ? {
+          activationTime: def.activation.activationTime,
+          activationType: def.activation.activationType,
+        }
+      : undefined,
+    range: def.range
+      ? {
+          origin: def.range.origin,
+          rangeValue: def.range.rangeValue,
+          aoeType: def.range.aoeType,
+          aoeValue: def.range.aoeValue,
+        }
+      : undefined,
+    duration: def.duration
+      ? {
+          durationType: def.duration.durationType,
+          durationInterval: def.duration.durationInterval,
+          durationUnit: def.duration.durationUnit,
+        }
+      : undefined,
+    components: def.components || undefined,
+    componentsDescription: def.componentsDescription || undefined,
+    concentration: typeof def.concentration === "boolean" ? def.concentration : undefined,
+    ritual: typeof def.ritual === "boolean" ? def.ritual : undefined,
+  };
 }
 
 function computeSpellsList(data: any): {
@@ -888,9 +1060,9 @@ function computeSpellsList(data: any): {
       );
 
       if (isCantrip) {
-        cantrips.push({ level: 0, name, description: def.description });
+        cantrips.push(mapSpell(def, 0));
       } else if (isPrep) {
-        preparedSpells.push({ level, name, description: def.description });
+        preparedSpells.push(mapSpell(def, level));
       }
     }
   }
@@ -921,9 +1093,9 @@ function computeSpellsList(data: any): {
         (!isPreparedCaster && !!s.countsAsKnownSpell);
 
       if (isCantrip) {
-        cantrips.push({ level: 0, name, description: def.description });
+        cantrips.push(mapSpell(def, 0));
       } else if (isAvailable) {
-        preparedSpells.push({ level, name, description: def.description });
+        preparedSpells.push(mapSpell(def, level));
       }
     }
   }
@@ -1052,9 +1224,12 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     }
     initiative += initBonus;
 
-    // Calculate Speed
-    let speed = data.race?.weightSpeeds?.normal?.walk ?? 30;
-    let speedBonus = 0;
+    // Calculate Speeds (walk, fly, swim, climb, burrow)
+    const rawSpeeds = data.race?.weightSpeeds?.normal || {};
+
+    // Walk speed
+    let speed = rawSpeeds.walk ?? 30;
+    let walkSpeedBonus = 0;
     for (const m of modifiers) {
       if (
         m?.type === "bonus" &&
@@ -1062,7 +1237,7 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
           m?.subType === "unarmored-movement" ||
           m?.subType === "innate-speed-walking")
       ) {
-        if (typeof m.value === "number") speedBonus += m.value;
+        if (typeof m.value === "number") walkSpeedBonus += m.value;
       }
       if (
         m?.type === "set" &&
@@ -1072,7 +1247,65 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
         if (m.value > speed) speed = m.value;
       }
     }
-    speed += speedBonus;
+    speed += walkSpeedBonus;
+    if (data.customSpeeds) {
+      const walkCustom = data.customSpeeds.find(
+        (cs: { speedId: number; value: number | null }) => cs.speedId === 1,
+      );
+      if (walkCustom && typeof walkCustom.value === "number") speed = walkCustom.value;
+    }
+
+    // Special speeds
+    const specialSpeeds: Array<{ type: string; value: number }> = [];
+    const speedTypes = [
+      {
+        key: "fly",
+        label: "Fly",
+        customId: 2,
+        subtypes: ["speed-flying", "innate-speed-flying", "flying-speed"],
+      },
+      {
+        key: "swim",
+        label: "Swim",
+        customId: 3,
+        subtypes: ["speed-swimming", "innate-speed-swimming", "swimming-speed"],
+      },
+      {
+        key: "climb",
+        label: "Climb",
+        customId: 4,
+        subtypes: ["speed-climbing", "innate-speed-climbing", "climbing-speed"],
+      },
+      {
+        key: "burrow",
+        label: "Burrow",
+        customId: 5,
+        subtypes: ["speed-burrowing", "innate-speed-burrowing", "burrowing-speed"],
+      },
+    ];
+
+    for (const st of speedTypes) {
+      let baseVal = rawSpeeds[st.key] ?? 0;
+      let bonusVal = 0;
+      for (const m of modifiers) {
+        if (m?.type === "bonus" && st.subtypes.includes(m.subType) && typeof m.value === "number") {
+          bonusVal += m.value;
+        }
+        if (m?.type === "set" && st.subtypes.includes(m.subType) && typeof m.value === "number") {
+          if (m.value > baseVal) baseVal = m.value;
+        }
+      }
+      let finalVal = baseVal + bonusVal;
+      if (data.customSpeeds) {
+        const custom = data.customSpeeds.find(
+          (cs: { speedId: number; value: number | null }) => cs.speedId === st.customId,
+        );
+        if (custom && typeof custom.value === "number") finalVal = custom.value;
+      }
+      if (finalVal > 0) {
+        specialSpeeds.push({ type: st.label, value: finalVal });
+      }
+    }
 
     const senses = computeSenses(modifiers, data.customSenses ?? []);
     const skills = computeSkills(modifiers, abilities, pb, data.characterValues ?? []);
@@ -1133,6 +1366,9 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const conditions: string[] = [];
     let languages: string[] = [];
     let tools: string[] = [];
+    let armorProficiencies: string[] = [];
+    let weaponProficiencies: string[] = [];
+
     for (const m of modifiers) {
       if (m?.type === "language" && m?.friendlySubtypeName) {
         languages.push(m.friendlySubtypeName);
@@ -1152,6 +1388,10 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
             name.toLowerCase().includes("vehicle");
           if (isTool) {
             tools.push(name);
+          } else if (m?.entityTypeId === 174869515) {
+            armorProficiencies.push(name);
+          } else if (m?.entityTypeId === 660121713) {
+            weaponProficiencies.push(name);
           }
         }
       }
@@ -1177,12 +1417,23 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
           name.toLowerCase().includes("vehicle")
         ) {
           tools.push(name);
+        } else if (
+          type === "armor" ||
+          type === "shield" ||
+          type.includes("armor") ||
+          type.includes("shield")
+        ) {
+          armorProficiencies.push(name);
+        } else if (type === "weapon" || type.includes("weapon")) {
+          weaponProficiencies.push(name);
         }
       }
     }
 
     languages = Array.from(new Set(languages)).sort();
     tools = Array.from(new Set(tools)).sort();
+    armorProficiencies = Array.from(new Set(armorProficiencies)).sort();
+    weaponProficiencies = Array.from(new Set(weaponProficiencies)).sort();
 
     if (Array.isArray(data.conditions)) {
       for (const c of data.conditions) {
@@ -1288,6 +1539,320 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
     const attacks = computeAttacks(data, abilities, pb, modifiers);
     const { cantrips, preparedSpells } = computeSpellsList(data);
 
+    // Parse Features & Traits
+    const features: FeatureInfo[] = [];
+    let activeArmorModel: string | null = null;
+    const activeInfusions: string[] = [];
+    const infusions: Array<{ name: string; description: string }> = [];
+    const metamagic: Array<{ name: string; description: string }> = [];
+    const totemAspects: Array<{ name: string; description: string }> = [];
+    const weaponMasteries: Array<{ name: string; description: string }> = [];
+
+    // Class Features
+    for (const c of data.classes ?? []) {
+      const className = c.definition?.name ?? "Class";
+      const classLevel = c.level ?? 0;
+      for (const cf of c.classFeatures ?? []) {
+        const def = cf.definition;
+        if (!def || def.hideInSheet) continue;
+        const name = def.name;
+        const description = def.description || def.snippet || "";
+        const requiredLevel = def.requiredLevel;
+        if (name && !features.some((f) => f.name === name)) {
+          features.push({
+            name,
+            description,
+            source: "class",
+            sourceName: className,
+            level: requiredLevel ?? undefined,
+            isUnlocked: requiredLevel ? classLevel >= requiredLevel : true,
+          });
+        }
+      }
+    }
+
+    // Racial Traits
+    const raceName = data.race?.fullName ?? data.race?.baseName ?? "Race";
+    for (const rt of data.race?.racialTraits ?? []) {
+      const def = rt.definition;
+      if (!def || def.hideInSheet) continue;
+      const name = def.name;
+      const description = def.description || def.snippet || "";
+      if (name && !features.some((f) => f.name === name)) {
+        features.push({
+          name,
+          description,
+          source: "race",
+          sourceName: raceName,
+        });
+      }
+    }
+
+    // Parse Option Selections (e.g. Artificer Infusions, Armorer Models, Sorcerer Metamagic, Totem Aspects, Custom Feat Choices)
+    const IGNORED_NAMES = new Set([
+      "strength",
+      "dexterity",
+      "constitution",
+      "intelligence",
+      "wisdom",
+      "charisma",
+      "increase two scores (+2 / +1)",
+      "increase one score (+1)",
+      "ability score increase",
+    ]);
+
+    const optionTypes = ["class", "race", "feat", "background"] as const;
+    for (const type of optionTypes) {
+      const list = data.options?.[type] ?? [];
+      for (const opt of list) {
+        const def = opt.definition;
+        if (!def) continue;
+
+        const name = def.name;
+        if (!name) continue;
+
+        // Filter out generic stat increases and choices
+        const lowerName = name.toLowerCase();
+        if (IGNORED_NAMES.has(lowerName)) continue;
+        if (lowerName.includes("increase") && lowerName.includes("score")) continue;
+
+        const description = def.description || def.snippet || "";
+
+        // Determine source and sourceName
+        const source =
+          type === "feat"
+            ? "feat"
+            : type === "race"
+              ? "race"
+              : type === "background"
+                ? "background"
+                : "class";
+        let sourceName = "";
+        let level: number | undefined;
+        let isUnlocked = true;
+
+        let isArmorModel = false;
+        let isInfusion = false;
+        let isMetamagic = false;
+        let isTotem = false;
+        let isWeaponMastery = false;
+
+        if (type === "class") {
+          let matchedClassName = "";
+          for (const c of data.classes ?? []) {
+            const classLevel = c.level ?? 0;
+            for (const cf of c.classFeatures ?? []) {
+              if (cf.definition?.id === opt.componentId) {
+                matchedClassName = c.definition?.name ?? "";
+                level = cf.definition?.requiredLevel ?? undefined;
+                isUnlocked = level ? classLevel >= level : true;
+
+                const parentName = cf.definition?.name ?? "";
+                if (parentName === "Armor Model" || opt.componentId === 12497161) {
+                  isArmorModel = true;
+                } else if (parentName === "Magic Item Plans" || opt.componentId === 12497143) {
+                  isInfusion = true;
+                } else if (
+                  parentName === "Metamagic" ||
+                  parentName === "Metamagic Options" ||
+                  parentName.toLowerCase().includes("metamagic")
+                ) {
+                  isMetamagic = true;
+                } else if (
+                  parentName === "Aspect of the Wilds" ||
+                  parentName === "Aspect of the Beast" ||
+                  parentName === "Totem Spirit" ||
+                  parentName.toLowerCase().includes("totem")
+                ) {
+                  isTotem = true;
+                }
+                break;
+              }
+            }
+            if (matchedClassName) break;
+          }
+          sourceName = matchedClassName || (data.classes?.[0]?.definition?.name ?? "Class");
+        } else if (type === "race") {
+          sourceName = data.race?.fullName ?? data.race?.baseName ?? "Race";
+        } else if (type === "feat") {
+          const feat = data.feats?.find(
+            (f: { definition?: { id?: number } }) => f.definition?.id === opt.componentId,
+          );
+          sourceName = feat?.definition?.name ?? "Feat";
+
+          const parentName = feat?.definition?.name ?? "";
+          if (parentName.toLowerCase().includes("weapon mastery")) {
+            isWeaponMastery = true;
+          }
+        } else if (type === "background") {
+          sourceName =
+            data.background?.definition?.name ??
+            data.background?.customBackground?.name ??
+            "Background";
+        }
+
+        if (isArmorModel) {
+          activeArmorModel = name;
+        } else if (isInfusion) {
+          infusions.push({ name, description });
+        } else if (isMetamagic) {
+          metamagic.push({ name, description });
+        } else if (isTotem) {
+          totemAspects.push({ name, description });
+        } else if (isWeaponMastery) {
+          weaponMasteries.push({ name, description });
+        } else {
+          if (!features.some((f) => f.name === name)) {
+            features.push({
+              name,
+              description,
+              source,
+              sourceName,
+              level,
+              isUnlocked,
+            });
+          }
+        }
+      }
+    }
+
+    // Populate active infusions from inventory items infused in DDB
+    for (const item of data.inventory ?? []) {
+      if (item.originEntityTypeId === 258900837) {
+        const name = item.definition?.name;
+        if (name) {
+          activeInfusions.push(name);
+        }
+      }
+    }
+
+    // Sort features: first by source, then level (if class), then name
+    features.sort((a, b) => {
+      if (a.source !== b.source) return a.source.localeCompare(b.source);
+      if (a.level !== undefined && b.level !== undefined && a.level !== b.level) {
+        return a.level - b.level;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    const characteristics: CharacterCharacteristics = {
+      personalityTraits: data.traits?.personalityTraits ?? "",
+      ideals: data.traits?.ideals ?? "",
+      bonds: data.traits?.bonds ?? "",
+      flaws: data.traits?.flaws ?? "",
+      appearance: data.traits?.appearance ?? "",
+      gender: data.gender ?? "",
+      age: data.age != null ? String(data.age) : "",
+      height: data.height ?? "",
+      weight: data.weight ?? "",
+      eyes: data.eyes ?? "",
+      skin: data.skin ?? "",
+      hair: data.hair ?? "",
+      backstory: data.notes?.backstory ?? "",
+      allies: data.notes?.allies ?? "",
+      enemies: data.notes?.enemies ?? "",
+      organizations: data.notes?.organizations ?? "",
+      otherNotes: data.notes?.other ?? "",
+    };
+
+    const STAT_ID_TO_NAME: Record<number, string> = {
+      1: "STR",
+      2: "DEX",
+      3: "CON",
+      4: "INT",
+      5: "WIS",
+      6: "CHA",
+    };
+    const SKILL_ID_TO_NAME: Record<number, string> = {
+      2: "Athletics",
+      3: "Acrobatics",
+      4: "Sleight of Hand",
+      5: "Stealth",
+      6: "Arcana",
+      8: "History",
+      9: "Investigation",
+      10: "Nature",
+      11: "Animal Handling",
+      12: "Insight",
+      13: "Medicine",
+      14: "Perception",
+      15: "Religion",
+      16: "Deception",
+      17: "Intimidation",
+      18: "Performance",
+      19: "Persuasion",
+      20: "Survival",
+    };
+
+    const creatures: CreatureInfo[] = (data.creatures ?? []).map((c: any) => {
+      const def = c.definition ?? {};
+      const creatureStats = (def.stats ?? []).map((s: any) => ({
+        statId: s.statId,
+        name: s.name ?? null,
+        value: s.value ?? 10
+      }));
+
+      const getStatMod = (statId: number) => {
+        const s = creatureStats.find((x: any) => x.statId === statId);
+        const val = s ? s.value : 10;
+        return Math.floor((val - 10) / 2);
+      };
+
+      const cSavingThrows = (def.savingThrows ?? []).map((st: any) => {
+        const name = STAT_ID_TO_NAME[st.statId] ?? `Stat ${st.statId}`;
+        const statMod = getStatMod(st.statId);
+        const bonus = st.bonusModifier ?? 0;
+        const total = statMod + pb + bonus;
+        return { name, value: total };
+      });
+
+      const cSkills = (def.skills ?? []).map((sk: any) => {
+        const name = SKILL_ID_TO_NAME[sk.skillId] ?? `Skill ${sk.skillId}`;
+        const total = (sk.value ?? 0) + (sk.additionalBonus ?? 0);
+        return { name, value: total };
+      });
+
+      return {
+        id: c.id,
+        name: c.name ?? null,
+        description: c.description ?? null,
+        isActive: !!c.isActive,
+        removedHitPoints: c.removedHitPoints ?? 0,
+        temporaryHitPoints: c.temporaryHitPoints ?? null,
+        definition: {
+          id: def.id,
+          name: def.name ?? "Unknown Creature",
+          armorClass: def.armorClass ?? 0,
+          armorClassDescription: def.armorClassDescription ?? null,
+          averageHitPoints: def.averageHitPoints ?? 0,
+          hitPointDice: def.hitPointDice ? {
+            diceCount: def.hitPointDice.diceCount ?? 0,
+            diceValue: def.hitPointDice.diceValue ?? 0,
+            diceString: def.hitPointDice.diceString ?? ""
+          } : null,
+          movements: (def.movements ?? []).map((m: any) => ({
+            movementId: m.movementId,
+            speed: m.speed,
+            notes: m.notes ?? ""
+          })),
+          passivePerception: def.passivePerception ?? 10,
+          avatarUrl: def.avatarUrl ?? null,
+          stats: creatureStats,
+          senses: (def.senses ?? []).map((s: any) => ({
+            senseId: s.senseId,
+            notes: s.notes ?? ""
+          })),
+          specialTraitsDescription: def.specialTraitsDescription ?? "",
+          actionsDescription: def.actionsDescription ?? "",
+          reactionsDescription: def.reactionsDescription ?? "",
+          bonusActionsDescription: def.bonusActionsDescription ?? "",
+          characteristicsDescription: def.characteristicsDescription ?? "",
+          skills: cSkills,
+          savingThrows: cSavingThrows,
+        }
+      };
+    });
+
     return {
       id: data.id,
       name: data.name ?? "Unnamed",
@@ -1319,6 +1884,9 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       conditions,
       languages,
       tools,
+      armorProficiencies,
+      weaponProficiencies,
+      specialSpeeds,
       spellcasting,
       hitDice,
       feats,
@@ -1332,6 +1900,15 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       defenses,
       actions,
       inventory,
+      features,
+      characteristics,
+      activeArmorModel,
+      activeInfusions,
+      infusions,
+      metamagic,
+      totemAspects,
+      weaponMasteries,
+      creatures,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
   } catch (err: any) {
@@ -1386,7 +1963,15 @@ function computeActions(data: any, abilities: AbilityScore[], pb: number): Actio
       const isNewer = !existing || aCompId > existing.componentId || aId > existing.id;
 
       if (!existing || isNewer) {
-        const info: ActionInfo = { name, source };
+        const info: ActionInfo = {
+          name,
+          source,
+          description: a?.snippet || a?.description || "",
+          activation: a?.activation ? {
+            activationType: a.activation.activationType,
+            activationTime: a.activation.activationTime
+          } : undefined
+        };
         const lu = a?.limitedUse;
         if (lu && typeof lu.maxUses === "number") {
           // statModifierUsesId: 1=STR,2=DEX,3=CON,4=INT,5=WIS,6=CHA
@@ -1460,6 +2045,9 @@ function errorMember(id: number, message: string): PartyMember {
     inventory: [],
     languages: [],
     tools: [],
+    armorProficiencies: [],
+    weaponProficiencies: [],
+    specialSpeeds: [],
     spellcasting: [],
     hitDice: "—",
     feats: [],
@@ -1470,8 +2058,35 @@ function errorMember(id: number, message: string): PartyMember {
     attacks: [],
     cantrips: [],
     preparedSpells: [],
+    features: [],
+    characteristics: {
+      personalityTraits: "",
+      ideals: "",
+      bonds: "",
+      flaws: "",
+      appearance: "",
+      gender: "",
+      age: "",
+      height: "",
+      weight: "",
+      eyes: "",
+      skin: "",
+      hair: "",
+      backstory: "",
+      allies: "",
+      enemies: "",
+      organizations: "",
+      otherNotes: "",
+    },
     readonlyUrl: `https://www.dndbeyond.com/characters/${id}`,
     error: message,
+    activeArmorModel: null,
+    activeInfusions: [],
+    infusions: [],
+    metamagic: [],
+    totemAspects: [],
+    weaponMasteries: [],
+    creatures: [],
   };
 }
 

@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { applyTheme } from "../hooks/useThemePreset";
 
 function NotFoundComponent() {
   return (
@@ -152,6 +153,15 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("party-stats-theme-preset");
+      if (saved) {
+        applyTheme(saved as any);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {

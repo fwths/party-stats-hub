@@ -7,6 +7,26 @@ import { CharacterDetailView } from "@/components/party/CharacterDetailView";
 import { PartyGridSkeleton } from "@/components/party/PartyGrid";
 import { partyQueryOptions, readStoredIds } from "@/lib/party";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
+import { ThemeSelector } from "@/components/party/ThemeSelector";
+
+function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  return (
+    <main className="min-h-screen p-8 text-foreground">
+      <h1 className="text-2xl font-bold mb-2">Failed to load character</h1>
+      <p className="text-muted-foreground mb-4">{error.message}</p>
+      <button
+        onClick={() => {
+          router.invalidate();
+          reset();
+        }}
+        className="rounded border border-border bg-secondary/60 px-3 py-1.5 hover:border-accent/60"
+      >
+        Retry
+      </button>
+    </main>
+  );
+}
 
 export const Route = createFileRoute("/character/$id")({
   head: ({ params }) => ({
@@ -16,24 +36,7 @@ export const Route = createFileRoute("/character/$id")({
     ],
   }),
   component: CharacterDetail,
-  errorComponent: ({ error, reset }) => {
-    const router = useRouter();
-    return (
-      <main className="min-h-screen p-8 text-foreground">
-        <h1 className="text-2xl font-bold mb-2">Failed to load character</h1>
-        <p className="text-muted-foreground mb-4">{error.message}</p>
-        <button
-          onClick={() => {
-            router.invalidate();
-            reset();
-          }}
-          className="rounded border border-border bg-secondary/60 px-3 py-1.5 hover:border-accent/60"
-        >
-          Retry
-        </button>
-      </main>
-    );
-  },
+  errorComponent: ErrorFallback,
   notFoundComponent: () => (
     <main className="min-h-screen p-8 text-foreground">
       <h1 className="text-2xl font-bold mb-2">Character not found</h1>
@@ -59,6 +62,7 @@ function CharacterDetail() {
             >
               <ArrowLeft size={14} /> Back to party
             </Link>
+            <ThemeSelector />
           </header>
           <Suspense fallback={<PartyGridSkeleton />}>
             <CharacterDetailInner />

@@ -2,7 +2,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { partyQueryOptions } from "@/lib/party";
 import { PartyMember } from "@/lib/dndbeyond.functions";
 import { SKILL_ABILITY } from "@/lib/constants";
+import { getFullyModifiedStats } from "@/lib/party-modifiers";
 import {
+
   Eye,
   Search,
   Brain,
@@ -97,10 +99,11 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
   let totalGold = 0;
 
   for (const m of members) {
-    if (m.armorClass > maxAc) {
-      maxAc = m.armorClass;
+    const mods = getFullyModifiedStats(m);
+    if (mods.ac > maxAc) {
+      maxAc = mods.ac;
       bestAcMembers = [m];
-    } else if (m.armorClass === maxAc) {
+    } else if (mods.ac === maxAc) {
       bestAcMembers.push(m);
     }
 
@@ -169,10 +172,10 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
   const bestHp = bestHpMembers.length > 0 ? { val: maxHp, members: bestHpMembers } : null;
 
   return (
-    <details className="group card-arcane mb-6 rounded-xl border border-border p-4.5 shadow-xl">
-      <summary className="flex cursor-pointer list-none items-center justify-between text-[13px] font-bold uppercase tracking-widest text-accent/90 hover:text-accent select-none">
-        <span className="flex items-center gap-2">
-          <Sparkles size={14} className="text-accent animate-pulse" />
+    <details className="group card-arcane card-arcane-hover mb-6 rounded-xl border border-border p-5 shadow-xl">
+      <summary className="flex cursor-pointer list-none items-center justify-between text-[13px] font-bold uppercase tracking-widest text-accent/90 hover:text-accent select-none text-glow-accent">
+        <span className="flex items-center gap-2.5">
+          <Sparkles size={15} className="text-accent animate-pulse" />
           <span>Party Highlights</span>
         </span>
         <ChevronDown
@@ -187,14 +190,14 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
           <div className="mb-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
             Passive Senses
           </div>
-          <div className="grid grid-cols-3 gap-3.5 text-center text-xs">
+          <div className="flex flex-wrap justify-center gap-3.5 text-center text-xs">
             {passiveHighlights.map(({ name, key, members: bestM, val }) => {
               const Icon =
                 key === "passivePerception" ? Eye : key === "passiveInvestigation" ? Search : Brain;
               return (
                 <div
                   key={name}
-                  className="relative overflow-hidden rounded-lg border border-accent/20 bg-accent/5 p-3 transition-all duration-300 hover:border-accent/40 hover:-translate-y-0.5 hover:shadow-md hover:shadow-accent/5"
+                  className="relative overflow-hidden rounded-lg border border-accent/20 bg-accent/5 p-3 transition-all duration-300 hover:border-accent/40 hover:-translate-y-0.5 hover:shadow-md hover:shadow-accent/5 w-[calc(50%-7px)] sm:w-[calc(33.333%-10px)] max-w-[240px] min-w-[140px] flex-grow flex-shrink-0 flex flex-col items-center justify-center text-center"
                 >
                   {/* Neon Glow Circle */}
                   <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-accent/8 blur-xl pointer-events-none" />
@@ -222,10 +225,10 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
           <div className="mb-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/75">
             Combat & Assets
           </div>
-          <div className="grid grid-cols-2 gap-3.5 text-center text-xs sm:grid-cols-3 md:grid-cols-5">
+          <div className="flex flex-wrap justify-center gap-3.5 text-center text-xs">
             {/* AC */}
             {bestAc && (
-              <div className="group/ac relative overflow-hidden rounded-lg border border-blue-500/25 bg-blue-500/5 p-3 transition-all duration-300 hover:border-blue-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-500/10">
+              <div className="group/ac relative overflow-hidden rounded-lg border border-blue-500/25 bg-blue-500/5 p-3 transition-all duration-300 hover:border-blue-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-blue-500/10 w-[calc(50%-7px)] sm:w-[calc(33.333%-10px)] md:w-[calc(20%-11.2px)] max-w-[240px] min-w-[140px] flex-grow flex-shrink-0 flex flex-col items-center justify-center text-center">
                 <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-blue-500/12 blur-xl pointer-events-none" />
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
                   <Shield
@@ -248,7 +251,7 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
 
             {/* Initiative */}
             {bestInit && (
-              <div className="group/init relative overflow-hidden rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 transition-all duration-300 hover:border-amber-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-amber-500/10">
+              <div className="group/init relative overflow-hidden rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 transition-all duration-300 hover:border-amber-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-amber-500/10 w-[calc(50%-7px)] sm:w-[calc(33.333%-10px)] md:w-[calc(20%-11.2px)] max-w-[240px] min-w-[140px] flex-grow flex-shrink-0 flex flex-col items-center justify-center text-center">
                 <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-amber-500/12 blur-xl pointer-events-none" />
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
                   <Zap
@@ -271,7 +274,7 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
 
             {/* Spell DC */}
             {bestDc && (
-              <div className="group/dc relative overflow-hidden rounded-lg border border-purple-500/25 bg-purple-500/5 p-3 transition-all duration-300 hover:border-purple-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-purple-500/10">
+              <div className="group/dc relative overflow-hidden rounded-lg border border-purple-500/25 bg-purple-500/5 p-3 transition-all duration-300 hover:border-purple-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-purple-500/10 w-[calc(50%-7px)] sm:w-[calc(33.333%-10px)] md:w-[calc(20%-11.2px)] max-w-[240px] min-w-[140px] flex-grow flex-shrink-0 flex flex-col items-center justify-center text-center">
                 <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-purple-500/12 blur-xl pointer-events-none" />
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
                   <Sparkles
@@ -294,7 +297,7 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
 
             {/* Max HP */}
             {bestHp && (
-              <div className="group/hp relative overflow-hidden rounded-lg border border-rose-500/25 bg-rose-500/5 p-3 transition-all duration-300 hover:border-rose-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-rose-500/10 col-span-2 sm:col-span-1 md:col-span-1">
+              <div className="group/hp relative overflow-hidden rounded-lg border border-rose-500/25 bg-rose-500/5 p-3 transition-all duration-300 hover:border-rose-500/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-rose-500/10 w-[calc(50%-7px)] sm:w-[calc(33.333%-10px)] md:w-[calc(20%-11.2px)] max-w-[240px] min-w-[140px] flex-grow flex-shrink-0 flex flex-col items-center justify-center text-center">
                 <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-rose-500/12 blur-xl pointer-events-none" />
                 <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
                   <Heart
@@ -316,7 +319,7 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
             )}
 
             {/* Total Wealth */}
-            <div className="group/wealth relative overflow-hidden rounded-lg border border-gold/25 bg-gold/5 p-3 transition-all duration-300 hover:border-gold/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-gold/10">
+            <div className="group/wealth relative overflow-hidden rounded-lg border border-gold/25 bg-gold/5 p-3 transition-all duration-300 hover:border-gold/55 hover:-translate-y-0.5 hover:shadow-md hover:shadow-gold/10 w-[calc(50%-7px)] sm:w-[calc(33.333%-10px)] md:w-[calc(20%-11.2px)] max-w-[240px] min-w-[140px] flex-grow flex-shrink-0 flex flex-col items-center justify-center text-center">
               <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-gold/12 blur-xl pointer-events-none" />
               <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
                 <Coins
@@ -343,43 +346,47 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
                 name === "STR"
                   ? {
                       icon: Dumbbell,
-                      colorClass: "text-accent/90 bg-accent/10",
-                      borderClass: "border-border/30 hover:border-accent/40",
-                      glowClass: "bg-accent/5",
+                      colorClass: "text-rose-400 bg-rose-500/10",
+                      borderClass: "border-border/30 hover:border-rose-500/40 hover:bg-rose-500/5",
+                      glowClass: "bg-rose-500/5",
                     }
                   : name === "DEX"
                     ? {
                         icon: Zap,
-                        colorClass: "text-accent/90 bg-accent/10",
-                        borderClass: "border-border/30 hover:border-accent/40",
-                        glowClass: "bg-accent/5",
+                        colorClass: "text-emerald-400 bg-emerald-500/10",
+                        borderClass:
+                          "border-border/30 hover:border-emerald-500/40 hover:bg-emerald-500/5",
+                        glowClass: "bg-emerald-500/5",
                       }
                     : name === "CON"
                       ? {
                           icon: Heart,
-                          colorClass: "text-accent/90 bg-accent/10",
-                          borderClass: "border-border/30 hover:border-accent/40",
-                          glowClass: "bg-accent/5",
+                          colorClass: "text-amber-500 bg-amber-500/10",
+                          borderClass:
+                            "border-border/30 hover:border-amber-500/40 hover:bg-amber-500/5",
+                          glowClass: "bg-amber-500/5",
                         }
                       : name === "INT"
                         ? {
                             icon: BookOpen,
-                            colorClass: "text-accent/90 bg-accent/10",
-                            borderClass: "border-border/30 hover:border-accent/40",
-                            glowClass: "bg-accent/5",
+                            colorClass: "text-sky-400 bg-sky-500/10",
+                            borderClass:
+                              "border-border/30 hover:border-sky-500/40 hover:bg-sky-500/5",
+                            glowClass: "bg-sky-500/5",
                           }
                         : name === "WIS"
                           ? {
                               icon: Compass,
-                              colorClass: "text-accent/90 bg-accent/10",
-                              borderClass: "border-border/30 hover:border-accent/40",
-                              glowClass: "bg-accent/5",
+                              colorClass: "text-teal-400 bg-teal-500/10",
+                              borderClass:
+                                "border-border/30 hover:border-teal-500/40 hover:bg-teal-500/5",
+                              glowClass: "bg-teal-500/5",
                             }
                           : {
                               icon: Crown,
-                              colorClass: "text-accent/90 bg-accent/10",
-                              borderClass: "border-border/30 hover:border-accent/40",
-                              glowClass: "bg-accent/5",
+                              colorClass: "text-gold bg-gold/10",
+                              borderClass: "border-border/30 hover:border-gold/55 hover:bg-gold/5",
+                              glowClass: "bg-gold/8",
                             };
               const Icon = details.icon;
               const fullName = ABILITY_FULL_NAME[name] || name;

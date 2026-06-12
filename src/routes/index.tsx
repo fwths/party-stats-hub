@@ -8,7 +8,7 @@ import { RefreshButton } from "@/components/party/RefreshButton";
 import { PartyHighlights } from "@/components/party/PartyHighlights";
 import { PartyGrid, PartyGridSkeleton } from "@/components/party/PartyGrid";
 import { ManagePartyDialog } from "@/components/party/ManagePartyDialog";
-import { PartyVitals } from "@/components/party/PartyVitals";
+import { ThemeSelector } from "@/components/party/ThemeSelector";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,10 +26,15 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 export default function Index() {
   const [ids, setIds] = useState<number[]>(() => readStoredIds() ?? PARTY_CHARACTER_IDS);
   const [managing, setManaging] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
 
   useEffect(() => {
@@ -39,13 +44,15 @@ export default function Index() {
         ids.every((v, i) => v === PARTY_CHARACTER_IDS[i]);
       if (isDefault) localStorage.removeItem(STORAGE_KEY);
       else localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-    } catch {}
+    } catch (e) {
+      console.warn("Failed to save party IDs to localStorage:", e);
+    }
   }, [ids]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallBtn(true);
     };
 
@@ -53,7 +60,8 @@ export default function Index() {
 
     if (
       typeof window !== "undefined" &&
-      (window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone)
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        (navigator as Navigator & { standalone?: boolean }).standalone)
     ) {
       setShowInstallBtn(false);
     }
@@ -84,6 +92,7 @@ export default function Index() {
               <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
             </h1>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <ThemeSelector />
               {showInstallBtn && (
                 <button
                   onClick={handleInstallClick}
@@ -107,7 +116,6 @@ export default function Index() {
             </div>
           </header>
           <Suspense fallback={<PartyGridSkeleton />}>
-            {/* <PartyVitals ids={ids} /> */}
             <PartyHighlights ids={ids} />
             <PartyGrid ids={ids} />
           </Suspense>

@@ -1,3 +1,4 @@
+import { ComponentType } from "react";
 import {
   Eye,
   EyeOff,
@@ -21,7 +22,10 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-export const CONDITION_BY_NAME = new Map<string, { Icon: any }>([
+export const CONDITION_BY_NAME = new Map<
+  string,
+  { Icon: ComponentType<{ size?: number; className?: string }> }
+>([
   ["blinded", { Icon: EyeOff }],
   ["charmed", { Icon: Heart }],
   ["deafened", { Icon: EarOff }],

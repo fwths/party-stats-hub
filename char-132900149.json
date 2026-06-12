@@ -1,0 +1,10 @@
+{
+  "id": 0,
+  "success": false,
+  "message": "An unexpected error has occurred",
+  "data": {
+    "serverMessage": "Unauthorized Access Attempt.",
+    "errorCode": "b495a33"
+  },
+  "pagination": null
+}

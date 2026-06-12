@@ -38,6 +38,8 @@ import { PartyMember, InventoryItem } from "@/lib/dndbeyond.functions";
 import { CONDITION_BY_NAME, SKILL_ABILITY } from "@/lib/constants";
 import { X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { getFullyModifiedStats } from "@/lib/party-modifiers";
+
 
 export const ABILITY_DETAILS: Record<
   string,
@@ -52,51 +54,52 @@ export const ABILITY_DETAILS: Record<
 > = {
   STR: {
     Icon: Dumbbell,
-    colorClass: "text-accent/80",
-    borderClass: "border-accent/15",
-    bgClass: "bg-accent/5",
-    glowClass: "shadow-accent/5",
-    hoverGlowClass: "hover:shadow-accent/10 hover:border-accent/40",
+    colorClass: "text-rose-400/90",
+    borderClass: "border-rose-500/20",
+    bgClass: "bg-rose-500/5",
+    glowClass: "shadow-rose-500/5",
+    hoverGlowClass: "hover:shadow-rose-500/15 hover:border-rose-500/40 hover:bg-rose-500/10",
   },
   DEX: {
     Icon: Zap,
-    colorClass: "text-accent/80",
-    borderClass: "border-accent/15",
-    bgClass: "bg-accent/5",
-    glowClass: "shadow-accent/5",
-    hoverGlowClass: "hover:shadow-accent/10 hover:border-accent/40",
+    colorClass: "text-emerald-400/90",
+    borderClass: "border-emerald-500/20",
+    bgClass: "bg-emerald-500/5",
+    glowClass: "shadow-emerald-500/5",
+    hoverGlowClass:
+      "hover:shadow-emerald-500/15 hover:border-emerald-500/40 hover:bg-emerald-500/10",
   },
   CON: {
     Icon: Heart,
-    colorClass: "text-accent/80",
-    borderClass: "border-accent/15",
-    bgClass: "bg-accent/5",
-    glowClass: "shadow-accent/5",
-    hoverGlowClass: "hover:shadow-accent/10 hover:border-accent/40",
+    colorClass: "text-amber-500/90",
+    borderClass: "border-amber-500/20",
+    bgClass: "bg-amber-500/5",
+    glowClass: "shadow-amber-500/5",
+    hoverGlowClass: "hover:shadow-amber-500/15 hover:border-amber-500/40 hover:bg-amber-500/10",
   },
   INT: {
     Icon: BookOpen,
-    colorClass: "text-accent/80",
-    borderClass: "border-accent/15",
-    bgClass: "bg-accent/5",
-    glowClass: "shadow-accent/5",
-    hoverGlowClass: "hover:shadow-accent/10 hover:border-accent/40",
+    colorClass: "text-sky-400/90",
+    borderClass: "border-sky-500/20",
+    bgClass: "bg-sky-500/5",
+    glowClass: "shadow-sky-500/5",
+    hoverGlowClass: "hover:shadow-sky-500/15 hover:border-sky-500/40 hover:bg-sky-500/10",
   },
   WIS: {
     Icon: Compass,
-    colorClass: "text-accent/80",
-    borderClass: "border-accent/15",
-    bgClass: "bg-accent/5",
-    glowClass: "shadow-accent/5",
-    hoverGlowClass: "hover:shadow-accent/10 hover:border-accent/40",
+    colorClass: "text-teal-400/90",
+    borderClass: "border-teal-500/20",
+    bgClass: "bg-teal-500/5",
+    glowClass: "shadow-teal-500/5",
+    hoverGlowClass: "hover:shadow-teal-500/15 hover:border-teal-500/40 hover:bg-teal-500/10",
   },
   CHA: {
     Icon: Crown,
-    colorClass: "text-accent/80",
-    borderClass: "border-accent/15",
-    bgClass: "bg-accent/5",
-    glowClass: "shadow-accent/5",
-    hoverGlowClass: "hover:shadow-accent/10 hover:border-accent/40",
+    colorClass: "text-gold/90",
+    borderClass: "border-gold/25",
+    bgClass: "bg-gold/5",
+    glowClass: "shadow-gold/5",
+    hoverGlowClass: "hover:shadow-gold/20 hover:border-gold/50 hover:bg-gold/10",
   },
 };
 
@@ -180,7 +183,9 @@ export function useCharacterConditions(characterId: number) {
     setAll(next);
     try {
       localStorage.setItem(CONDITIONS_KEY, JSON.stringify(next));
-    } catch {}
+    } catch (e) {
+      console.warn("Failed to save conditions to localStorage:", e);
+    }
   };
 
   const add = (name: string, rounds: number | null) => {
@@ -199,8 +204,11 @@ export function useCharacterConditions(characterId: number) {
         .filter((c) => c.rounds == null || c.rounds > 0),
     });
   };
+  const clear = () => {
+    persist({ ...all, [key]: [] });
+  };
 
-  return { list, add, remove, tick };
+  return { list, add, remove, tick, clear };
 }
 
 function ConditionChip({
@@ -265,13 +273,11 @@ export function getModifiedStats(member: PartyMember, localConditions: LocalCond
     ...localConditions.map((c) => c.name.toLowerCase()),
   ];
 
-  // 1. Check Exhaustion
-  if (member.exhaustion >= 5) {
-    speed = 0;
-    speedNotes.push("Speed 0 from Exhaustion 5");
-  } else if (member.exhaustion >= 2) {
-    speed = Math.floor(speed / 2);
-    speedNotes.push("Speed halved from Exhaustion");
+  // 1. Check Exhaustion (2024 Rules: Speed reduced by 5 ft per level of exhaustion)
+  if (member.exhaustion > 0) {
+    const penalty = member.exhaustion * 5;
+    speed = Math.max(0, speed - penalty);
+    speedNotes.push(`-${penalty} ft. from Exhaustion (Level ${member.exhaustion})`);
   }
 
   // 2. Check Restraining Conditions (Speed becomes 0)
@@ -335,9 +341,9 @@ export function ConditionsPanel({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [customName, setCustomName] = useState("");
-  const [rounds, setRounds] = useState<number>(10);
+  const [rounds, setRounds] = useState<number | null>(10);
+  const [effectTab, setEffectTab] = useState<"spells" | "conditions" | "cover">("spells");
 
-  const presets = ["Bless", "Shield", "Haste", "Bane", "Slow", "Stunned", "Poisoned"];
 
   const handleAdd = (name: string, r: number | null) => {
     if (!name.trim()) return;
@@ -381,48 +387,133 @@ export function ConditionsPanel({
           </button>
 
           {isOpen && (
-            <div className="absolute left-0 top-6 z-50 w-48 rounded-md border border-border bg-popover p-2 shadow-lg">
-              <div className="mb-1.5 text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
-                Quick Presets
-              </div>
-              <div className="flex flex-wrap gap-1 mb-2">
-                {presets.map((p) => (
+            <div className="absolute left-0 top-6 z-50 w-64 rounded-lg border border-border/80 bg-popover/95 p-3 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
+              {/* Category tabs */}
+              <div className="flex gap-1 border-b border-border/30 pb-1.5 mb-2">
+                {(["spells", "conditions", "cover"] as const).map((tab) => (
                   <button
-                    key={p}
-                    onClick={() => handleAdd(p, p === "Shield" ? 1 : 10)}
-                    className="rounded bg-secondary/80 px-1 py-0.5 text-[9px] text-foreground hover:bg-secondary"
+                    key={tab}
+                    type="button"
+                    onClick={() => setEffectTab(tab)}
+                    className={`flex-1 text-[9px] font-bold uppercase py-0.5 rounded transition-all cursor-pointer ${
+                      effectTab === tab
+                        ? "bg-accent/15 text-accent border border-accent/30 font-extrabold"
+                        : "text-muted-foreground hover:bg-secondary/40"
+                    }`}
                   >
-                    {p}
+                    {tab}
                   </button>
                 ))}
               </div>
-              <div className="border-t border-border/40 pt-1.5">
+
+              {/* Categorized presets list */}
+              <div className="max-h-28 overflow-y-auto mb-2.5 flex flex-wrap gap-1 pr-1 scrollbar-thin">
+                {effectTab === "spells" &&
+                  [
+                    { name: "Bless", d: 10 },
+                    { name: "Shield", d: 1 },
+                    { name: "Haste", d: 10 },
+                    { name: "Bane", d: 10 },
+                    { name: "Slow", d: 10 },
+                    { name: "Bladesong", d: 10 },
+                    { name: "Longstrider", d: null },
+                    { name: "Warding Bond", d: null },
+                  ].map((p) => (
+                    <button
+                      key={p.name}
+                      type="button"
+                      onClick={() => handleAdd(p.name, p.d)}
+                      className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+
+                {effectTab === "conditions" &&
+                  [
+                    "Blinded",
+                    "Charmed",
+                    "Deafened",
+                    "Frightened",
+                    "Grappled",
+                    "Invisible",
+                    "Paralyzed",
+                    "Poisoned",
+                    "Prone",
+                    "Restrained",
+                    "Stunned",
+                    "Unconscious",
+                  ].map((cond) => (
+                    <button
+                      key={cond}
+                      type="button"
+                      onClick={() => handleAdd(cond, null)}
+                      className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
+                    >
+                      {cond}
+                    </button>
+                  ))}
+
+                {effectTab === "cover" &&
+                  ["Half Cover", "3/4 Cover"].map((cov) => (
+                    <button
+                      key={cov}
+                      type="button"
+                      onClick={() => handleAdd(cov, null)}
+                      className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
+                    >
+                      {cov}
+                    </button>
+                  ))}
+              </div>
+
+              {/* Custom Input controls */}
+              <div className="border-t border-border/40 pt-2 flex flex-col gap-1.5">
                 <input
                   type="text"
-                  placeholder="Custom name..."
+                  placeholder="Custom effect name..."
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
-                  className="w-full rounded border border-border bg-secondary/40 px-1.5 py-0.5 text-[10px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-accent"
+                  className="w-full rounded border border-border bg-secondary/40 px-2 py-1 text-[10px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-accent"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleAdd(customName, rounds);
                   }}
                 />
-                <div className="mt-1 flex items-center justify-between gap-1">
-                  <span className="text-[8px] uppercase tracking-wider text-muted-foreground">
-                    Duration (Rounds)
-                  </span>
-                  <input
-                    type="number"
-                    value={rounds}
-                    onChange={(e) => setRounds(parseInt(e.target.value) || 1)}
-                    className="w-12 rounded border border-border bg-secondary/40 px-1 py-0.5 font-mono text-[9px] text-center text-foreground focus:outline-none"
-                  />
+                
+                {/* Duration select grid */}
+                <div className="flex items-center justify-between text-[9px] text-muted-foreground uppercase select-none mt-0.5">
+                  <span>Duration (Rounds)</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setRounds(null)}
+                      className={`px-1.5 py-0.5 rounded text-[8px] font-bold border transition-colors cursor-pointer ${
+                        rounds === null
+                          ? "border-accent/40 bg-accent/10 text-accent"
+                          : "border-border/30 bg-secondary/25 hover:border-accent/30"
+                      }`}
+                    >
+                      No Limit
+                    </button>
+                    <input
+                      type="number"
+                      placeholder="∞"
+                      value={rounds ?? ""}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setRounds(isNaN(val) ? null : val);
+                      }}
+                      className="w-10 rounded border border-border/50 bg-secondary/40 py-0.5 font-mono text-[9px] text-center text-foreground focus:outline-none"
+                    />
+                  </div>
                 </div>
+
                 <button
+                  type="button"
                   onClick={() => handleAdd(customName, rounds)}
-                  className="mt-2 w-full rounded bg-primary py-0.5 text-[9px] font-bold text-primary-foreground hover:bg-primary/90"
+                  className="mt-1 w-full rounded bg-primary py-1 text-[9px] font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer focus:outline-none transition-colors"
                 >
-                  Add Custom
+                  Add Effect
                 </button>
               </div>
             </div>
@@ -433,6 +524,26 @@ export function ConditionsPanel({
   );
 }
 
+function getItemRarityClass(rarity?: string) {
+  const norm = rarity?.toLowerCase().replace(/\s+/g, "") || "";
+  switch (norm) {
+    case "artifact":
+      return "border-rose-500/50 bg-rose-500/10 text-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.3)] font-bold";
+    case "legendary":
+      return "border-gold/50 bg-gold/10 text-gold shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_30%,transparent)] font-bold animate-pulse";
+    case "veryrare":
+      return "border-fuchsia-500/50 bg-fuchsia-500/10 text-fuchsia-300 shadow-[0_0_6px_rgba(217,70,239,0.25)] font-semibold";
+    case "rare":
+      return "border-violet-500/50 bg-violet-500/10 text-violet-300 font-semibold";
+    case "uncommon":
+      return "border-sky-500/40 bg-sky-500/5 text-sky-300";
+    case "common":
+      return "border-emerald-500/30 bg-emerald-500/5 text-emerald-300/90";
+    default:
+      return "border-border/30 bg-secondary/20 text-foreground/90 hover:border-accent/30";
+  }
+}
+
 function InventoryGroup({ label, items }: { label: string; items: InventoryItem[] }) {
   return (
     <div>
@@ -441,11 +552,10 @@ function InventoryGroup({ label, items }: { label: string; items: InventoryItem[
       </div>
       <div className="flex flex-wrap gap-1.5">
         {items.map((it, idx) => {
+          const rarityClass = getItemRarityClass(it.rarity);
           const styles = it.attuned
-            ? "border-gold/50 bg-[color-mix(in_oklab,var(--gold)_8%,var(--secondary))] text-gold shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_30%,transparent)] font-bold"
-            : it.magic
-              ? "border-accent/50 bg-accent/10 text-accent font-semibold"
-              : "border-border/30 bg-secondary/20 hover:border-accent/30 text-foreground/90";
+            ? `${rarityClass} ring-1 ring-gold/45 shadow-[0_0_10px_color-mix(in_oklab,var(--gold)_40%,transparent)]`
+            : rarityClass;
           const title =
             `${it.name} — ${it.type}` +
             (it.rarity ? ` (${it.rarity})` : "") +
@@ -586,9 +696,25 @@ export function CharacterCard({ member }: { member: PartyMember }) {
     tick: tickLocalCondition,
   } = useCharacterConditions(member.id);
 
-  const { ac, speed, acNotes, speedNotes } = getModifiedStats(member, localConditions);
+  const mods = getFullyModifiedStats(member);
+  const {
+    ac,
+    speed,
+    acNotes,
+    speedNotes,
+    hpCurrent,
+    tempHp,
+    spellSlots,
+    pactSlots,
+    actions,
+    carryingCapacity,
+    senses,
+    deathSaves,
+    hitDice,
+    defenses,
+  } = mods;
 
-  const hpPct = member.hpMax > 0 ? Math.min(100, (member.hpCurrent / member.hpMax) * 100) : 0;
+  const hpPct = mods.hpMax > 0 ? Math.min(100, (hpCurrent / mods.hpMax) * 100) : 0;
   const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
   const displaySkills = [...member.skills].sort((a, b) => {
     const profRank = (p: string) => {
@@ -616,16 +742,16 @@ export function CharacterCard({ member }: { member: PartyMember }) {
   }, [hpPct]);
 
   // HP change indicator
-  const prevHpRef = useRef<number>(member.hpCurrent);
+  const prevHpRef = useRef<number>(hpCurrent);
   const [delta, setDelta] = useState<{ value: number; key: number } | null>(null);
   useEffect(() => {
     const prev = prevHpRef.current;
-    if (prev !== member.hpCurrent) {
-      const diff = member.hpCurrent - prev;
+    if (prev !== hpCurrent) {
+      const diff = hpCurrent - prev;
       if (diff !== 0) setDelta({ value: diff, key: Date.now() });
-      prevHpRef.current = member.hpCurrent;
+      prevHpRef.current = hpCurrent;
     }
-  }, [member.hpCurrent]);
+  }, [hpCurrent]);
 
   // Split classes string "Wizard 5 / Cleric 2" into chips
   const classChips = member.classes
@@ -633,14 +759,22 @@ export function CharacterCard({ member }: { member: PartyMember }) {
     .map((s) => s.trim())
     .filter(Boolean);
 
+  const getAvatarRingClass = (pct: number) => {
+    if (pct <= 25)
+      return "ring-2 ring-destructive/80 shadow-[0_0_12px_var(--hp-critical)] animate-pulse";
+    if (pct <= 60) return "ring-2 ring-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.35)]";
+    return "ring-2 ring-primary/50 shadow-[0_0_10px_rgba(109,40,217,0.3)] border-glow-primary";
+  };
+  const avatarRing = getAvatarRingClass(hpPct);
+
   return (
-    <article className="card-arcane group relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-accent/50 hover:shadow-2xl hover:shadow-primary/20">
+    <article className="card-arcane card-arcane-hover group relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg">
       <div className="flex items-start gap-3">
         {member.avatarUrl ? (
           <Link
             to="/character/$id"
             params={{ id: String(member.id) }}
-            className="block h-16 w-16 flex-shrink-0 rounded-md border border-border overflow-hidden transition-all duration-200 hover:border-accent hover:shadow-[0_0_10px_color-mix(in_oklab,var(--accent)_40%,transparent)]"
+            className={`block h-16 w-16 flex-shrink-0 rounded-[28%] overflow-hidden transition-all duration-300 hover:scale-105 ${avatarRing}`}
             title="View character details"
           >
             <img
@@ -653,7 +787,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
           <Link
             to="/character/$id"
             params={{ id: String(member.id) }}
-            className="h-16 w-16 flex-shrink-0 rounded-md border border-border bg-muted hover:border-accent"
+            className={`h-16 w-16 flex-shrink-0 rounded-[28%] border border-border bg-muted hover:border-accent ${avatarRing}`}
             title="View character details"
           />
         )}
@@ -745,16 +879,16 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                   className="text-rose-500 drop-shadow-[0_0_3px_rgba(244,63,94,0.4)] transition-transform duration-300 group-hover/hp:animate-heartbeat"
                 />
                 <span>HP</span>
-                {member.hitDice && member.hitDice !== "—" && (
+                {hitDice && hitDice !== "—" && (
                   <span className="ml-1 font-mono text-[9px] text-muted-foreground/75">
-                    ({member.hitDice})
+                    ({hitDice})
                   </span>
                 )}
               </span>
               <span className="font-mono text-foreground relative">
-                {member.hpCurrent} / {member.hpMax}
-                {member.tempHp > 0 ? (
-                  <span className="ml-1 text-accent">+{member.tempHp}</span>
+                {hpCurrent} / {member.hpMax}
+                {tempHp > 0 ? (
+                  <span className="ml-1 text-accent">+{tempHp}</span>
                 ) : null}
                 {delta && (
                   <span
@@ -778,11 +912,11 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             </div>
           </div>
 
-          {member.hpCurrent <= 0 && (
+          {hpCurrent <= 0 && (
             <div className="mt-3 rounded border border-destructive/60 bg-destructive/10 px-2 py-2">
               <div className="mb-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider">
                 <span className="text-destructive">
-                  {member.deathSaves.stabilized ? "Stabilized" : "Death Saves"}
+                  {deathSaves.stabilized ? "Stabilized" : "Death Saves"}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
@@ -792,7 +926,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     <span
                       key={`s-${i}`}
                       className={`h-3 w-3 rotate-45 border ${
-                        i < member.deathSaves.successes
+                        i < deathSaves.successes
                           ? "border-hp-good bg-hp-good shadow-[0_0_6px_color-mix(in_oklab,var(--hp-good)_70%,transparent)]"
                           : "border-border bg-transparent"
                       }`}
@@ -805,7 +939,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     <span
                       key={`f-${i}`}
                       className={`h-3 w-3 rotate-45 border ${
-                        i < member.deathSaves.failures
+                        i < deathSaves.failures
                           ? "border-destructive bg-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_70%,transparent)]"
                           : "border-border bg-transparent"
                       }`}
@@ -959,8 +1093,8 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             </Section>
           )}
           {(member.spellcasting?.length > 0 ||
-            member.spellSlots.length > 0 ||
-            member.pactSlots.length > 0) && (
+            spellSlots.length > 0 ||
+            pactSlots.length > 0) && (
             <Section title="Spellcasting">
               <div className="flex flex-col gap-3">
                 {member.spellcasting && member.spellcasting.length > 0 && (
@@ -1011,9 +1145,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     })}
                   </div>
                 )}
-                {(member.spellSlots.length > 0 || member.pactSlots.length > 0) && (
+                {(spellSlots.length > 0 || pactSlots.length > 0) && (
                   <div className="flex flex-col gap-1.5 border-t border-border/30 pt-2">
-                    {member.spellSlots.map((s) => {
+                    {spellSlots.map((s) => {
                       const available = s.max - s.used;
                       return (
                         <div key={`s-${s.level}`} className="flex items-center gap-2">
@@ -1022,17 +1156,13 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                           </span>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="flex flex-wrap gap-1 cursor-help">
+                              <div className="flex flex-wrap gap-1.5 cursor-help">
                                 {Array.from({ length: s.max }).map((_, i) => {
                                   const filled = i < available;
                                   return (
                                     <span
                                       key={i}
-                                      className={
-                                        filled
-                                          ? "h-3 w-3 rounded-full bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-primary/60"
-                                          : "h-3 w-3 rounded-full border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
-                                      }
+                                      className={`mana-slot ${filled ? "mana-slot-filled" : ""}`}
                                     />
                                   );
                                 })}
@@ -1048,7 +1178,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                         </div>
                       );
                     })}
-                    {member.pactSlots.map((s) => {
+                    {pactSlots.map((s) => {
                       const available = s.max - s.used;
                       return (
                         <div key={`p-${s.level}`} className="flex items-center gap-2">
@@ -1057,17 +1187,13 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                           </span>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="flex flex-wrap gap-1 cursor-help">
+                              <div className="flex flex-wrap gap-1.5 cursor-help">
                                 {Array.from({ length: s.max }).map((_, i) => {
                                   const filled = i < available;
                                   return (
                                     <span
                                       key={i}
-                                      className={
-                                        filled
-                                          ? "h-3 w-3 rotate-45 bg-primary shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)] ring-1 ring-accent/70"
-                                          : "h-3 w-3 rotate-45 border border-accent/70 bg-transparent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_50%,transparent)]"
-                                      }
+                                      className={`pact-slot ${filled ? "pact-slot-filled" : ""}`}
                                     />
                                   );
                                 })}
@@ -1198,7 +1324,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             </Section>
           )}
 
-          {(member.senses.length > 0 || member.passivePerception != null) && (
+          {(senses.length > 0 || member.passivePerception != null) && (
             <Section title="Senses">
               <div className="flex flex-col gap-1.5">
                 {[
@@ -1230,9 +1356,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                       </div>
                     );
                   })}
-                {member.senses.length > 0 && (
+                {senses.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-1.5 mt-2">
-                    {member.senses.map((s) => {
+                    {senses.map((s) => {
                       const isDarkvision = s.name.toLowerCase().includes("darkvision");
                       const SenseIcon = isDarkvision ? Moon : Eye;
                       return (
@@ -1316,10 +1442,10 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             </Section>
           )}
 
-          {member.defenses.length > 0 && (
+          {defenses.length > 0 && (
             <Section title="Defenses">
               <div className="flex flex-wrap gap-1">
-                {member.defenses.map((d) => {
+                {defenses.map((d) => {
                   const styles =
                     d.type === "immunity"
                       ? "border-gold/60 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] text-gold"
@@ -1375,11 +1501,24 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             </Section>
           )}
 
-          {member.actions?.filter((a) => a.source === "class" && a.uses).length ? (
+          {actions?.filter((a) => a.source === "class" && a.uses).length ? (
             <Section title="Resources">
               <div className="flex flex-col gap-2">
-                {member.actions
+                {[...actions]
                   .filter((a) => a.source === "class" && a.uses)
+                  .sort((a, b) => {
+                    const getResourceSortValue = (act: any) => {
+                      const type = act.activation?.activationType;
+                      if (type === 1) return 1; // Action
+                      if (type === 3) return 2; // Bonus Action
+                      if (type === 4) return 3; // Reaction
+                      return 4; // Other
+                    };
+                    const sortA = getResourceSortValue(a);
+                    const sortB = getResourceSortValue(b);
+                    if (sortA !== sortB) return sortA - sortB;
+                    return a.name.localeCompare(b.name);
+                  })
                   .map((a) => {
                     const u = a.uses!;
                     const out = u.current <= 0;
@@ -1438,7 +1577,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                 items={member.inventory}
                 currencies={member.currencies}
                 weightCarried={member.weightCarried}
-                carryingCapacity={member.carryingCapacity}
+                carryingCapacity={carryingCapacity}
               />
             </Section>
           )}

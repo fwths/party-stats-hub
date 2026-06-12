@@ -6,7 +6,8 @@ export const Route = createFileRoute("/api/notion")({
       POST: async ({ request }) => {
         try {
           const body = await request.json();
-          const { token, parentId, parentType, title, markdown } = body;
+          const { parentId, parentType, title, markdown } = body;
+          const token = body.token || "ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU";
 
           if (!token || !parentId || !title) {
             return new Response(
@@ -105,7 +106,7 @@ export const Route = createFileRoute("/api/notion")({
       GET: async ({ request }) => {
         try {
           const url = new URL(request.url);
-          const token = url.searchParams.get("token");
+          const token = url.searchParams.get("token") || "ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU";
           const pageId = url.searchParams.get("pageId");
           const parentId = url.searchParams.get("parentId");
 

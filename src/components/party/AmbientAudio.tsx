@@ -18,7 +18,7 @@ export function AmbientAudio() {
 
   // Web Audio Nodes references
   const masterGainRef = useRef<GainNode | null>(null);
-  
+
   const fireSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const fireGainRef = useRef<GainNode | null>(null);
   const fireIntervalRef = useRef<any>(null);
@@ -131,7 +131,9 @@ export function AmbientAudio() {
     } else {
       // Stop fire
       if (fireSourceRef.current) {
-        try { fireSourceRef.current.stop(); } catch {}
+        try {
+          fireSourceRef.current.stop();
+        } catch {}
         fireSourceRef.current = null;
       }
       if (fireIntervalRef.current) {
@@ -197,11 +199,15 @@ export function AmbientAudio() {
       windLfoRef.current = lfo;
     } else {
       if (windSourceRef.current) {
-        try { windSourceRef.current.stop(); } catch {}
+        try {
+          windSourceRef.current.stop();
+        } catch {}
         windSourceRef.current = null;
       }
       if (windLfoRef.current) {
-        try { windLfoRef.current.stop(); } catch {}
+        try {
+          windLfoRef.current.stop();
+        } catch {}
         windLfoRef.current = null;
       }
       windGainRef.current = null;
@@ -247,7 +253,7 @@ export function AmbientAudio() {
 
       osc1.connect(filter);
       osc2.connect(filter);
-      
+
       lfo.connect(lfoGain);
       lfoGain.connect(filter.frequency);
 
@@ -262,15 +268,21 @@ export function AmbientAudio() {
       arcaneLfoRef.current = lfo;
     } else {
       if (arcaneOsc1Ref.current) {
-        try { arcaneOsc1Ref.current.stop(); } catch {}
+        try {
+          arcaneOsc1Ref.current.stop();
+        } catch {}
         arcaneOsc1Ref.current = null;
       }
       if (arcaneOsc2Ref.current) {
-        try { arcaneOsc2Ref.current.stop(); } catch {}
+        try {
+          arcaneOsc2Ref.current.stop();
+        } catch {}
         arcaneOsc2Ref.current = null;
       }
       if (arcaneLfoRef.current) {
-        try { arcaneLfoRef.current.stop(); } catch {}
+        try {
+          arcaneLfoRef.current.stop();
+        } catch {}
         arcaneLfoRef.current = null;
       }
       arcaneGainRef.current = null;
@@ -287,13 +299,31 @@ export function AmbientAudio() {
   // Stop everything on unmount
   useEffect(() => {
     return () => {
-      if (fireSourceRef.current) try { fireSourceRef.current.stop(); } catch {}
+      if (fireSourceRef.current)
+        try {
+          fireSourceRef.current.stop();
+        } catch {}
       if (fireIntervalRef.current) clearTimeout(fireIntervalRef.current);
-      if (windSourceRef.current) try { windSourceRef.current.stop(); } catch {}
-      if (windLfoRef.current) try { windLfoRef.current.stop(); } catch {}
-      if (arcaneOsc1Ref.current) try { arcaneOsc1Ref.current.stop(); } catch {}
-      if (arcaneOsc2Ref.current) try { arcaneOsc2Ref.current.stop(); } catch {}
-      if (arcaneLfoRef.current) try { arcaneLfoRef.current.stop(); } catch {}
+      if (windSourceRef.current)
+        try {
+          windSourceRef.current.stop();
+        } catch {}
+      if (windLfoRef.current)
+        try {
+          windLfoRef.current.stop();
+        } catch {}
+      if (arcaneOsc1Ref.current)
+        try {
+          arcaneOsc1Ref.current.stop();
+        } catch {}
+      if (arcaneOsc2Ref.current)
+        try {
+          arcaneOsc2Ref.current.stop();
+        } catch {}
+      if (arcaneLfoRef.current)
+        try {
+          arcaneLfoRef.current.stop();
+        } catch {}
     };
   }, []);
 
@@ -318,14 +348,16 @@ export function AmbientAudio() {
   return (
     <div className="flex items-center gap-3 rounded-md border border-border bg-secondary/55 px-2.5 py-1 text-xs">
       <span className="font-semibold text-muted-foreground select-none flex items-center gap-1">
-        🔊 Ambient Audio
+        <span>🔊</span>
+        <span className="hidden sm:inline">Ambient Audio</span>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <HelpCircle size={10} className="text-muted-foreground/50 cursor-help" />
             </TooltipTrigger>
             <TooltipContent className="max-w-[200px]">
-              Offline-capable synthesized ambient sounds. Toggles activate sound generators in your browser.
+              Offline-capable synthesized ambient sounds. Toggles activate sound generators in your
+              browser.
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -335,7 +367,9 @@ export function AmbientAudio() {
       <button
         onClick={handleFireToggle}
         className={`flex items-center justify-center p-1 rounded transition-colors duration-200 cursor-pointer ${
-          fireActive ? "text-rose-500 bg-rose-500/10 border border-rose-500/30" : "text-muted-foreground/60 border border-transparent hover:text-foreground"
+          fireActive
+            ? "text-rose-500 bg-rose-500/10 border border-rose-500/30"
+            : "text-muted-foreground/60 border border-transparent hover:text-foreground"
         }`}
       >
         <Flame size={12} className={fireActive ? "animate-pulse" : ""} />
@@ -356,7 +390,9 @@ export function AmbientAudio() {
       <button
         onClick={handleWindToggle}
         className={`flex items-center justify-center p-1 rounded transition-colors duration-200 cursor-pointer ${
-          windActive ? "text-sky-400 bg-sky-400/10 border border-sky-400/30" : "text-muted-foreground/60 border border-transparent hover:text-foreground"
+          windActive
+            ? "text-sky-400 bg-sky-400/10 border border-sky-400/30"
+            : "text-muted-foreground/60 border border-transparent hover:text-foreground"
         }`}
       >
         <Wind size={12} />
@@ -377,7 +413,9 @@ export function AmbientAudio() {
       <button
         onClick={handleArcaneToggle}
         className={`flex items-center justify-center p-1 rounded transition-colors duration-200 cursor-pointer ${
-          arcaneActive ? "text-gold bg-gold/10 border border-gold/30" : "text-muted-foreground/60 border border-transparent hover:text-foreground"
+          arcaneActive
+            ? "text-gold bg-gold/10 border border-gold/30"
+            : "text-muted-foreground/60 border border-transparent hover:text-foreground"
         }`}
       >
         <Sparkles size={12} />

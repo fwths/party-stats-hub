@@ -16,13 +16,14 @@ const RULES_DATA: RuleItem[] = [
     id: "blinded",
     name: "Blinded",
     category: "conditions",
-    summary: "Cannot see; automatically fails sight checks. Attacks have advantage against you; your attacks have disadvantage.",
+    summary:
+      "Cannot see; automatically fails sight checks. Attacks have advantage against you; your attacks have disadvantage.",
     effects: ["Sights Checks Fail", "Incoming Attacks Advantage", "Outgoing Attacks Disadvantage"],
     details: [
       "A blinded creature can't see and automatically fails any ability check that requires sight.",
       "Attack rolls against the creature have advantage.",
-      "The creature's attack rolls have disadvantage."
-    ]
+      "The creature's attack rolls have disadvantage.",
+    ],
   },
   {
     id: "charmed",
@@ -32,8 +33,8 @@ const RULES_DATA: RuleItem[] = [
     effects: ["Cannot Attack Charmer", "Charmer Social Advantage"],
     details: [
       "A charmed creature can't attack the charmer or target the charmer with harmful abilities or magical effects.",
-      "The charmer has advantage on any ability check to interact socially with the creature."
-    ]
+      "The charmer has advantage on any ability check to interact socially with the creature.",
+    ],
   },
   {
     id: "deafened",
@@ -42,31 +43,33 @@ const RULES_DATA: RuleItem[] = [
     summary: "Cannot hear; automatically fails hearing checks.",
     effects: ["Hearing Checks Fail"],
     details: [
-      "A deafened creature can't hear and automatically fails any ability check that requires hearing."
-    ]
+      "A deafened creature can't hear and automatically fails any ability check that requires hearing.",
+    ],
   },
   {
     id: "frightened",
     name: "Frightened",
     category: "conditions",
-    summary: "Disadvantage on checks/attacks while source is in sight. Cannot willingly move closer to the source.",
+    summary:
+      "Disadvantage on checks/attacks while source is in sight. Cannot willingly move closer to the source.",
     effects: ["Fear Disadvantage", "Movement Restricted"],
     details: [
       "A frightened creature has disadvantage on ability checks and attack rolls while the source of its fear is within line of sight.",
-      "The creature can't willingly move closer to the source of its fear."
-    ]
+      "The creature can't willingly move closer to the source of its fear.",
+    ],
   },
   {
     id: "grappled",
     name: "Grappled",
     category: "conditions",
-    summary: "Speed becomes 0. Ends if grappled creature is moved or grappler becomes incapacitated.",
+    summary:
+      "Speed becomes 0. Ends if grappled creature is moved or grappler becomes incapacitated.",
     effects: ["Speed 0"],
     details: [
       "A grappled creature's speed becomes 0, and it can't benefit from any bonus to its speed.",
       "The condition ends if the grappler is incapacitated.",
-      "The condition also ends if an effect removes the grappled creature from the reach of the grappler or grappling effect (such as being hurled away by the Thunderwave spell)."
-    ]
+      "The condition also ends if an effect removes the grappled creature from the reach of the grappler or grappling effect (such as being hurled away by the Thunderwave spell).",
+    ],
   },
   {
     id: "incapacitated",
@@ -76,48 +79,57 @@ const RULES_DATA: RuleItem[] = [
     effects: ["No Actions", "No Reactions"],
     details: [
       "An incapacitated creature can't take actions or reactions.",
-      "Certain spells and class features are automatically suppressed or broken while incapacitated."
-    ]
+      "Certain spells and class features are automatically suppressed or broken while incapacitated.",
+    ],
   },
   {
     id: "invisible",
     name: "Invisible",
     category: "conditions",
-    summary: "Impossible to see without magic/truesight. Attacks have disadvantage; your attacks have advantage.",
+    summary:
+      "Impossible to see without magic/truesight. Attacks have disadvantage; your attacks have advantage.",
     effects: ["Unseen", "Incoming Attacks Disadvantage", "Outgoing Attacks Advantage"],
     details: [
       "An invisible creature is impossible to see without the aid of magic or a special sense.",
       "For the purpose of hiding, the creature is heavily obscured. The creature's location can be detected by any noise it makes or tracks it leaves.",
-      "Attack rolls against the creature have disadvantage, and the creature's attack rolls have advantage."
-    ]
+      "Attack rolls against the creature have disadvantage, and the creature's attack rolls have advantage.",
+    ],
   },
   {
     id: "paralyzed",
     name: "Paralyzed",
     category: "conditions",
-    summary: "Incapacitated and cannot move/speak. Auto-fail STR/DEX saves. Attacks within 5ft critical hit.",
+    summary:
+      "Incapacitated and cannot move/speak. Auto-fail STR/DEX saves. Attacks within 5ft critical hit.",
     effects: ["Incapacitated", "Speed 0", "Auto-fail STR/DEX", "Critical Hits within 5ft"],
     details: [
       "A paralyzed creature is incapacitated and can't move or speak.",
       "The creature automatically fails Strength and Dexterity saving throws.",
       "Attack rolls against the creature have advantage.",
-      "Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature."
-    ]
+      "Any attack that hits the creature is a critical hit if the attacker is within 5 feet of the creature.",
+    ],
   },
   {
     id: "petrified",
     name: "Petrified",
     category: "conditions",
-    summary: "Turned to stone. Incapacitated, unaware, weight x10. Resistance to all damage; immune to poison/disease.",
-    effects: ["Turned to Stone", "Incapacitated", "Auto-fail STR/DEX", "All Damage Resistance", "Poison/Disease Immune"],
+    summary:
+      "Turned to stone. Incapacitated, unaware, weight x10. Resistance to all damage; immune to poison/disease.",
+    effects: [
+      "Turned to Stone",
+      "Incapacitated",
+      "Auto-fail STR/DEX",
+      "All Damage Resistance",
+      "Poison/Disease Immune",
+    ],
     details: [
       "A petrified creature is transformed, along with any nonmagical object it is wearing or carrying, into a solid inanimate substance (usually stone). Its weight increases by a factor of ten, and it ceases aging.",
       "The creature is incapacitated, can't move or speak, and is unaware of its surroundings.",
       "Attack rolls against the creature have advantage.",
       "The creature automatically fails Strength and Dexterity saving throws.",
       "The creature has resistance to all damage.",
-      "The creature is immune to poison and disease (poisons/diseases already in system are suspended, not cured)."
-    ]
+      "The creature is immune to poison and disease (poisons/diseases already in system are suspended, not cured).",
+    ],
   },
   {
     id: "poisoned",
@@ -125,65 +137,84 @@ const RULES_DATA: RuleItem[] = [
     category: "conditions",
     summary: "Disadvantage on attack rolls and ability checks.",
     effects: ["Attack Disadvantage", "Checks Disadvantage"],
-    details: [
-      "A poisoned creature has disadvantage on attack rolls and ability checks."
-    ]
+    details: ["A poisoned creature has disadvantage on attack rolls and ability checks."],
   },
   {
     id: "prone",
     name: "Prone",
     category: "conditions",
-    summary: "Can only crawl. Attack rolls have disadvantage. Incoming attacks within 5ft have advantage, others have disadvantage.",
-    effects: ["Crawling Move", "Attack Disadvantage", "Melee Hit Advantage", "Ranged Hit Disadvantage"],
+    summary:
+      "Can only crawl. Attack rolls have disadvantage. Incoming attacks within 5ft have advantage, others have disadvantage.",
+    effects: [
+      "Crawling Move",
+      "Attack Disadvantage",
+      "Melee Hit Advantage",
+      "Ranged Hit Disadvantage",
+    ],
     details: [
       "A prone creature's only movement option is to crawl, unless it stands up (which costs half its speed).",
       "The creature has disadvantage on attack rolls.",
-      "An attack roll against the creature has advantage if the attacker is within 5 feet. Otherwise, the attack roll has disadvantage."
-    ]
+      "An attack roll against the creature has advantage if the attacker is within 5 feet. Otherwise, the attack roll has disadvantage.",
+    ],
   },
   {
     id: "restrained",
     name: "Restrained",
     category: "conditions",
-    summary: "Speed 0. Attacks against have advantage; your attacks have disadvantage. Disadvantage on DEX saves.",
-    effects: ["Speed 0", "Incoming Attacks Advantage", "Outgoing Attacks Disadvantage", "DEX Saves Disadvantage"],
+    summary:
+      "Speed 0. Attacks against have advantage; your attacks have disadvantage. Disadvantage on DEX saves.",
+    effects: [
+      "Speed 0",
+      "Incoming Attacks Advantage",
+      "Outgoing Attacks Disadvantage",
+      "DEX Saves Disadvantage",
+    ],
     details: [
       "A restrained creature's speed becomes 0, and it can't benefit from any speed bonuses.",
       "Attack rolls against the creature have advantage, and the creature's attack rolls have disadvantage.",
-      "The creature has disadvantage on Dexterity saving throws."
-    ]
+      "The creature has disadvantage on Dexterity saving throws.",
+    ],
   },
   {
     id: "stunned",
     name: "Stunned",
     category: "conditions",
-    summary: "Incapacitated, cannot move, can only whisper. Auto-fail STR/DEX saves. Attacks against have advantage.",
+    summary:
+      "Incapacitated, cannot move, can only whisper. Auto-fail STR/DEX saves. Attacks against have advantage.",
     effects: ["Incapacitated", "Speed 0", "Auto-fail STR/DEX", "Incoming Attacks Advantage"],
     details: [
       "A stunned creature is incapacitated, can't move, and can speak only in faltering whispers.",
       "The creature automatically fails Strength and Dexterity saving throws.",
-      "Attack rolls against the creature have advantage."
-    ]
+      "Attack rolls against the creature have advantage.",
+    ],
   },
   {
     id: "unconscious",
     name: "Unconscious",
     category: "conditions",
-    summary: "Incapacitated, drops items, falls prone. Auto-fail STR/DEX saves. Attacks against within 5ft critical hit.",
-    effects: ["Incapacitated", "Falls Prone", "Auto-fail STR/DEX", "Incoming Attacks Advantage", "Critical Hits within 5ft"],
+    summary:
+      "Incapacitated, drops items, falls prone. Auto-fail STR/DEX saves. Attacks against within 5ft critical hit.",
+    effects: [
+      "Incapacitated",
+      "Falls Prone",
+      "Auto-fail STR/DEX",
+      "Incoming Attacks Advantage",
+      "Critical Hits within 5ft",
+    ],
     details: [
       "An unconscious creature is incapacitated, can't move or speak, and is unaware of its surroundings.",
       "The creature drops whatever it's holding and falls prone.",
       "The creature automatically fails Strength and Dexterity saving throws.",
       "Attack rolls against the creature have advantage.",
-      "Any attack that hits the creature is a critical hit if the attacker is within 5 feet."
-    ]
+      "Any attack that hits the creature is a critical hit if the attacker is within 5 feet.",
+    ],
   },
   {
     id: "exhaustion",
     name: "Exhaustion",
     category: "conditions",
-    summary: "Accumulated weariness in 6 levels. Speed reductions and disadvantage on checks/saves.",
+    summary:
+      "Accumulated weariness in 6 levels. Speed reductions and disadvantage on checks/saves.",
     effects: ["Cumulative Penalties", "Death at Level 6"],
     details: [
       "Level 1: Disadvantage on ability checks",
@@ -192,8 +223,8 @@ const RULES_DATA: RuleItem[] = [
       "Level 4: Hit point maximum halved",
       "Level 5: Speed reduced to 0",
       "Level 6: Death",
-      "Note (2024 Rules Streamline): Exhaustion has 6 levels. Each level decreases speed by 5 feet and imposes a -1 penalty to all D20 rolls (attacks, checks, saves). At level 6, the creature dies."
-    ]
+      "Note (2024 Rules Streamline): Exhaustion has 6 levels. Each level decreases speed by 5 feet and imposes a -1 penalty to all D20 rolls (attacks, checks, saves). At level 6, the creature dies.",
+    ],
   },
 
   // --- ACTIONS ---
@@ -205,8 +236,8 @@ const RULES_DATA: RuleItem[] = [
     details: [
       "Choose a target within your weapon's range: a creature, an object, or a location.",
       "Roll 1d20 + Ability Modifier (STR for melee, DEX for ranged) + Proficiency Bonus (if proficient).",
-      "If the roll meets or exceeds target AC, you hit and roll damage dice."
-    ]
+      "If the roll meets or exceeds target AC, you hit and roll damage dice.",
+    ],
   },
   {
     id: "cast_spell",
@@ -215,8 +246,8 @@ const RULES_DATA: RuleItem[] = [
     summary: "Cast a spell with a casting time of 1 action.",
     details: [
       "The spell's components (Verbal, Somatic, Material) must be met.",
-      "Follow the range, targeting, and spell level rules as described in the spell's description."
-    ]
+      "Follow the range, targeting, and spell level rules as described in the spell's description.",
+    ],
   },
   {
     id: "dash",
@@ -226,8 +257,8 @@ const RULES_DATA: RuleItem[] = [
     details: [
       "When you take the Dash action, you gain extra movement for the current turn.",
       "The increase equals your speed after applying any modifiers.",
-      "Any increase or reduction to your speed changes this extra movement by the same amount."
-    ]
+      "Any increase or reduction to your speed changes this extra movement by the same amount.",
+    ],
   },
   {
     id: "disengage",
@@ -235,8 +266,8 @@ const RULES_DATA: RuleItem[] = [
     category: "actions",
     summary: "Prevent opportunity attacks during your movement for the rest of your turn.",
     details: [
-      "If you take the Disengage action, your movement doesn't provoke opportunity attacks for the rest of the turn."
-    ]
+      "If you take the Disengage action, your movement doesn't provoke opportunity attacks for the rest of the turn.",
+    ],
   },
   {
     id: "dodge",
@@ -246,18 +277,19 @@ const RULES_DATA: RuleItem[] = [
     details: [
       "Until the start of your next turn, any attack roll made against you has disadvantage if you can see the attacker.",
       "You make Dexterity saving throws with advantage.",
-      "You lose this benefit if you are incapacitated or if your speed drops to 0."
-    ]
+      "You lose this benefit if you are incapacitated or if your speed drops to 0.",
+    ],
   },
   {
     id: "help",
     name: "Help",
     category: "actions",
-    summary: "Give an ally advantage on a check, or advantage on an attack roll against a target within 5ft.",
+    summary:
+      "Give an ally advantage on a check, or advantage on an attack roll against a target within 5ft.",
     details: [
       "You aid another creature. The creature you aid gains advantage on the next ability check it makes to perform the task.",
-      "Alternatively, you can aid a friendly creature in attacking a target within 5 feet of you. You feint or distract, giving advantage on the ally's first attack roll."
-    ]
+      "Alternatively, you can aid a friendly creature in attacking a target within 5 feet of you. You feint or distract, giving advantage on the ally's first attack roll.",
+    ],
   },
   {
     id: "hide",
@@ -266,8 +298,8 @@ const RULES_DATA: RuleItem[] = [
     summary: "Make a Dexterity (Stealth) check to hide from sight/hearing.",
     details: [
       "You make a Dexterity (Stealth) check in an attempt to hide.",
-      "You must not be clearly seen. If you succeed, you are considered unseen and unheard, giving you advantage on attack rolls and attacks against you have disadvantage."
-    ]
+      "You must not be clearly seen. If you succeed, you are considered unseen and unheard, giving you advantage on attack rolls and attacks against you have disadvantage.",
+    ],
   },
   {
     id: "ready",
@@ -277,26 +309,28 @@ const RULES_DATA: RuleItem[] = [
     details: [
       "Choose a perceivable trigger condition (e.g., 'If the goblin walks through the door...').",
       "Choose the action you will take in response, or choose to move up to your speed.",
-      "If you ready a spell, you cast it on your turn but hold its energy as a reaction (requires Concentration)."
-    ]
+      "If you ready a spell, you cast it on your turn but hold its energy as a reaction (requires Concentration).",
+    ],
   },
   {
     id: "search",
     name: "Search",
     category: "actions",
-    summary: "Dedicate your attention to finding something with a Perception or Investigation check.",
+    summary:
+      "Dedicate your attention to finding something with a Perception or Investigation check.",
     details: [
-      "Depending on the nature of what you are looking for, the DM might ask you to make a Wisdom (Perception) check or an Intelligence (Investigation) check."
-    ]
+      "Depending on the nature of what you are looking for, the DM might ask you to make a Wisdom (Perception) check or an Intelligence (Investigation) check.",
+    ],
   },
   {
     id: "use_object",
     name: "Use an Object",
     category: "actions",
-    summary: "Interact with an object that requires your action (e.g., drink a potion, open locks).",
+    summary:
+      "Interact with an object that requires your action (e.g., drink a potion, open locks).",
     details: [
-      "You normally interact with one object for free during movement or an action. When an object requires an action to use, you take this action."
-    ]
+      "You normally interact with one object for free during movement or an action. When an object requires an action to use, you take this action.",
+    ],
   },
 
   // --- RESTING & COVER ---
@@ -308,8 +342,8 @@ const RULES_DATA: RuleItem[] = [
     effects: ["+2 AC", "+2 DEX Saves"],
     details: [
       "A target with half cover has a +2 bonus to AC and Dexterity saving throws.",
-      "A target has half cover if an obstacle blocks at least half of its body. Examples include a low wall, a large piece of furniture, or another creature."
-    ]
+      "A target has half cover if an obstacle blocks at least half of its body. Examples include a low wall, a large piece of furniture, or another creature.",
+    ],
   },
   {
     id: "three_quarters_cover",
@@ -319,8 +353,8 @@ const RULES_DATA: RuleItem[] = [
     effects: ["+5 AC", "+5 DEX Saves"],
     details: [
       "A target with three-quarters cover has a +5 bonus to AC and Dexterity saving throws.",
-      "A target has three-quarters cover if about three-quarters of it is covered by an obstacle. Examples include a portcullis, an arrow slit, or a thick tree trunk."
-    ]
+      "A target has three-quarters cover if about three-quarters of it is covered by an obstacle. Examples include a portcullis, an arrow slit, or a thick tree trunk.",
+    ],
   },
   {
     id: "total_cover",
@@ -331,8 +365,8 @@ const RULES_DATA: RuleItem[] = [
     details: [
       "A target with total cover cannot be targeted directly by an attack or a spell.",
       "Spells that include the target in an area of effect can still affect it.",
-      "A target has total cover if it is completely concealed by an obstacle."
-    ]
+      "A target has total cover if it is completely concealed by an obstacle.",
+    ],
   },
   {
     id: "short_rest",
@@ -342,8 +376,8 @@ const RULES_DATA: RuleItem[] = [
     details: [
       "A Short Rest is a period of downtime, at least 1 hour long, during which a character does nothing more strenuous than eating, drinking, reading, and tending to wounds.",
       "A character can spend one or more Hit Dice. For each die rolled, add your Constitution modifier and regain that many HP.",
-      "You decide to spend hit dice one at a time."
-    ]
+      "You decide to spend hit dice one at a time.",
+    ],
   },
   {
     id: "long_rest",
@@ -355,9 +389,9 @@ const RULES_DATA: RuleItem[] = [
       "Regain all lost Hit Points.",
       "Regain spent Hit Dice up to half of your maximum hit dice amount (minimum of 1).",
       "Spell slots and once-per-long-rest class abilities are completely restored.",
-      "A character cannot benefit from more than one Long Rest in a 24-hour period."
-    ]
-  }
+      "A character cannot benefit from more than one Long Rest in a 24-hour period.",
+    ],
+  },
 ];
 
 export default function RulesReference() {
@@ -458,9 +492,7 @@ export default function RulesReference() {
                     : "bg-secondary/5 border-border/20 hover:bg-secondary/15 hover:border-border/40"
                 }`}
               >
-                <div className="font-semibold text-xs text-foreground mb-0.5">
-                  {rule.name}
-                </div>
+                <div className="font-semibold text-xs text-foreground mb-0.5">{rule.name}</div>
                 <div className="text-[10px] text-muted-foreground line-clamp-1 leading-normal">
                   {rule.summary}
                 </div>
@@ -514,7 +546,10 @@ export default function RulesReference() {
               </h3>
               <ul className="space-y-2.5">
                 {selectedRule.details.map((detail, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 text-xs text-foreground/90 leading-relaxed">
+                  <li
+                    key={idx}
+                    className="flex items-start gap-2.5 text-xs text-foreground/90 leading-relaxed"
+                  >
                     <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gold flex-shrink-0 shadow-[0_0_4px_var(--gold)]" />
                     <span>{detail}</span>
                   </li>
@@ -527,7 +562,8 @@ export default function RulesReference() {
           <div className="mt-8 rounded-lg bg-secondary/15 border border-border/30 p-3 select-none flex items-start gap-2.5">
             <ShieldAlert size={14} className="text-gold mt-0.5 flex-shrink-0" />
             <p className="text-[10px] text-muted-foreground leading-normal">
-              Always defer to the Dungeon Master's ruling. D&D 5e mechanics can vary based on campaign overrides, table rules, and chosen sourcebooks.
+              Always defer to the Dungeon Master's ruling. D&D 5e mechanics can vary based on
+              campaign overrides, table rules, and chosen sourcebooks.
             </p>
           </div>
         </div>

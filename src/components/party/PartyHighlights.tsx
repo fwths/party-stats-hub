@@ -5,7 +5,6 @@ import { SKILL_ABILITY } from "@/lib/constants";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 import { getShortName } from "@/lib/utils";
 import {
-
   Eye,
   Search,
   Brain,

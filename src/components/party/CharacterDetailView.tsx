@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   Award,
   BookOpen,
@@ -24,6 +24,18 @@ import {
   User,
   RefreshCw,
   ChevronDown,
+  Skull,
+  Clock,
+  Target,
+  Scroll,
+  Check,
+  Dumbbell,
+  Coins,
+  Sword,
+  FlaskConical,
+  Gem,
+  Wand,
+  Shirt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -46,8 +58,230 @@ import {
 } from "./CharacterCard";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 
-
 const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+
+interface ItemPreset {
+  name: string;
+  type: string;
+  rarity: string;
+  weight: number;
+  cost: number;
+  damage?: string;
+  armorClass?: number;
+  description?: string;
+}
+
+const DND_ITEM_PRESETS: ItemPreset[] = [
+  // Weapons
+  {
+    name: "Dagger",
+    type: "Weapon",
+    rarity: "Mundane",
+    weight: 1,
+    cost: 2,
+    damage: "1d4 piercing",
+    description: "Finesse, light, thrown (range 20/60)",
+  },
+  {
+    name: "Shortsword",
+    type: "Weapon",
+    rarity: "Mundane",
+    weight: 2,
+    cost: 10,
+    damage: "1d6 piercing",
+    description: "Finesse, light",
+  },
+  {
+    name: "Rapier",
+    type: "Weapon",
+    rarity: "Mundane",
+    weight: 2,
+    cost: 25,
+    damage: "1d8 piercing",
+    description: "Finesse",
+  },
+  {
+    name: "Longsword",
+    type: "Weapon",
+    rarity: "Mundane",
+    weight: 3,
+    cost: 15,
+    damage: "1d8 slashing",
+    description: "Versatile (1d10)",
+  },
+  {
+    name: "Greatsword",
+    type: "Weapon",
+    rarity: "Mundane",
+    weight: 6,
+    cost: 50,
+    damage: "2d6 slashing",
+    description: "Heavy, two-handed",
+  },
+  {
+    name: "Shortbow",
+    type: "Weapon",
+    rarity: "Mundane",
+    weight: 2,
+    cost: 25,
+    damage: "1d6 piercing",
+    description: "Ammunition (range 80/320), two-handed",
+  },
+  {
+    name: "Longbow",
+    type: "Weapon",
+    rarity: "Mundane",
+    weight: 2,
+    cost: 50,
+    damage: "1d8 piercing",
+    description: "Ammunition (range 150/600), heavy, two-handed",
+  },
+
+  // Armor & Shield
+  {
+    name: "Shield",
+    type: "Shield",
+    rarity: "Mundane",
+    weight: 6,
+    cost: 10,
+    armorClass: 2,
+    description: "A shield made from wood or metal. Calculates +2 AC bonus.",
+  },
+  {
+    name: "Leather Armor",
+    type: "Light Armor",
+    rarity: "Mundane",
+    weight: 10,
+    cost: 10,
+    armorClass: 11,
+    description: "Base AC 11 + Dex modifier.",
+  },
+  {
+    name: "Studded Leather Armor",
+    type: "Light Armor",
+    rarity: "Mundane",
+    weight: 13,
+    cost: 45,
+    armorClass: 12,
+    description: "Base AC 12 + Dex modifier.",
+  },
+  {
+    name: "Hide Armor",
+    type: "Medium Armor",
+    rarity: "Mundane",
+    weight: 12,
+    cost: 10,
+    armorClass: 12,
+    description: "Base AC 12 + Dex modifier (max 2).",
+  },
+  {
+    name: "Scale Mail",
+    type: "Medium Armor",
+    rarity: "Mundane",
+    weight: 45,
+    cost: 50,
+    armorClass: 14,
+    description: "Base AC 14 + Dex modifier (max 2). Disadvantage on Stealth.",
+  },
+  {
+    name: "Breastplate",
+    type: "Medium Armor",
+    rarity: "Mundane",
+    weight: 20,
+    cost: 400,
+    armorClass: 14,
+    description: "Base AC 14 + Dex modifier (max 2).",
+  },
+  {
+    name: "Half Plate Armor",
+    type: "Medium Armor",
+    rarity: "Mundane",
+    weight: 40,
+    cost: 750,
+    armorClass: 15,
+    description: "Base AC 15 + Dex modifier (max 2). Disadvantage on Stealth.",
+  },
+  {
+    name: "Chain Mail",
+    type: "Heavy Armor",
+    rarity: "Mundane",
+    weight: 55,
+    cost: 75,
+    armorClass: 16,
+    description: "Base AC 16. Requires STR 13. Disadvantage on Stealth.",
+  },
+  {
+    name: "Plate Armor",
+    type: "Heavy Armor",
+    rarity: "Mundane",
+    weight: 65,
+    cost: 1500,
+    armorClass: 18,
+    description: "Base AC 18. Requires STR 15. Disadvantage on Stealth.",
+  },
+
+  // Potions & Scrolls
+  {
+    name: "Potion of Healing",
+    type: "Potion",
+    rarity: "Common",
+    weight: 0.5,
+    cost: 50,
+    description: "Regain 2d4 + 2 hit points.",
+  },
+  {
+    name: "Potion of Greater Healing",
+    type: "Potion",
+    rarity: "Uncommon",
+    weight: 0.5,
+    cost: 150,
+    description: "Regain 4d4 + 4 hit points.",
+  },
+  {
+    name: "Potion of Superior Healing",
+    type: "Potion",
+    rarity: "Rare",
+    weight: 0.5,
+    cost: 450,
+    description: "Regain 8d4 + 8 hit points.",
+  },
+  {
+    name: "Scroll of Protection",
+    type: "Scroll",
+    rarity: "Rare",
+    weight: 0.1,
+    cost: 100,
+    description: "A spell scroll containing protection magic.",
+  },
+
+  // Magic Items
+  {
+    name: "Ring of Protection",
+    type: "Ring",
+    rarity: "Rare",
+    weight: 0,
+    cost: 200,
+    armorClass: 1,
+    description: "You gain a +1 bonus to AC and saving throws while wearing this ring.",
+  },
+  {
+    name: "Cloak of Protection",
+    type: "Wondrous Item",
+    rarity: "Uncommon",
+    weight: 3,
+    cost: 150,
+    armorClass: 1,
+    description: "You gain a +1 bonus to AC and saving throws while wearing this cloak.",
+  },
+  {
+    name: "Bag of Holding",
+    type: "Wondrous Item",
+    rarity: "Uncommon",
+    weight: 15,
+    cost: 250,
+    description: "This bag has an interior space considerably larger than its outside dimensions.",
+  },
+];
 
 const DAMAGE_TYPE_THEMES: Record<string, { bg: string; text: string; border: string }> = {
   fire: { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/30" },
@@ -64,6 +298,420 @@ const DAMAGE_TYPE_THEMES: Record<string, { bg: string; text: string; border: str
   piercing: { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/20" },
   bludgeoning: { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/20" },
 };
+
+const SCHOOL_THEMES: Record<
+  string,
+  {
+    color: string;
+    bg: string;
+    text: string;
+    border: string;
+    glow: string;
+    icon: any;
+  }
+> = {
+  abjuration: {
+    color: "cyan",
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-400",
+    border: "border-cyan-500/30",
+    glow: "shadow-cyan-500/20",
+    icon: Shield,
+  },
+  conjuration: {
+    color: "orange",
+    bg: "bg-orange-500/10",
+    text: "text-orange-400",
+    border: "border-orange-500/30",
+    glow: "shadow-orange-500/20",
+    icon: Layers,
+  },
+  divination: {
+    color: "indigo",
+    bg: "bg-indigo-500/10",
+    text: "text-indigo-400",
+    border: "border-indigo-500/30",
+    glow: "shadow-indigo-500/20",
+    icon: Eye,
+  },
+  enchantment: {
+    color: "pink",
+    bg: "bg-pink-500/10",
+    text: "text-pink-400",
+    border: "border-pink-500/30",
+    glow: "shadow-pink-500/20",
+    icon: Heart,
+  },
+  evocation: {
+    color: "red",
+    bg: "bg-red-500/10",
+    text: "text-red-400",
+    border: "border-red-500/30",
+    glow: "shadow-red-500/20",
+    icon: Flame,
+  },
+  illusion: {
+    color: "purple",
+    bg: "bg-purple-500/10",
+    text: "text-purple-400",
+    border: "border-purple-500/30",
+    glow: "shadow-purple-500/20",
+    icon: Moon,
+  },
+  necromancy: {
+    color: "emerald",
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-400",
+    border: "border-emerald-500/30",
+    glow: "shadow-emerald-500/20",
+    icon: Skull,
+  },
+  transmutation: {
+    color: "amber",
+    bg: "bg-amber-500/10",
+    text: "text-amber-400",
+    border: "border-amber-500/30",
+    glow: "shadow-amber-500/20",
+    icon: RefreshCw,
+  },
+};
+
+const getSchoolTheme = (schoolName?: string) => {
+  const normalized = schoolName?.toLowerCase() || "";
+  return (
+    SCHOOL_THEMES[normalized] || {
+      color: "slate",
+      bg: "bg-slate-500/10",
+      text: "text-slate-400",
+      border: "border-slate-500/20",
+      glow: "shadow-slate-500/10",
+      icon: BookOpen,
+    }
+  );
+};
+
+function MagicalSealWatermark({ school }: { school?: string }) {
+  const normalized = school?.toLowerCase() || "";
+
+  const renderGeometry = () => {
+    switch (normalized) {
+      case "abjuration":
+        return (
+          <>
+            <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle
+              cx="100"
+              cy="100"
+              r="70"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              fill="none"
+              strokeDasharray="3 3"
+            />
+            <polygon
+              points="100,20 180,60 180,140 100,180 20,140 20,60"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <polygon
+              points="100,35 160,65 160,135 100,165 40,135 40,65"
+              stroke="currentColor"
+              strokeWidth="0.75"
+              fill="none"
+              strokeDasharray="5 2"
+            />
+            <circle cx="100" cy="100" r="25" stroke="currentColor" strokeWidth="1" fill="none" />
+            <path
+              d="M 100 10 L 100 190 M 10 100 L 190 100"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              opacity="0.5"
+            />
+          </>
+        );
+      case "evocation":
+        return (
+          <>
+            <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle cx="100" cy="100" r="80" stroke="currentColor" strokeWidth="0.5" fill="none" />
+            <polygon
+              points="100,15 173,142 27,142"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <polygon
+              points="100,185 27,58 173,58"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <line
+              x1="100"
+              y1="10"
+              x2="100"
+              y2="190"
+              stroke="currentColor"
+              strokeWidth="0.75"
+              strokeDasharray="4 4"
+            />
+            <line
+              x1="10"
+              y1="100"
+              x2="190"
+              y2="100"
+              stroke="currentColor"
+              strokeWidth="0.75"
+              strokeDasharray="4 4"
+            />
+            <line x1="36" y1="36" x2="164" y2="164" stroke="currentColor" strokeWidth="0.75" />
+            <line x1="164" y1="36" x2="36" y2="164" stroke="currentColor" strokeWidth="0.75" />
+            <circle cx="100" cy="100" r="30" stroke="currentColor" strokeWidth="1" fill="none" />
+          </>
+        );
+      case "divination":
+        return (
+          <>
+            <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle
+              cx="100"
+              cy="100"
+              r="85"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              fill="none"
+              strokeDasharray="10 5 2 5"
+            />
+            <circle cx="100" cy="100" r="65" stroke="currentColor" strokeWidth="0.75" fill="none" />
+            <circle
+              cx="100"
+              cy="100"
+              r="45"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              fill="none"
+              strokeDasharray="2 2"
+            />
+            <path
+              d="M 50 100 Q 100 60 150 100 Q 100 140 50 100 Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <circle cx="100" cy="100" r="20" stroke="currentColor" strokeWidth="1.5" fill="none" />
+            <circle cx="100" cy="100" r="8" fill="currentColor" />
+            <path
+              d="M 100 10 L 100 45 M 100 155 L 100 190 M 10 100 L 45 100 M 155 100 L 190 100"
+              stroke="currentColor"
+              strokeWidth="1"
+            />
+          </>
+        );
+      case "enchantment":
+        return (
+          <>
+            <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle cx="100" cy="100" r="75" stroke="currentColor" strokeWidth="0.5" fill="none" />
+            <path
+              d="M 100 20 C 140 20, 180 60, 180 100 C 180 140, 140 180, 100 180 C 60 180, 20 140, 20 100 C 20 60, 60 20, 100 20 Z"
+              stroke="currentColor"
+              strokeWidth="0.75"
+              fill="none"
+              transform="rotate(15 100 100)"
+            />
+            <path
+              d="M 100 20 C 140 20, 180 60, 180 100 C 180 140, 140 180, 100 180 C 60 180, 20 140, 20 100 C 20 60, 60 20, 100 20 Z"
+              stroke="currentColor"
+              strokeWidth="0.75"
+              fill="none"
+              transform="rotate(45 100 100)"
+            />
+            <path
+              d="M 100 20 C 140 20, 180 60, 180 100 C 180 140, 140 180, 100 180 C 60 180, 20 140, 20 100 C 20 60, 60 20, 100 20 Z"
+              stroke="currentColor"
+              strokeWidth="0.75"
+              fill="none"
+              transform="rotate(75 100 100)"
+            />
+            <circle
+              cx="100"
+              cy="100"
+              r="35"
+              stroke="currentColor"
+              strokeWidth="1"
+              fill="none"
+              strokeDasharray="3 1"
+            />
+            <circle cx="100" cy="100" r="15" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          </>
+        );
+      case "illusion":
+        return (
+          <>
+            <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle
+              cx="100"
+              cy="100"
+              r="82"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              fill="none"
+              strokeDasharray="15 3 3 3"
+            />
+            <path
+              d="M 80 40 A 60 60 0 0 0 80 160 A 50 50 0 0 1 80 40"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              fill="none"
+            />
+            <path
+              d="M 120 40 A 60 60 0 0 1 120 160 A 50 50 0 0 0 120 40"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              fill="none"
+            />
+            <circle cx="100" cy="100" r="40" stroke="currentColor" strokeWidth="0.75" fill="none" />
+            <circle
+              cx="100"
+              cy="100"
+              r="20"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="none"
+              strokeDasharray="2 4"
+            />
+            <polygon
+              points="100,60 110,80 130,80 115,95 120,115 100,105 80,115 85,95 70,80 90,80"
+              stroke="currentColor"
+              strokeWidth="0.75"
+              fill="none"
+            />
+          </>
+        );
+      case "necromancy":
+        return (
+          <>
+            <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="1.25" fill="none" />
+            <circle
+              cx="100"
+              cy="100"
+              r="75"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              fill="none"
+              strokeDasharray="1 5"
+            />
+            <polygon
+              points="100,25 165,138 35,138"
+              stroke="currentColor"
+              strokeWidth="1"
+              fill="none"
+            />
+            <polygon
+              points="100,175 35,62 165,62"
+              stroke="currentColor"
+              strokeWidth="1"
+              fill="none"
+            />
+            <circle cx="100" cy="25" r="4" fill="currentColor" />
+            <circle cx="165" cy="138" r="4" fill="currentColor" />
+            <circle cx="35" cy="138" r="4" fill="currentColor" />
+            <circle cx="100" cy="175" r="4" fill="currentColor" />
+            <circle cx="35" cy="62" r="4" fill="currentColor" />
+            <circle cx="165" cy="62" r="4" fill="currentColor" />
+            <path
+              d="M 100 55 L 135 120 L 65 120 Z"
+              stroke="currentColor"
+              strokeWidth="0.75"
+              fill="none"
+            />
+            <circle cx="100" cy="100" r="15" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          </>
+        );
+      case "transmutation":
+        return (
+          <>
+            <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle cx="100" cy="100" r="78" stroke="currentColor" strokeWidth="0.5" fill="none" />
+            {Array.from({ length: 12 }).map((_, i) => (
+              <path
+                key={i}
+                d="M 95 10 L 105 10 L 103 22 L 97 22 Z"
+                stroke="currentColor"
+                strokeWidth="1"
+                fill="none"
+                transform={`rotate(${i * 30} 100 100)`}
+              />
+            ))}
+            <circle cx="100" cy="100" r="60" stroke="currentColor" strokeWidth="0.75" fill="none" />
+            <path
+              d="M 75 100 C 75 85, 90 85, 100 100 C 110 115, 125 115, 125 100 C 125 85, 110 85, 100 100 C 90 115, 75 115, 75 100 Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <circle cx="100" cy="100" r="10" stroke="currentColor" strokeWidth="0.5" fill="none" />
+          </>
+        );
+      case "conjuration":
+      default:
+        return (
+          <>
+            <circle cx="100" cy="100" r="90" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle
+              cx="100"
+              cy="100"
+              r="85"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              fill="none"
+              strokeDasharray="4 4"
+            />
+            <circle cx="100" cy="100" r="70" stroke="currentColor" strokeWidth="0.75" fill="none" />
+            <polygon
+              points="100,20 120,80 180,100 120,120 100,180 80,120 20,100 80,80"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              fill="none"
+            />
+            <polygon
+              points="100,20 120,80 180,100 120,120 100,180 80,120 20,100 80,80"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              fill="none"
+              transform="rotate(45 100 100)"
+            />
+            <circle cx="100" cy="100" r="30" stroke="currentColor" strokeWidth="1" fill="none" />
+            <circle
+              cx="100"
+              cy="100"
+              r="15"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              fill="none"
+              strokeDasharray="1 1"
+            />
+          </>
+        );
+    }
+  };
+
+  const theme = getSchoolTheme(school);
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden select-none opacity-[0.05] dark:opacity-[0.07] z-0">
+      <svg
+        width="380"
+        height="380"
+        viewBox="0 0 200 200"
+        className={`w-[380px] h-[380px] ${theme.text} animate-[spin_60s_linear_infinite]`}
+      >
+        {renderGeometry()}
+      </svg>
+    </div>
+  );
+}
 
 function parseHitDice(hitDiceStr: string) {
   if (!hitDiceStr || hitDiceStr === "—") return [];
@@ -138,9 +786,7 @@ function useLocalActiveInfusions(memberId: number, initialActiveInfusions: strin
 
   const toggleInfusion = (name: string) => {
     setActiveInfusions((prev) => {
-      const next = prev.includes(name)
-        ? prev.filter((x) => x !== name)
-        : [...prev, name];
+      const next = prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name];
       try {
         localStorage.setItem(storageKey, JSON.stringify(next));
       } catch (e) {
@@ -151,6 +797,254 @@ function useLocalActiveInfusions(memberId: number, initialActiveInfusions: strin
   };
 
   return [activeInfusions, toggleInfusion, setActiveInfusions] as const;
+}
+
+function useLocalInventoryState(memberId: number, initialItems: any[]) {
+  const storageKey = `party-stats:item-overrides:${memberId}`;
+  const customItemsKey = `party-stats:custom-items:${memberId}`;
+
+  const [overrides, setOverrides] = useState<
+    Record<string, { equipped?: boolean; attuned?: boolean }>
+  >(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [customItems, setCustomItems] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem(customItemsKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleItemEquipped = (itemName: string) => {
+    const isCustom = customItems.some((i) => i.name === itemName);
+    if (isCustom) {
+      setCustomItems((prev) => {
+        const next = prev.map((item) => {
+          if (item.name !== itemName) return item;
+          return { ...item, equipped: !item.equipped };
+        });
+
+        const targetItem = next.find((i) => i.name === itemName);
+        if (targetItem?.equipped) {
+          const isShield = (i: any) =>
+            i.armorTypeId === 4 || i.definition?.armorTypeId === 4 || i.isShield;
+          const isBodyArmor = (i: any) =>
+            (i.type?.toLowerCase().includes("armor") ||
+              i.type === "Armor" ||
+              i.definition?.filterType === "Armor" ||
+              i.filterType === "Armor") &&
+            (i.armorTypeId ?? 0) <= 3 &&
+            !isShield(i);
+
+          const checkShield = isShield(targetItem);
+          const checkArmor = isBodyArmor(targetItem);
+
+          if (checkShield || checkArmor) {
+            const finalNext = next.map((other) => {
+              if (other.name === itemName) return other;
+              const isOtherConflicting = checkShield ? isShield(other) : isBodyArmor(other);
+              if (isOtherConflicting) {
+                return { ...other, equipped: false };
+              }
+              return other;
+            });
+
+            setOverrides((prevOver) => {
+              const nextOver = { ...prevOver };
+              initialItems.forEach((other) => {
+                const isOtherConflicting = checkShield ? isShield(other) : isBodyArmor(other);
+                if (isOtherConflicting) {
+                  const otherOver = prevOver[other.name] ?? {};
+                  const otherEquipped =
+                    otherOver.equipped !== undefined ? otherOver.equipped : other.equipped;
+                  if (otherEquipped) {
+                    nextOver[other.name] = {
+                      ...otherOver,
+                      equipped: false,
+                    };
+                  }
+                }
+              });
+              try {
+                localStorage.setItem(storageKey, JSON.stringify(nextOver));
+              } catch {}
+              return nextOver;
+            });
+
+            try {
+              localStorage.setItem(customItemsKey, JSON.stringify(finalNext));
+            } catch {}
+            return finalNext;
+          }
+        }
+
+        try {
+          localStorage.setItem(customItemsKey, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+      return;
+    }
+
+    setOverrides((prev) => {
+      const current = prev[itemName] ?? {};
+      const initialItem = initialItems.find((i) => i.name === itemName);
+      const defaultEquipped = initialItem ? initialItem.equipped : false;
+      const currentEquipped = current.equipped !== undefined ? current.equipped : defaultEquipped;
+      const nextEquipped = !currentEquipped;
+
+      const next = {
+        ...prev,
+        [itemName]: {
+          ...current,
+          equipped: nextEquipped,
+        },
+      };
+
+      if (nextEquipped) {
+        const isShield = (i: any) =>
+          i.armorTypeId === 4 || i.definition?.armorTypeId === 4 || i.isShield;
+        const isBodyArmor = (i: any) =>
+          (i.type?.toLowerCase().includes("armor") ||
+            i.type === "Armor" ||
+            i.definition?.filterType === "Armor" ||
+            i.filterType === "Armor") &&
+          (i.armorTypeId ?? 0) <= 3 &&
+          !isShield(i);
+
+        const targetItem = initialItem;
+        if (targetItem) {
+          const checkShield = isShield(targetItem);
+          const checkArmor = isBodyArmor(targetItem);
+
+          if (checkShield || checkArmor) {
+            initialItems.forEach((other) => {
+              if (other.name === itemName) return;
+              const isOtherConflicting = checkShield ? isShield(other) : isBodyArmor(other);
+              if (isOtherConflicting) {
+                const otherOver = prev[other.name] ?? {};
+                const otherEquipped =
+                  otherOver.equipped !== undefined ? otherOver.equipped : other.equipped;
+                if (otherEquipped) {
+                  next[other.name] = {
+                    ...otherOver,
+                    equipped: false,
+                  };
+                }
+              }
+            });
+
+            setCustomItems((prevCustom) => {
+              const nextCustom = prevCustom.map((other) => {
+                const isOtherConflicting = checkShield ? isShield(other) : isBodyArmor(other);
+                if (isOtherConflicting) {
+                  return { ...other, equipped: false };
+                }
+                return other;
+              });
+              try {
+                localStorage.setItem(customItemsKey, JSON.stringify(nextCustom));
+              } catch {}
+              return nextCustom;
+            });
+          }
+        }
+      }
+
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const toggleItemAttuned = (itemName: string) => {
+    const isCustom = customItems.some((i) => i.name === itemName);
+    if (isCustom) {
+      setCustomItems((prev) => {
+        const next = prev.map((item) => {
+          if (item.name !== itemName) return item;
+          return { ...item, attuned: !item.attuned };
+        });
+        try {
+          localStorage.setItem(customItemsKey, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+      return;
+    }
+
+    setOverrides((prev) => {
+      const current = prev[itemName] ?? {};
+      const initialItem = initialItems.find((i) => i.name === itemName);
+      const defaultAttuned = initialItem ? initialItem.attuned : false;
+      const currentAttuned = current.attuned !== undefined ? current.attuned : defaultAttuned;
+      const next = {
+        ...prev,
+        [itemName]: {
+          ...current,
+          attuned: !currentAttuned,
+        },
+      };
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const setAllOverrides = (newOverrides: any) => {
+    setOverrides(newOverrides);
+  };
+
+  const addCustomItem = (newItem: any) => {
+    setCustomItems((prev) => {
+      const next = [...prev, newItem];
+      try {
+        localStorage.setItem(customItemsKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const deleteCustomItem = (itemName: string) => {
+    setCustomItems((prev) => {
+      const next = prev.filter((item) => item.name !== itemName);
+      try {
+        localStorage.setItem(customItemsKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const mappedInitial = initialItems.map((item) => {
+    const over = overrides[item.name];
+    return {
+      ...item,
+      equipped: over?.equipped !== undefined ? over.equipped : item.equipped,
+      attuned: over?.attuned !== undefined ? over.attuned : item.attuned,
+    };
+  });
+
+  const items = [...mappedInitial, ...customItems];
+
+  return [
+    items,
+    toggleItemEquipped,
+    toggleItemAttuned,
+    setAllOverrides,
+    addCustomItem,
+    deleteCustomItem,
+    setCustomItems,
+  ] as const;
 }
 
 const METAMAGIC_DICTIONARY: Record<string, string> = {
@@ -177,12 +1071,15 @@ const METAMAGIC_DICTIONARY: Record<string, string> = {
 };
 
 const RAGE_DICTIONARY: Record<string, string> = {
-  Active: "Enter a standard Rage. You have Resistance to Bludgeoning, Piercing, and Slashing damage, Advantage on Strength checks and saving throws, and deal extra Rage damage on Strength-based attacks.",
+  Active:
+    "Enter a standard Rage. You have Resistance to Bludgeoning, Piercing, and Slashing damage, Advantage on Strength checks and saving throws, and deal extra Rage damage on Strength-based attacks.",
   Bear: "While raging, you have Resistance to every damage type except Force, Necrotic, Psychic, and Radiant.",
-  Eagle: "When you activate your Rage, you can take the Disengage and Dash actions as part of that Bonus Action. While active, you can take a Bonus Action to take both of those actions.",
+  Eagle:
+    "When you activate your Rage, you can take the Disengage and Dash actions as part of that Bonus Action. While active, you can take a Bonus Action to take both of those actions.",
   Wolf: "While raging, your allies have Advantage on melee attack rolls against any enemy of yours within 5 feet of you.",
   Elk: "While raging, your walking speed increases by 15 feet.",
-  Tiger: "While raging, you can add 10 feet to your long jump distance and 3 feet to your high jump distance.",
+  Tiger:
+    "While raging, you can add 10 feet to your long jump distance and 3 feet to your high jump distance.",
 };
 
 const TOTEM_ASPECT_DICTIONARY: Record<string, string> = {
@@ -193,8 +1090,10 @@ const TOTEM_ASPECT_DICTIONARY: Record<string, string> = {
   Tiger: "You gain proficiency in Athletics, Acrobatics, Stealth, or Survival (or expertise).",
   Wolf: "You gain proficiency in Insight or Survival (or expertise). You can track other creatures while traveling at a fast pace, and move stealthily while traveling at normal pace.",
   Owl: "You gain proficiency in Investigation or Perception (or expertise). You gain Darkvision with a range of 60 feet (or +60 feet if you already have it).",
-  Panther: "You gain a climbing speed equal to your walking speed. You also gain proficiency in Acrobatics or Stealth (or expertise).",
-  Salmon: "You gain a swimming speed equal to your walking speed and can breathe underwater. You also gain proficiency in Athletics or Survival (or expertise).",
+  Panther:
+    "You gain a climbing speed equal to your walking speed. You also gain proficiency in Acrobatics or Stealth (or expertise).",
+  Salmon:
+    "You gain a swimming speed equal to your walking speed and can breathe underwater. You also gain proficiency in Athletics or Survival (or expertise).",
 };
 
 const WEAPON_MASTERY_DICTIONARY: Record<string, string> = {
@@ -441,7 +1340,7 @@ function useLocalHpState(
   hpCurrentInit: number,
   tempHpInit: number,
   hitDiceStr: string,
-  deathSavesInit: { successes: number; failures: number; stabilized: boolean }
+  deathSavesInit: { successes: number; failures: number; stabilized: boolean },
 ) {
   const storageKey = `party-stats:hp:${memberId}`;
   const [localData, setLocalData] = useState<LocalHpData>(() => {
@@ -526,9 +1425,10 @@ function useLocalHpState(
   const heal = (amount: number) => {
     setLocalData((prev) => {
       const newHp = Math.min(hpMax, prev.hpCurrent + amount);
-      const newDeathSaves = newHp > 0
-        ? { successes: 0, failures: 0, stabilized: false }
-        : (prev.deathSaves ?? { successes: 0, failures: 0, stabilized: false });
+      const newDeathSaves =
+        newHp > 0
+          ? { successes: 0, failures: 0, stabilized: false }
+          : (prev.deathSaves ?? { successes: 0, failures: 0, stabilized: false });
 
       return {
         ...prev,
@@ -758,12 +1658,30 @@ function useLocalSpellSlots(
     });
   };
 
+  const changeSlotUsed = (level: number, delta: number, isPact: boolean) => {
+    setLocalData((prev) => {
+      const usedMap = { ...(isPact ? prev.pactSlotsUsed : prev.spellSlotsUsed) };
+      const currentUsedOnServer =
+        (isPact ? initialPactSlots : initialSpellSlots).find((s) => s.level === level)?.used ?? 0;
+      const prevUsed = usedMap[level] !== undefined ? usedMap[level] : currentUsedOnServer;
+      const newUsed = Math.max(0, prevUsed + delta);
+      return {
+        ...prev,
+        [isPact ? "pactSlotsUsed" : "spellSlotsUsed"]: {
+          ...usedMap,
+          [level]: newUsed,
+        },
+      };
+    });
+  };
+
   return {
     spellSlots: getEffectiveSlots(initialSpellSlots, false),
     pactSlots: getEffectiveSlots(initialPactSlots, true),
     toggleSlot,
     restSlots,
     reset,
+    changeSlotUsed,
   };
 }
 
@@ -880,6 +1798,19 @@ function useLocalResourcesState(memberId: number, initialActions: ActionInfo[]) 
     });
   };
 
+  const useResourceAmount = (name: string, amount: number, max: number) => {
+    setLocalData((prev) => {
+      const currentSpent = prev.spent[name] ?? 0;
+      if (currentSpent >= max) return prev;
+      return {
+        spent: {
+          ...prev.spent,
+          [name]: Math.min(max, currentSpent + amount),
+        },
+      };
+    });
+  };
+
   const regainResource = (name: string) => {
     setLocalData((prev) => {
       const currentSpent = prev.spent[name] ?? 0;
@@ -936,22 +1867,24 @@ function useLocalResourcesState(memberId: number, initialActions: ActionInfo[]) 
   };
 
   const getEffectiveResource = (a: ActionInfo) => {
-    if (!a.uses) return a;
     const spent = localData.spent[a.name] ?? 0;
-    const current = Math.max(0, a.uses.max - spent);
+    const current = Math.max(0, (a.uses?.max ?? 0) - spent);
     return {
       ...a,
-      uses: {
-        ...a.uses,
-        current,
-        spent,
-      },
+      uses: a.uses
+        ? {
+            ...a.uses,
+            current,
+            spent,
+          }
+        : undefined,
     };
   };
 
   return {
     spent: localData.spent,
     useResource,
+    useResourceAmount,
     regainResource,
     toggleResourceBubble,
     restResources,
@@ -978,10 +1911,12 @@ function Panel({
       className={`card-arcane card-arcane-hover rounded-xl border border-border/40 ${padding} shadow-lg ${className}`}
     >
       {title && (
-        <div className={cn(
-          "flex items-center gap-2 font-bold uppercase tracking-widest text-accent text-glow-accent border-b border-border/20 select-none",
-          padding.includes("p-5") ? "mb-4.5 pb-3 text-xs" : "mb-2.5 pb-2 text-[10px]"
-        )}>
+        <div
+          className={cn(
+            "flex items-center gap-2 font-bold uppercase tracking-widest text-accent text-glow-accent border-b border-border/20 select-none",
+            padding.includes("p-5") ? "mb-4.5 pb-3 text-xs" : "mb-2.5 pb-2 text-[10px]",
+          )}
+        >
           {Icon && <Icon size={13} className="text-accent animate-pulse" />}
           <span>{title}</span>
         </div>
@@ -1005,12 +1940,7 @@ function DetailStat({
   return (
     <div className="group rounded-xl border border-border/40 bg-secondary/35 px-2.5 py-3 transition-all duration-300 hover:border-accent/40 hover:bg-secondary/60 relative overflow-hidden flex flex-col min-h-[72px] hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5 text-center">
       <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-        {Icon && (
-          <Icon
-            size={11}
-            className={cn("text-accent/80 shrink-0", iconClassName)}
-          />
-        )}
+        {Icon && <Icon size={11} className={cn("text-accent/80 shrink-0", iconClassName)} />}
         <span>{label}</span>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center mt-1.5">
@@ -1022,17 +1952,9 @@ function DetailStat({
   );
 }
 
-function DieSvg({
-  die,
-  className,
-  active,
-}: {
-  die: string;
-  className?: string;
-  active?: boolean;
-}) {
+function DieSvg({ die, className, active }: { die: string; className?: string; active?: boolean }) {
   const normDie = die.toLowerCase();
-  
+
   // Outer colors and strokes
   const activeColor = "var(--accent)";
   const strokeColor = active ? activeColor : "currentColor";
@@ -1053,9 +1975,36 @@ function DieSvg({
           fillOpacity={fillOpacity}
           strokeLinejoin="round"
         />
-        <line x1="50" y1="58" x2="50" y2="12" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="58" x2="90" y2="83" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="58" x2="10" y2="83" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
+        <line
+          x1="50"
+          y1="58"
+          x2="50"
+          y2="12"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="58"
+          x2="90"
+          y2="83"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="58"
+          x2="10"
+          y2="83"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
         <text
           x="50"
           y="74"
@@ -1081,11 +2030,56 @@ function DieSvg({
           fillOpacity={fillOpacity}
           strokeLinejoin="round"
         />
-        <line x1="50" y1="52" x2="50" y2="12" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="52" x2="85" y2="72" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="52" x2="15" y2="72" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="15" y1="32" x2="50" y2="52" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="85" y1="32" x2="50" y2="52" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
+        <line
+          x1="50"
+          y1="52"
+          x2="50"
+          y2="12"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="52"
+          x2="85"
+          y2="72"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="52"
+          x2="15"
+          y2="72"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="15"
+          y1="32"
+          x2="50"
+          y2="52"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="85"
+          y1="32"
+          x2="50"
+          y2="52"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
         <text
           x="50"
           y="56"
@@ -1111,12 +2105,62 @@ function DieSvg({
           fillOpacity={fillOpacity}
           strokeLinejoin="round"
         />
-        <line x1="15" y1="52" x2="85" y2="52" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="12" x2="50" y2="92" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="15" y1="52" x2="50" y2="35" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} />
-        <line x1="85" y1="52" x2="50" y2="35" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} />
-        <line x1="15" y1="52" x2="50" y2="69" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} />
-        <line x1="85" y1="52" x2="50" y2="69" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} />
+        <line
+          x1="15"
+          y1="52"
+          x2="85"
+          y2="52"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="12"
+          x2="50"
+          y2="92"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="15"
+          y1="52"
+          x2="50"
+          y2="35"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+        />
+        <line
+          x1="85"
+          y1="52"
+          x2="50"
+          y2="35"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+        />
+        <line
+          x1="15"
+          y1="52"
+          x2="50"
+          y2="69"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+        />
+        <line
+          x1="85"
+          y1="52"
+          x2="50"
+          y2="69"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+        />
         <text
           x="50"
           y="56"
@@ -1142,12 +2186,66 @@ function DieSvg({
           fillOpacity={fillOpacity}
           strokeLinejoin="round"
         />
-        <line x1="50" y1="52" x2="50" y2="10" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="52" x2="85" y2="38" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="52" x2="85" y2="62" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="52" x2="50" y2="90" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="52" x2="15" y2="62" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="52" x2="15" y2="38" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
+        <line
+          x1="50"
+          y1="52"
+          x2="50"
+          y2="10"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="52"
+          x2="85"
+          y2="38"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="52"
+          x2="85"
+          y2="62"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="52"
+          x2="50"
+          y2="90"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="52"
+          x2="15"
+          y2="62"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="52"
+          x2="15"
+          y2="38"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
         <text
           x="50"
           y="56"
@@ -1181,11 +2279,56 @@ function DieSvg({
           opacity={lineOpacity}
           strokeLinejoin="round"
         />
-        <line x1="50" y1="10" x2="50" y2="42" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="88" y1="38" x2="68" y2="55" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="74" y1="82" x2="61" y2="76" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="26" y1="82" x2="39" y2="76" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="12" y1="38" x2="32" y2="55" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
+        <line
+          x1="50"
+          y1="10"
+          x2="50"
+          y2="42"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="88"
+          y1="38"
+          x2="68"
+          y2="55"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="74"
+          y1="82"
+          x2="61"
+          y2="76"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="26"
+          y1="82"
+          x2="39"
+          y2="76"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="12"
+          y1="38"
+          x2="32"
+          y2="55"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
         <text
           x="50"
           y="62"
@@ -1219,15 +2362,96 @@ function DieSvg({
           opacity={lineOpacity}
           strokeLinejoin="round"
         />
-        <line x1="32" y1="37" x2="50" y2="10" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="32" y1="37" x2="15" y2="30" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="32" y1="37" x2="15" y2="70" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="68" y1="37" x2="50" y2="10" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="68" y1="37" x2="85" y2="30" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="68" y1="37" x2="85" y2="70" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="68" x2="15" y2="70" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="68" x2="50" y2="90" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
-        <line x1="50" y1="68" x2="85" y2="70" stroke={strokeColor} strokeWidth={strokeWidth} opacity={lineOpacity} strokeLinecap="round" />
+        <line
+          x1="32"
+          y1="37"
+          x2="50"
+          y2="10"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="32"
+          y1="37"
+          x2="15"
+          y2="30"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="32"
+          y1="37"
+          x2="15"
+          y2="70"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="68"
+          y1="37"
+          x2="50"
+          y2="10"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="68"
+          y1="37"
+          x2="85"
+          y2="30"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="68"
+          y1="37"
+          x2="85"
+          y2="70"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="68"
+          x2="15"
+          y2="70"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="68"
+          x2="50"
+          y2="90"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
+        <line
+          x1="50"
+          y1="68"
+          x2="85"
+          y2="70"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          opacity={lineOpacity}
+          strokeLinecap="round"
+        />
         <text
           x="50"
           y="53"
@@ -1247,23 +2471,39 @@ function DieSvg({
   return (
     <svg
       viewBox="0 0 100 100"
-      className={cn("w-full h-full select-none pointer-events-none transition-transform duration-300", className)}
+      className={cn(
+        "w-full h-full select-none pointer-events-none transition-transform duration-300",
+        className,
+      )}
     >
       {content}
     </svg>
   );
 }
 
-export function CharacterDetailView({ member }: { member: PartyMember }) {
-  const [activeLayout, setActiveLayout] = useState<"classic" | "sticky" | "tabbed" | "widescreen">(() => {
-    try {
-      const stored = localStorage.getItem("party-stats:detail-layout");
-      if (stored === "classic" || stored === "sticky" || stored === "tabbed" || stored === "widescreen") {
-        return stored;
-      }
-    } catch {}
-    return "tabbed";
-  });
+export function CharacterDetailView({
+  member,
+  allMembers = [],
+}: {
+  member: PartyMember;
+  allMembers?: PartyMember[];
+}) {
+  const [activeLayout, setActiveLayout] = useState<"classic" | "sticky" | "tabbed" | "widescreen">(
+    () => {
+      try {
+        const stored = localStorage.getItem("party-stats:detail-layout");
+        if (
+          stored === "classic" ||
+          stored === "sticky" ||
+          stored === "tabbed" ||
+          stored === "widescreen"
+        ) {
+          return stored;
+        }
+      } catch {}
+      return "tabbed";
+    },
+  );
   const [activeTab, setActiveTab] = useState<
     "combat" | "spells" | "skills" | "features" | "gear" | "bio" | "companions"
   >("skills");
@@ -1278,6 +2518,254 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
   const [spellSearch, setSpellSearch] = useState("");
   const [spellLevelFilter, setSpellLevelFilter] = useState<number | "all">("all");
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [selectedSpellName, setSelectedSpellName] = useState<string | null>(null);
+  const [spellbookViewMode, setSpellbookViewMode] = useState<"codex" | "grid">("codex");
+  const [spellSchoolFilter, setSpellSchoolFilter] = useState<string>("all");
+  const [spellActivationFilter, setSpellActivationFilter] = useState<string>("all");
+  const [spellConcentrationFilter, setSpellConcentrationFilter] = useState<boolean>(false);
+  const [spellRitualFilter, setSpellRitualFilter] = useState<boolean>(false);
+  const [castingSpellState, setCastingSpellState] = useState<{
+    active: boolean;
+    spellName: string | null;
+    slotLevel?: number;
+  } | null>(null);
+
+  const [selectedMetamagicName, setSelectedMetamagicName] = useState<string | null>(null);
+  const [onlyPreparedFilter, setOnlyPreparedFilter] = useState<boolean>(false);
+  const [localPrepOverride, setLocalPrepOverride] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem(`party-stats:prep-override:${member.id}`);
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        `party-stats:prep-override:${member.id}`,
+        JSON.stringify(localPrepOverride),
+      );
+    } catch {}
+  }, [localPrepOverride, member.id]);
+
+  const [localInnateSorcery, setLocalInnateSorcery] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(`party-stats:innate-sorcery:${member.id}`);
+      return stored === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`party-stats:innate-sorcery:${member.id}`, String(localInnateSorcery));
+    } catch {}
+  }, [localInnateSorcery, member.id]);
+
+  const [localStarryForm, setLocalStarryForm] = useState<"None" | "Archer" | "Chalice" | "Dragon">(
+    (() => {
+      try {
+        const stored = localStorage.getItem(`party-stats:starry-form:${member.id}`);
+        if (stored === "Archer" || stored === "Chalice" || stored === "Dragon") return stored;
+      } catch {}
+      return "None";
+    })(),
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`party-stats:starry-form:${member.id}`, localStarryForm);
+    } catch {}
+  }, [localStarryForm, member.id]);
+
+  const [localMantleOfMajesty, setLocalMantleOfMajesty] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(`party-stats:mantle-majesty:${member.id}`);
+      return stored === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`party-stats:mantle-majesty:${member.id}`, String(localMantleOfMajesty));
+    } catch {}
+  }, [localMantleOfMajesty, member.id]);
+
+  const [isMantleInspirationOpen, setIsMantleInspirationOpen] = useState(false);
+
+  const [invSearchTerm, setInvSearchTerm] = useState("");
+  const [invCategory, setInvCategory] = useState("all");
+  const [selectedInvItem, setSelectedInvItem] = useState<any | null>(null);
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemType, setNewItemType] = useState("Gear");
+  const [newItemRarity, setNewItemRarity] = useState("Mundane");
+  const [newItemQty, setNewItemQty] = useState(1);
+  const [newItemWeight, setNewItemWeight] = useState(0);
+  const [newItemCost, setNewItemCost] = useState(0);
+  const [newItemDamage, setNewItemDamage] = useState("");
+  const [newItemAc, setNewItemAc] = useState<number | "">("");
+  const [newItemDesc, setNewItemDesc] = useState("");
+  const [presetSearchTerm, setPresetSearchTerm] = useState("");
+  const [dndApiItems, setDndApiItems] = useState<
+    Array<{ name: string; index: string; category: "equipment" | "magic-items" }>
+  >([]);
+  const [isLoadingApiItems, setIsLoadingApiItems] = useState(false);
+  const [isFetchingDetail, setIsFetchingDetail] = useState(false);
+
+  useEffect(() => {
+    if (dndApiItems.length > 0) return;
+
+    async function fetchAllItems() {
+      setIsLoadingApiItems(true);
+      try {
+        const [eqRes, miRes] = await Promise.all([
+          fetch("https://www.dnd5eapi.co/api/2014/equipment").then((r) => r.json()),
+          fetch("https://www.dnd5eapi.co/api/2014/magic-items").then((r) => r.json()),
+        ]);
+
+        const eqList = (eqRes.results || []).map((i: { name: string; index: string }) => ({
+          name: i.name,
+          index: i.index,
+          category: "equipment" as const,
+        }));
+
+        const miList = (miRes.results || []).map((i: { name: string; index: string }) => ({
+          name: i.name,
+          index: i.index,
+          category: "magic-items" as const,
+        }));
+
+        setDndApiItems([...eqList, ...miList].sort((a, b) => a.name.localeCompare(b.name)));
+      } catch (e) {
+        console.error("Failed to load D&D SRD items list:", e);
+      } finally {
+        setIsLoadingApiItems(false);
+      }
+    }
+
+    fetchAllItems();
+  }, [dndApiItems.length]);
+
+  const allAvailableItems = useMemo(() => {
+    const candidates = new Map<
+      string,
+      {
+        name: string;
+        type: string;
+        rarity: string | null;
+        weight: number;
+        cost: number;
+        damage?: string;
+        armorClass?: number;
+        description?: string;
+        source: string;
+        apiIndex?: string;
+        apiCategory?: "equipment" | "magic-items";
+      }
+    >();
+
+    // 1. Add presets
+    for (const p of DND_ITEM_PRESETS) {
+      candidates.set(p.name.toLowerCase(), {
+        name: p.name,
+        type: p.type,
+        rarity: p.rarity,
+        weight: p.weight,
+        cost: p.cost,
+        damage: p.damage,
+        armorClass: p.armorClass,
+        description: p.description,
+        source: "Preset",
+      });
+    }
+
+    // 2. Add party items
+    for (const m of allMembers) {
+      if (!m.inventory) continue;
+      for (const item of m.inventory) {
+        if (!item.name) continue;
+        const key = item.name.toLowerCase();
+        if (!candidates.has(key)) {
+          candidates.set(key, {
+            name: item.name,
+            type: item.type,
+            rarity: item.rarity,
+            weight: item.weight ?? 0,
+            cost: item.cost ?? 0,
+            damage: item.damage,
+            armorClass: item.armorClass,
+            description: item.description ?? item.snippet,
+            source: `${m.name}'s Bag`,
+          });
+        }
+      }
+    }
+
+    // 3. Add D&D API items
+    for (const item of dndApiItems) {
+      const key = item.name.toLowerCase();
+      if (!candidates.has(key)) {
+        candidates.set(key, {
+          name: item.name,
+          type: item.category === "magic-items" ? "Magic Item" : "Equipment",
+          rarity: null,
+          weight: 0,
+          cost: 0,
+          source: "D&D Database",
+          apiIndex: item.index,
+          apiCategory: item.category,
+        });
+      }
+    }
+
+    return Array.from(candidates.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [allMembers, dndApiItems]);
+
+  const filteredPresets = useMemo(() => {
+    if (!presetSearchTerm.trim()) return [];
+    const term = presetSearchTerm.toLowerCase();
+    return allAvailableItems
+      .filter(
+        (item) =>
+          item.name.toLowerCase().includes(term) ||
+          item.type.toLowerCase().includes(term) ||
+          (item.description && item.description.toLowerCase().includes(term)),
+      )
+      .slice(0, 15); // Show top 15 matches
+  }, [presetSearchTerm, allAvailableItems]);
+
+  const quickAddSuggestions = useMemo(() => {
+    if (!invSearchTerm.trim() || invSearchTerm.length < 2) return [];
+    const term = invSearchTerm.toLowerCase();
+    return allAvailableItems
+      .filter(
+        (item) =>
+          (item.source === "Preset" || item.source === "D&D Database") &&
+          (item.name.toLowerCase().includes(term) || item.type.toLowerCase().includes(term)),
+      )
+      .slice(0, 5);
+  }, [invSearchTerm, allAvailableItems]);
+  const [
+    localInventory,
+    toggleLocalItemEquipped,
+    toggleLocalItemAttuned,
+    setAllInvOverrides,
+    addLocalCustomItem,
+    deleteLocalCustomItem,
+    setLocalCustomItems,
+  ] = useLocalInventoryState(member.id, member.inventory || []);
+
+  useEffect(() => {
+    setSelectedInvItem(null);
+    setInvSearchTerm("");
+    setInvCategory("all");
+  }, [member.id]);
   const [featureSearch, setFeatureSearch] = useState("");
   const [featureFilter, setFeatureFilter] = useState<"all" | "class" | "race" | "feat">("all");
   const [isAspectSelectOpen, setIsAspectSelectOpen] = useState(false);
@@ -1302,6 +2790,15 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
   const isBarbarian =
     member.classes.toLowerCase().includes("barbarian") ||
     (member.totemAspects && member.totemAspects.length > 0);
+
+  const isStarsDruid =
+    member.classes.toLowerCase().includes("druid") &&
+    (member.subclasses.some((s) => s.toLowerCase().includes("stars")) ||
+      (member.features ?? []).some((f) => f.name.toLowerCase().includes("starry form")));
+
+  const isGlamourBard =
+    member.classes.toLowerCase().includes("bard") &&
+    member.subclasses.some((s) => s.toLowerCase().includes("glamour"));
 
   const localHp = useLocalHpState(
     member.id,
@@ -1339,10 +2836,8 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     member.weaponMasteries || [],
   );
 
-  const [localActiveInfusions, toggleLocalActiveInfusion, setLocalActiveInfusions] = useLocalActiveInfusions(
-    member.id,
-    member.activeInfusions || [],
-  );
+  const [localActiveInfusions, toggleLocalActiveInfusion, setLocalActiveInfusions] =
+    useLocalActiveInfusions(member.id, member.activeInfusions || []);
 
   useEffect(() => {
     if (member.activeInfusions) {
@@ -1372,6 +2867,99 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
 
   const localSlots = useLocalSpellSlots(member.id, member.spellSlots, member.pactSlots);
 
+  const parseComponentCost = (desc?: string): { cost: number; item: string } | null => {
+    if (!desc) return null;
+    const match = desc.match(/worth\s+(?:at\s+least\s+)?([\d,]+)\s*(?:gp|gold)/i);
+    if (match) {
+      const cost = parseInt(match[1].replace(/,/g, ""), 10);
+      let item = "Material Component";
+      const descLower = desc.toLowerCase();
+      if (descLower.includes("diamond")) {
+        item = "Diamond";
+      } else if (descLower.includes("incense")) {
+        item = "Incense";
+      } else if (descLower.includes("ruby")) {
+        item = "Ruby";
+      } else if (descLower.includes("pearl")) {
+        item = "Pearl";
+      } else if (descLower.includes("jade")) {
+        item = "Jade";
+      } else if (descLower.includes("crystal")) {
+        item = "Crystal";
+      }
+      return { cost, item };
+    }
+    return null;
+  };
+
+  const getMetamagicCost = (name: string, spellLevel: number): number => {
+    const norm = name.toLowerCase();
+    if (norm.includes("quickened") || norm.includes("seeking")) return 2;
+    if (norm.includes("heightened")) return 3;
+    if (norm.includes("twinned")) return Math.max(1, spellLevel);
+    return 1;
+  };
+
+  const handleCastSpell = (spell: PreparedSpell, isPact: boolean, slotLevel: number) => {
+    const targetSlots = isPact ? localSlots.pactSlots : localSlots.spellSlots;
+    const slot = targetSlots.find((s) => s.level === slotLevel);
+    if (!slot) return;
+    const available = slot.max - slot.used;
+    if (available <= 0) return;
+
+    localSlots.toggleSlot(slotLevel, 0, isPact);
+
+    // Deduct Metamagic Sorcery Points if selected
+    if (selectedMetamagicName && selectedMetamagicName !== "None") {
+      const spAction = displayActions.find((a) => a.name.toLowerCase().includes("sorcery points"));
+      if (spAction && spAction.uses) {
+        const cost = getMetamagicCost(selectedMetamagicName, spell.level);
+        const maxSP = spAction.uses.max;
+        const currentSpent = localResources.spent[spAction.name] ?? 0;
+        const availableSP = Math.max(0, maxSP - currentSpent);
+        if (availableSP >= cost) {
+          localResources.useResourceAmount(spAction.name, cost, maxSP);
+        }
+      }
+    }
+
+    setCastingSpellState({
+      active: true,
+      spellName: spell.name,
+      slotLevel,
+    });
+
+    if (spell.concentration) {
+      addLocalCondition("Concentration", null);
+    }
+
+    setSelectedMetamagicName(null);
+
+    setTimeout(() => {
+      setCastingSpellState(null);
+    }, 1200);
+  };
+
+  const getCastSlotOptions = (spellLevel: number) => {
+    const options: Array<{ level: number; max: number; used: number; isPact: boolean }> = [];
+
+    localSlots.pactSlots.forEach((p) => {
+      const available = p.max - p.used;
+      if (p.level >= spellLevel && available > 0) {
+        options.push({ level: p.level, max: p.max, used: p.used, isPact: true });
+      }
+    });
+
+    localSlots.spellSlots.forEach((s) => {
+      const available = s.max - s.used;
+      if (s.level >= spellLevel && available > 0) {
+        options.push({ level: s.level, max: s.max, used: s.used, isPact: false });
+      }
+    });
+
+    return options;
+  };
+
   const displayActions = (() => {
     let list = [...(member.actions ?? [])];
     list = list.filter(
@@ -1384,7 +2972,8 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
         list.push({
           name: "Defensive Field",
           source: "class",
-          description: "As a bonus action, you can gain temporary hit points equal to your level. You can use this a number of times equal to your proficiency bonus per long rest.",
+          description:
+            "As a bonus action, you can gain temporary hit points equal to your level. You can use this a number of times equal to your proficiency bonus per long rest.",
           activation: {
             activationTime: 1,
             activationType: 3, // Bonus Action
@@ -1399,7 +2988,8 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
         list.push({
           name: "Dampening Field (Stealth Advantage)",
           source: "class",
-          description: "You have advantage on Dexterity (Stealth) checks. If you wear heavy armor, that armor doesn't impose disadvantage on your Dexterity (Stealth) checks.",
+          description:
+            "You have advantage on Dexterity (Stealth) checks. If you wear heavy armor, that armor doesn't impose disadvantage on your Dexterity (Stealth) checks.",
         });
       }
     }
@@ -1477,7 +3067,10 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
       const rageDamageBonus = barbarianLvl >= 16 ? 4 : barbarianLvl >= 9 ? 3 : 2;
 
       list = list.map((a) => {
-        const isMelee = a.properties?.some((p) => p.toLowerCase() === "melee") || a.name.toLowerCase().includes("unarmed") || a.name.toLowerCase().includes("strike");
+        const isMelee =
+          a.properties?.some((p) => p.toLowerCase() === "melee") ||
+          a.name.toLowerCase().includes("unarmed") ||
+          a.name.toLowerCase().includes("strike");
         if (isMelee && a.damage) {
           return {
             ...a,
@@ -1489,6 +3082,94 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
       });
     }
 
+    // Artificer Active Infusion weapon/unarmed modifications (checks for double counting remote DDB active infusions)
+    const isArtificer = member.classes.toLowerCase().includes("artificer");
+    if (isArtificer) {
+      const remoteActive = member.activeInfusions || [];
+
+      // Enhanced Weapon
+      const remoteEnhancedWeapon = remoteActive.includes("Enhanced Weapon");
+      const localEnhancedWeapon = localActiveInfusions.includes("Enhanced Weapon");
+      const enhancedWeaponDiff = (localEnhancedWeapon ? 1 : 0) - (remoteEnhancedWeapon ? 1 : 0);
+
+      if (enhancedWeaponDiff !== 0) {
+        list = list.map((a) => {
+          if (a.isWeapon && a.damage) {
+            const label =
+              enhancedWeaponDiff > 0
+                ? `+${enhancedWeaponDiff} Enhanced Weapon`
+                : `-${Math.abs(enhancedWeaponDiff)} Enhanced Weapon`;
+            return {
+              ...a,
+              attackBonus: (a.attackBonus ?? 0) + enhancedWeaponDiff,
+              damage: `${a.damage} ${enhancedWeaponDiff > 0 ? "+" : "-"} ${Math.abs(enhancedWeaponDiff)}`,
+              properties: [...(a.properties ?? []), label],
+            };
+          }
+          return a;
+        });
+      }
+
+      // Wraps of Unarmed Power
+      const remoteWraps = remoteActive.includes("Wraps of Unarmed Power, +1");
+      const localWraps = localActiveInfusions.includes("Wraps of Unarmed Power, +1");
+      const wrapsDiff = (localWraps ? 1 : 0) - (remoteWraps ? 1 : 0);
+
+      if (wrapsDiff !== 0) {
+        list = list.map((a) => {
+          const isUnarmed =
+            a.name.toLowerCase().includes("unarmed") || a.name.toLowerCase().includes("strike");
+          if (isUnarmed && a.damage) {
+            const label =
+              wrapsDiff > 0
+                ? `+${wrapsDiff} Wraps of Unarmed Power`
+                : `-${Math.abs(wrapsDiff)} Wraps of Unarmed Power`;
+            return {
+              ...a,
+              attackBonus: (a.attackBonus ?? 0) + wrapsDiff,
+              damage: `${a.damage} ${wrapsDiff > 0 ? "+" : "-"} ${Math.abs(wrapsDiff)}`,
+              properties: [...(a.properties ?? []), label],
+            };
+          }
+          return a;
+        });
+      }
+    }
+
+    // Druid Starry Form Archer attack
+    const isStarsDruid =
+      member.classes.toLowerCase().includes("druid") &&
+      (member.subclasses.some((s) => s.toLowerCase().includes("stars")) ||
+        (member.features ?? []).some((f) => f.name.toLowerCase().includes("starry form")));
+    if (isStarsDruid && localStarryForm === "Archer") {
+      const wisMod = member.abilities.find((a) => a.name === "WIS")?.modifier ?? 0;
+      const pb = member.proficiencyBonus;
+      const spellcasting = member.spellcasting?.[0];
+      const attackBonus = spellcasting ? spellcasting.attackBonus : wisMod + pb;
+      list.push({
+        name: "Luminous Archer (Starry Form)",
+        attackBonus,
+        damage: `1d8 + ${wisMod}`,
+        damageType: "Radiant",
+        properties: ["Ranged (120)", "Bonus Action", "Starry Form"],
+        isWeapon: false,
+      });
+    }
+
+    // Glamour Bard Mantle of Majesty Command
+    const isGlamourBard =
+      member.classes.toLowerCase().includes("bard") &&
+      member.subclasses.some((s) => s.toLowerCase().includes("glamour"));
+    if (isGlamourBard && localMantleOfMajesty) {
+      list.push({
+        name: "Mantle of Majesty Command",
+        attackBonus: null,
+        damage: "Command target to obey instructions (Wis Save)",
+        properties: ["Vocal", "Bonus Action", "Mantle of Majesty", "Free Cast"],
+        isWeapon: false,
+      });
+    }
+
     return list;
   })();
 
@@ -1496,6 +3177,22 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     member.id,
     displayActions.filter((a) => a.source === "class" && a.uses),
   );
+
+  // Synchronize Innate Sorcery resource bubble changes to localInnateSorcery state
+  const prevInnateSorcerySpentRef = useRef<number>(localResources.spent["Innate Sorcery"] ?? 0);
+  useEffect(() => {
+    const currentSpent = localResources.spent["Innate Sorcery"] ?? 0;
+    const prevSpent = prevInnateSorcerySpentRef.current;
+    prevInnateSorcerySpentRef.current = currentSpent;
+
+    if (currentSpent > prevSpent) {
+      // If resource was spent (bubble filled), turn on Innate Sorcery benefits
+      setLocalInnateSorcery(true);
+    } else if (currentSpent === 0 && prevSpent > 0) {
+      // If spent count was reset to 0 (e.g. rest or manual clear), turn off Innate Sorcery
+      setLocalInnateSorcery(false);
+    }
+  }, [localResources.spent["Innate Sorcery"]]);
 
   const mods = getFullyModifiedStats(member);
   const {
@@ -1541,7 +3238,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const displaySkills = [...member.skills].sort((a, b) => {
+  let displaySkills = [...member.skills].sort((a, b) => {
     const profRank = (p: string) => {
       if (p === "expertise") return 3;
       if (p === "proficient") return 2;
@@ -1552,6 +3249,27 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     if (diff !== 0) return diff;
     return a.name.localeCompare(b.name);
   });
+
+  // Apply Gloves of Thievery +5 bonus to Sleight of Hand check (checking for double counting remote DDB active infusions)
+  const isArtificer = member.classes.toLowerCase().includes("artificer");
+  if (isArtificer) {
+    const remoteActive = member.activeInfusions || [];
+    const remoteGloves = remoteActive.includes("Gloves of Thievery");
+    const localGloves = localActiveInfusions.includes("Gloves of Thievery");
+    const glovesDiff = (localGloves ? 5 : 0) - (remoteGloves ? 5 : 0);
+
+    if (glovesDiff !== 0) {
+      displaySkills = displaySkills.map((s) => {
+        if (s.name === "Sleight of Hand") {
+          return {
+            ...s,
+            modifier: s.modifier + glovesDiff,
+          };
+        }
+        return s;
+      });
+    }
+  }
 
   const hasFeralInstinct =
     member.features?.some((f) => f.name.toLowerCase().includes("feral instinct")) ?? false;
@@ -1799,7 +3517,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
       });
     }
 
-    const hasHeavyArmor = member.inventory.some(
+    const hasHeavyArmor = localInventory.some(
       (item) =>
         item.equipped &&
         item.type.toLowerCase().includes("armor") &&
@@ -1932,59 +3650,62 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
               {sc}
             </span>
           ))}
-          {isBarbarian && (() => {
-            const isTotemBarbarian = member.subclasses.some(
-              (s) => s.toLowerCase().includes("wild heart") || s.toLowerCase().includes("totem")
-            );
-            if (!isTotemBarbarian) return null;
+          {isBarbarian &&
+            (() => {
+              const isTotemBarbarian = member.subclasses.some(
+                (s) => s.toLowerCase().includes("wild heart") || s.toLowerCase().includes("totem"),
+              );
+              if (!isTotemBarbarian) return null;
 
-            const aspectOptions = (() => {
-              const hasAspectOfTheWilds = (member.features ?? []).some((f) => f.name === "Aspect of the Wilds");
-              if (hasAspectOfTheWilds) {
-                return ["Owl", "Panther", "Salmon"];
-              }
-              return ["Bear", "Eagle", "Elk", "Tiger", "Wolf"];
-            })();
+              const aspectOptions = (() => {
+                const hasAspectOfTheWilds = (member.features ?? []).some(
+                  (f) => f.name === "Aspect of the Wilds",
+                );
+                if (hasAspectOfTheWilds) {
+                  return ["Owl", "Panther", "Salmon"];
+                }
+                return ["Bear", "Eagle", "Elk", "Tiger", "Wolf"];
+              })();
 
-            return (
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                {/* Totem Aspect Dropdown */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="inline-block">
-                      <CustomSelect
-                        value={localTotemAspects[0]?.name || "None"}
-                        onChange={(val) => {
-                          if (val === "None") {
-                            setLocalTotemAspects([]);
-                          } else {
-                            setLocalTotemAspects([
-                              {
-                                name: val,
-                                description: TOTEM_ASPECT_DICTIONARY[val] || "",
-                              },
-                            ]);
-                          }
-                        }}
-                        options={aspectOptions}
-                        triggerClassName="inline-flex items-center gap-1 cursor-pointer rounded border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary select-none hover:bg-primary/20 transition-colors"
-                        labelPrefix={<span>🐾 Aspect:&nbsp;</span>}
-                        openUpward={true}
-                        onOpenChange={setIsAspectSelectOpen}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    className={cn("max-w-[280px] text-xs", isAspectSelectOpen && "hidden")}
-                  >
-                    {TOTEM_ASPECT_DICTIONARY[localTotemAspects[0]?.name] ||
-                      localTotemAspects[0]?.description ||
-                      "Choose a Totem Aspect to see its description."}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            );
-          })()}
+              return (
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  {/* Totem Aspect Dropdown */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="inline-block">
+                        <CustomSelect
+                          value={localTotemAspects[0]?.name || "None"}
+                          onChange={(val) => {
+                            if (val === "None") {
+                              setLocalTotemAspects([]);
+                            } else {
+                              setLocalTotemAspects([
+                                {
+                                  name: val,
+                                  description: TOTEM_ASPECT_DICTIONARY[val] || "",
+                                },
+                              ]);
+                            }
+                          }}
+                          options={aspectOptions}
+                          triggerClassName="inline-flex items-center gap-1 cursor-pointer rounded border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary select-none hover:bg-primary/20 transition-colors"
+                          labelPrefix={<span>🐾 Aspect:&nbsp;</span>}
+                          openUpward={true}
+                          onOpenChange={setIsAspectSelectOpen}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      className={cn("max-w-[280px] text-xs", isAspectSelectOpen && "hidden")}
+                    >
+                      {TOTEM_ASPECT_DICTIONARY[localTotemAspects[0]?.name] ||
+                        localTotemAspects[0]?.description ||
+                        "Choose a Totem Aspect to see its description."}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              );
+            })()}
         </div>
         {/* Armor Model */}
         {isArmorer && (
@@ -2064,10 +3785,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
       <div>
         <div className="mb-1.5 flex items-baseline justify-between text-sm">
           <span className="flex items-center gap-1.5 font-medium text-muted-foreground select-none">
-            <Heart
-              size={14}
-              className="text-rose-500 drop-shadow-[0_0_4px_rgba(244,63,94,0.5)]"
-            />
+            <Heart size={14} className="text-rose-500 drop-shadow-[0_0_4px_rgba(244,63,94,0.5)]" />
             <span>Hit Points</span>
             {displayHitDice && displayHitDice !== "—" && (
               <span className="ml-1 font-mono text-[10px] text-muted-foreground/75">
@@ -2095,7 +3813,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
             {showHpControl && (
               <div className="absolute right-0 top-7 z-50 flex flex-col gap-3 rounded-xl border border-border/80 bg-popover/95 p-3.5 shadow-2xl min-w-[240px] backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
                 <div className="flex items-center justify-between border-b border-border/30 pb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">HP Control Center</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    HP Control Center
+                  </span>
                   <button
                     type="button"
                     onClick={() => setShowHpControl(false)}
@@ -2189,7 +3909,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
 
                 {/* Temporary HP Section */}
                 <div className="border-t border-border/30 pt-2.5 flex flex-col gap-1.5">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/80 select-none">Temporary HP</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/80 select-none">
+                    Temporary HP
+                  </span>
                   <div className="flex items-center gap-1.5">
                     <input
                       type="number"
@@ -2290,7 +4012,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                         type="button"
                         onClick={() => {
                           const newVal = i + 1;
-                          localHp.setDeathSaveSuccesses(localHp.deathSaves.successes === newVal ? i : newVal);
+                          localHp.setDeathSaveSuccesses(
+                            localHp.deathSaves.successes === newVal ? i : newVal,
+                          );
                         }}
                         className={`h-3.5 w-3.5 rotate-45 border transition-all duration-200 cursor-pointer focus:outline-none hover:scale-110 active:scale-90 ${
                           active
@@ -2313,7 +4037,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                         type="button"
                         onClick={() => {
                           const newVal = i + 1;
-                          localHp.setDeathSaveFailures(localHp.deathSaves.failures === newVal ? i : newVal);
+                          localHp.setDeathSaveFailures(
+                            localHp.deathSaves.failures === newVal ? i : newVal,
+                          );
                         }}
                         className={`h-3.5 w-3.5 rotate-45 border transition-all duration-200 cursor-pointer focus:outline-none hover:scale-110 active:scale-90 ${
                           active
@@ -2416,11 +4142,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     </div>
   );
 
-  const vitals = (
-    <Panel>
-      {vitalsContent}
-    </Panel>
-  );
+  const vitals = <Panel>{vitalsContent}</Panel>;
 
   // === ABILITY SCORES ===
   const abilityScores = (
@@ -2485,8 +4207,12 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
           const isConflict = hasAdv && hasDis;
           const badgesToRender: Array<{ type: "adv" | "dis" | "conflict"; label: string }> = [];
           if (isConflict) {
-            const advSit = sEffects.filter((e) => e.type === "adv").some((e) => e.label.includes("*"));
-            const disSit = sEffects.filter((e) => e.type === "dis").some((e) => e.label.includes("*"));
+            const advSit = sEffects
+              .filter((e) => e.type === "adv")
+              .some((e) => e.label.includes("*"));
+            const disSit = sEffects
+              .filter((e) => e.type === "dis")
+              .some((e) => e.label.includes("*"));
             badgesToRender.push({
               type: "conflict" as const,
               label: `${advSit ? "Adv*" : "Adv"}|${disSit ? "Dis*" : "Dis"}`,
@@ -2550,7 +4276,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                         <span className="text-muted-foreground/60 mx-px">|</span>
                         <span className="text-rose-400">{badge.label.split("|")[1]}</span>
                       </>
-                    ) : badge.label}
+                    ) : (
+                      badge.label
+                    )}
                   </span>
                 ))}
               </div>
@@ -2605,8 +4333,12 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
           const isConflict = hasAdv && hasDis;
           const badgesToRender: Array<{ type: "adv" | "dis" | "conflict"; label: string }> = [];
           if (isConflict) {
-            const advSit = sEffects.filter((e) => e.type === "adv").some((e) => e.label.includes("*"));
-            const disSit = sEffects.filter((e) => e.type === "dis").some((e) => e.label.includes("*"));
+            const advSit = sEffects
+              .filter((e) => e.type === "adv")
+              .some((e) => e.label.includes("*"));
+            const disSit = sEffects
+              .filter((e) => e.type === "dis")
+              .some((e) => e.label.includes("*"));
             badgesToRender.push({
               type: "conflict" as const,
               label: `${advSit ? "Adv*" : "Adv"}|${disSit ? "Dis*" : "Dis"}`,
@@ -2656,7 +4388,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                         <span className="text-muted-foreground/60 mx-px">|</span>
                         <span className="text-rose-400">{badge.label.split("|")[1]}</span>
                       </>
-                    ) : badge.label}
+                    ) : (
+                      badge.label
+                    )}
                   </span>
                 ))}
                 {isExpert && <span className="shrink-0 text-[8px] text-gold">★</span>}
@@ -2860,152 +4594,155 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
   const reactionActions = displayActions.filter(
     (act) =>
       !displayAttacks.some((atk) => atk.name.toLowerCase() === act.name.toLowerCase()) &&
-      act.activation?.activationType === 4
+      act.activation?.activationType === 4,
   );
 
-  const allReactions = [
-    ...reactionSpells,
-    ...reactionActions,
-  ];
+  const allReactions = [...reactionSpells, ...reactionActions];
 
-  const attacks = (displayAttacks.length > 0 || spellBonusActions.length > 0 || allReactions.length > 0) && (() => {
-    const renderActionRow = (act: any, keyId: string) => {
-      const actText = getActivationText(act.activation);
-      return (
-        <div
-          key={keyId}
-          onClick={() => toggleExpand(`act-${keyId}`)}
-          className="group/act relative cursor-pointer overflow-hidden rounded-xl border border-border/40 bg-gradient-to-r from-secondary/20 to-secondary/5 p-3 transition-all duration-300 hover:border-accent/30 hover:bg-secondary/25"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="shrink-0 text-[8.5px] font-bold uppercase tracking-wider text-muted-foreground/80 bg-secondary/80 px-1.5 py-0.5 rounded border border-border/10">
-                {act.source}
-              </span>
-              <span className="font-heading text-xs font-bold text-foreground truncate group-hover/act:text-accent transition-colors">
-                {act.name}
-              </span>
+  const attacks =
+    (displayAttacks.length > 0 || spellBonusActions.length > 0 || allReactions.length > 0) &&
+    (() => {
+      const renderActionRow = (act: any, keyId: string) => {
+        const actText = getActivationText(act.activation);
+        return (
+          <div
+            key={keyId}
+            onClick={() => toggleExpand(`act-${keyId}`)}
+            className="group/act relative cursor-pointer overflow-hidden rounded-xl border border-border/40 bg-gradient-to-r from-secondary/20 to-secondary/5 p-3 transition-all duration-300 hover:border-accent/30 hover:bg-secondary/25"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="shrink-0 text-[8.5px] font-bold uppercase tracking-wider text-muted-foreground/80 bg-secondary/80 px-1.5 py-0.5 rounded border border-border/10">
+                  {act.source}
+                </span>
+                <span className="font-heading text-xs font-bold text-foreground truncate group-hover/act:text-accent transition-colors">
+                  {act.name}
+                </span>
+              </div>
+              {actText && (
+                <span className="shrink-0 rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[8.5px] uppercase tracking-wider text-primary font-semibold">
+                  ⚡ {actText}
+                </span>
+              )}
             </div>
-            {actText && (
-              <span className="shrink-0 rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[8.5px] uppercase tracking-wider text-primary font-semibold">
-                ⚡ {actText}
-              </span>
+            {act.uses && (
+              <div className="mt-1 text-[9px] font-semibold text-accent font-mono">
+                Uses: {act.uses.current} / {act.uses.max} (resets on {act.uses.reset})
+              </div>
+            )}
+            {expandedItems[`act-${keyId}`] && act.description && (
+              <div
+                className="mt-2.5 text-[10px] leading-relaxed text-muted-foreground/90 border-t border-border/10 pt-2"
+                dangerouslySetInnerHTML={{ __html: act.description }}
+              />
             )}
           </div>
-          {act.uses && (
-            <div className="mt-1 text-[9px] font-semibold text-accent font-mono">
-              Uses: {act.uses.current} / {act.uses.max} (resets on {act.uses.reset})
-            </div>
-          )}
-          {expandedItems[`act-${keyId}`] && act.description && (
-            <div
-              className="mt-2.5 text-[10px] leading-relaxed text-muted-foreground/90 border-t border-border/10 pt-2"
-              dangerouslySetInnerHTML={{ __html: act.description }}
-            />
-          )}
-        </div>
-      );
-    };
+        );
+      };
 
-    return (
-      <Panel title="Attacks & Actions" icon={Swords}>
-        <div className="flex flex-col gap-3.5">
-          {displayAttacks.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none mb-1 pl-1">
-                Attacks
-              </div>
-              {displayAttacks.map((atk, idx) => {
-                const dmgTypeLower = atk.damageType?.toLowerCase() || "";
-                const dmgTheme = DAMAGE_TYPE_THEMES[dmgTypeLower] || {
-                  bg: "bg-secondary/40",
-                  text: "text-foreground/90",
-                  border: "border-border/40",
-                };
-                return (
-                  <div
-                    key={`${atk.name}-${idx}`}
-                    className="group/atk relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-r from-secondary/30 to-secondary/10 p-3.5 transition-all duration-300 hover:scale-[1.01] hover:border-accent/40 hover:bg-secondary/40"
-                  >
-                    {/* Highlight Left Border indicator */}
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent/60 opacity-0 group-hover/atk:opacity-100 transition-opacity" />
+      return (
+        <Panel title="Attacks & Actions" icon={Swords}>
+          <div className="flex flex-col gap-3.5">
+            {displayAttacks.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none mb-1 pl-1">
+                  Attacks
+                </div>
+                {displayAttacks.map((atk, idx) => {
+                  const dmgTypeLower = atk.damageType?.toLowerCase() || "";
+                  const dmgTheme = DAMAGE_TYPE_THEMES[dmgTypeLower] || {
+                    bg: "bg-secondary/40",
+                    text: "text-foreground/90",
+                    border: "border-border/40",
+                  };
+                  return (
+                    <div
+                      key={`${atk.name}-${idx}`}
+                      className="group/atk relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-r from-secondary/30 to-secondary/10 p-3.5 transition-all duration-300 hover:scale-[1.01] hover:border-accent/40 hover:bg-secondary/40"
+                    >
+                      {/* Highlight Left Border indicator */}
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent/60 opacity-0 group-hover/atk:opacity-100 transition-opacity" />
 
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-secondary/60 text-accent group-hover/atk:text-glow-accent transition-colors">
-                          <Swords size={16} />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-heading text-sm font-bold text-foreground truncate group-hover/atk:text-accent transition-colors">
-                            {atk.name}
-                          </span>
-                          {atk.properties && atk.properties.length > 0 && (
-                            <span className="mt-1 text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground/85">
-                              {atk.properties.join(" • ")}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between sm:justify-end gap-3.5 font-mono">
-                        {/* To Hit Badge */}
-                        {atk.attackBonus != null && (
-                          <div className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs">
-                            <span className="text-primary font-bold text-[13px] drop-shadow-[0_0_2px_var(--primary)]">
-                              {atk.attackBonus >= 0 ? `+${atk.attackBonus}` : atk.attackBonus}
-                            </span>
-                            <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-muted-foreground/85">
-                              to hit
-                            </span>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-secondary/60 text-accent group-hover/atk:text-glow-accent transition-colors">
+                            <Swords size={16} />
                           </div>
-                        )}
-
-                        {/* Damage Block */}
-                        {atk.damage && (
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center rounded-lg border border-border/50 bg-secondary/80 px-2.5 py-1 text-xs">
-                              <span className="font-bold text-foreground text-[13px]">{atk.damage}</span>
-                            </div>
-                            {atk.damageType && (
-                              <span
-                                className={`rounded-lg border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${dmgTheme.bg} ${dmgTheme.text} ${dmgTheme.border}`}
-                              >
-                                {atk.damageType}
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-heading text-sm font-bold text-foreground truncate group-hover/atk:text-accent transition-colors">
+                              {atk.name}
+                            </span>
+                            {atk.properties && atk.properties.length > 0 && (
+                              <span className="mt-1 text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground/85">
+                                {atk.properties.join(" • ")}
                               </span>
                             )}
                           </div>
-                        )}
+                        </div>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-3.5 font-mono">
+                          {/* To Hit Badge */}
+                          {atk.attackBonus != null && (
+                            <div className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs">
+                              <span className="text-primary font-bold text-[13px] drop-shadow-[0_0_2px_var(--primary)]">
+                                {atk.attackBonus >= 0 ? `+${atk.attackBonus}` : atk.attackBonus}
+                              </span>
+                              <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-muted-foreground/85">
+                                to hit
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Damage Block */}
+                          {atk.damage && (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center rounded-lg border border-border/50 bg-secondary/80 px-2.5 py-1 text-xs">
+                                <span className="font-bold text-foreground text-[13px]">
+                                  {atk.damage}
+                                </span>
+                              </div>
+                              {atk.damageType && (
+                                <span
+                                  className={`rounded-lg border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${dmgTheme.bg} ${dmgTheme.text} ${dmgTheme.border}`}
+                                >
+                                  {atk.damageType}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {spellBonusActions.length > 0 && (
-            <div className="flex flex-col gap-2">
-              {displayAttacks.length > 0 && <div className="border-t border-border/10 my-1.5" />}
-              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none mb-1 pl-1">
-                Bonus Actions
+                  );
+                })}
               </div>
-              {spellBonusActions.map((act, idx) => renderActionRow(act, `bonus-${idx}`))}
-            </div>
-          )}
+            )}
 
-          {allReactions.length > 0 && (
-            <div className="flex flex-col gap-2">
-              {(displayAttacks.length > 0 || spellBonusActions.length > 0) && <div className="border-t border-border/10 my-1.5" />}
-              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none mb-1 pl-1">
-                Reactions
+            {spellBonusActions.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {displayAttacks.length > 0 && <div className="border-t border-border/10 my-1.5" />}
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none mb-1 pl-1">
+                  Bonus Actions
+                </div>
+                {spellBonusActions.map((act, idx) => renderActionRow(act, `bonus-${idx}`))}
               </div>
-              {allReactions.map((act, idx) => renderActionRow(act, `reaction-${idx}`))}
-            </div>
-          )}
-        </div>
-      </Panel>
-    );
-  })();
+            )}
+
+            {allReactions.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {(displayAttacks.length > 0 || spellBonusActions.length > 0) && (
+                  <div className="border-t border-border/10 my-1.5" />
+                )}
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none mb-1 pl-1">
+                  Reactions
+                </div>
+                {allReactions.map((act, idx) => renderActionRow(act, `reaction-${idx}`))}
+              </div>
+            )}
+          </div>
+        </Panel>
+      );
+    })();
 
   // === SPELLCASTING ===
   const spellcastingPanel = (member.spellcasting?.length > 0 ||
@@ -3013,8 +4750,325 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     member.pactSlots.length > 0) && (
     <Panel title="Spellcasting" icon={Sparkles}>
       <div className="flex flex-col gap-3">
+        {member.classes.toLowerCase().includes("sorcerer") && (
+          <div className="p-2.5 rounded-xl border border-accent/30 bg-accent/5 flex items-center justify-between gap-3 text-xs select-none">
+            <div className="flex items-center gap-2">
+              <span className="text-base shrink-0 animate-pulse">✨</span>
+              <div>
+                <span className="font-heading font-extrabold text-foreground block">
+                  Innate Sorcery
+                </span>
+                <span className="text-[9px] text-muted-foreground leading-normal">
+                  DC +1, Advantage on Spell Attack rolls
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const nextActive = !localInnateSorcery;
+                setLocalInnateSorcery(nextActive);
+                if (nextActive) {
+                  // Find the max uses of Innate Sorcery dynamically
+                  const isAction = displayActions.find((a) => a.name === "Innate Sorcery");
+                  const maxUses = isAction?.uses?.max ?? 2;
+                  const currentSpent = localResources.spent["Innate Sorcery"] ?? 0;
+                  if (currentSpent < maxUses) {
+                    localResources.useResource("Innate Sorcery", maxUses);
+                  }
+                }
+              }}
+              className={`px-3 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer shadow-sm
+                ${
+                  localInnateSorcery
+                    ? "bg-accent border-accent text-accent-foreground shadow-accent/20 animate-pulse"
+                    : "bg-secondary/45 border-border hover:border-accent/40 text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              {localInnateSorcery ? "Active" : "Inactive"}
+            </button>
+          </div>
+        )}
+
+        {member.classes.toLowerCase().includes("sorcerer") &&
+          (() => {
+            const spAction = displayActions.find((a) =>
+              a.name.toLowerCase().includes("sorcery points"),
+            );
+            if (!spAction) return null;
+            const maxSP = spAction.uses?.max ?? 0;
+            const currentSpentSP = localResources.spent[spAction.name] ?? 0;
+            const currentSP = Math.max(0, maxSP - currentSpentSP);
+            const maxCastingLevel = Math.max(...localSlots.spellSlots.map((s) => s.level), 0);
+
+            const spToSlotCosts = [0, 2, 3, 5, 6, 7];
+            const slotToSpYields = [0, 1, 2, 3, 4, 5];
+
+            return (
+              <div className="p-2.5 rounded-xl border border-accent/25 bg-secondary/15 flex flex-col gap-2.5 text-xs select-none">
+                <div className="flex items-center justify-between border-b border-border/10 pb-1.5">
+                  <span className="font-heading font-extrabold text-foreground">
+                    Flexible Casting
+                  </span>
+                  <span className="font-mono text-[10px] text-accent font-semibold">
+                    {currentSP} / {maxSP} Sorcery Points
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 divide-x divide-border/10">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Create Slots (SP → Slot)
+                    </span>
+                    <div className="flex flex-col gap-1">
+                      {[1, 2, 3, 4, 5]
+                        .filter((lvl) => lvl <= maxCastingLevel)
+                        .map((lvl) => {
+                          const cost = spToSlotCosts[lvl];
+                          const canAfford = currentSP >= cost;
+                          return (
+                            <button
+                              key={`create-${lvl}`}
+                              disabled={!canAfford}
+                              onClick={() => {
+                                localResources.useResourceAmount(spAction.name, cost, maxSP);
+                                localSlots.changeSlotUsed(lvl, -1, false);
+                              }}
+                              className="w-full py-1 px-1.5 bg-accent/5 hover:bg-accent/15 disabled:opacity-40 disabled:pointer-events-none text-[9.5px] border border-accent/20 rounded font-bold text-accent transition-all flex justify-between cursor-pointer"
+                            >
+                              <span>Level {lvl} Slot</span>
+                              <span className="font-mono opacity-80">-{cost} SP</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5 pl-3">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Reclaim SP (Slot → SP)
+                    </span>
+                    <div className="flex flex-col gap-1">
+                      {[1, 2, 3, 4, 5]
+                        .filter((lvl) => lvl <= maxCastingLevel)
+                        .map((lvl) => {
+                          const yieldSP = slotToSpYields[lvl];
+                          const slot = localSlots.spellSlots.find((s) => s.level === lvl);
+                          const hasSlot = slot && slot.max - slot.used > 0;
+                          const canGain = currentSP < maxSP;
+                          return (
+                            <button
+                              key={`reclaim-${lvl}`}
+                              disabled={!hasSlot || !canGain}
+                              onClick={() => {
+                                localSlots.changeSlotUsed(lvl, 1, false);
+                                localResources.useResourceAmount(spAction.name, -yieldSP, maxSP);
+                              }}
+                              className="w-full py-1 px-1.5 bg-primary/5 hover:bg-primary/15 disabled:opacity-40 disabled:pointer-events-none text-[9.5px] border border-primary/20 rounded font-bold text-primary transition-all flex justify-between cursor-pointer"
+                            >
+                              <span>Level {lvl} Slot</span>
+                              <span className="font-mono opacity-80">+{yieldSP} SP</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+        {isStarsDruid &&
+          (() => {
+            const wsAction = displayActions.find((a) =>
+              a.name.toLowerCase().includes("wild shape"),
+            );
+            const maxWS = wsAction?.uses?.max ?? 2;
+            const currentSpentWS = wsAction ? (localResources.spent[wsAction.name] ?? 0) : 0;
+            const currentWS = wsAction ? Math.max(0, maxWS - currentSpentWS) : 0;
+
+            return (
+              <div className="p-2.5 rounded-xl border border-accent/25 bg-secondary/15 flex flex-col gap-2 text-xs select-none">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="font-heading font-extrabold text-foreground block">
+                      Starry Form
+                    </span>
+                    <span className="text-[9px] text-muted-foreground leading-normal">
+                      Archer (BA Attack), Chalice (Extra Heal), Dragon (Min 10 Checks)
+                    </span>
+                  </div>
+                  {wsAction && (
+                    <span className="font-mono text-[9px] text-accent font-semibold">
+                      {currentWS} / {maxWS} Wild Shapes
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-1.5">
+                  {(["None", "Archer", "Chalice", "Dragon"] as const).map((form) => {
+                    const isActive = localStarryForm === form;
+                    const needsWS = form !== "None" && !isActive;
+                    const canActivate = !needsWS || currentWS > 0;
+                    return (
+                      <button
+                        key={form}
+                        disabled={!canActivate && !isActive}
+                        onClick={() => {
+                          if (isActive) {
+                            setLocalStarryForm("None");
+                          } else {
+                            setLocalStarryForm(form);
+                            if (needsWS && wsAction) {
+                              localResources.useResource(wsAction.name, maxWS);
+                            }
+                          }
+                        }}
+                        className={`flex-1 py-1.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed
+                        ${
+                          isActive
+                            ? "bg-accent border-accent text-accent-foreground shadow-sm shadow-accent/25 animate-pulse"
+                            : "bg-secondary/45 border-border hover:border-accent/40 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {form === "None" ? "Dismiss" : form}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+        {isGlamourBard &&
+          (() => {
+            const biAction = displayActions.find((a) =>
+              a.name.toLowerCase().includes("bardic inspiration"),
+            );
+            const maxBI = biAction?.uses?.max ?? 4;
+            const currentSpentBI = biAction ? (localResources.spent[biAction.name] ?? 0) : 0;
+            const currentBI = biAction ? Math.max(0, maxBI - currentSpentBI) : 0;
+
+            const momAction = displayActions.find((a) =>
+              a.name.toLowerCase().includes("mantle of majesty"),
+            );
+            const maxMoM = momAction?.uses?.max ?? 1;
+            const currentSpentMoM = momAction ? (localResources.spent[momAction.name] ?? 0) : 0;
+            const currentMoM = momAction ? Math.max(0, maxMoM - currentSpentMoM) : 0;
+
+            return (
+              <div className="p-2.5 rounded-xl border border-accent/25 bg-secondary/15 flex flex-col gap-2.5 text-xs select-none">
+                <div className="flex items-center justify-between border-b border-border/10 pb-1.5">
+                  <span className="font-heading font-extrabold text-foreground">
+                    Glamour Mantles
+                  </span>
+                  {biAction && (
+                    <span className="font-mono text-[9px] text-accent font-semibold">
+                      {currentBI} / {maxBI} Inspiration
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  {/* Mantle of Inspiration */}
+                  <div className="flex flex-col gap-1.5">
+                    <button
+                      disabled={currentBI <= 0 && !isMantleInspirationOpen}
+                      onClick={() => setIsMantleInspirationOpen(!isMantleInspirationOpen)}
+                      className={`w-full py-1.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5
+                      ${
+                        isMantleInspirationOpen
+                          ? "bg-accent/15 border-accent text-accent"
+                          : "bg-secondary/45 border-border hover:border-accent/40 text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span>🎭 Mantle of Inspiration</span>
+                      <span className="text-[8.5px] font-normal opacity-80">
+                        (Cost: 1 Inspiration)
+                      </span>
+                    </button>
+                    {isMantleInspirationOpen && (
+                      <div className="p-2 bg-secondary/30 border border-border/40 rounded-lg flex flex-col gap-1.5 animate-fade-in">
+                        <span className="text-[9px] font-semibold text-muted-foreground">
+                          Apply 5 Temp HP to members in range:
+                        </span>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {["Willow Alatáriel", "Echo", "Dresana Silvakias", "Qemuel"].map(
+                            (name) => {
+                              const idMap: Record<string, number> = {
+                                "Willow Alatáriel": 131296315,
+                                Echo: 132900149,
+                                "Dresana Silvakias": 132940690,
+                                Qemuel: 97349530,
+                              };
+                              const otherId = idMap[name];
+                              if (!otherId) return null;
+                              return (
+                                <button
+                                  key={name}
+                                  onClick={() => {
+                                    try {
+                                      const storageKey = `party-stats:hp:${otherId}`;
+                                      const stored = localStorage.getItem(storageKey);
+                                      const data = stored ? JSON.parse(stored) : {};
+                                      data.tempHp = Math.max(data.tempHp || 0, 5);
+                                      localStorage.setItem(storageKey, JSON.stringify(data));
+
+                                      if (biAction) {
+                                        localResources.useResource(biAction.name, maxBI);
+                                      }
+
+                                      setIsMantleInspirationOpen(false);
+                                      alert(`Applied 5 temporary HP to ${name}!`);
+                                    } catch {}
+                                  }}
+                                  className="py-1 px-1.5 border border-border/60 bg-secondary/50 hover:bg-accent hover:text-accent-foreground hover:border-accent rounded text-[9.5px] font-bold text-muted-foreground transition-all cursor-pointer text-left truncate"
+                                >
+                                  + {name.split(" ")[0]}
+                                </button>
+                              );
+                            },
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mantle of Majesty */}
+                  {momAction && (
+                    <div className="flex items-center justify-between gap-3 border-t border-border/10 pt-2 mt-0.5">
+                      <div>
+                        <span className="font-heading font-extrabold text-foreground block">
+                          Mantle of Majesty
+                        </span>
+                        <span className="text-[8.5px] text-muted-foreground">
+                          Command as BA for free
+                        </span>
+                      </div>
+                      <button
+                        disabled={currentMoM <= 0 && !localMantleOfMajesty}
+                        onClick={() => {
+                          const next = !localMantleOfMajesty;
+                          setLocalMantleOfMajesty(next);
+                          if (next && momAction) {
+                            localResources.useResource(momAction.name, maxMoM);
+                          }
+                        }}
+                        className={`px-3 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer shadow-sm
+                        ${
+                          localMantleOfMajesty
+                            ? "bg-accent border-accent text-accent-foreground shadow-accent/20 animate-pulse"
+                            : "bg-secondary/45 border-border hover:border-accent/40 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {localMantleOfMajesty ? "Active" : "Inactive"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         {member.spellcasting?.map((sc) => {
           const abilityMod = member.abilities.find((a) => a.name === sc.ability)?.modifier ?? 0;
+          const isSorc = sc.className.toLowerCase() === "sorcerer";
+          const displayDc = isSorc && localInnateSorcery ? sc.saveDc + 1 : sc.saveDc;
+          const displayAttackBonus = sc.attackBonus;
           return (
             <div
               key={sc.className}
@@ -3035,17 +5089,24 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                     Modifier
                   </div>
                 </div>
-                <div className="pl-1">
-                  <div className="font-heading text-xl font-extrabold leading-tight text-foreground">
-                    {fmt(sc.attackBonus)}
+                <div className="pl-1 relative">
+                  <div className="font-heading text-xl font-extrabold leading-tight text-foreground flex items-center justify-center gap-1">
+                    {fmt(displayAttackBonus)}
+                    {isSorc && localInnateSorcery && (
+                      <span className="text-[8.5px] font-sans font-bold uppercase tracking-wider text-accent border border-accent/30 bg-accent/10 px-1 rounded animate-pulse select-none">
+                        Adv
+                      </span>
+                    )}
                   </div>
                   <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
                     Spell Attack
                   </div>
                 </div>
                 <div className="pl-1">
-                  <div className="font-heading text-xl font-extrabold leading-tight text-gold">
-                    {sc.saveDc}
+                  <div
+                    className={`font-heading text-xl font-extrabold leading-tight ${isSorc && localInnateSorcery ? "text-accent text-glow-accent scale-105" : "text-gold"} transition-all duration-300`}
+                  >
+                    {displayDc}
                   </div>
                   <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
                     Save DC
@@ -3260,247 +5321,1350 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     );
   };
 
-  const expandedSpellbook = (member.cantrips.length > 0 || member.preparedSpells.length > 0) && (() => {
-    const spellLevelOptions = [
-      "All Levels",
-      ...(member.cantrips.length > 0 ? ["Cantrips"] : []),
-      ...levels.map((lvl) => {
+  const expandedSpellbook =
+    (member.cantrips.length > 0 || member.allSpells.length > 0) &&
+    (() => {
+      const getIsPrepared = (s: PreparedSpell) => {
+        if (s.alwaysPrepared || s.level === 0) return true;
+        return localPrepOverride[s.name] !== undefined ? localPrepOverride[s.name] : !!s.prepared;
+      };
+
+      const filteredCantrips = member.cantrips.filter((c) => {
+        if (spellSearch && !c.name.toLowerCase().includes(spellSearch.toLowerCase())) return false;
+        if (spellLevelFilter !== "all" && spellLevelFilter !== 0) return false;
+        if (spellSchoolFilter !== "all" && c.school?.toLowerCase() !== spellSchoolFilter)
+          return false;
+        if (spellActivationFilter !== "all") {
+          const actText = getActivationText(c.activation).toLowerCase();
+          if (spellActivationFilter === "action" && actText !== "action") return false;
+          if (spellActivationFilter === "bonus" && actText !== "bonus action") return false;
+          if (spellActivationFilter === "reaction" && actText !== "reaction") return false;
+          if (
+            spellActivationFilter === "other" &&
+            ["action", "bonus action", "reaction"].includes(actText)
+          )
+            return false;
+        }
+        if (spellConcentrationFilter && !c.concentration) return false;
+        if (spellRitualFilter && !c.ritual) return false;
+        return true;
+      });
+
+      const filteredLeveledSpells: Record<number, PreparedSpell[]> = {};
+      member.allSpells.forEach((s) => {
+        const isPrepared = getIsPrepared(s);
+        if (onlyPreparedFilter && !isPrepared) return;
+
+        if (spellSearch && !s.name.toLowerCase().includes(spellSearch.toLowerCase())) return;
+        if (spellLevelFilter !== "all" && s.level !== spellLevelFilter) return;
+        if (spellSchoolFilter !== "all" && s.school?.toLowerCase() !== spellSchoolFilter) return;
+        if (spellActivationFilter !== "all") {
+          const actText = getActivationText(s.activation).toLowerCase();
+          if (spellActivationFilter === "action" && actText !== "action") return;
+          if (spellActivationFilter === "bonus" && actText !== "bonus action") return;
+          if (spellActivationFilter === "reaction" && actText !== "reaction") return;
+          if (
+            spellActivationFilter === "other" &&
+            ["action", "bonus action", "reaction"].includes(actText)
+          )
+            return;
+        }
+        if (spellConcentrationFilter && !s.concentration) return;
+        if (spellRitualFilter && !s.ritual) return;
+
+        if (!filteredLeveledSpells[s.level]) {
+          filteredLeveledSpells[s.level] = [];
+        }
+        filteredLeveledSpells[s.level].push(s);
+      });
+
+      const filteredLevels = Object.keys(filteredLeveledSpells)
+        .map(Number)
+        .sort((a, b) => a - b);
+
+      const allFilteredSpells = [
+        ...filteredCantrips,
+        ...Object.values(filteredLeveledSpells).flat(),
+      ];
+
+      const selectedSpell = allFilteredSpells.find((s) => s.name === selectedSpellName) || null;
+
+      const spellsByLevel: Record<number, PreparedSpell[]> = {};
+      member.allSpells.forEach((s) => {
+        if (!spellsByLevel[s.level]) {
+          spellsByLevel[s.level] = [];
+        }
+        spellsByLevel[s.level].push(s);
+      });
+      const allLevels = Object.keys(spellsByLevel)
+        .map(Number)
+        .sort((a, b) => a - b);
+
+      const spellLevelOptions = [
+        "All Levels",
+        ...(member.cantrips.length > 0 ? ["Cantrips"] : []),
+        ...allLevels.map((lvl) => {
+          const suffix = lvl === 1 ? "st" : lvl === 2 ? "nd" : lvl === 3 ? "rd" : "th";
+          return `${lvl}${suffix} Level`;
+        }),
+      ];
+
+      const currentLevelLabel = (() => {
+        if (spellLevelFilter === "all") return "All Levels";
+        if (spellLevelFilter === 0) return "Cantrips";
+        const lvl = Number(spellLevelFilter);
         const suffix = lvl === 1 ? "st" : lvl === 2 ? "nd" : lvl === 3 ? "rd" : "th";
         return `${lvl}${suffix} Level`;
-      })
-    ];
+      })();
 
-    const currentLevelLabel = (() => {
-      if (spellLevelFilter === "all") return "All Levels";
-      if (spellLevelFilter === 0) return "Cantrips";
-      const lvl = Number(spellLevelFilter);
-      const suffix = lvl === 1 ? "st" : lvl === 2 ? "nd" : lvl === 3 ? "rd" : "th";
-      return `${lvl}${suffix} Level`;
-    })();
-
-    const handleSpellLevelChange = (label: string) => {
-      if (label === "All Levels") {
-        setSpellLevelFilter("all");
-      } else if (label === "Cantrips") {
-        setSpellLevelFilter(0);
-      } else {
-        const match = label.match(/^(\d+)/);
-        if (match) {
-          setSpellLevelFilter(parseInt(match[1], 10));
+      const handleSpellLevelChange = (label: string) => {
+        if (label === "All Levels") {
+          setSpellLevelFilter("all");
+        } else if (label === "Cantrips") {
+          setSpellLevelFilter(0);
+        } else {
+          const match = label.match(/^(\d+)/);
+          if (match) {
+            setSpellLevelFilter(parseInt(match[1], 10));
+          }
         }
-      }
-    };
+      };
 
-    return (
-      <Panel title="Spellbook" icon={Sparkles}>
-        <div className="flex flex-col gap-4">
-          {/* Spellbook Search & Filters */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/20 pb-3 mb-1">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search spells..."
-                value={spellSearch}
-                onChange={(e) => setSpellSearch(e.target.value)}
-                className="w-full rounded-lg border border-border bg-secondary/35 pl-8 pr-4 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent"
-              />
+      const spellSchoolOptions = [
+        "All Schools",
+        "Abjuration",
+        "Conjuration",
+        "Divination",
+        "Enchantment",
+        "Evocation",
+        "Illusion",
+        "Necromancy",
+        "Transmutation",
+      ];
+
+      const currentSchoolLabel =
+        spellSchoolFilter === "all"
+          ? "All Schools"
+          : spellSchoolFilter.charAt(0).toUpperCase() + spellSchoolFilter.slice(1);
+
+      const handleSpellSchoolChange = (label: string) => {
+        if (label === "All Schools") {
+          setSpellSchoolFilter("all");
+        } else {
+          setSpellSchoolFilter(label.toLowerCase());
+        }
+      };
+
+      const spellActivationOptions = [
+        "All Casting Times",
+        "Action",
+        "Bonus Action",
+        "Reaction",
+        "Other",
+      ];
+
+      const currentActivationLabel =
+        spellActivationFilter === "all"
+          ? "All Casting Times"
+          : spellActivationFilter === "bonus"
+            ? "Bonus Action"
+            : spellActivationFilter.charAt(0).toUpperCase() + spellActivationFilter.slice(1);
+
+      const handleSpellActivationChange = (label: string) => {
+        if (label === "All Casting Times") {
+          setSpellActivationFilter("all");
+        } else if (label === "Bonus Action") {
+          setSpellActivationFilter("bonus");
+        } else {
+          setSpellActivationFilter(label.toLowerCase());
+        }
+      };
+
+      const hasAnyActiveFilters =
+        spellSearch ||
+        spellLevelFilter !== "all" ||
+        spellSchoolFilter !== "all" ||
+        spellActivationFilter !== "all" ||
+        spellConcentrationFilter ||
+        spellRitualFilter ||
+        onlyPreparedFilter;
+
+      const clearAllFilters = () => {
+        setSpellSearch("");
+        setSpellLevelFilter("all");
+        setSpellSchoolFilter("all");
+        setSpellActivationFilter("all");
+        setSpellConcentrationFilter(false);
+        setSpellRitualFilter(false);
+        setOnlyPreparedFilter(false);
+      };
+
+      const renderSlotsInline = (s: SpellSlotLevel, isPact = false) => {
+        const available = s.max - s.used;
+        return (
+          <div className="flex items-center gap-1.5 select-none">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex cursor-pointer flex-wrap gap-1.5">
+                  {Array.from({ length: s.max }).map((_, i) => {
+                    const filled = i < available;
+                    if (isPact) {
+                      return (
+                        <span
+                          key={i}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            localSlots.toggleSlot(s.level, i, true);
+                          }}
+                          className={`pact-slot ${filled ? "pact-slot-filled" : ""}`}
+                        />
+                      );
+                    } else {
+                      return (
+                        <span
+                          key={i}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            localSlots.toggleSlot(s.level, i, false);
+                          }}
+                          className={`mana-slot ${filled ? "mana-slot-filled" : ""}`}
+                        />
+                      );
+                    }
+                  })}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="text-xs">
+                {isPact ? "Pact" : "Level"} {s.level} Slots: {available} / {s.max} remaining (Click
+                to toggle)
+              </TooltipContent>
+            </Tooltip>
+            <span className="font-mono text-[9px] text-muted-foreground">
+              ({available}/{s.max})
+            </span>
+          </div>
+        );
+      };
+
+      const renderCodexDetail = (spell: PreparedSpell) => {
+        const isCantrip = spell.level === 0;
+        const schoolTheme = getSchoolTheme(spell.school);
+        const SchoolIcon = schoolTheme.icon;
+        const isCasting = castingSpellState?.active && castingSpellState.spellName === spell.name;
+
+        const actText = getActivationText(spell.activation);
+        const rangeText = getRangeText(spell.range);
+        const durationText = getDurationText(spell.duration, spell.concentration);
+        const compText = getComponentsText(spell.components, spell.componentsDescription);
+
+        const castOptions = isCantrip ? [] : getCastSlotOptions(spell.level);
+
+        const costlyComponent =
+          parseComponentCost(spell.componentsDescription) || parseComponentCost(spell.description);
+        const matchingInventoryItem = costlyComponent
+          ? localInventory.find((i) =>
+              i.name.toLowerCase().includes(costlyComponent.item.toLowerCase()),
+            )
+          : null;
+
+        const isSorcerer = member.classes.toLowerCase().includes("sorcerer");
+        const metamagicOptions = localMetamagic || [];
+        const spAction = displayActions.find((a) =>
+          a.name.toLowerCase().includes("sorcery points"),
+        );
+        const spEffective = spAction ? localResources.getEffectiveResource(spAction) : null;
+        const currentSP = spEffective?.uses?.current ?? 0;
+
+        const isSpellPrepared = getIsPrepared(spell);
+        const sorcDC = (() => {
+          const sc = member.spellcasting?.find((s) => s.className.toLowerCase() === "sorcerer");
+          return sc ? sc.saveDc + (localInnateSorcery ? 1 : 0) : null;
+        })();
+
+        return (
+          <div className="flex flex-col h-full relative">
+            <MagicalSealWatermark school={spell.school} />
+            {isCasting && (
+              <div className="absolute inset-0 bg-black/75 backdrop-blur-md flex flex-col items-center justify-center z-50 animate-[fade-in_0.2s_ease-out] rounded-xl">
+                <div className="relative flex items-center justify-center mb-4">
+                  <div className="absolute w-28 h-28 border border-accent/40 rounded-full border-dashed animate-[spin_12s_linear_infinite]" />
+                  <div className="absolute w-24 h-24 border-2 border-accent/20 rounded-full animate-[spin_8s_linear_infinite] [animation-direction:reverse]" />
+                  <div className="absolute w-20 h-20 border border-gold/40 rounded-full border-double animate-pulse" />
+                  <div className="absolute w-36 h-36 border border-accent/10 rounded-full animate-ping opacity-20" />
+                  <Sparkles className="text-gold w-8 h-8 animate-bounce" />
+                </div>
+                <div className="text-center px-4">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent animate-pulse block mb-1">
+                    Casting Incantation
+                  </span>
+                  <h3 className="text-lg font-heading font-extrabold text-foreground tracking-wide mb-1">
+                    {spell.name}
+                  </h3>
+                  <span className="text-[9px] font-mono text-muted-foreground/90 bg-secondary/50 px-2 py-0.5 rounded border border-border/30">
+                    {castingSpellState?.slotLevel
+                      ? `Used Level ${castingSpellState.slotLevel} Slot`
+                      : "Channeled Cantrip"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="p-4 border-b border-border/20 bg-[#16151c]/90 backdrop-blur-xs flex items-start justify-between gap-3 shrink-0 z-10">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-heading font-extrabold text-foreground tracking-wide flex items-center gap-2">
+                  <SchoolIcon className={`w-5 h-5 ${schoolTheme.text} shrink-0`} />
+                  <span className="truncate">{spell.name}</span>
+                </h3>
+                <div className="flex flex-wrap gap-1.5 mt-1.5 items-center">
+                  <span
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[8px] uppercase tracking-wider font-bold ${schoolTheme.bg} ${schoolTheme.text} ${schoolTheme.border}`}
+                  >
+                    <SchoolIcon className="w-2.5 h-2.5" />
+                    {spell.school}
+                  </span>
+                  {spell.ritual && (
+                    <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider font-bold">
+                      Ritual
+                    </span>
+                  )}
+                  {spell.concentration && (
+                    <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded text-[8px] uppercase tracking-wider font-bold">
+                      Concentration
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <span className="inline-block px-2.5 py-1 rounded bg-accent/10 border border-accent/20 font-mono text-xs text-accent font-bold">
+                  {isCantrip ? "Cantrip" : `Level ${spell.level}`}
+                </span>
+                <button
+                  onClick={() => setSelectedSpellName(null)}
+                  className="px-2 py-1 text-[10px] font-bold rounded border border-border bg-secondary/20 hover:bg-secondary/40 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                  title="Deselect Spell"
+                >
+                  ✕ Close
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Level:
-              </span>
-              <CustomSelect
-                value={currentLevelLabel}
-                onChange={handleSpellLevelChange}
-                options={spellLevelOptions}
-                triggerClassName="inline-flex items-center gap-1.5 cursor-pointer rounded border border-border bg-secondary/35 px-2.5 py-1 text-xs text-foreground hover:bg-secondary/50 focus:outline-none"
-                optionsWidth="w-32"
-              />
+
+            <div className="px-4 py-3 border-b border-border/10 bg-[#16151c]/50 backdrop-blur-xs shrink-0 z-10">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                <div className="p-2 rounded border border-border/20 bg-secondary/20">
+                  <div className="text-muted-foreground flex items-center justify-center gap-1 text-[8px] uppercase tracking-wider font-bold mb-1">
+                    <Clock className="w-3.5 h-3.5 text-accent/80" /> Casting Time
+                  </div>
+                  <div className="text-[10px] font-bold text-foreground truncate" title={actText}>
+                    {actText || "—"}
+                  </div>
+                </div>
+                <div className="p-2 rounded border border-border/20 bg-secondary/20">
+                  <div className="text-muted-foreground flex items-center justify-center gap-1 text-[8px] uppercase tracking-wider font-bold mb-1">
+                    <Target className="w-3.5 h-3.5 text-accent/80" /> Range
+                  </div>
+                  <div className="text-[10px] font-bold text-foreground truncate" title={rangeText}>
+                    {rangeText || "—"}
+                  </div>
+                </div>
+                <div className="p-2 rounded border border-border/20 bg-secondary/20">
+                  <div className="text-muted-foreground flex items-center justify-center gap-1 text-[8px] uppercase tracking-wider font-bold mb-1">
+                    <Clock className="w-3.5 h-3.5 text-accent/80" /> Duration
+                  </div>
+                  <div
+                    className="text-[10px] font-bold text-foreground truncate"
+                    title={durationText}
+                  >
+                    {durationText || "—"}
+                  </div>
+                </div>
+                <div className="p-2 rounded border border-border/20 bg-secondary/20">
+                  <div className="text-muted-foreground flex items-center justify-center gap-1 text-[8px] uppercase tracking-wider font-bold mb-1">
+                    <Scroll className="w-3.5 h-3.5 text-accent/80" /> Components
+                  </div>
+                  <div className="text-[10px] font-bold text-foreground truncate" title={compText}>
+                    {compText || "—"}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar z-10 relative">
+              {/* Innate Sorcery active banner */}
+              {isSorcerer && localInnateSorcery && (
+                <div className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-2.5 flex items-center gap-2 text-[10px] text-accent leading-normal animate-pulse">
+                  <span className="text-xs">✨</span>
+                  <span>
+                    <strong>Innate Sorcery Active:</strong> +1 Spell Save DC (DC {sorcDC}) &
+                    Advantage on Sorcerer Spell Attacks.
+                  </span>
+                </div>
+              )}
+
+              {/* Starry Form active banner */}
+              {isStarsDruid && localStarryForm !== "None" && (
+                <div className="mb-4 rounded-lg border border-primary/30 bg-primary/5 p-2.5 flex items-center gap-2 text-[10px] text-primary leading-normal animate-pulse">
+                  <span className="text-xs">🌌</span>
+                  <span>
+                    <strong>Starry Form ({localStarryForm}) Active:</strong>{" "}
+                    {localStarryForm === "Archer" &&
+                      "Luminous Archer attack is available under Actions (1d8+WIS Radiant, BA)."}
+                    {localStarryForm === "Chalice" &&
+                      "When casting a healing spell, a creature within 30 ft regains an extra 1d8+WIS HP."}
+                    {localStarryForm === "Dragon" &&
+                      "Guaranteed minimum d20 roll of 10 on Intelligence/Wisdom checks and Concentration saves."}
+                  </span>
+                </div>
+              )}
+
+              {/* Mantle of Majesty active banner */}
+              {isGlamourBard && localMantleOfMajesty && (
+                <div className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-2.5 flex items-center gap-2 text-[10px] text-accent leading-normal animate-pulse">
+                  <span className="text-xs">👑</span>
+                  <span>
+                    <strong>Mantle of Majesty Active:</strong> Cast Command as a Bonus Action for
+                    free! Command shortcut added to Actions.
+                  </span>
+                </div>
+              )}
+
+              {!isSpellPrepared && spell.level > 0 && (
+                <div className="mb-4 rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 flex items-center justify-between gap-3 text-[10.5px] text-amber-400">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm shrink-0">⚠️</span>
+                    <div>
+                      <span className="font-bold block uppercase tracking-wide text-[8px] opacity-75 mb-0.5">
+                        Spell Unprepared
+                      </span>
+                      <span>{spell.name} is not currently prepared.</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setLocalPrepOverride((prev) => ({
+                        ...prev,
+                        [spell.name]: true,
+                      }));
+                    }}
+                    className="px-2 py-1 text-[9.5px] font-bold rounded border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer transition-all shrink-0"
+                  >
+                    Prepare Now
+                  </button>
+                </div>
+              )}
+
+              {costlyComponent && (
+                <div
+                  className={`mb-4 rounded-lg border p-3 flex items-start gap-2 text-[10.5px] leading-normal
+                  ${
+                    matchingInventoryItem && matchingInventoryItem.quantity > 0
+                      ? "bg-teal-500/5 border-teal-500/20 text-teal-400"
+                      : "bg-red-500/5 border-red-500/20 text-red-400"
+                  }`}
+                >
+                  <span className="text-sm shrink-0">
+                    {matchingInventoryItem && matchingInventoryItem.quantity > 0 ? "✔️" : "⚠️"}
+                  </span>
+                  <div className="flex-1">
+                    <span className="font-bold block uppercase tracking-wide text-[8px] opacity-75 mb-0.5">
+                      Costly Component Check
+                    </span>
+                    {matchingInventoryItem && matchingInventoryItem.quantity > 0 ? (
+                      <span>
+                        {member.name} has{" "}
+                        <strong>
+                          {matchingInventoryItem.quantity}x {matchingInventoryItem.name}
+                        </strong>{" "}
+                        in inventory (worth {costlyComponent.cost} gp).
+                      </span>
+                    ) : (
+                      <span>
+                        Missing required component:{" "}
+                        <strong>
+                          {costlyComponent.item} worth {costlyComponent.cost} gp
+                        </strong>
+                        . Not found in live inventory!
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {spell.description ? (
+                <div
+                  className="text-xs leading-relaxed text-muted-foreground/90 font-sans prose prose-invert max-w-none 
+                  prose-p:my-2 prose-ul:list-disc prose-ul:pl-4 prose-ol:list-decimal prose-ol:pl-4 
+                  prose-strong:text-foreground prose-strong:font-bold"
+                  dangerouslySetInnerHTML={{ __html: spell.description }}
+                />
+              ) : (
+                <div className="text-muted-foreground text-xs italic py-4 text-center">
+                  No spell description available.
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-border/20 bg-[#16151c]/95 backdrop-blur-xs shrink-0 flex flex-col gap-2.5 z-10">
+              {isSorcerer && metamagicOptions.length > 0 && spAction && spell.level > 0 && (
+                <div className="border-b border-border/15 pb-3.5 mb-1">
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <span>Sorcerer Metamagic</span>
+                    <span className="text-[9px] text-accent font-semibold font-mono">
+                      {currentSP} / {spEffective?.uses?.max} SP Available
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {metamagicOptions.map((mm) => {
+                      const cost = getMetamagicCost(mm.name, spell.level);
+                      const isSelected = selectedMetamagicName === mm.name;
+                      const canAfford = currentSP >= cost;
+                      const mmDesc = METAMAGIC_DICTIONARY[mm.name] || mm.description;
+
+                      return (
+                        <Tooltip key={mm.name}>
+                          <TooltipTrigger asChild>
+                            <button
+                              disabled={!canAfford && !isSelected}
+                              onClick={() => {
+                                setSelectedMetamagicName(isSelected ? null : mm.name);
+                              }}
+                              className={`px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed
+                                ${
+                                  isSelected
+                                    ? "bg-accent/15 border-accent text-accent font-bold shadow-md shadow-accent/5"
+                                    : "bg-secondary/35 border-border/60 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-accent" : "bg-muted-foreground/40"}`}
+                              />
+                              <span>{mm.name}</span>
+                              <span className="text-[8.5px] opacity-75 font-mono">({cost} SP)</span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[280px] text-xs">
+                            {mmDesc}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                  {selectedMetamagicName && (
+                    <div className="text-[9.5px] text-muted-foreground leading-relaxed bg-accent/5 border border-accent/20 rounded-lg p-2.5 animate-fade-in">
+                      <span className="font-bold text-accent block mb-0.5">
+                        Active Modifier: {selectedMetamagicName}
+                      </span>
+                      {METAMAGIC_DICTIONARY[selectedMetamagicName]}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {isCantrip ? (
+                <button
+                  onClick={() => handleCastSpell(spell, false, 0)}
+                  className="w-full relative overflow-hidden group py-2.5 rounded-lg bg-gradient-to-r from-accent to-purple-600 text-xs font-bold text-white shadow-md hover:shadow-accent/20 hover:from-accent/90 hover:to-purple-500 transition-all active:scale-[0.98] cursor-pointer"
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 animate-pulse text-gold" />
+                    Cast Cantrip
+                  </span>
+                </button>
+              ) : (
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
+                    <span>Channel Spell Slots</span>
+                    <span className="text-[9px] text-accent font-normal normal-case">
+                      Select a slot to expend
+                    </span>
+                  </div>
+                  {castOptions.length === 0 ? (
+                    <div className="text-center py-2.5 rounded-lg border border-red-500/20 bg-red-500/5 text-red-400 text-[10px] font-bold flex items-center justify-center gap-1.5">
+                      <span>⚠️ Out of spell slots at Level {spell.level} or above.</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {castOptions.map((opt) => {
+                        const optAvailable = opt.max - opt.used;
+                        const metamagicSufficient = selectedMetamagicName
+                          ? currentSP >= getMetamagicCost(selectedMetamagicName, spell.level)
+                          : true;
+
+                        return (
+                          <button
+                            key={`${opt.isPact ? "pact" : "spell"}-${opt.level}`}
+                            disabled={!metamagicSufficient}
+                            onClick={() => handleCastSpell(spell, opt.isPact, opt.level)}
+                            className={`flex-1 min-w-[90px] py-1.5 px-2 rounded-lg border text-[10.5px] font-bold transition-all hover:scale-[1.03] active:scale-[0.98] flex flex-col items-center justify-center gap-0.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed
+                            ${
+                              opt.isPact
+                                ? "bg-accent/5 border-accent/40 text-accent hover:bg-accent/10 hover:border-accent"
+                                : "bg-primary/5 border-primary/40 text-primary hover:bg-primary/10 hover:border-primary"
+                            }`}
+                          >
+                            <span>Cast as L{opt.level}</span>
+                            <span className="text-[8px] font-normal opacity-85">
+                              {optAvailable} / {opt.max} left {opt.isPact && "(Pact)"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+        );
+      };
 
-        {/* Cantrips Section */}
-        {member.cantrips.length > 0 &&
-          (spellLevelFilter === "all" || spellLevelFilter === 0) &&
-          (() => {
-            const list = filteredCantrips;
-            if (list.length === 0) return null;
-            return (
-              <div className="rounded-lg border border-border/30 bg-secondary/10 p-3">
-                <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-accent select-none">
-                  Cantrips
-                </h4>
-                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 items-start">
-                  {list.map((c) => {
-                    const isExpanded = !!expandedItems[`spell-${c.name}`];
-                    return (
-                      <div
-                        key={c.name}
-                        className="flex flex-col rounded-md border border-accent/20 bg-accent/5 transition-all duration-200"
-                      >
-                        <button
-                          onClick={() => toggleExpand(`spell-${c.name}`)}
-                          className="w-full text-left cursor-pointer flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs text-foreground hover:bg-accent/10 focus:outline-none"
-                        >
-                          <span className="flex items-center gap-2 font-medium">
-                            <Sparkles size={10} className="text-accent shrink-0" />
-                            <span>{c.name}</span>
-                          </span>
-                          <span className="text-[9px] text-muted-foreground font-mono">
-                            {isExpanded ? "▲ LESS" : "▼ DETAILS"}
-                          </span>
-                        </button>
-                        {isExpanded && (
-                          <div className="px-2.5 pb-2 border-t border-accent/10 pt-2 flex flex-col gap-2">
-                            {/* Spell Badges */}
-                            <div className="flex flex-wrap gap-1">
-                              {c.school && (
-                                <span className="rounded bg-secondary border border-border/30 px-1 py-0.5 text-[8px] uppercase tracking-wider text-muted-foreground">
-                                  {c.school}
+      return (
+        <Panel
+          title={
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-1.5 select-none">
+                <Sparkles className="text-accent w-4 h-4" />
+                <span>Spellbook</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {hasAnyActiveFilters && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="px-2 py-0.5 rounded border border-border bg-secondary/35 text-[9px] font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+                <div className="flex items-center rounded border border-border bg-secondary/20 p-0.5">
+                  <button
+                    onClick={() => setSpellbookViewMode("codex")}
+                    className={`p-1 rounded text-xs transition-colors cursor-pointer ${
+                      spellbookViewMode === "codex"
+                        ? "bg-accent text-accent-foreground font-bold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Codex View"
+                  >
+                    <Columns2 size={12} />
+                  </button>
+                  <button
+                    onClick={() => setSpellbookViewMode("grid")}
+                    className={`p-1 rounded text-xs transition-colors cursor-pointer ${
+                      spellbookViewMode === "grid"
+                        ? "bg-accent text-accent-foreground font-bold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Grid View"
+                  >
+                    <LayoutGrid size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        >
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2 border-b border-border/20 pb-3 mb-1">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search spells by name..."
+                    value={spellSearch}
+                    onChange={(e) => setSpellSearch(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-secondary/35 pl-8 pr-4 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <CustomSelect
+                    value={currentLevelLabel}
+                    onChange={handleSpellLevelChange}
+                    options={spellLevelOptions}
+                    triggerClassName="inline-flex items-center gap-1.5 cursor-pointer rounded border border-border bg-secondary/35 px-2.5 py-1.5 text-xs text-foreground hover:bg-secondary/50 focus:outline-none shrink-0"
+                    optionsWidth="w-32"
+                  />
+                  <CustomSelect
+                    value={currentSchoolLabel}
+                    onChange={handleSpellSchoolChange}
+                    options={spellSchoolOptions}
+                    triggerClassName="inline-flex items-center gap-1.5 cursor-pointer rounded border border-border bg-secondary/35 px-2.5 py-1.5 text-xs text-foreground hover:bg-secondary/50 focus:outline-none shrink-0"
+                    optionsWidth="w-36"
+                  />
+                  <CustomSelect
+                    value={currentActivationLabel}
+                    onChange={handleSpellActivationChange}
+                    options={spellActivationOptions}
+                    triggerClassName="inline-flex items-center gap-1.5 cursor-pointer rounded border border-border bg-secondary/35 px-2.5 py-1.5 text-xs text-foreground hover:bg-secondary/50 focus:outline-none shrink-0"
+                    optionsWidth="w-40"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5 items-center mt-1 select-none font-sans">
+                <button
+                  onClick={() => setOnlyPreparedFilter(!onlyPreparedFilter)}
+                  className={`px-2 py-0.5 rounded border text-[10px] font-semibold transition-all flex items-center gap-1 cursor-pointer
+                  ${
+                    onlyPreparedFilter
+                      ? "bg-teal-500/10 border-teal-500/40 text-teal-400"
+                      : "bg-secondary/20 border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  📖 Prepared Only
+                </button>
+                <button
+                  onClick={() => setSpellConcentrationFilter(!spellConcentrationFilter)}
+                  className={`px-2 py-0.5 rounded border text-[10px] font-semibold transition-all flex items-center gap-1 cursor-pointer
+                  ${
+                    spellConcentrationFilter
+                      ? "bg-amber-500/10 border-amber-500/40 text-amber-400"
+                      : "bg-secondary/20 border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  🕒 Concentration
+                </button>
+                <button
+                  onClick={() => setSpellRitualFilter(!spellRitualFilter)}
+                  className={`px-2 py-0.5 rounded border text-[10px] font-semibold transition-all flex items-center gap-1 cursor-pointer
+                  ${
+                    spellRitualFilter
+                      ? "bg-sky-500/10 border-sky-500/40 text-sky-400"
+                      : "bg-secondary/20 border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  📜 Ritual
+                </button>
+              </div>
+            </div>
+
+            {spellbookViewMode === "codex" ? (
+              <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.8fr] gap-4">
+                <div className="flex flex-col gap-3 max-h-[580px] overflow-y-auto pr-1 border-r border-border/10 lg:pr-3">
+                  {filteredCantrips.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between border-b border-border/10 pb-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-accent">
+                          Cantrips
+                        </span>
+                        <span className="font-mono text-[9px] text-muted-foreground">
+                          ({filteredCantrips.length})
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {filteredCantrips.map((c) => {
+                          const schoolTheme = getSchoolTheme(c.school);
+                          const SchoolIcon = schoolTheme.icon;
+                          const isSelected = selectedSpellName === c.name;
+                          const actText = getActivationText(c.activation);
+                          return (
+                            <div
+                              key={c.name}
+                              onClick={() => setSelectedSpellName(c.name)}
+                              className={`flex items-center justify-between gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all hover:bg-secondary/35
+                              ${
+                                isSelected
+                                  ? "bg-accent/10 border-accent/80 text-foreground shadow-md shadow-accent/5 font-medium"
+                                  : "bg-secondary/15 border-border/50 text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <div
+                                  className={`w-1 h-3 rounded-full ${isSelected ? "bg-accent" : "bg-muted-foreground/30"}`}
+                                />
+                                <SchoolIcon
+                                  className={`w-3.5 h-3.5 shrink-0 ${isSelected ? schoolTheme.text : "text-muted-foreground/60"}`}
+                                />
+                                <span className="truncate">{c.name}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0 text-[8px] font-mono select-none">
+                                {c.concentration && (
+                                  <span className="text-amber-400" title="Concentration">
+                                    C
+                                  </span>
+                                )}
+                                {c.ritual && (
+                                  <span className="text-sky-400" title="Ritual">
+                                    R
+                                  </span>
+                                )}
+                                <span className="bg-secondary px-1 py-0.5 rounded text-[8px] text-muted-foreground font-sans font-semibold">
+                                  {actText === "Action"
+                                    ? "1A"
+                                    : actText === "Bonus Action"
+                                      ? "1BA"
+                                      : actText === "Reaction"
+                                        ? "1R"
+                                        : "Oth"}
                                 </span>
-                              )}
-                              {c.activation && (
-                                <span className="rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-primary">
-                                  ⚡ {getActivationText(c.activation)}
-                                </span>
-                              )}
-                              {c.range && (
-                                <span className="rounded bg-teal-500/10 border border-teal-500/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-teal-400">
-                                  🎯 {getRangeText(c.range)}
-                                </span>
-                              )}
-                              {c.duration && (
-                                <span className="rounded bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-amber-400">
-                                  🕒 {getDurationText(c.duration, c.concentration)}
-                                </span>
-                              )}
-                              {c.components && (
-                                <span
-                                  className="rounded bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-purple-400"
-                                  title={c.componentsDescription}
-                                >
-                                  📜 {getComponentsText(c.components)}
-                                </span>
-                              )}
-                              {c.ritual && (
-                                <span className="rounded bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-sky-400 font-bold">
-                                  Ritual
-                                </span>
-                              )}
+                              </div>
                             </div>
-                            {c.description && (
-                              <div
-                                className="text-[10px] leading-relaxed text-muted-foreground/90 max-h-[160px] overflow-y-auto pr-1"
-                                dangerouslySetInnerHTML={{ __html: c.description }}
-                              />
-                            )}
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {filteredLevels.map((lvl) => {
+                    const list = filteredLeveledSpells[lvl] || [];
+                    if (list.length === 0) return null;
+                    const suffix = lvl === 1 ? "st" : lvl === 2 ? "nd" : lvl === 3 ? "rd" : "th";
+                    const slot = localSlots.spellSlots.find((s) => s.level === lvl);
+                    const pact = localSlots.pactSlots.find((s) => s.level === lvl);
+                    return (
+                      <div key={lvl} className="space-y-1.5">
+                        <div className="flex flex-wrap items-center justify-between border-b border-border/10 pb-1 gap-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-foreground/95">
+                            {lvl}
+                            {suffix} Level Spells
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {slot && renderSlotsInline(slot, false)}
+                            {pact && renderSlotsInline(pact, true)}
                           </div>
-                        )}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {list.map((spell) => {
+                            const schoolTheme = getSchoolTheme(spell.school);
+                            const SchoolIcon = schoolTheme.icon;
+                            const isSelected = selectedSpellName === spell.name;
+                            const actText = getActivationText(spell.activation);
+                            const isSpellPrepared = getIsPrepared(spell);
+                            const isAlways = !!spell.alwaysPrepared;
+
+                            return (
+                              <div
+                                key={spell.name}
+                                onClick={() => setSelectedSpellName(spell.name)}
+                                className={`flex items-center justify-between gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all hover:bg-secondary/35
+                                ${
+                                  isSelected
+                                    ? "bg-accent/10 border-accent/80 text-foreground shadow-md shadow-accent/5 font-medium"
+                                    : "bg-secondary/15 border-border/50 text-muted-foreground hover:text-foreground"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 truncate">
+                                  <div
+                                    className={`w-1 h-3 rounded-full ${isSelected ? "bg-accent" : "bg-muted-foreground/30"}`}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!isAlways) {
+                                        setLocalPrepOverride((prev) => ({
+                                          ...prev,
+                                          [spell.name]: !isSpellPrepared,
+                                        }));
+                                      }
+                                    }}
+                                    className="p-1 rounded transition-colors hover:bg-secondary/80 focus:outline-none cursor-pointer shrink-0"
+                                    title={
+                                      isAlways
+                                        ? "Always Prepared"
+                                        : isSpellPrepared
+                                          ? "Unprepare Spell"
+                                          : "Prepare Spell"
+                                    }
+                                  >
+                                    {isAlways ? (
+                                      <BookOpen className="w-3.5 h-3.5 text-gold animate-pulse" />
+                                    ) : isSpellPrepared ? (
+                                      <BookOpen className="w-3.5 h-3.5 text-teal-400" />
+                                    ) : (
+                                      <BookOpen className="w-3.5 h-3.5 text-muted-foreground/30 hover:text-muted-foreground" />
+                                    )}
+                                  </button>
+                                  <SchoolIcon
+                                    className={`w-3.5 h-3.5 shrink-0 ${isSelected ? schoolTheme.text : "text-muted-foreground/60"}`}
+                                  />
+                                  <span
+                                    className={`truncate ${isSpellPrepared ? "text-foreground font-semibold" : "text-muted-foreground/50 italic font-normal"}`}
+                                  >
+                                    {spell.name}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0 text-[8px] font-mono select-none">
+                                  {spell.concentration && (
+                                    <span className="text-amber-400" title="Concentration">
+                                      C
+                                    </span>
+                                  )}
+                                  {spell.ritual && (
+                                    <span className="text-sky-400" title="Ritual">
+                                      R
+                                    </span>
+                                  )}
+                                  <span className="bg-secondary px-1 py-0.5 rounded text-[8px] text-muted-foreground font-sans font-semibold">
+                                    {actText === "Action"
+                                      ? "1A"
+                                      : actText === "Bonus Action"
+                                        ? "1BA"
+                                        : actText === "Reaction"
+                                          ? "1R"
+                                          : "Oth"}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })}
+
+                  {filteredCantrips.length === 0 && filteredLevels.length === 0 && (
+                    <div className="text-center py-8 text-xs text-muted-foreground italic">
+                      No spells match these filters.
+                    </div>
+                  )}
+                </div>
+
+                <div className="hidden lg:flex flex-col border border-border/30 bg-secondary/15 rounded-xl min-h-[480px] h-[580px] overflow-hidden shadow-inner relative">
+                  {selectedSpell ? (
+                    renderCodexDetail(selectedSpell)
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-muted-foreground/70 select-none">
+                      <div className="relative flex items-center justify-center w-24 h-24 mb-4 opacity-50">
+                        <div className="absolute inset-0 border border-muted-foreground/20 rounded-full border-dashed animate-[spin_20s_linear_infinite]" />
+                        <div className="absolute w-20 h-20 border border-muted-foreground/15 rounded-full animate-[spin_10s_linear_infinite] [animation-direction:reverse]" />
+                        <BookOpen size={28} className="text-muted-foreground animate-pulse" />
+                      </div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/80 mb-1">
+                        Consult the Codex
+                      </h4>
+                      <p className="text-[10px] leading-relaxed max-w-[200px] text-muted-foreground/80 font-sans">
+                        Select a spell from the directory to prepare your incantation and channel
+                        spell slots.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-            );
-          })()}
+            ) : (
+              <div className="flex flex-col gap-4">
+                {filteredCantrips.length > 0 && (
+                  <div className="rounded-lg border border-border/30 bg-secondary/10 p-3">
+                    <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-accent select-none">
+                      Cantrips
+                    </h4>
+                    <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 items-start">
+                      {filteredCantrips.map((c) => {
+                        const isExpanded = !!expandedItems[`spell-${c.name}`];
+                        const schoolTheme = getSchoolTheme(c.school);
+                        const SchoolIcon = schoolTheme.icon;
+                        const isCasting =
+                          castingSpellState?.active && castingSpellState.spellName === c.name;
 
-        {/* Leveled Spells grouped by Level */}
-        {levels
-          .filter((lvl) => spellLevelFilter === "all" || spellLevelFilter === lvl)
-          .map((lvl) => {
-            const list = filteredLeveledSpells[lvl] || [];
-            if (list.length === 0) return null;
-            const suffix = lvl === 1 ? "st" : lvl === 2 ? "nd" : lvl === 3 ? "rd" : "th";
-            const slot = localSlots.spellSlots.find((s) => s.level === lvl);
-            const pact = localSlots.pactSlots.find((s) => s.level === lvl);
-            return (
-              <div key={lvl} className="rounded-lg border border-border/30 bg-secondary/15 p-3">
-                <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-border/10 pb-1.5">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/90 select-none">
-                    {lvl}
-                    {suffix} Level
-                  </h4>
-                  {slot && renderSlotsInline(slot, false)}
-                  {pact && renderSlotsInline(pact, true)}
-                </div>
-                <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 items-start">
-                  {list.map((spell) => {
-                    const isExpanded = !!expandedItems[`spell-${spell.name}`];
-                    return (
-                      <div
-                        key={spell.name}
-                        className="flex flex-col rounded-md border border-border/50 bg-secondary/45 transition-all duration-200"
-                      >
-                        <button
-                          onClick={() => toggleExpand(`spell-${spell.name}`)}
-                          className="w-full text-left cursor-pointer flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs text-foreground hover:bg-secondary/60 focus:outline-none"
-                        >
-                          <span className="flex items-center gap-2 font-medium">
-                            <BookOpen size={10} className="text-muted-foreground shrink-0" />
-                            <span>{spell.name}</span>
-                          </span>
-                          <span className="text-[9px] text-muted-foreground font-mono">
-                            {isExpanded ? "▲ LESS" : "▼ DETAILS"}
-                          </span>
-                        </button>
-                        {isExpanded && (
-                          <div className="px-2.5 pb-2 border-t border-border/15 pt-2 flex flex-col gap-2">
-                            {/* Spell Badges */}
-                            <div className="flex flex-wrap gap-1">
-                              {spell.school && (
-                                <span className="rounded bg-secondary border border-border/30 px-1 py-0.5 text-[8px] uppercase tracking-wider text-muted-foreground">
-                                  {spell.school}
+                        return (
+                          <div
+                            key={c.name}
+                            className={`flex flex-col rounded-md border transition-all duration-200 relative overflow-hidden
+                            ${isExpanded ? "border-accent/40 bg-accent/5" : "border-border/50 bg-secondary/45"}`}
+                          >
+                            {isCasting && (
+                              <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 animate-fade-in">
+                                <Sparkles className="text-gold w-4 h-4 animate-bounce mb-1" />
+                                <span className="text-[8px] font-bold text-accent uppercase tracking-wider animate-pulse">
+                                  Casting Cantrip
                                 </span>
-                              )}
-                              {spell.activation && (
-                                <span className="rounded bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-primary">
-                                  ⚡ {getActivationText(spell.activation)}
-                                </span>
-                              )}
-                              {spell.range && (
-                                <span className="rounded bg-teal-500/10 border border-teal-500/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-teal-400">
-                                  🎯 {getRangeText(spell.range)}
-                                </span>
-                              )}
-                              {spell.duration && (
-                                <span className="rounded bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-amber-400">
-                                  🕒 {getDurationText(spell.duration, spell.concentration)}
-                                </span>
-                              )}
-                              {spell.components && (
-                                <span
-                                  className="rounded bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-purple-400"
-                                  title={spell.componentsDescription}
+                              </div>
+                            )}
+
+                            <button
+                              onClick={() => toggleExpand(`spell-${c.name}`)}
+                              className="w-full text-left cursor-pointer flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs text-foreground hover:bg-secondary/30 focus:outline-none"
+                            >
+                              <span className="flex items-center gap-2 font-medium">
+                                <SchoolIcon size={11} className={`${schoolTheme.text} shrink-0`} />
+                                <span>{c.name}</span>
+                              </span>
+                              <span className="text-[8px] text-muted-foreground font-mono">
+                                {isExpanded ? "▲ LESS" : "▼ DETAILS"}
+                              </span>
+                            </button>
+                            {isExpanded && (
+                              <div className="px-2.5 pb-2 border-t border-border/10 pt-2 flex flex-col gap-2">
+                                <div className="flex flex-wrap gap-1">
+                                  <span
+                                    className={`rounded px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wider ${schoolTheme.bg} ${schoolTheme.text} ${schoolTheme.border}`}
+                                  >
+                                    {c.school}
+                                  </span>
+                                  {c.activation && (
+                                    <span className="rounded bg-primary/10 border border-primary/20 px-1 py-0.5 text-[7px] uppercase tracking-wider text-primary font-bold">
+                                      ⚡ {getActivationText(c.activation)}
+                                    </span>
+                                  )}
+                                  {c.range && (
+                                    <span className="rounded bg-teal-500/10 border border-teal-500/20 px-1 py-0.5 text-[7px] uppercase tracking-wider text-teal-400 font-bold">
+                                      🎯 {getRangeText(c.range)}
+                                    </span>
+                                  )}
+                                  {c.duration && (
+                                    <span className="rounded bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 text-[7px] uppercase tracking-wider text-amber-400 font-bold">
+                                      🕒 {getDurationText(c.duration, c.concentration)}
+                                    </span>
+                                  )}
+                                </div>
+                                {c.description && (
+                                  <div
+                                    className="text-[10px] leading-relaxed text-muted-foreground/90 max-h-[140px] overflow-y-auto pr-1 font-sans border-t border-border/5 pt-1.5 prose prose-invert max-w-none"
+                                    dangerouslySetInnerHTML={{ __html: c.description }}
+                                  />
+                                )}
+                                <button
+                                  onClick={() => handleCastSpell(c, false, 0)}
+                                  className="w-full mt-1.5 py-1 rounded bg-gradient-to-r from-accent to-purple-600 text-[9px] font-bold text-white shadow hover:from-accent/90 hover:to-purple-500 transition-all cursor-pointer"
                                 >
-                                  📜 {getComponentsText(spell.components)}
-                                </span>
-                              )}
-                              {spell.ritual && (
-                                <span className="rounded bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 text-[8px] uppercase tracking-wider text-sky-400 font-bold">
-                                  Ritual
-                                </span>
-                              )}
-                            </div>
-                            {spell.description && (
-                              <div
-                                className="text-[10px] leading-relaxed text-muted-foreground/90 max-h-[160px] overflow-y-auto pr-1"
-                                dangerouslySetInnerHTML={{ __html: spell.description }}
-                              />
+                                  Cast Cantrip
+                                </button>
+                              </div>
                             )}
                           </div>
-                        )}
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {filteredLevels.map((lvl) => {
+                  const list = filteredLeveledSpells[lvl] || [];
+                  if (list.length === 0) return null;
+                  const suffix = lvl === 1 ? "st" : lvl === 2 ? "nd" : lvl === 3 ? "rd" : "th";
+                  const slot = localSlots.spellSlots.find((s) => s.level === lvl);
+                  const pact = localSlots.pactSlots.find((s) => s.level === lvl);
+
+                  return (
+                    <div
+                      key={lvl}
+                      className="rounded-lg border border-border/30 bg-secondary/15 p-3"
+                    >
+                      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-border/10 pb-1.5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/90 select-none">
+                          {lvl}
+                          {suffix} Level
+                        </h4>
+                        {slot && renderSlotsInline(slot, false)}
+                        {pact && renderSlotsInline(pact, true)}
                       </div>
-                    );
-                  })}
+                      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 items-start">
+                        {list.map((spell) => {
+                          const isExpanded = !!expandedItems[`spell-${spell.name}`];
+                          const schoolTheme = getSchoolTheme(spell.school);
+                          const SchoolIcon = schoolTheme.icon;
+                          const isCasting =
+                            castingSpellState?.active && castingSpellState.spellName === spell.name;
+                          const castOptions = getCastSlotOptions(spell.level);
+                          const isSpellPrepared = getIsPrepared(spell);
+                          const isAlways = !!spell.alwaysPrepared;
+
+                          const costlyComponent =
+                            parseComponentCost(spell.componentsDescription) ||
+                            parseComponentCost(spell.description);
+                          const matchingInventoryItem = costlyComponent
+                            ? localInventory.find((i) =>
+                                i.name.toLowerCase().includes(costlyComponent.item.toLowerCase()),
+                              )
+                            : null;
+
+                          const isSorcerer = member.classes.toLowerCase().includes("sorcerer");
+                          const metamagicOptions = localMetamagic || [];
+                          const spAction = displayActions.find((a) =>
+                            a.name.toLowerCase().includes("sorcery points"),
+                          );
+                          const spEffective = spAction
+                            ? localResources.getEffectiveResource(spAction)
+                            : null;
+                          const currentSP = spEffective?.uses?.current ?? 0;
+                          const sorcDC = (() => {
+                            const sc = member.spellcasting?.find(
+                              (s) => s.className.toLowerCase() === "sorcerer",
+                            );
+                            return sc ? sc.saveDc + (localInnateSorcery ? 1 : 0) : null;
+                          })();
+
+                          return (
+                            <div
+                              key={spell.name}
+                              className={`flex flex-col rounded-md border transition-all duration-200 relative overflow-hidden
+                              ${isExpanded ? "border-accent/40 bg-accent/5" : "border-border/50 bg-secondary/45"}`}
+                            >
+                              {isCasting && (
+                                <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 animate-fade-in">
+                                  <Sparkles className="text-gold w-4 h-4 animate-bounce mb-1" />
+                                  <span className="text-[8px] font-bold text-accent uppercase tracking-wider animate-pulse">
+                                    Casting L{castingSpellState?.slotLevel}
+                                  </span>
+                                </div>
+                              )}
+
+                              <div className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs text-foreground hover:bg-secondary/35 focus:outline-none">
+                                <span className="flex items-center gap-2 font-medium truncate min-w-0">
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!isAlways) {
+                                        setLocalPrepOverride((prev) => ({
+                                          ...prev,
+                                          [spell.name]: !isSpellPrepared,
+                                        }));
+                                      }
+                                    }}
+                                    className="p-1 rounded transition-colors hover:bg-secondary/60 cursor-pointer shrink-0"
+                                    title={
+                                      isAlways
+                                        ? "Always Prepared"
+                                        : isSpellPrepared
+                                          ? "Unprepare Spell"
+                                          : "Prepare Spell"
+                                    }
+                                  >
+                                    {isAlways ? (
+                                      <BookOpen className="w-3.5 h-3.5 text-gold animate-pulse" />
+                                    ) : isSpellPrepared ? (
+                                      <BookOpen className="w-3.5 h-3.5 text-teal-400" />
+                                    ) : (
+                                      <BookOpen className="w-3.5 h-3.5 text-muted-foreground/30 hover:text-muted-foreground" />
+                                    )}
+                                  </span>
+                                  <SchoolIcon
+                                    size={11}
+                                    className={`${schoolTheme.text} shrink-0`}
+                                  />
+                                  <span
+                                    onClick={() => toggleExpand(`spell-${spell.name}`)}
+                                    className={`cursor-pointer truncate hover:text-accent transition-colors ${isSpellPrepared ? "text-foreground font-semibold" : "text-muted-foreground/50 italic font-normal"}`}
+                                  >
+                                    {spell.name}
+                                  </span>
+                                </span>
+                                <button
+                                  onClick={() => toggleExpand(`spell-${spell.name}`)}
+                                  className="text-[8px] text-muted-foreground font-mono focus:outline-none shrink-0"
+                                >
+                                  {isExpanded ? "▲ LESS" : "▼ DETAILS"}
+                                </button>
+                              </div>
+                              {isExpanded && (
+                                <div className="px-2.5 pb-2 border-t border-border/10 pt-2 flex flex-col gap-2">
+                                  <div className="flex flex-wrap gap-1">
+                                    <span
+                                      className={`rounded px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wider ${schoolTheme.bg} ${schoolTheme.text} ${schoolTheme.border}`}
+                                    >
+                                      {spell.school}
+                                    </span>
+                                    {spell.activation && (
+                                      <span className="rounded bg-primary/10 border border-primary/20 px-1 py-0.5 text-[7px] uppercase tracking-wider text-primary font-bold">
+                                        ⚡ {getActivationText(spell.activation)}
+                                      </span>
+                                    )}
+                                    {spell.range && (
+                                      <span className="rounded bg-teal-500/10 border border-teal-500/20 px-1 py-0.5 text-[7px] uppercase tracking-wider text-teal-400 font-bold">
+                                        🎯 {getRangeText(spell.range)}
+                                      </span>
+                                    )}
+                                    {spell.duration && (
+                                      <span className="rounded bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 text-[7px] uppercase tracking-wider text-amber-400 font-bold">
+                                        🕒 {getDurationText(spell.duration, spell.concentration)}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {isSorcerer && localInnateSorcery && (
+                                    <div className="rounded-lg border border-accent/30 bg-accent/5 p-2 flex items-center gap-1.5 text-[9px] text-accent leading-normal animate-pulse">
+                                      <span>✨</span>
+                                      <span>
+                                        <strong>Innate Sorcery Active:</strong> DC +1 (DC {sorcDC})
+                                        & Advantage on Attacks
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {isStarsDruid && localStarryForm !== "None" && (
+                                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-2 flex items-center gap-1.5 text-[9px] text-primary leading-normal animate-pulse">
+                                      <span>🌌</span>
+                                      <span>
+                                        <strong>Starry Form ({localStarryForm}) Active:</strong>{" "}
+                                        {localStarryForm === "Archer" &&
+                                          "Archer attack added to Actions."}
+                                        {localStarryForm === "Chalice" && "Extra 1d8+WIS heal."}
+                                        {localStarryForm === "Dragon" &&
+                                          "Min 10 on Int/Wis/Concentration check."}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {isGlamourBard && localMantleOfMajesty && (
+                                    <div className="rounded-lg border border-accent/30 bg-accent/5 p-2 flex items-center gap-1.5 text-[9px] text-accent leading-normal animate-pulse">
+                                      <span>👑</span>
+                                      <span>
+                                        <strong>Mantle of Majesty Active:</strong> Command free BA
+                                        cast.
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {!isSpellPrepared && (
+                                    <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-2 flex items-center justify-between gap-2 text-[9.5px] text-amber-400">
+                                      <span>⚠️ Not prepared.</span>
+                                      <button
+                                        onClick={() =>
+                                          setLocalPrepOverride((prev) => ({
+                                            ...prev,
+                                            [spell.name]: true,
+                                          }))
+                                        }
+                                        className="px-1.5 py-0.5 text-[8.5px] font-bold rounded border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 cursor-pointer"
+                                      >
+                                        Prepare
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {costlyComponent && (
+                                    <div
+                                      className={`rounded-lg border p-2 text-[9.5px] leading-normal
+                                      ${
+                                        matchingInventoryItem && matchingInventoryItem.quantity > 0
+                                          ? "bg-teal-500/5 border-teal-500/20 text-teal-400"
+                                          : "bg-red-500/5 border-red-500/20 text-red-400"
+                                      }`}
+                                    >
+                                      {matchingInventoryItem &&
+                                      matchingInventoryItem.quantity > 0 ? (
+                                        <span>
+                                          ✔️ Live inventory: {matchingInventoryItem.quantity}x{" "}
+                                          {matchingInventoryItem.name}
+                                        </span>
+                                      ) : (
+                                        <span>
+                                          ⚠️ Missing component: {costlyComponent.item} (
+                                          {costlyComponent.cost} gp)
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {spell.description && (
+                                    <div
+                                      className="text-[10px] leading-relaxed text-muted-foreground/90 max-h-[140px] overflow-y-auto pr-1 font-sans border-t border-border/5 pt-1.5 prose prose-invert max-w-none"
+                                      dangerouslySetInnerHTML={{ __html: spell.description }}
+                                    />
+                                  )}
+
+                                  {isSorcerer && metamagicOptions.length > 0 && spAction && (
+                                    <div className="mt-2 border-t border-border/10 pt-2 flex flex-col gap-1">
+                                      <span className="text-[8.5px] font-bold text-muted-foreground uppercase tracking-wider">
+                                        Metamagic Modifier ({currentSP} SP left):
+                                      </span>
+                                      <div className="flex flex-wrap gap-1 mt-0.5">
+                                        {metamagicOptions.map((mm) => {
+                                          const cost = getMetamagicCost(mm.name, spell.level);
+                                          const isSelected = selectedMetamagicName === mm.name;
+                                          const canAfford = currentSP >= cost;
+                                          return (
+                                            <button
+                                              key={mm.name}
+                                              disabled={!canAfford && !isSelected}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedMetamagicName(
+                                                  isSelected ? null : mm.name,
+                                                );
+                                              }}
+                                              className={`px-1.5 py-0.5 rounded border text-[8.5px] font-semibold transition-all cursor-pointer disabled:opacity-40
+                                                ${
+                                                  isSelected
+                                                    ? "bg-accent/15 border-accent text-accent font-bold"
+                                                    : "bg-secondary/35 border-border/60 text-muted-foreground hover:text-foreground"
+                                                }`}
+                                              title={METAMAGIC_DICTIONARY[mm.name]}
+                                            >
+                                              {mm.name} ({cost})
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="mt-2 border-t border-border/10 pt-2 flex flex-col gap-1.5">
+                                    {castOptions.length === 0 ? (
+                                      <span className="text-[8.5px] font-bold text-red-400 text-center py-1 rounded bg-red-500/5">
+                                        Out of spell slots
+                                      </span>
+                                    ) : (
+                                      <div className="flex gap-1.5 select-none">
+                                        {castOptions.map((opt) => {
+                                          const metamagicSufficient = selectedMetamagicName
+                                            ? currentSP >=
+                                              getMetamagicCost(selectedMetamagicName, spell.level)
+                                            : true;
+
+                                          return (
+                                            <button
+                                              key={`${opt.isPact ? "p" : "s"}-${opt.level}`}
+                                              disabled={!metamagicSufficient}
+                                              onClick={() =>
+                                                handleCastSpell(spell, opt.isPact, opt.level)
+                                              }
+                                              className={`flex-1 py-1 rounded text-[8px] font-bold transition-all hover:scale-[1.03] text-center cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed
+                                              ${
+                                                opt.isPact
+                                                  ? "bg-accent/5 border-accent/30 text-accent hover:bg-accent/15"
+                                                  : "bg-primary/5 border-primary/30 text-primary hover:bg-primary/15"
+                                              }`}
+                                              title={`Cast using Level ${opt.level} Slot`}
+                                            >
+                                              L{opt.level} {opt.isPact && "Pact"} (
+                                              {opt.max - opt.used} left)
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {filteredCantrips.length === 0 && filteredLevels.length === 0 && (
+                  <div className="text-center py-12 text-sm text-muted-foreground italic border border-dashed border-border/20 rounded-xl bg-secondary/5">
+                    No spells found matching those filters.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedSpell && spellbookViewMode === "codex" && (
+              <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex justify-end lg:hidden animate-fade-in">
+                <div className="w-full max-w-md bg-[#100f14]/95 border-l border-border/50 h-full flex flex-col shadow-2xl animate-slide-in-right relative">
+                  <div className="flex items-center justify-between p-3 border-b border-[#16151c]/50 bg-[#16151c]/90 shrink-0 z-10">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                      Spell Scroll Detail
+                    </span>
+                    <button
+                      onClick={() => setSelectedSpellName(null)}
+                      className="px-2.5 py-1 text-[10px] font-bold rounded-lg border border-border/60 bg-secondary/20 hover:bg-secondary/40 text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      ✕ Close
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto animate-fade-in relative z-10">
+                    {renderCodexDetail(selectedSpell)}
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </Panel>
-    );
-  })();
+            )}
+          </div>
+        </Panel>
+      );
+    })();
 
   const trackedResources = displayActions
     .filter((a) => a.source === "class" && a.uses)
@@ -3593,7 +6757,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                               "inline-flex items-center gap-1 cursor-pointer rounded border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider select-none transition-colors",
                               localRage !== "None"
                                 ? "border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/20"
-                                : "border-border bg-secondary/40 text-muted-foreground hover:bg-secondary/60"
+                                : "border-border bg-secondary/40 text-muted-foreground hover:bg-secondary/60",
                             )}
                             labelPrefix={<span>🔥 Rage:&nbsp;</span>}
                             openUpward={true}
@@ -3621,7 +6785,10 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
               </div>
 
               {isSmallMax ? (
-                <div className="mt-1.5 flex items-center justify-between gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className="mt-1.5 flex items-center justify-between gap-1.5"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="flex flex-wrap gap-1.5">
                     {Array.from({ length: u.max }).map((_, i) => {
                       const active = i < u.current;
@@ -3650,7 +6817,10 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                   )}
                 </div>
               ) : (
-                <div className="mt-1.5 flex items-center justify-between gap-3" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className="mt-1.5 flex items-center justify-between gap-3"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary/50 border border-border/10 p-[1.5px] flex items-center">
                     <div
                       className="h-full rounded-full bg-accent shadow-[0_0_8px_var(--accent)] transition-all duration-500"
@@ -3680,8 +6850,6 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                   </div>
                 </div>
               )}
-
-
 
               {expandedItems[`res-${a.name}`] && a.description && (
                 <div
@@ -3727,7 +6895,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                     </div>
                   )}
                   <div>
-                    <h4 className="font-heading text-sm font-extrabold text-foreground">{c.name || def.name}</h4>
+                    <h4 className="font-heading text-sm font-extrabold text-foreground">
+                      {c.name || def.name}
+                    </h4>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mt-0.5 select-none">
                       {def.armorClassDescription
                         ? `${def.armorClass} AC ${def.armorClassDescription}`
@@ -3754,9 +6924,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                     <div className="text-[9px] font-bold text-muted-foreground uppercase">
                       {statNames[idx] || `S${s.statId}`}
                     </div>
-                    <div className="text-sm font-extrabold text-foreground mt-0.5">
-                      {s.value}
-                    </div>
+                    <div className="text-sm font-extrabold text-foreground mt-0.5">{s.value}</div>
                     <div className="text-[10px] text-muted-foreground/80 font-mono mt-0.5 font-semibold">
                       {getMod(s.value)}
                     </div>
@@ -3782,13 +6950,19 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
               </div>
 
               {/* Saving Throws & Skills */}
-              {((def.savingThrows && def.savingThrows.length > 0) || (def.skills && def.skills.length > 0)) && (
+              {((def.savingThrows && def.savingThrows.length > 0) ||
+                (def.skills && def.skills.length > 0)) && (
                 <div className="flex flex-col gap-1.5 text-[11px] bg-secondary/20 rounded-lg p-2.5 border border-border/10 select-none">
                   {def.savingThrows && def.savingThrows.length > 0 && (
                     <div className="flex flex-wrap gap-x-2 gap-y-1 items-center">
-                      <span className="text-[9.5px] font-bold text-muted-foreground uppercase tracking-wide">Saves:</span>
+                      <span className="text-[9.5px] font-bold text-muted-foreground uppercase tracking-wide">
+                        Saves:
+                      </span>
                       {def.savingThrows.map((st) => (
-                        <span key={st.name} className="font-semibold text-foreground/95 bg-secondary/40 px-1.5 py-0.5 rounded border border-border/10">
+                        <span
+                          key={st.name}
+                          className="font-semibold text-foreground/95 bg-secondary/40 px-1.5 py-0.5 rounded border border-border/10"
+                        >
                           {st.name} {st.value >= 0 ? `+${st.value}` : st.value}
                         </span>
                       ))}
@@ -3796,9 +6970,14 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                   )}
                   {def.skills && def.skills.length > 0 && (
                     <div className="flex flex-wrap gap-x-2 gap-y-1 items-center">
-                      <span className="text-[9.5px] font-bold text-muted-foreground uppercase tracking-wide">Skills:</span>
+                      <span className="text-[9.5px] font-bold text-muted-foreground uppercase tracking-wide">
+                        Skills:
+                      </span>
                       {def.skills.map((sk) => (
-                        <span key={sk.name} className="font-semibold text-foreground/95 bg-secondary/40 px-1.5 py-0.5 rounded border border-border/10">
+                        <span
+                          key={sk.name}
+                          className="font-semibold text-foreground/95 bg-secondary/40 px-1.5 py-0.5 rounded border border-border/10"
+                        >
                           {sk.name} {sk.value >= 0 ? `+${sk.value}` : sk.value}
                         </span>
                       ))}
@@ -3892,7 +7071,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                   "flex flex-col gap-1.5 rounded-lg border p-2.5 transition-all duration-200 cursor-pointer select-none",
                   isActive
                     ? "border-primary bg-primary/5 shadow-[0_0_8px_color-mix(in_oklab,var(--primary)_15%,transparent)]"
-                    : "border-border bg-secondary/15 hover:border-accent/40 hover:bg-secondary/25"
+                    : "border-border bg-secondary/15 hover:border-accent/40 hover:bg-secondary/25",
                 )}
               >
                 <div className="flex items-center justify-between gap-1.5 text-xs font-semibold select-none">
@@ -4367,7 +7546,13 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
   const bioPanel = (() => {
     const chars = member.characteristics;
     const hasPhysicalDetails =
-      chars?.gender || chars?.age || chars?.height || chars?.weight || chars?.eyes || chars?.skin || chars?.hair;
+      chars?.gender ||
+      chars?.age ||
+      chars?.height ||
+      chars?.weight ||
+      chars?.eyes ||
+      chars?.skin ||
+      chars?.hair;
 
     const physicalDetails = [
       { label: "Gender", value: chars?.gender },
@@ -4397,7 +7582,10 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                     <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground select-none">
                       {detail.label}
                     </div>
-                    <div className="mt-0.5 text-xs font-semibold text-foreground truncate" title={detail.value}>
+                    <div
+                      className="mt-0.5 text-xs font-semibold text-foreground truncate"
+                      title={detail.value}
+                    >
                       {detail.value}
                     </div>
                   </div>
@@ -4574,7 +7762,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     { id: "combat", label: "Combat & Actions", icon: Swords },
     ...(hasSpellcasting ? [{ id: "spells", label: "Spellbook", icon: Sparkles }] : []),
     { id: "features", label: "Features & Traits", icon: Award },
-    ...(member.creatures && member.creatures.length > 0 ? [{ id: "companions", label: "Companions", icon: Brain }] : []),
+    ...(member.creatures && member.creatures.length > 0
+      ? [{ id: "companions", label: "Companions", icon: Brain }]
+      : []),
     { id: "gear", label: "Inventory", icon: Package },
     { id: "bio", label: "Bio & Appearance", icon: User },
   ];
@@ -4587,9 +7777,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
         return (
           <button
             key={tab.id}
-            onClick={() =>
-              setActiveTab(tab.id as any)
-            }
+            onClick={() => setActiveTab(tab.id as any)}
             className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer focus:outline-none ${
               isActive
                 ? "border-accent bg-accent/10 text-accent font-bold shadow-[0_0_12px_color-mix(in_oklab,var(--accent)_25%,transparent)]"
@@ -4617,7 +7805,8 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
             const spent = localHp.spentHitDice[pool.die] ?? 0;
             const remaining = pool.remaining - spent;
             const pct = pool.total > 0 ? (remaining / pool.total) * 100 : 0;
-            const barColor = pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-wounded" : "bg-hp-critical";
+            const barColor =
+              pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-wounded" : "bg-hp-critical";
             const q = bulkCounts[pool.die] ?? 1;
 
             return (
@@ -4629,11 +7818,14 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                   {/* Header Row */}
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="flex items-center gap-1 font-bold uppercase tracking-wider text-muted-foreground select-none">
-                      <span className="w-4 h-4 text-accent/80 inline-block"><DieSvg die="d20" active={true} /></span>
+                      <span className="w-4 h-4 text-accent/80 inline-block">
+                        <DieSvg die="d20" active={true} />
+                      </span>
                       <span>{pool.die} Pool</span>
                     </span>
                     <span className="font-mono font-bold text-muted-foreground">
-                      <strong className="text-foreground">{remaining}</strong> / {pool.total} Remaining
+                      <strong className="text-foreground">{remaining}</strong> / {pool.total}{" "}
+                      Remaining
                     </span>
                   </div>
 
@@ -4653,7 +7845,11 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                             }
                           }}
                           className="h-8 w-8 flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none hover:scale-105 active:scale-95"
-                          title={active ? `Click to spend 1 ${pool.die}` : `Click to regain 1 ${pool.die}`}
+                          title={
+                            active
+                              ? `Click to spend 1 ${pool.die}`
+                              : `Click to regain 1 ${pool.die}`
+                          }
                         >
                           <DieSvg die={pool.die} active={active} />
                         </button>
@@ -4878,19 +8074,865 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
               )}
             </div>
           )}
-          {activeTab === "gear" && (
-            <div className="flex flex-col gap-4">
-              {inventoryPanel}
-              {infusionsPanel}
-              {!inventoryPanel && !infusionsPanel && (
-                <Panel>
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    No items in inventory.
-                  </p>
-                </Panel>
-              )}
-            </div>
-          )}
+          {activeTab === "gear" &&
+            (() => {
+              const getRarityTheme = (rarity?: string | null) => {
+                const norm = rarity?.toLowerCase().replace(/\s+/g, "") || "";
+                switch (norm) {
+                  case "artifact":
+                    return {
+                      border: "border-rose-500/50 hover:border-rose-400",
+                      bg: "bg-rose-500/5",
+                      text: "text-rose-300",
+                      glow: "shadow-[0_0_15px_rgba(244,63,94,0.15)]",
+                      badge: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+                      gradient: "from-rose-500/10 via-rose-500/5 to-transparent",
+                    };
+                  case "legendary":
+                    return {
+                      border: "border-gold/50 hover:border-gold",
+                      bg: "bg-gold/5",
+                      text: "text-gold",
+                      glow: "shadow-[0_0_15px_color-mix(in_oklab,var(--gold)_15%,transparent)]",
+                      badge: "bg-gold/15 text-gold border-gold/30",
+                      gradient: "from-gold/10 via-gold/5 to-transparent",
+                    };
+                  case "veryrare":
+                    return {
+                      border: "border-fuchsia-500/50 hover:border-fuchsia-400",
+                      bg: "bg-fuchsia-500/5",
+                      text: "text-fuchsia-300",
+                      glow: "shadow-[0_0_12px_rgba(217,70,239,0.12)]",
+                      badge: "bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30",
+                      gradient: "from-fuchsia-500/10 via-fuchsia-500/5 to-transparent",
+                    };
+                  case "rare":
+                    return {
+                      border: "border-violet-500/40 hover:border-violet-400",
+                      bg: "bg-violet-500/5",
+                      text: "text-violet-300",
+                      glow: "shadow-[0_0_10px_rgba(139,92,246,0.1)]",
+                      badge: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+                      gradient: "from-violet-500/10 via-violet-500/5 to-transparent",
+                    };
+                  case "uncommon":
+                    return {
+                      border: "border-sky-500/30 hover:border-sky-400",
+                      bg: "bg-sky-500/5",
+                      text: "text-sky-300",
+                      glow: "",
+                      badge: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+                      gradient: "from-sky-500/5 via-sky-500/0 to-transparent",
+                    };
+                  case "common":
+                    return {
+                      border: "border-emerald-500/20 hover:border-emerald-400",
+                      bg: "bg-emerald-500/5",
+                      text: "text-emerald-400",
+                      glow: "",
+                      badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+                      gradient: "from-emerald-500/5 via-emerald-500/0 to-transparent",
+                    };
+                  default:
+                    return {
+                      border: "border-border/40 hover:border-border",
+                      bg: "bg-secondary/10",
+                      text: "text-foreground",
+                      glow: "",
+                      badge: "bg-secondary/40 text-muted-foreground border-border/20",
+                      gradient: "from-secondary/5 via-transparent to-transparent",
+                    };
+                }
+              };
+
+              const filteredInventory = localInventory.filter((item) => {
+                const matchesSearch =
+                  item.name.toLowerCase().includes(invSearchTerm.toLowerCase()) ||
+                  (item.type && item.type.toLowerCase().includes(invSearchTerm.toLowerCase())) ||
+                  (item.rarity &&
+                    item.rarity.toLowerCase().includes(invSearchTerm.toLowerCase())) ||
+                  (item.description &&
+                    item.description.toLowerCase().includes(invSearchTerm.toLowerCase()));
+
+                if (!matchesSearch) return false;
+
+                const t = item.type.toLowerCase();
+                const isWeapon = t.includes("weapon") || !!item.damage;
+                const isArmor =
+                  t.includes("armor") ||
+                  t.includes("shield") ||
+                  typeof item.armorClass === "number";
+                const isMagic =
+                  item.magic ||
+                  (item.rarity && item.rarity !== "Common" && item.rarity !== "Mundane");
+                const isConsumable =
+                  t.includes("potion") ||
+                  t.includes("scroll") ||
+                  t.includes("elixir") ||
+                  t.includes("wand");
+
+                if (invCategory === "weapons") return isWeapon;
+                if (invCategory === "armor") return isArmor;
+                if (invCategory === "magic") return isMagic;
+                if (invCategory === "consumables") return isConsumable;
+                if (invCategory === "other") return !isWeapon && !isArmor && !isConsumable;
+
+                return true;
+              });
+
+              return (
+                <div className="flex flex-col gap-5">
+                  {/* Carrying Load, Coin Pouch, and Attunement Tracker */}
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+                    <div className="flex flex-col justify-center gap-1.5 rounded-xl border border-border/40 bg-secondary/10 p-3.5 relative overflow-hidden">
+                      <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-primary/5 blur-lg pointer-events-none" />
+                      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                        <div className="flex items-center gap-1.5">
+                          <Dumbbell size={12} className="text-primary" />
+                          <span>Carrying Load</span>
+                        </div>
+                        <span className="font-mono text-foreground font-bold">
+                          {member.weightCarried.toFixed(1)} / {displayCarryingCapacity} lbs
+                        </span>
+                      </div>
+                      {(() => {
+                        const weightPct =
+                          displayCarryingCapacity > 0
+                            ? Math.min(100, (member.weightCarried / displayCarryingCapacity) * 100)
+                            : 0;
+                        const weightColor =
+                          weightPct > 90
+                            ? "bg-hp-critical"
+                            : weightPct > 75
+                              ? "bg-hp-wounded"
+                              : "bg-primary";
+                        const weightGlow =
+                          weightPct > 90
+                            ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-critical)_70%,transparent)] animate-pulse"
+                            : weightPct > 75
+                              ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
+                              : "shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)]";
+                        return (
+                          <div className="h-2 overflow-hidden rounded-full bg-secondary mt-1.5">
+                            <div
+                              className={`h-full ${weightColor} ${weightGlow} transition-all duration-500`}
+                              style={{ width: `${weightPct}%` }}
+                            />
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="flex flex-col justify-center gap-1.5 rounded-xl border border-border/40 bg-secondary/10 p-3.5 relative overflow-hidden">
+                      <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-gold/5 blur-lg pointer-events-none" />
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                        <Coins size={12} className="text-gold" />
+                        <span>Coin Pouch</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-1.5 mt-1 font-mono text-[11px] font-bold select-all">
+                        <div
+                          className="flex flex-col items-center flex-1 bg-secondary/25 border border-border/20 rounded py-0.5"
+                          title="Platinum"
+                        >
+                          <span className="text-sky-300 text-[8px] font-extrabold uppercase tracking-wider mb-0.5 select-none">
+                            PP
+                          </span>
+                          <span className="text-sky-100">{member.currencies?.pp ?? 0}</span>
+                        </div>
+                        <div
+                          className="flex flex-col items-center flex-1 bg-secondary/25 border border-border/20 rounded py-0.5"
+                          title="Gold"
+                        >
+                          <span className="text-gold text-[8px] font-extrabold uppercase tracking-wider mb-0.5 select-none">
+                            GP
+                          </span>
+                          <span className="text-gold">{member.currencies?.gp ?? 0}</span>
+                        </div>
+                        <div
+                          className="flex flex-col items-center flex-1 bg-secondary/25 border border-border/20 rounded py-0.5"
+                          title="Electrum"
+                        >
+                          <span className="text-teal-300 text-[8px] font-extrabold uppercase tracking-wider mb-0.5 select-none">
+                            EP
+                          </span>
+                          <span className="text-teal-100">{member.currencies?.ep ?? 0}</span>
+                        </div>
+                        <div
+                          className="flex flex-col items-center flex-1 bg-secondary/25 border border-border/20 rounded py-0.5"
+                          title="Silver"
+                        >
+                          <span className="text-slate-300 text-[8px] font-extrabold uppercase tracking-wider mb-0.5 select-none">
+                            SP
+                          </span>
+                          <span className="text-slate-100">{member.currencies?.sp ?? 0}</span>
+                        </div>
+                        <div
+                          className="flex flex-col items-center flex-1 bg-secondary/25 border border-border/20 rounded py-0.5"
+                          title="Copper"
+                        >
+                          <span className="text-amber-600 text-[8px] font-extrabold uppercase tracking-wider mb-0.5 select-none">
+                            CP
+                          </span>
+                          <span className="text-amber-500">{member.currencies?.cp ?? 0}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-xl border border-gold/30 bg-[color-mix(in_oklab,var(--gold)_8%,var(--secondary))] px-4 py-3.5 shadow-[0_0_10px_color-mix(in_oklab,var(--gold)_15%,transparent)] select-none">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gold">
+                          <Sparkles size={12} className="text-gold animate-pulse" />
+                          <span>Attunement Slots</span>
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          Magic item slots filled
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const attunedCount =
+                            localInventory.filter((i) => i.equipped && i.attuned).length ?? 0;
+                          return [1, 2, 3].map((slotIdx) => {
+                            const isFilled = slotIdx <= attunedCount;
+                            return (
+                              <div
+                                key={slotIdx}
+                                className={cn(
+                                  "h-5 w-5 rounded-full border flex items-center justify-center text-[9px] font-bold transition-all duration-300",
+                                  isFilled
+                                    ? "border-gold bg-gold/15 text-gold shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_40%,transparent)]"
+                                    : "border-border bg-secondary/30 text-muted-foreground/45",
+                                )}
+                              >
+                                {isFilled ? "✦" : slotIdx}
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main gear area */}
+                  {localInventory.length === 0 ? (
+                    <Panel>
+                      <p className="py-8 text-center text-sm text-muted-foreground">
+                        No items in inventory.
+                      </p>
+                    </Panel>
+                  ) : (
+                    <div className="grid gap-5 md:grid-cols-[1.4fr_1fr]">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-2 rounded-xl border border-border/40 bg-secondary/10 p-3">
+                          <div className="flex gap-2 items-center">
+                                        <div className="relative flex-1">
+                              <Search
+                                size={14}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                              />
+                              <input
+                                type="text"
+                                value={invSearchTerm}
+                                onChange={(e) => setInvSearchTerm(e.target.value)}
+                                placeholder="Search inventory or type standard items to Quick Add..."
+                                className="w-full rounded-lg border border-border bg-secondary/20 py-2 pl-9 pr-8 text-xs text-foreground placeholder:text-muted-foreground/50 focus:border-accent focus:outline-none transition-colors"
+                              />
+                              {isFetchingDetail ? (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                  <RefreshCw size={12} className="animate-spin text-accent" />
+                                </div>
+                              ) : (
+                                invSearchTerm && (
+                                  <button
+                                    onClick={() => setInvSearchTerm("")}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+                                  >
+                                    Clear
+                                  </button>
+                                )
+                              )}
+
+                              {quickAddSuggestions.length > 0 && (
+                                <div className="absolute left-0 right-0 mt-1.5 z-[110] max-h-60 overflow-y-auto rounded-lg border border-border bg-[#18181b] p-1.5 shadow-2xl animate-in fade-in duration-100">
+                                  <div className="text-[9px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider flex justify-between items-center select-none">
+                                    <span>✨ Quick Add to Inventory</span>
+                                    {isFetchingDetail && (
+                                      <RefreshCw size={10} className="animate-spin text-accent" />
+                                    )}
+                                  </div>
+                                  {quickAddSuggestions.map((item) => (
+                                    <button
+                                      key={`${item.name}-${item.source}`}
+                                      type="button"
+                                      onClick={async () => {
+                                        let itemToAdd: any = null;
+                                        if (item.apiIndex && item.apiCategory) {
+                                          setIsFetchingDetail(true);
+                                          try {
+                                            const res = await fetch(
+                                              `https://www.dnd5eapi.co/api/2014/${item.apiCategory}/${item.apiIndex}`,
+                                            );
+                                            if (res.ok) {
+                                              const detail = await res.json();
+
+                                              let baseType = "Gear";
+                                              if (item.apiCategory === "magic-items") {
+                                                baseType = "Wondrous Item";
+                                                const categoryName = (
+                                                  detail.equipment_category?.name || ""
+                                                ).toLowerCase();
+                                                if (categoryName.includes("ring")) baseType = "Ring";
+                                                else if (categoryName.includes("scroll"))
+                                                  baseType = "Scroll";
+                                                else if (categoryName.includes("potion"))
+                                                  baseType = "Potion";
+                                                else if (categoryName.includes("shield"))
+                                                  baseType = "Shield";
+                                                else if (categoryName.includes("weapon"))
+                                                  baseType = "Weapon";
+                                              } else {
+                                                const categoryName = (
+                                                  detail.equipment_category?.name || ""
+                                                ).toLowerCase();
+                                                if (categoryName.includes("weapon")) {
+                                                  baseType = "Weapon";
+                                                } else if (categoryName.includes("armor")) {
+                                                  const armorCat = (
+                                                    detail.armor_category || ""
+                                                  ).toLowerCase();
+                                                  if (armorCat.includes("light"))
+                                                    baseType = "Light Armor";
+                                                  else if (armorCat.includes("medium"))
+                                                    baseType = "Medium Armor";
+                                                  else if (armorCat.includes("heavy"))
+                                                    baseType = "Heavy Armor";
+                                                  else if (armorCat.includes("shield"))
+                                                    baseType = "Shield";
+                                                } else if (categoryName.includes("potion")) {
+                                                  baseType = "Potion";
+                                                } else if (categoryName.includes("ring")) {
+                                                  baseType = "Ring";
+                                                } else if (categoryName.includes("scroll")) {
+                                                  baseType = "Scroll";
+                                                }
+                                              }
+
+                                              let calculatedCost = 0;
+                                              if (detail.cost) {
+                                                const qty = detail.cost.quantity || 0;
+                                                const unit = (
+                                                  detail.cost.unit || "gp"
+                                                ).toLowerCase();
+                                                if (unit === "gp") calculatedCost = qty;
+                                                else if (unit === "sp") calculatedCost = qty / 10;
+                                                else if (unit === "cp") calculatedCost = qty / 100;
+                                                else if (unit === "ep") calculatedCost = qty / 2;
+                                                else if (unit === "pp") calculatedCost = qty * 10;
+                                              }
+
+                                              let armorTypeId: number | undefined;
+                                              if (baseType === "Shield") armorTypeId = 4;
+                                              else if (baseType === "Light Armor") armorTypeId = 1;
+                                              else if (baseType === "Medium Armor") armorTypeId = 2;
+                                              else if (baseType === "Heavy Armor") armorTypeId = 3;
+
+                                              itemToAdd = {
+                                                name: detail.name || item.name,
+                                                type: baseType,
+                                                rarity: detail.rarity?.name || "Mundane",
+                                                magic:
+                                                  detail.rarity?.name !== "Mundane" &&
+                                                  detail.rarity?.name !== "Common",
+                                                equipped: false,
+                                                attuned: false,
+                                                quantity: 1,
+                                                weight: detail.weight || 0,
+                                                cost: calculatedCost,
+                                                damage: detail.damage?.damage_dice || undefined,
+                                                armorClass:
+                                                  detail.armor_class?.base !== undefined
+                                                    ? detail.armor_class.base
+                                                    : undefined,
+                                                armorTypeId,
+                                                description: Array.isArray(detail.desc)
+                                                  ? detail.desc.join("\n")
+                                                  : detail.desc || undefined,
+                                                isLocalCustom: true,
+                                              };
+                                            }
+                                          } catch (e) {
+                                            console.error("Failed to fetch D&D item details:", e);
+                                          } finally {
+                                            setIsFetchingDetail(false);
+                                          }
+                                        } else {
+                                          let armorTypeId: number | undefined;
+                                          if (item.type === "Shield") armorTypeId = 4;
+                                          else if (item.type === "Light Armor") armorTypeId = 1;
+                                          else if (item.type === "Medium Armor") armorTypeId = 2;
+                                          else if (item.type === "Heavy Armor") armorTypeId = 3;
+
+                                          itemToAdd = {
+                                            name: item.name,
+                                            type: item.type,
+                                            rarity: item.rarity || "Mundane",
+                                            magic:
+                                              item.rarity !== "Mundane" &&
+                                              item.rarity !== "Common",
+                                            equipped: false,
+                                            attuned: false,
+                                            quantity: 1,
+                                            weight: item.weight,
+                                            cost: item.cost,
+                                            damage: item.damage || undefined,
+                                            armorClass:
+                                              item.armorClass !== undefined
+                                                ? item.armorClass
+                                                : undefined,
+                                            armorTypeId,
+                                            description: item.description || undefined,
+                                            isLocalCustom: true,
+                                          };
+                                        }
+
+                                        if (itemToAdd) {
+                                          addLocalCustomItem(itemToAdd);
+                                          setInvSearchTerm("");
+                                        }
+                                      }}
+                                      className="w-full text-left px-2 py-1.5 rounded hover:bg-secondary flex items-center justify-between transition-colors cursor-pointer select-none"
+                                    >
+                                      <div>
+                                        <div className="font-bold text-foreground text-xs">
+                                          {item.name}
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                          <span>{item.type}</span>
+                                          {item.rarity && item.rarity !== "Mundane" && (
+                                            <>
+                                              <span>•</span>
+                                              <span className="text-accent">{item.rarity}</span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <span className="text-[9px] font-bold text-accent px-2 py-0.5 rounded border border-accent/20 bg-accent/5 shrink-0 select-none">
+                                        + Quick Add
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => {
+                                setNewItemName("");
+                                setNewItemType("Gear");
+                                setNewItemRarity("Mundane");
+                                setNewItemQty(1);
+                                setNewItemWeight(0);
+                                setNewItemCost(0);
+                                setNewItemDamage("");
+                                setNewItemAc("");
+                                setNewItemDesc("");
+                                setShowAddItemModal(true);
+                              }}
+                              className="rounded-lg bg-accent/15 border border-accent/30 hover:bg-accent/25 text-accent font-bold px-3 py-2 text-xs transition-all flex items-center gap-1.5 shrink-0 cursor-pointer focus:outline-none select-none"
+                            >
+                              <Plus size={13} />
+                              <span>Add Item</span>
+                            </button>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {[
+                              { id: "all", label: "🎒 All" },
+                              { id: "weapons", label: "⚔️ Weapons" },
+                              { id: "armor", label: "🛡️ Armor" },
+                              { id: "magic", label: "✨ Magic" },
+                              { id: "consumables", label: "🧪 Potions" },
+                              { id: "other", label: "📦 Gear" },
+                            ].map((cat) => {
+                              const isActive = invCategory === cat.id;
+                              return (
+                                <button
+                                  key={cat.id}
+                                  onClick={() => setInvCategory(cat.id)}
+                                  className={cn(
+                                    "rounded px-2.5 py-1 text-[10px] font-semibold transition-all duration-200 cursor-pointer select-none",
+                                    isActive
+                                      ? "bg-accent text-accent-foreground shadow-sm"
+                                      : "bg-secondary/35 text-muted-foreground border border-border/30 hover:bg-secondary/60 hover:text-foreground",
+                                  )}
+                                >
+                                  {cat.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl border border-border/40 bg-secondary/5 p-3 min-h-[350px] max-h-[550px] overflow-y-auto custom-scrollbar">
+                          {(() => {
+                            const items = filteredInventory;
+                            if (items.length === 0) {
+                              return (
+                                <div className="flex flex-col items-center justify-center py-12 text-center select-none">
+                                  <span className="text-xl">🔍</span>
+                                  <p className="text-xs font-semibold text-muted-foreground mt-2">
+                                    No items found matching filters
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                                {items.map((item, idx) => {
+                                  const theme = getRarityTheme(item.rarity);
+                                  const isSelected =
+                                    selectedInvItem?.name === item.name &&
+                                    selectedInvItem?.equipped === item.equipped;
+                                  return (
+                                    <div
+                                      key={`${item.name}-${idx}`}
+                                      onClick={() => setSelectedInvItem(item)}
+                                      className={cn(
+                                        "flex items-center gap-3 rounded-lg border p-2.5 transition-all duration-200 cursor-pointer relative overflow-hidden group select-none",
+                                        theme.bg,
+                                        isSelected
+                                          ? "border-gold shadow-[0_0_10px_color-mix(in_oklab,var(--gold)_20%,transparent)] bg-[color-mix(in_oklab,var(--gold)_6%,var(--secondary))]"
+                                          : `${theme.border} hover:scale-[1.01] hover:bg-secondary/30`,
+                                      )}
+                                    >
+                                      <div
+                                        className={`absolute -right-6 -bottom-6 h-12 w-12 rounded-full bg-gradient-to-br ${theme.gradient} blur-md pointer-events-none group-hover:scale-125 transition-transform duration-500`}
+                                      />
+
+                                      <div
+                                        className={cn(
+                                          "h-8 w-8 rounded border flex items-center justify-center shrink-0",
+                                          isSelected ? "border-gold/40 bg-gold/10" : theme.badge,
+                                        )}
+                                      >
+                                        {(() => {
+                                          const t = item.type.toLowerCase();
+                                          const iconSize = 14;
+                                          const iconClass = cn(
+                                            item.attuned
+                                              ? "text-gold"
+                                              : item.magic
+                                                ? "text-accent"
+                                                : "text-muted-foreground/80",
+                                          );
+
+                                          if (t.includes("weapon") || item.damage) {
+                                            return <Sword size={iconSize} className={iconClass} />;
+                                          }
+                                          if (t.includes("shield")) {
+                                            return <Shield size={iconSize} className={iconClass} />;
+                                          }
+                                          if (t.includes("armor")) {
+                                            return <Shirt size={iconSize} className={iconClass} />;
+                                          }
+                                          if (t.includes("potion") || t.includes("elixir")) {
+                                            return (
+                                              <FlaskConical size={iconSize} className={iconClass} />
+                                            );
+                                          }
+                                          if (t.includes("scroll")) {
+                                            return <Scroll size={iconSize} className={iconClass} />;
+                                          }
+                                          if (
+                                            t.includes("ring") ||
+                                            t.includes("jewelry") ||
+                                            t.includes("amulet") ||
+                                            t.includes("cloak")
+                                          ) {
+                                            return <Gem size={iconSize} className={iconClass} />;
+                                          }
+                                          if (
+                                            t.includes("wand") ||
+                                            t.includes("staff") ||
+                                            t.includes("rod")
+                                          ) {
+                                            return <Wand size={iconSize} className={iconClass} />;
+                                          }
+                                          return <Package size={iconSize} className={iconClass} />;
+                                        })()}
+                                      </div>
+
+                                      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                                        <span className="text-xs font-bold text-foreground truncate group-hover:text-accent transition-colors">
+                                          {item.name}
+                                        </span>
+                                        <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground tracking-wide font-medium uppercase truncate">
+                                          <span>{item.type}</span>
+                                          {item.rarity &&
+                                            item.rarity !== "Mundane" &&
+                                            item.rarity !== "Common" && (
+                                              <>
+                                                <span>•</span>
+                                                <span className={theme.text}>{item.rarity}</span>
+                                              </>
+                                            )}
+                                        </div>
+                                      </div>
+
+                                      <div className="flex flex-col items-end gap-1.5 shrink-0 select-none">
+                                        {item.quantity > 1 && (
+                                          <span className="font-mono text-[9px] font-bold text-muted-foreground bg-secondary/70 border border-border/30 rounded px-1">
+                                            ×{item.quantity}
+                                          </span>
+                                        )}
+                                        <div className="flex items-center gap-1">
+                                          {item.equipped && (
+                                            <span className="text-[8px] font-bold text-teal-400 bg-teal-500/10 border border-teal-500/25 rounded px-1 uppercase tracking-wider">
+                                              EQ
+                                            </span>
+                                          )}
+                                          {item.attuned && (
+                                            <span className="text-[8px] font-bold text-gold bg-gold/10 border border-gold/25 rounded px-1 uppercase tracking-wider">
+                                              AT
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-3 md:sticky md:top-4 self-start w-full">
+                        {selectedInvItem ? (
+                          (() => {
+                            const activeInvItem =
+                              localInventory.find(
+                                (item) =>
+                                  item.name === selectedInvItem.name &&
+                                  item.equipped === selectedInvItem.equipped,
+                              ) || selectedInvItem;
+                            const theme = getRarityTheme(activeInvItem.rarity);
+
+                            const handleToggleEquip = () => {
+                              toggleLocalItemEquipped(activeInvItem.name);
+                              setSelectedInvItem({
+                                ...activeInvItem,
+                                equipped: !activeInvItem.equipped,
+                              });
+                            };
+
+                            const handleToggleAttune = () => {
+                              toggleLocalItemAttuned(activeInvItem.name);
+                              setSelectedInvItem({
+                                ...activeInvItem,
+                                attuned: !activeInvItem.attuned,
+                              });
+                            };
+
+                            return (
+                              <div
+                                className={cn(
+                                  "rounded-xl border bg-secondary/15 p-4 relative overflow-hidden transition-all duration-300",
+                                  theme.border,
+                                  theme.glow,
+                                )}
+                              >
+                                <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-gold/5 blur-xl pointer-events-none select-none" />
+
+                                <div className="border-b border-border/40 pb-3 mb-4 select-none">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={cn(
+                                        "text-[9px] font-bold uppercase tracking-wider border rounded px-1.5 py-0.5",
+                                        theme.badge,
+                                      )}
+                                    >
+                                      {activeInvItem.rarity ? activeInvItem.rarity : "Mundane"}
+                                    </span>
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground bg-secondary/45 border border-border/20 rounded px-1.5 py-0.5">
+                                      {activeInvItem.type}
+                                    </span>
+                                  </div>
+                                  <h3 className="font-heading text-base font-bold text-foreground mt-2 select-all leading-tight">
+                                    {activeInvItem.name}
+                                  </h3>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 mb-4 text-[10px] select-all">
+                                  <div className="rounded border border-border/40 bg-secondary/25 p-2 flex flex-col justify-center gap-0.5">
+                                    <span className="text-muted-foreground uppercase font-bold tracking-wider text-[8px]">
+                                      Weight
+                                    </span>
+                                    <span className="font-mono text-foreground font-bold">
+                                      {activeInvItem.weight
+                                        ? `${(activeInvItem.weight * activeInvItem.quantity).toFixed(1)} lbs`
+                                        : "—"}
+                                    </span>
+                                  </div>
+                                  <div className="rounded border border-border/40 bg-secondary/25 p-2 flex flex-col justify-center gap-0.5">
+                                    <span className="text-muted-foreground uppercase font-bold tracking-wider text-[8px]">
+                                      Value
+                                    </span>
+                                    <span className="font-mono text-gold font-bold">
+                                      {activeInvItem.cost ? `${activeInvItem.cost} gp` : "—"}
+                                    </span>
+                                  </div>
+                                  <div className="rounded border border-border/40 bg-secondary/25 p-2 flex flex-col justify-center gap-0.5">
+                                    <span className="text-muted-foreground uppercase font-bold tracking-wider text-[8px]">
+                                      Equipped
+                                    </span>
+                                    <span
+                                      className={
+                                        activeInvItem.equipped
+                                          ? "text-teal-400 font-bold"
+                                          : "text-muted-foreground"
+                                      }
+                                    >
+                                      {activeInvItem.equipped ? "Yes" : "No"}
+                                    </span>
+                                  </div>
+                                  <div className="rounded border border-border/40 bg-secondary/25 p-2 flex flex-col justify-center gap-0.5">
+                                    <span className="text-muted-foreground uppercase font-bold tracking-wider text-[8px]">
+                                      Attuned
+                                    </span>
+                                    <span
+                                      className={
+                                        activeInvItem.attuned
+                                          ? "text-gold font-bold"
+                                          : "text-muted-foreground"
+                                      }
+                                    >
+                                      {activeInvItem.attuned ? "Yes ✦" : "No"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex gap-2 mb-4">
+                                  <button
+                                    onClick={handleToggleEquip}
+                                    className={cn(
+                                      "flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition-all duration-200 cursor-pointer select-none text-center",
+                                      activeInvItem.equipped
+                                        ? "bg-teal-500/10 border-teal-500/30 text-teal-400 hover:bg-teal-500/20"
+                                        : "bg-secondary/35 border-border/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+                                    )}
+                                  >
+                                    {activeInvItem.equipped ? "🛡️ Unequip" : "🛡️ Equip"}
+                                  </button>
+                                  <button
+                                    onClick={handleToggleAttune}
+                                    className={cn(
+                                      "flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition-all duration-200 cursor-pointer select-none text-center",
+                                      activeInvItem.attuned
+                                        ? "bg-gold/15 border-gold/30 text-gold hover:bg-gold/25 shadow-[0_0_8px_rgba(212,175,55,0.1)]"
+                                        : "bg-secondary/35 border-border/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+                                    )}
+                                  >
+                                    {activeInvItem.attuned ? "✦ Unattune" : "✦ Attune"}
+                                  </button>
+                                  {activeInvItem.isLocalCustom && (
+                                    <button
+                                      onClick={() => {
+                                        deleteLocalCustomItem(activeInvItem.name);
+                                        setSelectedInvItem(null);
+                                      }}
+                                      className="rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 font-bold px-3 py-2 text-xs transition-all cursor-pointer focus:outline-none select-none text-center shrink-0"
+                                      title="Delete Custom Item"
+                                    >
+                                      🗑️
+                                    </button>
+                                  )}
+                                </div>
+
+                                {(() => {
+                                  const isWeapon =
+                                    activeInvItem.damage ||
+                                    (activeInvItem.properties &&
+                                      activeInvItem.properties.length > 0);
+                                  const isArmor = typeof activeInvItem.armorClass === "number";
+                                  if (!isWeapon && !isArmor) return null;
+                                  return (
+                                    <div className="rounded-xl border border-border/40 bg-secondary/10 p-3 mb-4 select-all">
+                                      <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                                        Attributes
+                                      </span>
+                                      <div className="flex flex-col gap-1.5 text-[10px]">
+                                        {activeInvItem.damage && (
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">Damage:</span>
+                                            <span className="font-mono text-accent font-bold">
+                                              {activeInvItem.damage}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {typeof activeInvItem.armorClass === "number" && (
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">
+                                              Armor Class (AC):
+                                            </span>
+                                            <span className="font-mono text-teal-400 font-bold">
+                                              +{activeInvItem.armorClass}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {activeInvItem.properties &&
+                                          activeInvItem.properties.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                              {activeInvItem.properties.map((p: string) => (
+                                                <span
+                                                  key={p}
+                                                  className="rounded bg-secondary border border-border/30 px-1.5 py-0.5 text-[8px] font-bold text-foreground/80 tracking-wide uppercase"
+                                                >
+                                                  {p}
+                                                </span>
+                                              ))}
+                                            </div>
+                                          )}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+
+                                <div className="text-[11px] leading-relaxed select-all">
+                                  <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 select-none">
+                                    Lore & Magic Description
+                                  </span>
+                                  <div
+                                    className="bg-secondary/20 border border-border/30 rounded-lg p-3 max-h-[200px] overflow-y-auto custom-scrollbar leading-normal text-muted-foreground/90 prose-arcanum"
+                                    dangerouslySetInnerHTML={{
+                                      __html:
+                                        activeInvItem.description ||
+                                        "No description available for this item.",
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <div className="rounded-xl border border-dashed border-border/50 bg-secondary/5 p-8 text-center flex flex-col items-center justify-center min-h-[300px] select-none">
+                            <span className="text-3xl opacity-40">🔮</span>
+                            <h4 className="font-heading text-sm font-bold text-foreground mt-3 leading-snug">
+                              Gear Inspector
+                            </h4>
+                            <p className="text-[11px] text-muted-foreground max-w-[200px] mt-1 leading-normal">
+                              Select any gear item from the inventory grid to inspect its properties
+                              and lore.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {infusionsPanel}
+                </div>
+              );
+            })()}
           {activeTab === "bio" && (
             <div>
               {bioPanel || (
@@ -4911,9 +8953,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
     <div className="flex flex-col gap-4 relative">
       <section className="card-arcane relative rounded-xl border border-border/40 p-5 shadow-lg">
         <div className="grid gap-6 md:grid-cols-[1.3fr_1fr] items-start">
-          <div className="w-full">
-            {heroContent}
-          </div>
+          <div className="w-full">{heroContent}</div>
           <div className="w-full border-t border-border/10 pt-5 md:border-t-0 md:pt-0 md:border-l md:border-border/10 md:pl-6">
             {vitalsContent}
           </div>
@@ -4924,9 +8964,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
           {sessionControls}
           {layoutSwitcher}
         </div>
-        <div>
-          {hitDiceConsole}
-        </div>
+        <div>{hitDiceConsole}</div>
       </div>
       {content}
 
@@ -4943,7 +8981,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
             </p>
             {(() => {
               const pools = parseHitDice(member.hitDice);
-              const availablePools = pools.filter(p => (p.remaining - (localHp.spentHitDice[p.die] ?? 0)) > 0);
+              const availablePools = pools.filter(
+                (p) => p.remaining - (localHp.spentHitDice[p.die] ?? 0) > 0,
+              );
               if (availablePools.length === 0) return null;
               return (
                 <div className="mb-4 rounded-lg border border-border/40 bg-secondary/10 p-3">
@@ -4963,9 +9003,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                             <button
                               type="button"
                               onClick={() => {
-                                setShortRestDiceSpend(prev => ({
+                                setShortRestDiceSpend((prev) => ({
                                   ...prev,
-                                  [pool.die]: Math.max(0, (prev[pool.die] ?? 0) - 1)
+                                  [pool.die]: Math.max(0, (prev[pool.die] ?? 0) - 1),
                                 }));
                               }}
                               disabled={chosen <= 0}
@@ -4973,13 +9013,15 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                             >
                               <Minus size={10} />
                             </button>
-                            <span className="w-6 text-center font-mono text-[11px] font-bold select-none">{chosen}</span>
+                            <span className="w-6 text-center font-mono text-[11px] font-bold select-none">
+                              {chosen}
+                            </span>
                             <button
                               type="button"
                               onClick={() => {
-                                setShortRestDiceSpend(prev => ({
+                                setShortRestDiceSpend((prev) => ({
                                   ...prev,
-                                  [pool.die]: Math.min(remaining, (prev[pool.die] ?? 0) + 1)
+                                  [pool.die]: Math.min(remaining, (prev[pool.die] ?? 0) + 1),
                                 }));
                               }}
                               disabled={chosen >= remaining}
@@ -5019,7 +9061,7 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                 onClick={() => {
                   const healAmt = parseInt(shortRestHealInput, 10) || 0;
                   localHp.shortRest(healAmt);
-                  
+
                   // Consume selected hit dice
                   Object.entries(shortRestDiceSpend).forEach(([die, count]) => {
                     if (count > 0) {
@@ -5029,6 +9071,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
 
                   localSlots.restSlots(false);
                   localResources.restResources(false);
+                  setLocalInnateSorcery(false);
+                  setLocalStarryForm("None");
+                  setLocalMantleOfMajesty(false);
                   setRestModal(null);
                 }}
                 className="rounded bg-accent px-4 py-1.5 text-xs font-bold text-accent-foreground hover:bg-accent/90 cursor-pointer"
@@ -5063,6 +9108,9 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                   localHp.longRest();
                   localSlots.restSlots(true);
                   localResources.restResources(true);
+                  setLocalInnateSorcery(false);
+                  setLocalStarryForm("None");
+                  setLocalMantleOfMajesty(false);
                   setRestModal(null);
                 }}
                 className="rounded bg-accent px-4 py-1.5 text-xs font-bold text-accent-foreground hover:bg-accent/90 cursor-pointer"
@@ -5097,18 +9145,453 @@ export function CharacterDetailView({ member }: { member: PartyMember }) {
                   localHp.reset();
                   localSlots.reset();
                   localResources.reset();
+                  setLocalInnateSorcery(false);
+                  setLocalStarryForm("None");
+                  setLocalMantleOfMajesty(false);
                   setLocalArmorModel(member.activeArmorModel);
                   setLocalTotemAspects(member.totemAspects || []);
                   setLocalMetamagic(member.metamagic || []);
                   setLocalWeaponMasteries(member.weaponMasteries || []);
                   setLocalActiveInfusions(member.activeInfusions || []);
                   setLocalRage("None");
+                  try {
+                    localStorage.removeItem(`party-stats:item-overrides:${member.id}`);
+                    localStorage.removeItem(`party-stats:custom-items:${member.id}`);
+                  } catch {}
+                  setAllInvOverrides({});
+                  setLocalCustomItems([]);
                   clearLocalConditions();
                   setShowSyncConfirm(false);
                 }}
                 className="rounded bg-destructive px-4 py-1.5 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
               >
                 Sync & Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ADD CUSTOM ITEM MODAL */}
+      {showAddItemModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-md rounded-xl border border-border bg-popover p-5 shadow-2xl animate-in zoom-in-95 duration-150 my-8">
+            <h3 className="font-heading text-lg font-bold text-foreground mb-1 flex items-center gap-2">
+              🎒 Add Custom Item
+            </h3>
+            <p className="text-[11px] text-muted-foreground mb-4 font-medium leading-normal">
+              Create a custom item in your local inventory. This item will persist in your browser
+              and automatically update your calculations.
+            </p>
+
+            <div className="flex flex-col gap-3.5 text-xs text-foreground">
+              <div className="relative">
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-accent mb-1 select-none flex items-center gap-1">
+                  ✨ Search & Autofill from Presets or Party Bags
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={presetSearchTerm}
+                    onChange={(e) => setPresetSearchTerm(e.target.value)}
+                    placeholder="Search e.g. Cloak, Sword, Plate, Potion..."
+                    className="w-full rounded border border-border bg-secondary/35 pl-9 pr-3 py-2 text-foreground focus:outline-none"
+                  />
+                  <Search
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  />
+                  {isFetchingDetail ? (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <RefreshCw size={12} className="animate-spin text-accent" />
+                    </div>
+                  ) : (
+                    presetSearchTerm && (
+                      <button
+                        type="button"
+                        onClick={() => setPresetSearchTerm("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )
+                  )}
+                </div>
+
+                {filteredPresets.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 z-[110] max-h-56 overflow-y-auto rounded-lg border border-border bg-[#18181b] p-1.5 shadow-2xl animate-in fade-in duration-100">
+                    <div className="text-[9px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">
+                      Matches ({filteredPresets.length})
+                    </div>
+                    {filteredPresets.map((item) => (
+                      <button
+                        key={`${item.name}-${item.source}`}
+                        type="button"
+                        onClick={async () => {
+                          if (item.apiIndex && item.apiCategory) {
+                            setIsFetchingDetail(true);
+                            try {
+                              const res = await fetch(
+                                `https://www.dnd5eapi.co/api/2014/${item.apiCategory}/${item.apiIndex}`,
+                              );
+                              if (res.ok) {
+                                const detail = await res.json();
+                                setNewItemName(detail.name || item.name);
+
+                                // Type resolver
+                                let baseType = "Gear";
+                                if (item.apiCategory === "magic-items") {
+                                  baseType = "Wondrous Item";
+                                  const categoryName = (
+                                    detail.equipment_category?.name || ""
+                                  ).toLowerCase();
+                                  if (categoryName.includes("ring")) baseType = "Ring";
+                                  else if (categoryName.includes("scroll")) baseType = "Scroll";
+                                  else if (categoryName.includes("potion")) baseType = "Potion";
+                                  else if (categoryName.includes("shield")) baseType = "Shield";
+                                  else if (categoryName.includes("weapon")) baseType = "Weapon";
+                                } else {
+                                  const categoryName = (
+                                    detail.equipment_category?.name || ""
+                                  ).toLowerCase();
+                                  if (categoryName.includes("weapon")) {
+                                    baseType = "Weapon";
+                                  } else if (categoryName.includes("armor")) {
+                                    const armorCat = (detail.armor_category || "").toLowerCase();
+                                    if (armorCat.includes("light")) baseType = "Light Armor";
+                                    else if (armorCat.includes("medium")) baseType = "Medium Armor";
+                                    else if (armorCat.includes("heavy")) baseType = "Heavy Armor";
+                                    else if (armorCat.includes("shield")) baseType = "Shield";
+                                  } else if (categoryName.includes("potion")) {
+                                    baseType = "Potion";
+                                  } else if (categoryName.includes("ring")) {
+                                    baseType = "Ring";
+                                  } else if (categoryName.includes("scroll")) {
+                                    baseType = "Scroll";
+                                  }
+                                }
+                                setNewItemType(baseType);
+
+                                // Rarity resolver
+                                const r = detail.rarity?.name || "Mundane";
+                                setNewItemRarity(r);
+
+                                // Cost resolver
+                                let calculatedCost = 0;
+                                if (detail.cost) {
+                                  const qty = detail.cost.quantity || 0;
+                                  const unit = (detail.cost.unit || "gp").toLowerCase();
+                                  if (unit === "gp") calculatedCost = qty;
+                                  else if (unit === "sp") calculatedCost = qty / 10;
+                                  else if (unit === "cp") calculatedCost = qty / 100;
+                                  else if (unit === "ep") calculatedCost = qty / 2;
+                                  else if (unit === "pp") calculatedCost = qty * 10;
+                                }
+                                setNewItemCost(calculatedCost);
+
+                                setNewItemWeight(detail.weight || 0);
+                                setNewItemDamage(detail.damage?.damage_dice || "");
+                                setNewItemAc(
+                                  detail.armor_class?.base !== undefined
+                                    ? detail.armor_class.base
+                                    : "",
+                                );
+                                setNewItemDesc(
+                                  Array.isArray(detail.desc)
+                                    ? detail.desc.join("\n")
+                                    : detail.desc || "",
+                                );
+                              }
+                            } catch (e) {
+                              console.error("Failed to fetch D&D item details:", e);
+                            } finally {
+                              setIsFetchingDetail(false);
+                            }
+                          } else {
+                            setNewItemName(item.name);
+                            const t = item.type;
+                            if (t.toLowerCase().includes("light armor")) {
+                              setNewItemType("Light Armor");
+                            } else if (t.toLowerCase().includes("medium armor")) {
+                              setNewItemType("Medium Armor");
+                            } else if (t.toLowerCase().includes("heavy armor")) {
+                              setNewItemType("Heavy Armor");
+                            } else if (t.toLowerCase().includes("armor")) {
+                              setNewItemType("Light Armor");
+                            } else if (t.toLowerCase().includes("shield")) {
+                              setNewItemType("Shield");
+                            } else if (t.toLowerCase().includes("weapon")) {
+                              setNewItemType("Weapon");
+                            } else if (t.toLowerCase().includes("potion")) {
+                              setNewItemType("Potion");
+                            } else if (t.toLowerCase().includes("ring")) {
+                              setNewItemType("Ring");
+                            } else if (t.toLowerCase().includes("scroll")) {
+                              setNewItemType("Scroll");
+                            } else {
+                              setNewItemType("Gear");
+                            }
+                            setNewItemRarity(item.rarity || "Mundane");
+                            setNewItemWeight(item.weight);
+                            setNewItemCost(item.cost);
+                            setNewItemDamage(item.damage ?? "");
+                            setNewItemAc(item.armorClass !== undefined ? item.armorClass : "");
+                            setNewItemDesc(item.description ?? "");
+                          }
+                          setPresetSearchTerm("");
+                        }}
+                        className="w-full text-left px-2 py-1.5 rounded hover:bg-secondary flex items-center justify-between transition-colors cursor-pointer"
+                      >
+                        <div className="pr-2 truncate">
+                          <div className="font-bold text-foreground truncate">{item.name}</div>
+                          <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 truncate">
+                            <span>{item.type}</span>
+                            <span>•</span>
+                            <span>{item.rarity || "Mundane"}</span>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 shrink-0">
+                          {item.source}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
+                  Item Name
+                </label>
+                <input
+                  type="text"
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  placeholder="e.g. Cloak of Protection"
+                  className="w-full rounded border border-border bg-secondary/35 px-3 py-2 text-foreground focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
+                    Item Type
+                  </label>
+                  <select
+                    value={newItemType}
+                    onChange={(e) => setNewItemType(e.target.value)}
+                    className="w-full rounded border border-border bg-secondary/35 px-3 py-2 text-foreground focus:outline-none cursor-pointer"
+                  >
+                    <option value="Gear" className="bg-[#17171c] text-slate-100">
+                      🎒 Gear / Item
+                    </option>
+                    <option value="Weapon" className="bg-[#17171c] text-slate-100">
+                      ⚔️ Weapon
+                    </option>
+                    <option value="Shield" className="bg-[#17171c] text-slate-100">
+                      🛡️ Shield
+                    </option>
+                    <option value="Light Armor" className="bg-[#17171c] text-slate-100">
+                      👕 Light Armor
+                    </option>
+                    <option value="Medium Armor" className="bg-[#17171c] text-slate-100">
+                      🛡️ Medium Armor
+                    </option>
+                    <option value="Heavy Armor" className="bg-[#17171c] text-slate-100">
+                      🔘 Heavy Armor
+                    </option>
+                    <option value="Potion" className="bg-[#17171c] text-slate-100">
+                      🧪 Potion
+                    </option>
+                    <option value="Ring" className="bg-[#17171c] text-slate-100">
+                      💍 Ring
+                    </option>
+                    <option value="Scroll" className="bg-[#17171c] text-slate-100">
+                      📜 Scroll
+                    </option>
+                    <option value="Wondrous Item" className="bg-[#17171c] text-slate-100">
+                      ✨ Wondrous Item
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
+                    Rarity
+                  </label>
+                  <select
+                    value={newItemRarity}
+                    onChange={(e) => setNewItemRarity(e.target.value)}
+                    className="w-full rounded border border-border bg-secondary/35 px-3 py-2 text-foreground focus:outline-none cursor-pointer"
+                  >
+                    <option value="Mundane" className="bg-[#17171c] text-slate-100">
+                      Common (Mundane)
+                    </option>
+                    <option value="Common" className="bg-[#17171c] text-slate-100">
+                      Common (Magic)
+                    </option>
+                    <option value="Uncommon" className="bg-[#17171c] text-slate-100">
+                      Uncommon
+                    </option>
+                    <option value="Rare" className="bg-[#17171c] text-slate-100">
+                      Rare
+                    </option>
+                    <option value="Very Rare" className="bg-[#17171c] text-slate-100">
+                      Very Rare
+                    </option>
+                    <option value="Legendary" className="bg-[#17171c] text-slate-100">
+                      Legendary
+                    </option>
+                    <option value="Artifact" className="bg-[#17171c] text-slate-100">
+                      Artifact
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
+                    Qty
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newItemQty}
+                    onChange={(e) => setNewItemQty(Math.max(1, Number(e.target.value)))}
+                    className="w-full rounded border border-border bg-secondary/35 px-3 py-2 text-foreground focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
+                    Weight (lbs)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={newItemWeight}
+                    onChange={(e) => setNewItemWeight(Math.max(0, Number(e.target.value)))}
+                    className="w-full rounded border border-border bg-secondary/35 px-3 py-2 text-foreground focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
+                    Cost (gp)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newItemCost}
+                    onChange={(e) => setNewItemCost(Math.max(0, Number(e.target.value)))}
+                    className="w-full rounded border border-border bg-secondary/35 px-3 py-2 text-foreground focus:outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              {newItemType === "Weapon" && (
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
+                    Weapon Damage (e.g. 1d8, 2d6)
+                  </label>
+                  <input
+                    type="text"
+                    value={newItemDamage}
+                    onChange={(e) => setNewItemDamage(e.target.value)}
+                    placeholder="e.g. 1d8 or 2d6"
+                    className="w-full rounded border border-border bg-secondary/35 px-3 py-2 text-foreground focus:outline-none font-mono"
+                  />
+                </div>
+              )}
+
+              {(newItemType === "Shield" || newItemType.includes("Armor") || newItemType === "Ring" || newItemType === "Wondrous Item") && (
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
+                    Base AC / AC Bonus
+                  </label>
+                  <input
+                    type="number"
+                    value={newItemAc}
+                    onChange={(e) =>
+                      setNewItemAc(e.target.value === "" ? "" : Number(e.target.value))
+                    }
+                    placeholder={
+                      newItemType === "Shield"
+                        ? "e.g. 2"
+                        : newItemType.includes("Armor")
+                          ? "e.g. 18 for Plate"
+                          : "e.g. 1 for Protection"
+                    }
+                    className="w-full rounded border border-border bg-secondary/35 px-3 py-2 text-foreground focus:outline-none font-mono"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
+                  Description / Properties
+                </label>
+                <textarea
+                  value={newItemDesc}
+                  onChange={(e) => setNewItemDesc(e.target.value)}
+                  placeholder="Enter custom magic item description or properties..."
+                  rows={3}
+                  className="w-full rounded border border-border bg-secondary/35 px-3 py-2 text-foreground focus:outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-5">
+              <button
+                onClick={() => setShowAddItemModal(false)}
+                className="rounded border border-border bg-transparent px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary cursor-pointer select-none focus:outline-none"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (!newItemName.trim()) return;
+
+                  const isShield = newItemType === "Shield";
+                  const isArmor = newItemType.includes("Armor");
+                  let mappedType = newItemType;
+                  let armorTypeId: number | undefined;
+
+                  if (isShield) {
+                    mappedType = "Shield";
+                    armorTypeId = 4;
+                  } else if (isArmor) {
+                    mappedType = "Armor";
+                    if (newItemType === "Light Armor") armorTypeId = 1;
+                    else if (newItemType === "Medium Armor") armorTypeId = 2;
+                    else if (newItemType === "Heavy Armor") armorTypeId = 3;
+                  }
+
+                  const item = {
+                    name: newItemName.trim(),
+                    type: mappedType,
+                    rarity: newItemRarity === "Mundane" ? null : newItemRarity,
+                    magic: newItemRarity !== "Mundane" && newItemRarity !== "Common",
+                    equipped: false,
+                    attuned: false,
+                    quantity: Number(newItemQty) || 1,
+                    weight: Number(newItemWeight) || 0,
+                    cost: Number(newItemCost) || 0,
+                    damage: newItemDamage || undefined,
+                    armorClass: newItemAc !== "" ? Number(newItemAc) : undefined,
+                    armorTypeId,
+                    description: newItemDesc || undefined,
+                    isLocalCustom: true,
+                  };
+
+                  addLocalCustomItem(item);
+                  setShowAddItemModal(false);
+                }}
+                disabled={!newItemName.trim()}
+                className="rounded bg-accent px-4 py-1.5 text-xs font-bold text-accent-foreground hover:bg-accent/90 disabled:opacity-30 cursor-pointer select-none focus:outline-none"
+              >
+                Add Custom Item
               </button>
             </div>
           </div>

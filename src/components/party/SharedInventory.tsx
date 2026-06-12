@@ -123,7 +123,9 @@ export function SharedInventory({ members }: SharedInventoryProps) {
           </div>
 
           <div className="text-center bg-secondary/35 border border-border/30 rounded-lg py-3 select-all">
-            <div className="text-[10px] uppercase font-bold text-muted-foreground">Total GP Value</div>
+            <div className="text-[10px] uppercase font-bold text-muted-foreground">
+              Total GP Value
+            </div>
             <div className="font-heading text-2xl font-extrabold text-gold tracking-tight drop-shadow-sm mt-0.5">
               {Math.round(totalGPEquivalent * 100) / 100} gp
             </div>
@@ -131,23 +133,33 @@ export function SharedInventory({ members }: SharedInventoryProps) {
 
           <div className="grid grid-cols-5 gap-1.5 text-center text-xs select-all">
             <div className="rounded border border-border bg-secondary/25 px-1 py-2">
-              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">PP</span>
+              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                PP
+              </span>
               <span className="font-mono font-bold text-foreground">{totalCurrencies.pp}</span>
             </div>
             <div className="rounded border border-border bg-secondary/25 px-1 py-2">
-              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">GP</span>
+              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                GP
+              </span>
               <span className="font-mono font-bold text-gold">{totalCurrencies.gp}</span>
             </div>
             <div className="rounded border border-border bg-secondary/25 px-1 py-2">
-              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">EP</span>
+              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                EP
+              </span>
               <span className="font-mono font-bold text-foreground/85">{totalCurrencies.ep}</span>
             </div>
             <div className="rounded border border-border bg-secondary/25 px-1 py-2">
-              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">SP</span>
+              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                SP
+              </span>
               <span className="font-mono font-bold text-foreground/75">{totalCurrencies.sp}</span>
             </div>
             <div className="rounded border border-border bg-secondary/25 px-1 py-2">
-              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">CP</span>
+              <span className="block text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                CP
+              </span>
               <span className="font-mono font-bold text-amber-600">{totalCurrencies.cp}</span>
             </div>
           </div>
@@ -202,7 +214,10 @@ export function SharedInventory({ members }: SharedInventoryProps) {
 
             {/* Live Search Filter */}
             <div className="relative w-full sm:max-w-[200px]">
-              <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+              <Search
+                size={11}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60"
+              />
               <input
                 type="text"
                 placeholder="Search bags..."
@@ -216,7 +231,9 @@ export function SharedInventory({ members }: SharedInventoryProps) {
           <div className="max-h-[380px] overflow-y-auto pr-2 space-y-2">
             {filteredMagicItems.length === 0 ? (
               <p className="text-xs text-muted-foreground italic select-none">
-                {searchTerm ? "No matching items found." : "No magic items found in character inventories."}
+                {searchTerm
+                  ? "No matching items found."
+                  : "No magic items found in character inventories."}
               </p>
             ) : (
               <>
@@ -235,7 +252,10 @@ export function SharedInventory({ members }: SharedInventoryProps) {
                         )}
                       </div>
                       <div className="text-[10px] text-muted-foreground mt-0.5 select-none">
-                        {item.type} • Held by: <span className="font-medium text-foreground">{getShortName(item.ownerName)}</span>
+                        {item.type} • Held by:{" "}
+                        <span className="font-medium text-foreground">
+                          {getShortName(item.ownerName)}
+                        </span>
                       </div>
                     </div>
 
@@ -243,7 +263,7 @@ export function SharedInventory({ members }: SharedInventoryProps) {
                       {item.rarity && (
                         <span
                           className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${getRarityBadgeColor(
-                            item.rarity
+                            item.rarity,
                           )}`}
                         >
                           {item.rarity}

@@ -16,7 +16,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
     if (
       !window.confirm(
         "Are you sure you want to perform a Short Rest for the entire party?\n" +
-          "This clears death saves, resets Warlock pact slots, and resets short-rest class resources."
+          "This clears death saves, resets Warlock pact slots, and resets short-rest class resources.",
       )
     ) {
       return;
@@ -72,11 +72,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
       member.actions?.forEach((a) => {
         if (a.uses && a.uses.reset) {
           const resetType = a.uses.reset.toLowerCase();
-          if (
-            resetType.includes("short") ||
-            resetType === "rest" ||
-            resetType.includes("combat")
-          ) {
+          if (resetType.includes("short") || resetType === "rest" || resetType.includes("combat")) {
             resData.spent[a.name] = 0;
           }
         }
@@ -94,7 +90,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
     if (
       !window.confirm(
         "Are you sure you want to perform a Long Rest for the entire party?\n" +
-          "This restores all characters to max HP, resets all spell/pact slots and resources, clears death saves, and removes custom conditions."
+          "This restores all characters to max HP, resets all spell/pact slots and resources, clears death saves, and removes custom conditions.",
       )
     ) {
       return;
@@ -121,10 +117,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
       member.pactSlots?.forEach((s) => {
         pactSlotsUsed[s.level] = 0;
       });
-      localStorage.setItem(
-        slotsKey,
-        JSON.stringify({ spellSlotsUsed, pactSlotsUsed })
-      );
+      localStorage.setItem(slotsKey, JSON.stringify({ spellSlotsUsed, pactSlotsUsed }));
 
       // 3. Reset resources
       localStorage.removeItem(`party-stats:resources:${member.id}`);
@@ -142,7 +135,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
   // 1. HP Alerts (0 HP or Bloodied < 50% HP)
   const deadMembers = activeMembers.filter((m) => m.hpCurrent === 0);
   const bloodiedMembers = activeMembers.filter(
-    (m) => m.hpCurrent > 0 && m.hpCurrent <= m.hpMax / 2
+    (m) => m.hpCurrent > 0 && m.hpCurrent <= m.hpMax / 2,
   );
 
   // 2. Aggregate Active Conditions (both remote and local)
@@ -173,7 +166,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
 
   // 3. Spell slot monitoring
   const spellcasters = activeMembers.filter(
-    (m) => m.spellSlots?.some((s) => s.max > 0) || m.pactSlots?.some((s) => s.max > 0)
+    (m) => m.spellSlots?.some((s) => s.max > 0) || m.pactSlots?.some((s) => s.max > 0),
   );
 
   return (
@@ -291,11 +284,11 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
               {spellcasters.map((m) => {
                 const totalSlotsMax = [...(m.spellSlots ?? []), ...(m.pactSlots ?? [])].reduce(
                   (sum, s) => sum + s.max,
-                  0
+                  0,
                 );
                 const totalSlotsUsed = [...(m.spellSlots ?? []), ...(m.pactSlots ?? [])].reduce(
                   (sum, s) => sum + s.used,
-                  0
+                  0,
                 );
                 const pctUsed = totalSlotsMax > 0 ? (totalSlotsUsed / totalSlotsMax) * 100 : 0;
 

@@ -40,7 +40,6 @@ import { X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 
-
 export const ABILITY_DETAILS: Record<
   string,
   {
@@ -344,7 +343,6 @@ export function ConditionsPanel({
   const [rounds, setRounds] = useState<number | null>(10);
   const [effectTab, setEffectTab] = useState<"spells" | "conditions" | "cover">("spells");
 
-
   const handleAdd = (name: string, r: number | null) => {
     if (!name.trim()) return;
     onAddLocal(name.trim(), r);
@@ -479,7 +477,7 @@ export function ConditionsPanel({
                     if (e.key === "Enter") handleAdd(customName, rounds);
                   }}
                 />
-                
+
                 {/* Duration select grid */}
                 <div className="flex items-center justify-between text-[9px] text-muted-foreground uppercase select-none mt-0.5">
                   <span>Duration (Rounds)</span>
@@ -885,9 +883,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               </span>
               <span className="font-mono text-foreground relative">
                 {hpCurrent} / {member.hpMax}
-                {tempHp > 0 ? (
-                  <span className="ml-1 text-accent">+{tempHp}</span>
-                ) : null}
+                {tempHp > 0 ? <span className="ml-1 text-accent">+{tempHp}</span> : null}
                 {delta && (
                   <span
                     key={delta.key}
@@ -1090,9 +1086,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               </div>
             </Section>
           )}
-          {(member.spellcasting?.length > 0 ||
-            spellSlots.length > 0 ||
-            pactSlots.length > 0) && (
+          {(member.spellcasting?.length > 0 || spellSlots.length > 0 || pactSlots.length > 0) && (
             <Section title="Spellcasting">
               <div className="flex flex-col gap-3">
                 {member.spellcasting && member.spellcasting.length > 0 && (

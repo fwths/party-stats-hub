@@ -27,7 +27,9 @@ export function ThemeSelector() {
     <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-secondary/35 px-2.5 py-1.5 backdrop-blur-md select-none transition-all duration-300">
       <div className="flex items-center gap-1.5 pr-1.5 border-r border-border/40 text-muted-foreground/80">
         <Palette size={13} className="text-accent animate-pulse" />
-        <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Theme</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">
+          Theme
+        </span>
       </div>
       <div className="flex items-center gap-2">
         {presets.map((preset) => {
@@ -51,7 +53,7 @@ export function ThemeSelector() {
                   {/* Inner color dot */}
                   <span
                     className={`h-2.5 w-2.5 rounded-full transition-all duration-300 ${getDotStyles(
-                      preset.id
+                      preset.id,
                     )} ${isActive ? "scale-100 shadow-[0_0_8px_var(--accent)]" : "scale-90 group-hover:scale-100"}`}
                   />
                 </button>

@@ -124,7 +124,7 @@ export default function Index() {
               </Suspense>
             </div>
           </header>
-          
+
           <Suspense fallback={<PartyGridSkeleton />}>
             <PartyDashboard ids={ids} />
           </Suspense>
@@ -140,7 +140,9 @@ export default function Index() {
 
 function PartyDashboard({ ids }: { ids: number[] }) {
   const { data } = useSuspenseQuery(partyQueryOptions(ids));
-  const [activeTab, setActiveTab] = useState<"grid" | "combat" | "inventory" | "roller" | "notes" | "rules">("grid");
+  const [activeTab, setActiveTab] = useState<
+    "grid" | "combat" | "inventory" | "roller" | "notes" | "rules"
+  >("grid");
 
   const validMembers = data.members.filter((m) => !m.error);
 

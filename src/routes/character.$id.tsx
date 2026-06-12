@@ -99,5 +99,5 @@ function CharacterDetailInner() {
     );
   }
 
-  return <CharacterDetailView member={member} />;
+  return <CharacterDetailView member={member} allMembers={data.members} />;
 }

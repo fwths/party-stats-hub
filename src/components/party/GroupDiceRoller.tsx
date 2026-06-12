@@ -32,7 +32,10 @@ function CustomSelect({ value, onChange, options }: CustomSelectProps) {
         className="flex items-center justify-between w-full rounded border border-border/80 bg-secondary/40 hover:bg-secondary/60 hover:border-accent/40 px-3 py-1.5 text-xs text-foreground focus:border-accent focus:outline-none transition-all duration-200 cursor-pointer select-none text-left h-[34px]"
       >
         <span className="truncate">{selectedOption ? selectedOption.label : "Select..."}</span>
-        <ChevronDown size={12} className={`text-muted-foreground/60 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        <ChevronDown
+          size={12}
+          className={`text-muted-foreground/60 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+        />
       </button>
 
       {isOpen && (

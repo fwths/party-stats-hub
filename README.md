@@ -4,19 +4,19 @@ A live D&D party dashboard that pulls character data from **D&D Beyond** and pre
 
 ## ✨ Features
 
-| Feature | Description |
-|---|---|
-| **Party Cards** | At-a-glance overview of every party member — HP, AC, level, class, ability scores, conditions, and more |
-| **Character Detail** | Deep-dive into a single character: full ability scores, skills, saves, spells, inventory, actions, and features |
-| **Combat Health** | Consolidated hit-point tracker for the whole party during encounters |
-| **Shared Inventory** | Browse and search items across all party members' bags |
-| **Group Dice Roller** | Roll dice for any party member with full modifier support |
-| **Campaign Journal** | Session notes & campaign log stored in the browser |
-| **Rules Reference** | Quick-access reference for common D&D 5e rules |
-| **Ambient Audio** | Background soundscapes to set the mood during sessions |
-| **Theme Selector** | Multiple visual themes with dark-mode-first design |
-| **PWA / Installable** | Service worker & web manifest — install it as a native-feeling app on any device |
-| **Auto-Refresh** | Data re-fetches every 30 seconds and on window focus so stats stay live |
+| Feature               | Description                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Party Cards**       | At-a-glance overview of every party member — HP, AC, level, class, ability scores, conditions, and more         |
+| **Character Detail**  | Deep-dive into a single character: full ability scores, skills, saves, spells, inventory, actions, and features |
+| **Combat Health**     | Consolidated hit-point tracker for the whole party during encounters                                            |
+| **Shared Inventory**  | Browse and search items across all party members' bags                                                          |
+| **Group Dice Roller** | Roll dice for any party member with full modifier support                                                       |
+| **Campaign Journal**  | Session notes & campaign log stored in the browser                                                              |
+| **Rules Reference**   | Quick-access reference for common D&D 5e rules                                                                  |
+| **Ambient Audio**     | Background soundscapes to set the mood during sessions                                                          |
+| **Theme Selector**    | Multiple visual themes with dark-mode-first design                                                              |
+| **PWA / Installable** | Service worker & web manifest — install it as a native-feeling app on any device                                |
+| **Auto-Refresh**      | Data re-fetches every 30 seconds and on window focus so stats stay live                                         |
 
 ## 🛠 Tech Stack
 
@@ -75,9 +75,7 @@ Edit [`src/lib/party-config.ts`](src/lib/party-config.ts) to swap in your own ch
 // e.g. https://www.dndbeyond.com/characters/12345678 → 12345678
 // The character must have privacy set to "Public" on D&D Beyond.
 export const PARTY_CHARACTER_IDS: number[] = [
-  12345678,
-  23456789,
-  34567890,
+  12345678, 23456789, 34567890,
   // ... add as many as you need
 ];
 ```
@@ -86,10 +84,10 @@ Users can also add/remove characters at runtime via the **⚙ Manage** dialog �
 
 ### Environment Variables
 
-| Variable | Where | Purpose |
-|---|---|---|
-| `NODE_ENV` | Server only | Standard Node environment flag |
-| `VITE_*` | Client + Server | Public config (analytics, public URLs). Never put secrets here. |
+| Variable   | Where           | Purpose                                                         |
+| ---------- | --------------- | --------------------------------------------------------------- |
+| `NODE_ENV` | Server only     | Standard Node environment flag                                  |
+| `VITE_*`   | Client + Server | Public config (analytics, public URLs). Never put secrets here. |
 
 Server-only env is read in [`src/lib/config.server.ts`](src/lib/config.server.ts). The `.server.ts` suffix prevents Vite from bundling it into the client.
 
@@ -133,14 +131,14 @@ party-stats-hub/
 
 ## 📜 Available Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start the dev server with HMR |
-| `npm run build` | Create a production build |
+| Command             | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| `npm run dev`       | Start the dev server with HMR                      |
+| `npm run build`     | Create a production build                          |
 | `npm run build:dev` | Build in development mode (unminified, sourcemaps) |
-| `npm run preview` | Preview the production build locally |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Format all files with Prettier |
+| `npm run preview`   | Preview the production build locally               |
+| `npm run lint`      | Run ESLint                                         |
+| `npm run format`    | Format all files with Prettier                     |
 
 ## 🔌 How It Works
 

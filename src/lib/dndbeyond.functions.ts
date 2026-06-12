@@ -63,6 +63,14 @@ export interface InventoryItem {
   equipped: boolean;
   attuned: boolean;
   quantity: number;
+  weight?: number;
+  description?: string;
+  snippet?: string;
+  cost?: number;
+  damage?: string;
+  properties?: string[];
+  armorClass?: number;
+  armorTypeId?: number;
 }
 
 export interface DeathSaves {
@@ -112,6 +120,8 @@ export interface PreparedSpell {
   componentsDescription?: string;
   concentration?: boolean;
   ritual?: boolean;
+  prepared?: boolean;
+  alwaysPrepared?: boolean;
 }
 
 export interface FeatureInfo {
@@ -252,6 +262,7 @@ export interface PartyMember {
   attacks: AttackInfo[];
   cantrips: PreparedSpell[];
   preparedSpells: PreparedSpell[];
+  allSpells: PreparedSpell[];
   features: FeatureInfo[];
   characteristics: CharacterCharacteristics;
   activeArmorModel: string | null;
@@ -656,16 +667,17 @@ function computeSkills(
     "20": "survival",
   };
   // typeId 26 = skill proficiency level override
-  // value: 1=half, 2=proficient, 3=expertise
-  const overrides: Record<string, "half" | "proficient" | "expertise"> = {};
+  // value: 1=none, 2=half, 3=proficient, 4=expertise
+  const overrides: Record<string, "none" | "half" | "proficient" | "expertise"> = {};
   for (const cv of characterValues) {
     if (cv?.typeId !== 26) continue;
     const key = SKILL_ID_TO_KEY[String(cv.valueId)];
     if (!key) continue;
     const v = cv.value;
-    if (v === 3) overrides[key] = "expertise";
-    else if (v === 2) overrides[key] = "proficient";
-    else if (v === 1) overrides[key] = "half";
+    if (v === 4) overrides[key] = "expertise";
+    else if (v === 3) overrides[key] = "proficient";
+    else if (v === 2) overrides[key] = "half";
+    else if (v === 1) overrides[key] = "none";
   }
   return SKILLS.map(([key, name, abilityIdx]) => {
     const modProf = computeSkillProficiency(modifiers, key);
@@ -1007,7 +1019,7 @@ function computeAttacks(
   return attacks;
 }
 
-function mapSpell(def: any, level: number): PreparedSpell {
+function mapSpell(def: any, level: number, prepared = true, alwaysPrepared = false): PreparedSpell {
   return {
     level,
     name: def.name,
@@ -1038,15 +1050,19 @@ function mapSpell(def: any, level: number): PreparedSpell {
     componentsDescription: def.componentsDescription || undefined,
     concentration: typeof def.concentration === "boolean" ? def.concentration : undefined,
     ritual: typeof def.ritual === "boolean" ? def.ritual : undefined,
+    prepared,
+    alwaysPrepared,
   };
 }
 
 function computeSpellsList(data: any): {
   cantrips: PreparedSpell[];
   preparedSpells: PreparedSpell[];
+  allSpells: PreparedSpell[];
 } {
   const cantrips: PreparedSpell[] = [];
   const preparedSpells: PreparedSpell[] = [];
+  const allSpells: PreparedSpell[] = [];
 
   // 1. Process data.spells (race, background, item, feat, and subclass/class always-prepared)
   const sources = ["race", "class", "background", "item", "feat"] as const;
@@ -1066,10 +1082,14 @@ function computeSpellsList(data: any): {
         source === "race"
       );
 
+      const mapped = mapSpell(def, level, isPrep, !!s.alwaysPrepared);
       if (isCantrip) {
-        cantrips.push(mapSpell(def, 0));
-      } else if (isPrep) {
-        preparedSpells.push(mapSpell(def, level));
+        cantrips.push(mapped);
+      } else {
+        if (isPrep) {
+          preparedSpells.push(mapped);
+        }
+        allSpells.push(mapped);
       }
     }
   }
@@ -1089,20 +1109,20 @@ function computeSpellsList(data: any): {
       const level = def.level ?? 0;
       const isCantrip = level === 0;
 
-      // Available if:
-      // - Cantrip (level === 0)
-      // - Or level > 0 and (prepared || alwaysPrepared)
-      // - Or level > 0 and (not a prepared caster and countsAsKnownSpell is true)
       const isAvailable =
         isCantrip ||
         !!s.prepared ||
         !!s.alwaysPrepared ||
         (!isPreparedCaster && !!s.countsAsKnownSpell);
 
+      const mapped = mapSpell(def, level, isAvailable, !!s.alwaysPrepared);
       if (isCantrip) {
-        cantrips.push(mapSpell(def, 0));
-      } else if (isAvailable) {
-        preparedSpells.push(mapSpell(def, level));
+        cantrips.push(mapped);
+      } else {
+        if (isAvailable) {
+          preparedSpells.push(mapped);
+        }
+        allSpells.push(mapped);
       }
     }
   }
@@ -1125,13 +1145,29 @@ function computeSpellsList(data: any): {
       uniquePrepared.push(p);
     }
   }
-
   uniquePrepared.sort((a, b) => {
     if (a.level !== b.level) return a.level - b.level;
     return a.name.localeCompare(b.name);
   });
 
-  return { cantrips: uniqueCantrips, preparedSpells: uniquePrepared };
+  const seenAllSpells = new Set<string>();
+  const uniqueAllSpells: PreparedSpell[] = [];
+  for (const p of allSpells) {
+    if (!seenAllSpells.has(p.name)) {
+      seenAllSpells.add(p.name);
+      uniqueAllSpells.push(p);
+    }
+  }
+  uniqueAllSpells.sort((a, b) => {
+    if (a.level !== b.level) return a.level - b.level;
+    return a.name.localeCompare(b.name);
+  });
+
+  return {
+    cantrips: uniqueCantrips,
+    preparedSpells: uniquePrepared,
+    allSpells: uniqueAllSpells,
+  };
 }
 
 async function fetchCharacter(id: number): Promise<PartyMember> {
@@ -1204,7 +1240,100 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
 
 function parseCharacterPayload(id: number, payload: any): PartyMember {
   try {
-    const data = payload.data;
+    // Clone inventory and modifiers.item to prevent mutating the original cached payload
+    const data = {
+      ...payload.data,
+      inventory: payload.data.inventory
+        ? payload.data.inventory.map((item: any) => ({
+            ...item,
+            definition: item.definition ? { ...item.definition } : undefined,
+          }))
+        : undefined,
+      modifiers: payload.data.modifiers
+        ? {
+            ...payload.data.modifiers,
+            item: payload.data.modifiers.item ? [...payload.data.modifiers.item] : undefined,
+          }
+        : undefined,
+    };
+
+    // Prevent illegal stacking of multiple body armors or multiple shields (qem cant equip two shields and two plates)
+    const inv: any[] = data.inventory ?? [];
+    const equippedArmor = inv.filter((i) => i.equipped && i.definition?.filterType === "Armor");
+    const body = equippedArmor.filter((i) => (i.definition?.armorTypeId ?? 0) <= 3);
+    const shields = equippedArmor.filter((i) => i.definition?.armorTypeId === 4);
+
+    // Helper to calculate magic AC bonus for a definition ID
+    const getItemAcBonus = (defId: number) => {
+      const itemMods = data.modifiers?.item ?? [];
+      return itemMods
+        .filter(
+          (m: any) =>
+            m.componentId === defId &&
+            m.componentTypeId === 112130694 &&
+            m.subType === "armor-class" &&
+            m.type === "bonus",
+        )
+        .reduce((sum: number, m: any) => sum + (typeof m.value === "number" ? m.value : 0), 0);
+    };
+
+    let bestBodyArmor: any = null;
+    if (body.length > 0) {
+      bestBodyArmor = body.reduce((a, b) => {
+        const aEff = (a.definition.armorClass ?? 0) + getItemAcBonus(a.definition.id);
+        const bEff = (b.definition.armorClass ?? 0) + getItemAcBonus(b.definition.id);
+        return bEff > aEff ? b : a;
+      });
+    }
+
+    let bestShield: any = null;
+    if (shields.length > 0) {
+      bestShield = shields.reduce((a, b) => {
+        const aEff = (a.definition.armorClass ?? 0) + getItemAcBonus(a.definition.id);
+        const bEff = (b.definition.armorClass ?? 0) + getItemAcBonus(b.definition.id);
+        return bEff > aEff ? b : a;
+      });
+    }
+
+    const modifiersToRemove = new Map<string, number>();
+
+    const markItemUnequipped = (item: any) => {
+      item.equipped = false;
+      const granted = item.definition?.grantedModifiers ?? [];
+      for (const m of granted) {
+        if (m.id) {
+          const idStr = String(m.id);
+          modifiersToRemove.set(idStr, (modifiersToRemove.get(idStr) ?? 0) + 1);
+        }
+      }
+    };
+
+    body.forEach((item) => {
+      if (item !== bestBodyArmor) {
+        markItemUnequipped(item);
+      }
+    });
+
+    shields.forEach((item) => {
+      if (item !== bestShield) {
+        markItemUnequipped(item);
+      }
+    });
+
+    if (data.modifiers?.item && modifiersToRemove.size > 0) {
+      data.modifiers.item = data.modifiers.item.filter((m: any) => {
+        if (m.id) {
+          const idStr = String(m.id);
+          const count = modifiersToRemove.get(idStr) ?? 0;
+          if (count > 0) {
+            modifiersToRemove.set(idStr, count - 1);
+            return false; // remove this copy of the modifier
+          }
+        }
+        return true;
+      });
+    }
+
     const modifiers = flattenModifiers(data);
 
     const abilities: AbilityScore[] = ABILITY_NAMES.map((name, i) => {
@@ -1599,7 +1728,7 @@ function parseCharacterPayload(id: number, payload: any): PartyMember {
     const carryingCapacity = computeCarryingCapacity(abilities[0].score, modifiers);
 
     const attacks = computeAttacks(data, abilities, pb, modifiers);
-    const { cantrips, preparedSpells } = computeSpellsList(data);
+    const { cantrips, preparedSpells, allSpells } = computeSpellsList(data);
 
     // Parse Features & Traits
     const features: FeatureInfo[] = [];
@@ -1851,7 +1980,7 @@ function parseCharacterPayload(id: number, payload: any): PartyMember {
       const creatureStats = (def.stats ?? []).map((s: any) => ({
         statId: s.statId,
         name: s.name ?? null,
-        value: s.value ?? 10
+        value: s.value ?? 10,
       }));
 
       const getStatMod = (statId: number) => {
@@ -1887,22 +2016,24 @@ function parseCharacterPayload(id: number, payload: any): PartyMember {
           armorClass: def.armorClass ?? 0,
           armorClassDescription: def.armorClassDescription ?? null,
           averageHitPoints: def.averageHitPoints ?? 0,
-          hitPointDice: def.hitPointDice ? {
-            diceCount: def.hitPointDice.diceCount ?? 0,
-            diceValue: def.hitPointDice.diceValue ?? 0,
-            diceString: def.hitPointDice.diceString ?? ""
-          } : null,
+          hitPointDice: def.hitPointDice
+            ? {
+                diceCount: def.hitPointDice.diceCount ?? 0,
+                diceValue: def.hitPointDice.diceValue ?? 0,
+                diceString: def.hitPointDice.diceString ?? "",
+              }
+            : null,
           movements: (def.movements ?? []).map((m: any) => ({
             movementId: m.movementId,
             speed: m.speed,
-            notes: m.notes ?? ""
+            notes: m.notes ?? "",
           })),
           passivePerception: def.passivePerception ?? 10,
           avatarUrl: def.avatarUrl ?? null,
           stats: creatureStats,
           senses: (def.senses ?? []).map((s: any) => ({
             senseId: s.senseId,
-            notes: s.notes ?? ""
+            notes: s.notes ?? "",
           })),
           specialTraitsDescription: def.specialTraitsDescription ?? "",
           actionsDescription: def.actionsDescription ?? "",
@@ -1911,7 +2042,7 @@ function parseCharacterPayload(id: number, payload: any): PartyMember {
           characteristicsDescription: def.characteristicsDescription ?? "",
           skills: cSkills,
           savingThrows: cSavingThrows,
-        }
+        },
       };
     });
 
@@ -1959,6 +2090,7 @@ function parseCharacterPayload(id: number, payload: any): PartyMember {
       attacks,
       cantrips,
       preparedSpells,
+      allSpells,
       defenses,
       actions,
       inventory,
@@ -2029,10 +2161,12 @@ function computeActions(data: any, abilities: AbilityScore[], pb: number): Actio
           name,
           source,
           description: a?.snippet || a?.description || "",
-          activation: a?.activation ? {
-            activationType: a.activation.activationType,
-            activationTime: a.activation.activationTime
-          } : undefined
+          activation: a?.activation
+            ? {
+                activationType: a.activation.activationType,
+                activationTime: a.activation.activationTime,
+              }
+            : undefined,
         };
         const lu = a?.limitedUse;
         if (lu && typeof lu.maxUses === "number") {
@@ -2120,6 +2254,7 @@ function errorMember(id: number, message: string): PartyMember {
     attacks: [],
     cantrips: [],
     preparedSpells: [],
+    allSpells: [],
     features: [],
     characteristics: {
       personalityTraits: "",
@@ -2180,6 +2315,16 @@ function computeInventory(data: any): InventoryItem[] {
       equipped: !!i.equipped,
       attuned: !!i.isAttuned,
       quantity: i.quantity ?? 1,
+      weight: typeof def.weight === "number" ? def.weight : undefined,
+      description: def.description ?? def.snippet ?? undefined,
+      snippet: def.snippet ?? undefined,
+      cost: typeof def.cost === "number" ? def.cost : undefined,
+      damage: def.damage ? def.damage.diceString : undefined,
+      properties: Array.isArray(def.properties)
+        ? def.properties.map((p: any) => p.name)
+        : undefined,
+      armorClass: typeof def.armorClass === "number" ? def.armorClass : undefined,
+      armorTypeId: typeof def.armorTypeId === "number" ? def.armorTypeId : undefined,
     });
   }
   // Sort: attuned > equipped magic > equipped > other magic > rest; within: by rarity desc, then name

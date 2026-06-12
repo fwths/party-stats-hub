@@ -1,5 +1,27 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Plus, Trash2, CheckCircle2, Circle, Sparkles, ListTodo, FileText, Check, AlertCircle, Settings, Send, ExternalLink, Loader2, Database, Search, RefreshCw, BookOpen, Compass, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  CheckCircle2,
+  Circle,
+  Sparkles,
+  ListTodo,
+  FileText,
+  Check,
+  AlertCircle,
+  Settings,
+  Send,
+  ExternalLink,
+  Loader2,
+  Database,
+  Search,
+  RefreshCw,
+  BookOpen,
+  Compass,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
 
 interface TodoItem {
   id: string;
@@ -43,7 +65,7 @@ export default function SessionNotes() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const historyMenuRef = useRef<HTMLDivElement | null>(null);
-  
+
   // --- 1. Session Notes (Scratchpad) State ---
   const [notes, setNotes] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -73,9 +95,13 @@ export default function SessionNotes() {
 
   // --- 3. Notion Config & Integration State ---
   const [showNotionSettings, setShowNotionSettings] = useState(false);
-  const [notionToken, setNotionToken] = useState("ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU");
+  const [notionToken, setNotionToken] = useState(
+    "ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU",
+  );
   const [notionParentId, setNotionParentId] = useState("");
-  const [notionParentType, setNotionParentType] = useState<"database" | "page" | "workspace">("workspace");
+  const [notionParentType, setNotionParentType] = useState<"database" | "page" | "workspace">(
+    "workspace",
+  );
   const [triggerRefresh, setTriggerRefresh] = useState(0);
 
   // --- 4. Workspace Pages List & Search States ---
@@ -89,7 +115,9 @@ export default function SessionNotes() {
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [selectedPageTitle, setSelectedPageTitle] = useState<string | null>(null);
   const [selectedPageIsDb, setSelectedPageIsDb] = useState<boolean>(false);
-  const [navigationHistory, setNavigationHistory] = useState<{ id: string; title: string; isDb: boolean }[]>([]);
+  const [navigationHistory, setNavigationHistory] = useState<
+    { id: string; title: string; isDb: boolean }[]
+  >([]);
   const [pageContent, setPageContent] = useState<string>("");
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
@@ -135,7 +163,7 @@ export default function SessionNotes() {
     setHistory((prev) => {
       const lastSnapshot = prev[0];
       const now = Date.now();
-      
+
       if (lastSnapshot) {
         const timeDiff = now - lastSnapshot.timestamp;
         const minutesDiff = timeDiff / (1000 * 60);
@@ -143,7 +171,7 @@ export default function SessionNotes() {
           return prev;
         }
       }
-      
+
       const newHistory = [{ timestamp: now, content }, ...prev].slice(0, 10);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
       return newHistory;
@@ -194,7 +222,10 @@ export default function SessionNotes() {
 
     setTimeout(() => {
       textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
+      textarea.setSelectionRange(
+        start + prefix.length,
+        start + prefix.length + selectedText.length,
+      );
     }, 0);
   };
 
@@ -220,7 +251,9 @@ export default function SessionNotes() {
     reader.onload = (event) => {
       const content = event.target?.result;
       if (typeof content === "string") {
-        if (window.confirm("Importing this file will replace your current scratchpad notes. Proceed?")) {
+        if (
+          window.confirm("Importing this file will replace your current scratchpad notes. Proceed?")
+        ) {
           setNotes(content);
           localStorage.setItem(NOTE_KEY, content);
           saveHistorySnapshot(content);
@@ -235,7 +268,11 @@ export default function SessionNotes() {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncTitle, setSyncTitle] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<{ success: boolean; url?: string; error?: string } | null>(null);
+  const [syncResult, setSyncResult] = useState<{
+    success: boolean;
+    url?: string;
+    error?: string;
+  } | null>(null);
 
   // Load Notion config on mount
   useEffect(() => {
@@ -283,11 +320,9 @@ export default function SessionNotes() {
     setPagesError(null);
     try {
       let url = `/api/notion?token=${encodeURIComponent(notionToken)}`;
-      
-      const useWorkspaceSearch = 
-        notionParentType === "workspace" || 
-        !notionParentId || 
-        debouncedSearchTerm.trim() !== "";
+
+      const useWorkspaceSearch =
+        notionParentType === "workspace" || !notionParentId || debouncedSearchTerm.trim() !== "";
 
       if (useWorkspaceSearch) {
         url += `&workspaceSearch=true`;
@@ -334,7 +369,7 @@ export default function SessionNotes() {
           setPageContent(data.markdown || "");
           if (data.parentDb && navigationHistory.length === 0) {
             setNavigationHistory([
-              { id: data.parentDb.id, title: data.parentDb.title, isDb: true }
+              { id: data.parentDb.id, title: data.parentDb.title, isDb: true },
             ]);
           }
         } else {
@@ -354,7 +389,7 @@ export default function SessionNotes() {
   useEffect(() => {
     if (activeMode === "page" && !selectedPageId && notionPages.length > 0) {
       const timelinePage = notionPages.find((p) =>
-        p.title?.toLowerCase().includes("campaign timeline")
+        p.title?.toLowerCase().includes("campaign timeline"),
       );
       if (timelinePage) {
         setSelectedPageId(timelinePage.id);
@@ -411,7 +446,11 @@ export default function SessionNotes() {
     try {
       localStorage.setItem(
         "mob.notion-config.v1",
-        JSON.stringify({ token: notionToken, parentId: notionParentId, parentType: notionParentType })
+        JSON.stringify({
+          token: notionToken,
+          parentId: notionParentId,
+          parentType: notionParentType,
+        }),
       );
       alert("Notion configuration saved successfully!");
       setShowNotionSettings(false);
@@ -440,9 +479,7 @@ export default function SessionNotes() {
 
   const handleToggleTodo = (id: string) => {
     setTodos((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, completed: !item.completed } : item
-      )
+      prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item)),
     );
   };
 
@@ -457,7 +494,9 @@ export default function SessionNotes() {
   };
 
   const handleClearNotes = () => {
-    if (window.confirm("Are you sure you want to clear your session notes? This cannot be undone.")) {
+    if (
+      window.confirm("Are you sure you want to clear your session notes? This cannot be undone.")
+    ) {
       setNotes("");
       localStorage.setItem(NOTE_KEY, "");
       setIsSaving(false);
@@ -514,7 +553,7 @@ export default function SessionNotes() {
   const handleLoadPageIntoScratchpad = () => {
     if (
       window.confirm(
-        `Are you sure you want to load "${selectedPageTitle}" into your scratchpad?\nWarning: This will overwrite your current active session notes.`
+        `Are you sure you want to load "${selectedPageTitle}" into your scratchpad?\nWarning: This will overwrite your current active session notes.`,
       )
     ) {
       setNotes(pageContent);
@@ -537,7 +576,6 @@ export default function SessionNotes() {
   return (
     <>
       <div className="flex flex-col lg:flex-row gap-6 items-stretch min-h-[600px]">
-        
         {/* LEFT COLUMN: Sidebar (Campaign Codex) */}
         <div className="w-full lg:w-[28%] flex flex-col card-arcane rounded-xl border border-border p-5 shadow-xl select-none min-h-[500px] flex-shrink-0">
           <div className="flex items-center justify-between border-b border-border/40 pb-3 mb-4">
@@ -594,7 +632,10 @@ export default function SessionNotes() {
 
           {/* Config Settings inside Sidebar */}
           {showNotionSettings && (
-            <form onSubmit={saveNotionConfig} className="mb-4 rounded-lg bg-secondary/15 border border-border/30 p-4 space-y-3 animate-fade-in select-text">
+            <form
+              onSubmit={saveNotionConfig}
+              className="mb-4 rounded-lg bg-secondary/15 border border-border/30 p-4 space-y-3 animate-fade-in select-text"
+            >
               <h3 className="text-xs font-bold uppercase tracking-wider text-gold flex items-center gap-1">
                 <Settings size={12} />
                 Notion Configuration
@@ -751,8 +792,8 @@ export default function SessionNotes() {
                           parentType === "page_id"
                             ? p.parent.page_id
                             : parentType === "database_id"
-                            ? p.parent.database_id
-                            : null;
+                              ? p.parent.database_id
+                              : null;
 
                         if (parentId && pageMap.has(parentId)) {
                           pageMap.get(parentId).children.push(p);
@@ -774,7 +815,9 @@ export default function SessionNotes() {
                       let displayNodes = roots;
                       if (notionParentType !== "workspace" && notionParentId) {
                         const targetKey = Array.from(pageMap.keys()).find(
-                          (k) => k.replace(/-/g, "").toLowerCase() === notionParentId.replace(/-/g, "").toLowerCase()
+                          (k) =>
+                            k.replace(/-/g, "").toLowerCase() ===
+                            notionParentId.replace(/-/g, "").toLowerCase(),
                         );
                         if (targetKey) {
                           displayNodes = pageMap.get(targetKey).children;
@@ -785,12 +828,12 @@ export default function SessionNotes() {
                         displayNodes.sort((a: any, b: any) => {
                           const aTitle = a.title?.toLowerCase() || "";
                           const bTitle = b.title?.toLowerCase() || "";
-                          
+
                           const isATimeline = aTitle.includes("campaign timeline");
                           const isBTimeline = bTitle.includes("campaign timeline");
                           const isAMotherOfBob = aTitle.includes("mother of bob");
                           const isBMotherOfBob = bTitle.includes("mother of bob");
-                          
+
                           if (isATimeline && !isBTimeline) return -1;
                           if (!isATimeline && isBTimeline) return 1;
 
@@ -818,16 +861,21 @@ export default function SessionNotes() {
                             setSelectedPageId(id);
                             setSelectedPageTitle(title);
                             setSelectedPageIsDb(!!isDb);
-                            
+
                             // Check if selected page has a parent database and prepopulate history
-                            const selectedPage = notionPages.find(p => p.id === id);
-                            if (selectedPage?.parent?.type === "database_id" && selectedPage.parent.database_id) {
+                            const selectedPage = notionPages.find((p) => p.id === id);
+                            if (
+                              selectedPage?.parent?.type === "database_id" &&
+                              selectedPage.parent.database_id
+                            ) {
                               const parentDbId = selectedPage.parent.database_id;
                               const cleanParentId = parentDbId.replace(/-/g, "").toLowerCase();
-                              const parentDb = notionPages.find(p => p.id.replace(/-/g, "").toLowerCase() === cleanParentId);
+                              const parentDb = notionPages.find(
+                                (p) => p.id.replace(/-/g, "").toLowerCase() === cleanParentId,
+                              );
                               if (parentDb) {
                                 setNavigationHistory([
-                                  { id: parentDb.id, title: parentDb.title, isDb: true }
+                                  { id: parentDb.id, title: parentDb.title, isDb: true },
                                 ]);
                                 return;
                               }
@@ -858,12 +906,21 @@ export default function SessionNotes() {
                     : "border-border/40 bg-secondary/10 hover:bg-secondary/15 hover:border-border/60 text-foreground"
                 }`}
               >
-                <FileText size={16} className={activeMode === "scratchpad" ? "text-gold" : "text-muted-foreground"} />
+                <FileText
+                  size={16}
+                  className={activeMode === "scratchpad" ? "text-gold" : "text-muted-foreground"}
+                />
                 <div className="min-w-0 flex-1 flex items-center justify-between">
-                  <span className="text-xs uppercase tracking-wider font-bold">Session Scratchpad</span>
+                  <span className="text-xs uppercase tracking-wider font-bold">
+                    Session Scratchpad
+                  </span>
                   <span className="flex h-2 w-2 relative">
-                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeMode === "scratchpad" ? "bg-gold" : "bg-emerald-400"}`}></span>
-                    <span className={`relative inline-flex rounded-full h-2 w-2 ${activeMode === "scratchpad" ? "bg-gold" : "bg-emerald-400"}`}></span>
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeMode === "scratchpad" ? "bg-gold" : "bg-emerald-400"}`}
+                    ></span>
+                    <span
+                      className={`relative inline-flex rounded-full h-2 w-2 ${activeMode === "scratchpad" ? "bg-gold" : "bg-emerald-400"}`}
+                    ></span>
                   </span>
                 </div>
               </button>
@@ -873,11 +930,9 @@ export default function SessionNotes() {
 
         {/* RIGHT COLUMN: Work Area */}
         <div className="flex-1 flex flex-col card-arcane rounded-xl border border-border p-6 shadow-xl transition-all duration-300 min-h-[500px] min-w-0">
-          
           {/* VIEW MODE 1: Scratchpad Workspace */}
           {activeMode === "scratchpad" && (
             <div className="flex-1 flex flex-col">
-              
               {/* Header */}
               <div className="flex items-center justify-between border-b border-border/40 pb-3 mb-4 select-none">
                 <div className="flex items-center gap-3">
@@ -933,24 +988,36 @@ export default function SessionNotes() {
                           Draft Snapshots
                         </span>
                         {history.length === 0 ? (
-                          <p className="text-[10px] text-muted-foreground italic text-center py-4">No snapshots saved yet.</p>
+                          <p className="text-[10px] text-muted-foreground italic text-center py-4">
+                            No snapshots saved yet.
+                          </p>
                         ) : (
                           <div className="space-y-1.5">
                             {history.map((snapshot, idx) => {
-                              const timeStr = new Date(snapshot.timestamp).toLocaleTimeString(undefined, {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              });
-                              const dateStr = new Date(snapshot.timestamp).toLocaleDateString(undefined, {
-                                month: "short",
-                                day: "numeric",
-                              });
+                              const timeStr = new Date(snapshot.timestamp).toLocaleTimeString(
+                                undefined,
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              );
+                              const dateStr = new Date(snapshot.timestamp).toLocaleDateString(
+                                undefined,
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              );
                               return (
                                 <button
                                   key={idx}
                                   type="button"
                                   onClick={() => {
-                                    if (window.confirm("Restore this draft snapshot? Your current active notes will be overwritten.")) {
+                                    if (
+                                      window.confirm(
+                                        "Restore this draft snapshot? Your current active notes will be overwritten.",
+                                      )
+                                    ) {
                                       setNotes(snapshot.content);
                                       localStorage.setItem(NOTE_KEY, snapshot.content);
                                       setShowHistoryMenu(false);
@@ -959,7 +1026,9 @@ export default function SessionNotes() {
                                   className="w-full text-left p-2 rounded hover:bg-gold/5 border border-transparent hover:border-gold/20 transition-all duration-150 block"
                                 >
                                   <div className="flex items-center justify-between text-[10px] font-bold text-gold mb-0.5">
-                                    <span>{dateStr} - {timeStr}</span>
+                                    <span>
+                                      {dateStr} - {timeStr}
+                                    </span>
                                     <span className="text-[8px] font-mono text-muted-foreground">
                                       {snapshot.content.length} chars
                                     </span>
@@ -1017,9 +1086,10 @@ export default function SessionNotes() {
 
               {/* Nested Workspace */}
               <div className="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
-                
                 {/* Journal Editor (left 7 cols or full 12 cols if expanded) */}
-                <div className={`${isEditorExpanded ? "xl:col-span-12" : "xl:col-span-7"} flex flex-col min-h-[300px]`}>
+                <div
+                  className={`${isEditorExpanded ? "xl:col-span-12" : "xl:col-span-7"} flex flex-col min-h-[300px]`}
+                >
                   {/* Markdown Formatting Toolbar */}
                   <div className="flex flex-wrap items-center gap-1 bg-secondary/15 border border-border/40 border-b-0 rounded-t-lg px-3 py-2 select-none">
                     <button
@@ -1097,139 +1167,144 @@ export default function SessionNotes() {
                 {/* Quest Tracker (right 5 cols) */}
                 {!isEditorExpanded && (
                   <div className="xl:col-span-5 flex flex-col border-t xl:border-t-0 xl:border-l border-border/20 pt-5 xl:pt-0 xl:pl-6">
-                  <div className="flex items-center justify-between border-b border-border/20 pb-2 mb-3 select-none">
-                    <div className="flex items-center gap-1.5">
-                      <ListTodo size={14} className="text-gold" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Quests & Tasks</span>
-                    </div>
-                    <span className="rounded-full bg-gold/10 border border-gold/25 px-1.5 py-0.5 text-[9px] font-bold text-gold font-mono">
-                      {activeCount} Active
-                    </span>
-                  </div>
-
-                  {/* Add quest form */}
-                  <form onSubmit={handleAddTodo} className="space-y-2 mb-4 select-text">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={newTodoText}
-                        onChange={(e) => setNewTodoText(e.target.value)}
-                        placeholder="Log a new quest..."
-                        className="w-full rounded-lg bg-secondary/15 border border-border/40 focus:border-gold/50 focus:ring-1 focus:ring-gold/20 pl-3 pr-8 py-1.5 text-xs text-foreground placeholder-muted-foreground/50 focus:outline-none transition-all duration-300"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!newTodoText.trim()}
-                        className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-md bg-gold/15 hover:bg-gold/25 border border-gold/30 text-gold disabled:opacity-40 disabled:hover:bg-gold/15 transition-all duration-200 cursor-pointer"
-                      >
-                        <Plus size={14} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      {(Object.keys(BADGES) as Array<TodoItem["type"]>).map((type) => (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => setNewTodoType(type)}
-                          className={`rounded border px-1.5 py-0.5 text-[8px] font-medium transition-all duration-200 cursor-pointer capitalize ${
-                            newTodoType === type
-                              ? "bg-gold/20 border-gold text-gold"
-                              : "bg-secondary/20 border-border/30 text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {BADGES[type].label.split(" ")[0]}
-                        </button>
-                      ))}
-                    </div>
-                  </form>
-
-                  {/* Filter Toolbar */}
-                  <div className="flex items-center justify-between border-b border-border/20 pb-1.5 mb-2.5 text-[10px] select-none">
-                    <div className="flex items-center gap-1">
-                      {(["all", "active", "completed"] as const).map((mode) => (
-                        <button
-                          key={mode}
-                          onClick={() => setFilter(mode)}
-                          className={`px-1.5 py-0.5 capitalize rounded transition-colors duration-200 cursor-pointer font-medium ${
-                            filter === mode
-                              ? "text-gold bg-gold/5 font-semibold"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {mode}
-                        </button>
-                      ))}
-                    </div>
-                    {todos.some((t) => t.completed) && (
-                      <button
-                        onClick={handleClearCompleted}
-                        className="font-bold uppercase tracking-wider text-rose-400/80 hover:text-rose-400 transition-colors duration-200 cursor-pointer"
-                      >
-                        Clear Done
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Quest Scrollable List */}
-                  <div className="flex-1 overflow-y-auto max-h-[260px] space-y-1.5 pr-1 custom-scrollbar">
-                    {filteredTodos.length === 0 ? (
-                      <div className="text-center py-6 select-none">
-                        <p className="text-[10px] text-muted-foreground italic">
-                          No quests found.
-                        </p>
+                    <div className="flex items-center justify-between border-b border-border/20 pb-2 mb-3 select-none">
+                      <div className="flex items-center gap-1.5">
+                        <ListTodo size={14} className="text-gold" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                          Quests & Tasks
+                        </span>
                       </div>
-                    ) : (
-                      filteredTodos.map((todo) => {
-                        const badge = BADGES[todo.type];
-                        return (
-                          <div
-                            key={todo.id}
-                            className={`group flex items-start justify-between gap-2.5 rounded-lg border p-2.5 transition-all duration-300 ${
-                              todo.completed
-                                ? "bg-secondary/5 border-border/20 opacity-60"
-                                : "bg-secondary/10 border-border/30 hover:border-border/50 hover:bg-secondary/15"
+                      <span className="rounded-full bg-gold/10 border border-gold/25 px-1.5 py-0.5 text-[9px] font-bold text-gold font-mono">
+                        {activeCount} Active
+                      </span>
+                    </div>
+
+                    {/* Add quest form */}
+                    <form onSubmit={handleAddTodo} className="space-y-2 mb-4 select-text">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={newTodoText}
+                          onChange={(e) => setNewTodoText(e.target.value)}
+                          placeholder="Log a new quest..."
+                          className="w-full rounded-lg bg-secondary/15 border border-border/40 focus:border-gold/50 focus:ring-1 focus:ring-gold/20 pl-3 pr-8 py-1.5 text-xs text-foreground placeholder-muted-foreground/50 focus:outline-none transition-all duration-300"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newTodoText.trim()}
+                          className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-md bg-gold/15 hover:bg-gold/25 border border-gold/30 text-gold disabled:opacity-40 disabled:hover:bg-gold/15 transition-all duration-200 cursor-pointer"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {(Object.keys(BADGES) as Array<TodoItem["type"]>).map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setNewTodoType(type)}
+                            className={`rounded border px-1.5 py-0.5 text-[8px] font-medium transition-all duration-200 cursor-pointer capitalize ${
+                              newTodoType === type
+                                ? "bg-gold/20 border-gold text-gold"
+                                : "bg-secondary/20 border-border/30 text-muted-foreground hover:text-foreground"
                             }`}
                           >
-                            <div className="flex items-start gap-2 flex-1 min-w-0">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleTodo(todo.id)}
-                                className="mt-0.5 text-muted-foreground hover:text-gold transition-colors duration-200 cursor-pointer flex-shrink-0"
-                              >
-                                {todo.completed ? (
-                                  <CheckCircle2 size={14} className="text-gold" />
-                                ) : (
-                                  <Circle size={14} />
-                                )}
-                              </button>
-                              <div className="min-w-0 flex-1">
-                                <p className={`text-xs leading-normal break-words text-foreground select-text ${todo.completed ? "line-through text-muted-foreground" : ""}`}>
-                                  {todo.text}
-                                </p>
-                                <div className="flex items-center gap-1.5 mt-1 select-none">
-                                  <span className={`rounded-full border px-1 py-0.2 text-[7px] font-bold tracking-wide uppercase ${badge.color}`}>
-                                    {badge.label.split(" ")[0]}
-                                  </span>
+                            {BADGES[type].label.split(" ")[0]}
+                          </button>
+                        ))}
+                      </div>
+                    </form>
+
+                    {/* Filter Toolbar */}
+                    <div className="flex items-center justify-between border-b border-border/20 pb-1.5 mb-2.5 text-[10px] select-none">
+                      <div className="flex items-center gap-1">
+                        {(["all", "active", "completed"] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            onClick={() => setFilter(mode)}
+                            className={`px-1.5 py-0.5 capitalize rounded transition-colors duration-200 cursor-pointer font-medium ${
+                              filter === mode
+                                ? "text-gold bg-gold/5 font-semibold"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {mode}
+                          </button>
+                        ))}
+                      </div>
+                      {todos.some((t) => t.completed) && (
+                        <button
+                          onClick={handleClearCompleted}
+                          className="font-bold uppercase tracking-wider text-rose-400/80 hover:text-rose-400 transition-colors duration-200 cursor-pointer"
+                        >
+                          Clear Done
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Quest Scrollable List */}
+                    <div className="flex-1 overflow-y-auto max-h-[260px] space-y-1.5 pr-1 custom-scrollbar">
+                      {filteredTodos.length === 0 ? (
+                        <div className="text-center py-6 select-none">
+                          <p className="text-[10px] text-muted-foreground italic">
+                            No quests found.
+                          </p>
+                        </div>
+                      ) : (
+                        filteredTodos.map((todo) => {
+                          const badge = BADGES[todo.type];
+                          return (
+                            <div
+                              key={todo.id}
+                              className={`group flex items-start justify-between gap-2.5 rounded-lg border p-2.5 transition-all duration-300 ${
+                                todo.completed
+                                  ? "bg-secondary/5 border-border/20 opacity-60"
+                                  : "bg-secondary/10 border-border/30 hover:border-border/50 hover:bg-secondary/15"
+                              }`}
+                            >
+                              <div className="flex items-start gap-2 flex-1 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleTodo(todo.id)}
+                                  className="mt-0.5 text-muted-foreground hover:text-gold transition-colors duration-200 cursor-pointer flex-shrink-0"
+                                >
+                                  {todo.completed ? (
+                                    <CheckCircle2 size={14} className="text-gold" />
+                                  ) : (
+                                    <Circle size={14} />
+                                  )}
+                                </button>
+                                <div className="min-w-0 flex-1">
+                                  <p
+                                    className={`text-xs leading-normal break-words text-foreground select-text ${todo.completed ? "line-through text-muted-foreground" : ""}`}
+                                  >
+                                    {todo.text}
+                                  </p>
+                                  <div className="flex items-center gap-1.5 mt-1 select-none">
+                                    <span
+                                      className={`rounded-full border px-1 py-0.2 text-[7px] font-bold tracking-wide uppercase ${badge.color}`}
+                                    >
+                                      {badge.label.split(" ")[0]}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTodo(todo.id)}
+                                className="text-muted-foreground hover:text-rose-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 cursor-pointer flex-shrink-0 p-0.5"
+                                title="Delete quest"
+                              >
+                                <Trash2 size={12} />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteTodo(todo.id)}
-                              className="text-muted-foreground hover:text-rose-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity duration-200 cursor-pointer flex-shrink-0 p-0.5"
-                              title="Delete quest"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        );
-                      })
-                    )}
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-
+                )}
               </div>
             </div>
           )}
@@ -1237,7 +1312,6 @@ export default function SessionNotes() {
           {/* VIEW MODE 2: Read-Only Notion Page */}
           {activeMode === "page" && selectedPageId && (
             <div className="flex-1 flex flex-col select-text">
-              
               {/* Header */}
               <div className="flex items-center justify-between border-b border-border/40 pb-3 mb-4 select-none">
                 <div className="flex items-center gap-3 min-w-0">
@@ -1258,7 +1332,10 @@ export default function SessionNotes() {
                     >
                       <ChevronRight size={12} className="transform rotate-180 text-gold" />
                       <span className="max-w-[150px] truncate">
-                        Back to {navigationHistory[navigationHistory.length - 1]?.title ? parseInlineStyles(navigationHistory[navigationHistory.length - 1].title) : "Codex"}
+                        Back to{" "}
+                        {navigationHistory[navigationHistory.length - 1]?.title
+                          ? parseInlineStyles(navigationHistory[navigationHistory.length - 1].title)
+                          : "Codex"}
                       </span>
                     </button>
                   )}
@@ -1317,7 +1394,11 @@ export default function SessionNotes() {
                         if (selectedPageId && selectedPageTitle) {
                           setNavigationHistory((prev) => [
                             ...prev,
-                            { id: selectedPageId, title: selectedPageTitle, isDb: selectedPageIsDb },
+                            {
+                              id: selectedPageId,
+                              title: selectedPageTitle,
+                              isDb: selectedPageIsDb,
+                            },
                           ]);
                         }
                         setActiveMode("page");
@@ -1331,7 +1412,6 @@ export default function SessionNotes() {
               </div>
             </div>
           )}
-
         </div>
       </div>
 
@@ -1369,7 +1449,10 @@ export default function SessionNotes() {
                 </div>
 
                 <p className="text-[10px] text-muted-foreground leading-normal">
-                  This will create a new page named <strong className="text-foreground">"{syncTitle}"</strong> inside your specified Notion {notionParentType === "database" ? "database" : "page"} and sync all markdown journal notes.
+                  This will create a new page named{" "}
+                  <strong className="text-foreground">"{syncTitle}"</strong> inside your specified
+                  Notion {notionParentType === "database" ? "database" : "page"} and sync all
+                  markdown journal notes.
                 </p>
 
                 <div className="flex justify-end gap-2 pt-2 border-t border-border/20">
@@ -1406,7 +1489,9 @@ export default function SessionNotes() {
                       <Check size={20} />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="font-bold text-xs text-foreground">Sync Completed Successfully!</h4>
+                      <h4 className="font-bold text-xs text-foreground">
+                        Sync Completed Successfully!
+                      </h4>
                       <p className="text-[10px] text-muted-foreground">
                         Your journal notes have been published to Notion.
                       </p>
@@ -1468,13 +1553,16 @@ export default function SessionNotes() {
 }
 
 // Parse inline styles: bold (**text**), italic (*text*), and markdown pageId links ([Title](pageId:ID))
-function parseInlineStyles(text: string, onSelectPage?: (id: string, title: string) => void): React.ReactNode {
+function parseInlineStyles(
+  text: string,
+  onSelectPage?: (id: string, title: string) => void,
+): React.ReactNode {
   if (!text) return "";
 
   // Split by pageId links: [Title](pageId:ID)
   const linkRegex = /\[(.*?)\]\(pageId:(.*?)\)/g;
   const parts = text.split(linkRegex);
-  
+
   if (parts.length === 1) {
     // No links, just parse bold/italic
     return parseBoldItalic(text);
@@ -1486,7 +1574,7 @@ function parseInlineStyles(text: string, onSelectPage?: (id: string, title: stri
     if (parts[i]) {
       elements.push(<span key={`text-${i}`}>{parseBoldItalic(parts[i])}</span>);
     }
-    
+
     // Add link button
     if (i + 2 < parts.length) {
       const linkTitle = parts[i + 1];
@@ -1499,13 +1587,13 @@ function parseInlineStyles(text: string, onSelectPage?: (id: string, title: stri
             className="text-purple-400 hover:text-purple-300 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer text-left inline mx-0.5"
           >
             {linkTitle}
-          </button>
+          </button>,
         );
       } else {
         elements.push(
           <span key={`link-${i}`} className="text-purple-400 font-semibold mx-0.5">
             {linkTitle}
-          </span>
+          </span>,
         );
       }
     }
@@ -1712,16 +1800,16 @@ function InteractiveTable({
           <tbody className="divide-y divide-border/20">
             {sortedRows.length === 0 ? (
               <tr>
-                <td colSpan={headers.length} className="p-4 text-center text-muted-foreground italic">
+                <td
+                  colSpan={headers.length}
+                  className="p-4 text-center text-muted-foreground italic"
+                >
                   No matching entries found.
                 </td>
               </tr>
             ) : (
               sortedRows.map((row, rowIdx) => (
-                <tr
-                  key={rowIdx}
-                  className="hover:bg-secondary/5 transition-colors duration-150"
-                >
+                <tr key={rowIdx} className="hover:bg-secondary/5 transition-colors duration-150">
                   {row.map((cell, cellIdx) => {
                     if (hiddenColumns.has(cellIdx)) return null;
                     return (
@@ -1791,10 +1879,13 @@ function MarkdownRenderer({
 
         const parseCellContent = (cellText: string, isFirstCol?: boolean) => {
           if (!cellText) return "";
-          
+
           // Split by newline or comma to support lists of items in a single cell
-          const parts = cellText.split(/(?:\r?\n|,)/).map(p => p.trim()).filter(Boolean);
-          
+          const parts = cellText
+            .split(/(?:\r?\n|,)/)
+            .map((p) => p.trim())
+            .filter(Boolean);
+
           const renderedParts: React.ReactNode[] = parts.map((part, idx) => {
             const match = part.match(/\[(.*?)\]\(pageId:(.*?)\)/);
             if (match) {
@@ -1821,7 +1912,11 @@ function MarkdownRenderer({
           const joinedElements: React.ReactNode[] = [];
           renderedParts.forEach((part, index) => {
             if (index > 0) {
-              joinedElements.push(<span key={`comma-${index}`} className="text-muted-foreground mr-1">,</span>);
+              joinedElements.push(
+                <span key={`comma-${index}`} className="text-muted-foreground mr-1">
+                  ,
+                </span>,
+              );
             }
             joinedElements.push(part);
           });
@@ -1835,7 +1930,7 @@ function MarkdownRenderer({
             headers={headers}
             rowsData={rowsData}
             parseCellContent={parseCellContent}
-          />
+          />,
         );
         continue;
       }
@@ -1855,7 +1950,7 @@ function MarkdownRenderer({
               </span>
             )}
             <pre className="whitespace-pre">{codeBlockLines.join("\n")}</pre>
-          </div>
+          </div>,
         );
         codeBlockLines = [];
         inCodeBlock = false;
@@ -1894,7 +1989,7 @@ function MarkdownRenderer({
                 ({isDb ? "Database" : "Subpage"})
               </span>
             </button>
-          </div>
+          </div>,
         );
         continue;
       }
@@ -1913,7 +2008,7 @@ function MarkdownRenderer({
           >
             <span className="text-lg flex-shrink-0 select-none">{emoji}</span>
             <div className="flex-1">{parseInlineStyles(text, onSelectPage)}</div>
-          </div>
+          </div>,
         );
         continue;
       }
@@ -1933,7 +2028,7 @@ function MarkdownRenderer({
           <span className={isChecked ? "line-through text-muted-foreground" : ""}>
             {parseInlineStyles(trimmed.slice(6), onSelectPage)}
           </span>
-        </div>
+        </div>,
       );
       continue;
     }
@@ -1946,14 +2041,16 @@ function MarkdownRenderer({
           className="my-3 pl-4 border-l-2 border-gold/40 italic text-foreground/80 text-sm select-text leading-relaxed"
         >
           {parseInlineStyles(trimmed.slice(2), onSelectPage)}
-        </blockquote>
+        </blockquote>,
       );
       continue;
     }
 
     // Horizontal Ruler Divider
     if (trimmed === "---") {
-      elements.push(<hr key={keyCounter++} className="my-5 border-t border-border/30 select-none" />);
+      elements.push(
+        <hr key={keyCounter++} className="my-5 border-t border-border/30 select-none" />,
+      );
       continue;
     }
 
@@ -1964,7 +2061,10 @@ function MarkdownRenderer({
         const caption = match[1];
         const url = match[2];
         elements.push(
-          <div key={keyCounter++} className="my-4 select-none flex flex-col items-center gap-2 max-w-full">
+          <div
+            key={keyCounter++}
+            className="my-4 select-none flex flex-col items-center gap-2 max-w-full"
+          >
             <img
               src={url}
               alt={caption}
@@ -1973,7 +2073,7 @@ function MarkdownRenderer({
             {caption && caption !== "image" && (
               <span className="text-[10px] text-muted-foreground italic font-sans">{caption}</span>
             )}
-          </div>
+          </div>,
         );
         continue;
       }
@@ -1987,7 +2087,7 @@ function MarkdownRenderer({
           className="font-heading text-lg font-bold tracking-tight text-gold mt-5 mb-3 border-b border-border/30 pb-2"
         >
           {parseInlineStyles(trimmed.slice(2), onSelectPage)}
-        </h1>
+        </h1>,
       );
       continue;
     }
@@ -1998,7 +2098,7 @@ function MarkdownRenderer({
           className="font-heading text-base font-bold tracking-tight text-foreground mt-4 mb-2 border-b border-border/20 pb-1"
         >
           {parseInlineStyles(trimmed.slice(3), onSelectPage)}
-        </h2>
+        </h2>,
       );
       continue;
     }
@@ -2009,7 +2109,7 @@ function MarkdownRenderer({
           className="font-heading text-sm font-bold tracking-tight text-foreground mt-3.5 mb-1.5"
         >
           {parseInlineStyles(trimmed.slice(4), onSelectPage)}
-        </h3>
+        </h3>,
       );
       continue;
     }
@@ -2023,7 +2123,7 @@ function MarkdownRenderer({
         >
           <span className="text-gold mt-1.5 text-[8px] flex-shrink-0">◆</span>
           <span>{parseInlineStyles(trimmed.slice(2), onSelectPage)}</span>
-        </div>
+        </div>,
       );
       continue;
     }
@@ -2041,7 +2141,7 @@ function MarkdownRenderer({
             {num}.
           </span>
           <span>{parseInlineStyles(trimmed.replace(/^\d+\.\s+/, ""), onSelectPage)}</span>
-        </div>
+        </div>,
       );
       continue;
     }
@@ -2056,7 +2156,7 @@ function MarkdownRenderer({
     elements.push(
       <p key={keyCounter++} className="text-sm text-foreground/80 leading-relaxed my-2">
         {parseInlineStyles(line, onSelectPage)}
-      </p>
+      </p>,
     );
   }
 
@@ -2078,7 +2178,7 @@ function highlightMatch(text: string, query: string) {
       </mark>
     ) : (
       <React.Fragment key={i}>{parseInlineStyles(part)}</React.Fragment>
-    )
+    ),
   );
 }
 
@@ -2118,7 +2218,7 @@ function TreeItem({
         </span>
       );
     } else if (item.parent?.type === "database_id") {
-      const parentDb = notionPages.find(p => p.id === item.parent?.database_id);
+      const parentDb = notionPages.find((p) => p.id === item.parent?.database_id);
       let text = "Entry";
       let colorClass = "bg-sky-500/10 text-sky-400 border-sky-500/25";
       if (parentDb) {
@@ -2135,7 +2235,9 @@ function TreeItem({
         }
       }
       badgeElement = (
-        <span className={`text-[7.5px] font-bold border px-1 py-0.2 rounded flex-shrink-0 select-none scale-90 tracking-wide uppercase ${colorClass}`}>
+        <span
+          className={`text-[7.5px] font-bold border px-1 py-0.2 rounded flex-shrink-0 select-none scale-90 tracking-wide uppercase ${colorClass}`}
+        >
           {text}
         </span>
       );
@@ -2177,7 +2279,9 @@ function TreeItem({
             ) : (
               <FileText size={11} className="text-muted-foreground/60 flex-shrink-0" />
             )}
-            <span className="text-xs truncate">{highlightMatch(item.title, searchQuery || "")}</span>
+            <span className="text-xs truncate">
+              {highlightMatch(item.title, searchQuery || "")}
+            </span>
           </div>
           {badgeElement}
         </div>

@@ -501,7 +501,7 @@ export function getFullyModifiedStats(member: PartyMember) {
       localActiveInfusions.includes("Shield, +1") ||
       localActiveInfusions.includes("Repulsion Shield");
     const hasShield = inventory.some(
-      (i) => i.equipped && (i.armorTypeId === 4 || i.definition?.armorTypeId === 4),
+      (i) => i.equipped && i.armorTypeId === 4,
     );
 
     if (hasShield) {
@@ -529,8 +529,8 @@ export function getFullyModifiedStats(member: PartyMember) {
     const hasArmor = inventory.some(
       (i) =>
         i.equipped &&
-        (i.type?.toLowerCase().includes("armor") || i.definition?.filterType === "Armor") &&
-        (i.armorTypeId ?? i.definition?.armorTypeId ?? 0) <= 3,
+        i.type?.toLowerCase().includes("armor") &&
+        (i.armorTypeId ?? 0) <= 3,
     );
 
     if (hasArmor) {
@@ -593,6 +593,7 @@ export function getFullyModifiedStats(member: PartyMember) {
   );
 
   return {
+    ...member,
     hpCurrent: localHp.hpCurrent,
     tempHp: localHp.tempHp,
     hpMax: member.hpMax,

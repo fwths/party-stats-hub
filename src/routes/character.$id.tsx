@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CharacterDetailView } from "@/components/party/CharacterDetailView";
 import { PartyGridSkeleton } from "@/components/party/PartyGrid";
-import { partyQueryOptions, readStoredIds } from "@/lib/party";
+import { partyQueryOptions, readStoredIds, getStoredIdsServer, readStoredIdsFromCookie } from "@/lib/party";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { ThemeSelector } from "@/components/party/ThemeSelector";
 
@@ -35,6 +35,20 @@ export const Route = createFileRoute("/character/$id")({
       { name: "description", content: "Detailed character sheet view." },
     ],
   }),
+  loader: async ({ params, context }) => {
+    let ids: number[] | null = null;
+    if (typeof window === "undefined") {
+      ids = await getStoredIdsServer();
+    } else {
+      ids = readStoredIdsFromCookie();
+    }
+    const charId = Number(params.id);
+    const resolvedIds = ids ?? PARTY_CHARACTER_IDS;
+    const effectiveIds = resolvedIds.includes(charId) ? resolvedIds : [...resolvedIds, charId];
+
+    await context.queryClient.ensureQueryData(partyQueryOptions(effectiveIds));
+    return { ids };
+  },
   component: CharacterDetail,
   errorComponent: ErrorFallback,
   notFoundComponent: () => (
@@ -77,8 +91,9 @@ function CharacterDetailInner() {
   const { id } = Route.useParams();
   const charId = Number(id);
 
-  // Resolve party ids from localStorage on the client, fall back to defaults.
-  const [ids, setIds] = useState<number[]>(PARTY_CHARACTER_IDS);
+  // Resolve party ids from loader on first render, fallback to localStorage/defaults.
+  const { ids: initialIds } = Route.useLoaderData() as { ids?: number[] | null };
+  const [ids, setIds] = useState<number[]>(initialIds ?? PARTY_CHARACTER_IDS);
   useEffect(() => {
     const stored = readStoredIds();
     if (stored) setIds(stored);

@@ -2,13 +2,17 @@ import { PartyMember } from "@/lib/dndbeyond.functions";
 import { Heart, ShieldAlert, Activity, Wand2, Coffee, Moon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getShortName } from "@/lib/utils";
+import { getFullyModifiedStats } from "@/lib/party-modifiers";
+import { useRouter } from "@tanstack/react-router";
 
 interface CombatDashboardProps {
   members: PartyMember[];
 }
 
 export function CombatDashboard({ members }: CombatDashboardProps) {
-  const activeMembers = members.filter((m) => !m.error);
+  const router = useRouter();
+  const modifiedMembers = members.map(getFullyModifiedStats);
+  const activeMembers = modifiedMembers.filter((m) => !m.error);
 
   if (activeMembers.length === 0) return null;
 
@@ -83,7 +87,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
       localStorage.removeItem(`party-stats:rage:${member.id}`);
     });
 
-    window.location.reload();
+    router.invalidate();
   };
 
   const handleLongRest = () => {
@@ -129,7 +133,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
     // 5. Remove custom conditions
     localStorage.removeItem("mob.conditions.v1");
 
-    window.location.reload();
+    router.invalidate();
   };
 
   // 1. HP Alerts (0 HP or Bloodied < 50% HP)

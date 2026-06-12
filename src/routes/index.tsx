@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { readStoredIds, partyQueryOptions, STORAGE_KEY } from "@/lib/party";
+import { readStoredIds, partyQueryOptions, STORAGE_KEY, getStoredIdsServer, readStoredIdsFromCookie, COOKIE_KEY } from "@/lib/party";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Users, Activity, Package, Swords, BookOpen, Info } from "lucide-react";
 
@@ -30,7 +30,16 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Live D&D party stats for MOB." },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(partyQueryOptions(null)),
+  loader: async ({ context }) => {
+    let ids: number[] | null = null;
+    if (typeof window === "undefined") {
+      ids = await getStoredIdsServer();
+    } else {
+      ids = readStoredIdsFromCookie();
+    }
+    await context.queryClient.ensureQueryData(partyQueryOptions(ids));
+    return { ids };
+  },
   component: Index,
 });
 
@@ -40,7 +49,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function Index() {
-  const [ids, setIds] = useState<number[]>(() => readStoredIds() ?? PARTY_CHARACTER_IDS);
+  const { ids: initialIds } = Route.useLoaderData();
+  const [ids, setIds] = useState<number[]>(initialIds ?? PARTY_CHARACTER_IDS);
   const [managing, setManaging] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
@@ -50,10 +60,15 @@ export default function Index() {
       const isDefault =
         ids.length === PARTY_CHARACTER_IDS.length &&
         ids.every((v, i) => v === PARTY_CHARACTER_IDS[i]);
-      if (isDefault) localStorage.removeItem(STORAGE_KEY);
-      else localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+      if (isDefault) {
+        localStorage.removeItem(STORAGE_KEY);
+        document.cookie = `${COOKIE_KEY}=; path=/; max-age=0; SameSite=Lax`;
+      } else {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+        document.cookie = `${COOKIE_KEY}=${ids.join(",")}; path=/; max-age=31536000; SameSite=Lax`;
+      }
     } catch (e) {
-      console.warn("Failed to save party IDs to localStorage:", e);
+      console.warn("Failed to save party IDs to localStorage/cookie:", e);
     }
   }, [ids]);
 

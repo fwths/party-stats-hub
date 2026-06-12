@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Award,
   BookOpen,
@@ -6641,26 +6642,30 @@ export function CharacterDetailView({
               </div>
             )}
 
-            {selectedSpell && spellbookViewMode === "codex" && (
-              <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex justify-end lg:hidden animate-fade-in">
-                <div className="w-full max-w-md bg-[#100f14]/95 border-l border-border/50 h-full flex flex-col shadow-2xl animate-slide-in-right relative">
-                  <div className="flex items-center justify-between p-3 border-b border-[#16151c]/50 bg-[#16151c]/90 shrink-0 z-10">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-                      Spell Scroll Detail
-                    </span>
-                    <button
-                      onClick={() => setSelectedSpellName(null)}
-                      className="px-2.5 py-1 text-[10px] font-bold rounded-lg border border-border/60 bg-secondary/20 hover:bg-secondary/40 text-muted-foreground hover:text-foreground cursor-pointer"
-                    >
-                      ✕ Close
-                    </button>
+            {selectedSpell &&
+              spellbookViewMode === "codex" &&
+              typeof document !== "undefined" &&
+              createPortal(
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-[150] flex justify-end lg:hidden animate-fade-in">
+                  <div className="w-full max-w-md bg-[#100f14]/95 border-l border-border/50 h-full flex flex-col shadow-2xl animate-slide-in-right relative">
+                    <div className="flex items-center justify-between p-3 border-b border-[#16151c]/50 bg-[#16151c]/90 shrink-0 z-10">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none">
+                        Spell Scroll Detail
+                      </span>
+                      <button
+                        onClick={() => setSelectedSpellName(null)}
+                        className="px-2.5 py-1 text-[10px] font-bold rounded-lg border border-border/60 bg-secondary/20 hover:bg-secondary/40 text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        ✕ Close
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto animate-fade-in relative z-10">
+                      {renderCodexDetail(selectedSpell)}
+                    </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto animate-fade-in relative z-10">
-                    {renderCodexDetail(selectedSpell)}
-                  </div>
-                </div>
-              </div>
-            )}
+                </div>,
+                document.body,
+              )}
           </div>
         </Panel>
       );

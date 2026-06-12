@@ -1,6 +1,6 @@
-# 🎲 Party Stats Hub — Mother of Bob (MOB)
+# ⚔️ D&D Campaign Hub
 
-A live D&D party dashboard that pulls character data from **D&D Beyond** and presents it in a rich, interactive web app. Built for the *Mother of Bob* campaign, but easily configurable for any party.
+A live D&D party dashboard that pulls character data from **D&D Beyond** and presents it in a rich, interactive web app. Easily configurable for any party.
 
 ## ✨ Features
 
@@ -72,14 +72,13 @@ Edit [`src/lib/party-config.ts`](src/lib/party-config.ts) to swap in your own ch
 
 ```ts
 // Each ID is the number at the end of a D&D Beyond character URL,
-// e.g. https://www.dndbeyond.com/characters/97349530 → 97349530
+// e.g. https://www.dndbeyond.com/characters/12345678 → 12345678
 // The character must have privacy set to "Public" on D&D Beyond.
 export const PARTY_CHARACTER_IDS: number[] = [
-  97349530,
-  131296315,
-  131593533,
-  132900149,
-  132940690,
+  12345678,
+  23456789,
+  34567890,
+  // ... add as many as you need
 ];
 ```
 

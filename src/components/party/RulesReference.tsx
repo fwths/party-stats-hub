@@ -486,7 +486,7 @@ export default function RulesReference() {
 
         <div className="flex-1 flex flex-col justify-between">
           <div>
-            <h1 className="text-lg font-bold text-foreground bg-gradient-to-r from-gold via-yellow-300 to-amber-500 bg-clip-text text-transparent mb-1 flex items-center gap-2">
+            <h1 className="text-lg font-bold text-foreground bg-gradient-to-r from-gold to-amber-700 dark:from-gold dark:via-yellow-300 dark:to-amber-500 bg-clip-text text-transparent mb-1 flex items-center gap-2">
               {selectedRule.name}
             </h1>
             <p className="text-xs text-muted-foreground italic mb-4 leading-relaxed border-l-2 border-gold/30 pl-3">

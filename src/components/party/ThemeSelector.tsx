@@ -56,7 +56,7 @@ export function ThemeSelector() {
                   />
                 </button>
               </TooltipTrigger>
-              <TooltipContent className="text-xs font-semibold px-2 py-1 bg-popover border border-border">
+              <TooltipContent className="text-xs font-semibold px-2 py-1 bg-popover text-popover-foreground border border-border">
                 {preset.name}
               </TooltipContent>
             </Tooltip>

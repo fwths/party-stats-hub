@@ -174,6 +174,7 @@ export const THEME_PRESETS: ThemePreset[] = [
       "--muted-foreground": "oklch(0.38 0.04 70)",
       "--accent": "oklch(0.35 0.14 25)",
       "--accent-foreground": "oklch(0.95 0.02 80)",
+      "--gold": "oklch(0.42 0.11 65)", // Darker, rich bronze-gold for excellent contrast on light backgrounds
       "--border": "oklch(0.76 0.06 80)",
       "--input": "oklch(0.82 0.05 80)",
       "--ring": "oklch(0.40 0.12 40)",

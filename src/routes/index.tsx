@@ -215,7 +215,7 @@ function PartyDashboard({ ids }: { ids: number[] }) {
           }`}
         >
           <Info size={12} />
-          <span>Rules Ref</span>
+          <span>Rules Reference</span>
         </button>
       </div>
 

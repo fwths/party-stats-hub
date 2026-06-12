@@ -204,7 +204,7 @@ function PartyDashboard({ ids }: { ids: number[] }) {
           }`}
         >
           <BookOpen size={12} />
-          <span>Session Log</span>
+          <span>Campaign Journal</span>
         </button>
         <button
           onClick={() => setActiveTab("rules")}

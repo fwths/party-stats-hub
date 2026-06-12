@@ -159,7 +159,7 @@ export function SharedInventory({ members }: SharedInventoryProps) {
               <span>Attunement Status</span>
             </div>
 
-            <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
+            <div className="space-y-2.5">
               {attunementData.map((a) => (
                 <div key={a.charId} className="text-xs">
                   <div className="flex items-center justify-between font-semibold mb-1">
@@ -213,54 +213,58 @@ export function SharedInventory({ members }: SharedInventoryProps) {
             </div>
           </div>
 
-          <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2">
+          <div className="max-h-[380px] overflow-y-auto pr-2 space-y-2">
             {filteredMagicItems.length === 0 ? (
               <p className="text-xs text-muted-foreground italic select-none">
                 {searchTerm ? "No matching items found." : "No magic items found in character inventories."}
               </p>
             ) : (
-              filteredMagicItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border border-border/40 bg-secondary/20 px-3 py-2 text-xs gap-2"
-                >
-                  <div>
-                    <div className="font-semibold text-foreground flex items-center gap-1.5 select-all">
-                      <span>{item.name}</span>
-                      {item.quantity > 1 && (
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          (x{item.quantity})
+              <>
+                {filteredMagicItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border border-border/40 bg-secondary/20 px-3 py-2 text-xs gap-2"
+                  >
+                    <div>
+                      <div className="font-semibold text-foreground flex items-center gap-1.5 select-all">
+                        <span>{item.name}</span>
+                        {item.quantity > 1 && (
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            (x{item.quantity})
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5 select-none">
+                        {item.type} • Held by: <span className="font-medium text-foreground">{getShortName(item.ownerName)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 select-none">
+                      {item.rarity && (
+                        <span
+                          className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${getRarityBadgeColor(
+                            item.rarity
+                          )}`}
+                        >
+                          {item.rarity}
+                        </span>
+                      )}
+                      {item.attuned && (
+                        <span className="rounded border border-gold/30 bg-gold/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-gold">
+                          Attuned
+                        </span>
+                      )}
+                      {item.equipped && !item.attuned && (
+                        <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Equipped
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5 select-none">
-                      {item.type} • Held by: <span className="font-medium text-foreground">{getShortName(item.ownerName)}</span>
-                    </div>
                   </div>
-
-                  <div className="flex items-center gap-2 select-none">
-                    {item.rarity && (
-                      <span
-                        className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${getRarityBadgeColor(
-                          item.rarity
-                        )}`}
-                      >
-                        {item.rarity}
-                      </span>
-                    )}
-                    {item.attuned && (
-                      <span className="rounded border border-gold/30 bg-gold/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-gold">
-                        Attuned
-                      </span>
-                    )}
-                    {item.equipped && !item.attuned && (
-                      <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        Equipped
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))
+                ))}
+                {/* Spacer to guarantee the bottom item is never cut off when scrolled all the way down */}
+                <div className="h-4" aria-hidden="true" />
+              </>
             )}
           </div>
         </div>

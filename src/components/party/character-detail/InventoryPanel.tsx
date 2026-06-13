@@ -16,6 +16,7 @@ import {
   Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { PartyMember } from "@/lib/dndbeyond.functions";
 import { Panel } from "../CharacterDetailView";
 
@@ -272,6 +273,7 @@ export default function InventoryPanel({
 
   // Add Item Modal states
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  useModalHistorySync(showAddItemModal, setShowAddItemModal, "isInventoryAddItemModalOpen");
   const [newItemName, setNewItemName] = useState("");
   const [newItemType, setNewItemType] = useState("Gear");
   const [newItemRarity, setNewItemRarity] = useState("Mundane");
@@ -539,11 +541,7 @@ export default function InventoryPanel({
                 ? Math.min(100, (member.weightCarried / displayCarryingCapacity) * 100)
                 : 0;
             const weightColor =
-              weightPct > 90
-                ? "bg-hp-critical"
-                : weightPct > 75
-                  ? "bg-hp-wounded"
-                  : "bg-primary";
+              weightPct > 90 ? "bg-hp-critical" : weightPct > 75 ? "bg-hp-wounded" : "bg-primary";
             const weightGlow =
               weightPct > 90
                 ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-critical)_70%,transparent)] animate-pulse"
@@ -729,7 +727,8 @@ export default function InventoryPanel({
                                     } else if (categoryName.includes("armor")) {
                                       const armorCat = (detail.armor_category || "").toLowerCase();
                                       if (armorCat.includes("light")) baseType = "Light Armor";
-                                      else if (armorCat.includes("medium")) baseType = "Medium Armor";
+                                      else if (armorCat.includes("medium"))
+                                        baseType = "Medium Armor";
                                       else if (armorCat.includes("heavy")) baseType = "Heavy Armor";
                                       else if (armorCat.includes("shield")) baseType = "Shield";
                                     } else if (categoryName.includes("potion")) {
@@ -805,7 +804,8 @@ export default function InventoryPanel({
                                 weight: item.weight,
                                 cost: item.cost,
                                 damage: item.damage || undefined,
-                                armorClass: item.armorClass !== undefined ? item.armorClass : undefined,
+                                armorClass:
+                                  item.armorClass !== undefined ? item.armorClass : undefined,
                                 armorTypeId,
                                 description: item.description || undefined,
                                 isLocalCustom: true,
@@ -976,12 +976,14 @@ export default function InventoryPanel({
                             </span>
                             <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground tracking-wide font-medium uppercase truncate">
                               <span>{item.type}</span>
-                              {item.rarity && item.rarity !== "Mundane" && item.rarity !== "Common" && (
-                                <>
-                                  <span>•</span>
-                                  <span className={theme.text}>{item.rarity}</span>
-                                </>
-                              )}
+                              {item.rarity &&
+                                item.rarity !== "Mundane" &&
+                                item.rarity !== "Common" && (
+                                  <>
+                                    <span>•</span>
+                                    <span className={theme.text}>{item.rarity}</span>
+                                  </>
+                                )}
                             </div>
                           </div>
 
@@ -1205,7 +1207,8 @@ export default function InventoryPanel({
                       <div
                         className="bg-secondary/20 border border-border/30 rounded-lg p-3 max-h-[200px] overflow-y-auto custom-scrollbar leading-normal text-muted-foreground/90 prose-arcanum"
                         dangerouslySetInnerHTML={{
-                          __html: activeInvItem.description || "No description available for this item.",
+                          __html:
+                            activeInvItem.description || "No description available for this item.",
                         }}
                       />
                     </div>
@@ -1292,14 +1295,18 @@ export default function InventoryPanel({
                             let baseType = "Gear";
                             if (item.apiCategory === "magic-items") {
                               baseType = "Wondrous Item";
-                              const categoryName = (detail.equipment_category?.name || "").toLowerCase();
+                              const categoryName = (
+                                detail.equipment_category?.name || ""
+                              ).toLowerCase();
                               if (categoryName.includes("ring")) baseType = "Ring";
                               else if (categoryName.includes("scroll")) baseType = "Scroll";
                               else if (categoryName.includes("potion")) baseType = "Potion";
                               else if (categoryName.includes("shield")) baseType = "Shield";
                               else if (categoryName.includes("weapon")) baseType = "Weapon";
                             } else {
-                              const categoryName = (detail.equipment_category?.name || "").toLowerCase();
+                              const categoryName = (
+                                detail.equipment_category?.name || ""
+                              ).toLowerCase();
                               if (categoryName.includes("weapon")) {
                                 baseType = "Weapon";
                               } else if (categoryName.includes("armor")) {
@@ -1334,9 +1341,13 @@ export default function InventoryPanel({
                             }
                             setNewItemCost(calculatedCost);
                             setNewItemDamage(detail.damage?.damage_dice || "");
-                            setNewItemAc(detail.armor_class?.base !== undefined ? detail.armor_class.base : "");
+                            setNewItemAc(
+                              detail.armor_class?.base !== undefined ? detail.armor_class.base : "",
+                            );
                             setNewItemDesc(
-                              Array.isArray(detail.desc) ? detail.desc.join("\n") : detail.desc || "",
+                              Array.isArray(detail.desc)
+                                ? detail.desc.join("\n")
+                                : detail.desc || "",
                             );
                           }
                         } catch (e) {
@@ -1370,7 +1381,9 @@ export default function InventoryPanel({
                           </>
                         )}
                         <span>•</span>
-                        <span className="text-[9px] italic text-muted-foreground/60">{item.source}</span>
+                        <span className="text-[9px] italic text-muted-foreground/60">
+                          {item.source}
+                        </span>
                       </div>
                     </div>
                   </button>
@@ -1470,13 +1483,19 @@ export default function InventoryPanel({
                     onChange={(e) => setNewItemRarity(e.target.value)}
                     className="rounded-lg border border-border bg-[#0d0d0f] p-2 text-foreground focus:border-accent focus:outline-none transition-colors"
                   >
-                    {["Mundane", "Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact"].map(
-                      (rar) => (
-                        <option key={rar} value={rar}>
-                          {rar}
-                        </option>
-                      ),
-                    )}
+                    {[
+                      "Mundane",
+                      "Common",
+                      "Uncommon",
+                      "Rare",
+                      "Very Rare",
+                      "Legendary",
+                      "Artifact",
+                    ].map((rar) => (
+                      <option key={rar} value={rar}>
+                        {rar}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

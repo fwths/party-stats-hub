@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import {
   Plus,
   Trash2,
@@ -266,6 +267,7 @@ export default function SessionNotes() {
 
   // --- 6. Sync Modal State ---
   const [showSyncModal, setShowSyncModal] = useState(false);
+  useModalHistorySync(showSyncModal, setShowSyncModal, "isSessionNotesSyncModalOpen");
   const [syncTitle, setSyncTitle] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{

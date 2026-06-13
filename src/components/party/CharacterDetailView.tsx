@@ -39,6 +39,7 @@ import {
   Shirt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   PartyMember,
@@ -2606,6 +2607,15 @@ export function CharacterDetailView({
   const [invCategory, setInvCategory] = useState("all");
   const [selectedInvItem, setSelectedInvItem] = useState<any | null>(null);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  useModalHistorySync(
+    !!restModal,
+    (open) => {
+      if (!open) setRestModal(null);
+    },
+    "isRestModalOpen",
+  );
+  useModalHistorySync(showSyncConfirm, setShowSyncConfirm, "isSyncConfirmOpen");
+  useModalHistorySync(showAddItemModal, setShowAddItemModal, "isAddItemModalOpen");
   const [newItemName, setNewItemName] = useState("");
   const [newItemType, setNewItemType] = useState("Gear");
   const [newItemRarity, setNewItemRarity] = useState("Mundane");
@@ -7126,7 +7136,10 @@ export function CharacterDetailView({
                 </div>
               )}
 
-              {(newItemType === "Shield" || newItemType.includes("Armor") || newItemType === "Ring" || newItemType === "Wondrous Item") && (
+              {(newItemType === "Shield" ||
+                newItemType.includes("Armor") ||
+                newItemType === "Ring" ||
+                newItemType === "Wondrous Item") && (
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1 select-none">
                     Base AC / AC Bonus

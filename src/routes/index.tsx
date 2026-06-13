@@ -2,7 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { readStoredIds, partyQueryOptions, STORAGE_KEY, getStoredIdsServer, readStoredIdsFromCookie, COOKIE_KEY } from "@/lib/party";
+import {
+  readStoredIds,
+  partyQueryOptions,
+  STORAGE_KEY,
+  getStoredIdsServer,
+  readStoredIdsFromCookie,
+  COOKIE_KEY,
+} from "@/lib/party";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Users, Activity, Package, Swords, BookOpen, Info } from "lucide-react";
 
@@ -12,6 +19,7 @@ import { PartyGrid, PartyGridSkeleton } from "@/components/party/PartyGrid";
 import { ManagePartyDialog } from "@/components/party/ManagePartyDialog";
 import { ThemeSelector } from "@/components/party/ThemeSelector";
 import { CombatDashboard } from "@/components/party/CombatDashboard";
+import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { GroupDiceRoller } from "@/components/party/GroupDiceRoller";
 import { SharedInventory } from "@/components/party/SharedInventory";
 import { AmbientAudio } from "@/components/party/AmbientAudio";
@@ -52,6 +60,7 @@ export default function Index() {
   const { ids: initialIds } = Route.useLoaderData();
   const [ids, setIds] = useState<number[]>(initialIds ?? PARTY_CHARACTER_IDS);
   const [managing, setManaging] = useState(false);
+  useModalHistorySync(managing, setManaging, "isManagingParty");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
 

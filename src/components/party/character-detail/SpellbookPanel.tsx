@@ -19,6 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PartyMember, PreparedSpell, SpellSlotLevel } from "@/lib/dndbeyond.functions";
 import { Panel, CustomSelect } from "../CharacterDetailView";
@@ -551,7 +552,9 @@ interface SpellbookPanelProps {
   setSelectedMetamagicName: React.Dispatch<React.SetStateAction<string | null>>;
   handleCastSpell: (spell: PreparedSpell, isPact: boolean, slotLevel: number) => void;
   getMetamagicCost: (name: string, spellLevel: number) => number;
-  getCastSlotOptions: (spellLevel: number) => Array<{ level: number; max: number; used: number; isPact: boolean }>;
+  getCastSlotOptions: (
+    spellLevel: number,
+  ) => Array<{ level: number; max: number; used: number; isPact: boolean }>;
   parseComponentCost: (desc?: string) => { cost: number; item: string } | null;
 }
 
@@ -588,6 +591,15 @@ export default function SpellbookPanel({
   const [selectedSpellName, setSelectedSpellName] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
+  useModalHistorySync(
+    !!selectedSpellName,
+    (open) => {
+      if (!open) setSelectedSpellName(null);
+    },
+    "isSpellOpen",
+    typeof window !== "undefined" ? window.innerWidth < 1024 : true
+  );
+
   const isStarsDruid = useMemo(() => {
     return (
       member.classes.toLowerCase().includes("druid") &&
@@ -618,13 +630,17 @@ export default function SpellbookPanel({
     return member.cantrips.filter((c) => {
       if (spellSearch && !c.name.toLowerCase().includes(spellSearch.toLowerCase())) return false;
       if (spellLevelFilter !== "all" && spellLevelFilter !== 0) return false;
-      if (spellSchoolFilter !== "all" && c.school?.toLowerCase() !== spellSchoolFilter) return false;
+      if (spellSchoolFilter !== "all" && c.school?.toLowerCase() !== spellSchoolFilter)
+        return false;
       if (spellActivationFilter !== "all") {
         const actText = getActivationText(c.activation).toLowerCase();
         if (spellActivationFilter === "action" && actText !== "action") return false;
         if (spellActivationFilter === "bonus" && actText !== "bonus action") return false;
         if (spellActivationFilter === "reaction" && actText !== "reaction") return false;
-        if (spellActivationFilter === "other" && ["action", "bonus action", "reaction"].includes(actText))
+        if (
+          spellActivationFilter === "other" &&
+          ["action", "bonus action", "reaction"].includes(actText)
+        )
           return false;
       }
       if (spellConcentrationFilter && !c.concentration) return false;
@@ -655,7 +671,10 @@ export default function SpellbookPanel({
         if (spellActivationFilter === "action" && actText !== "action") return;
         if (spellActivationFilter === "bonus" && actText !== "bonus action") return;
         if (spellActivationFilter === "reaction" && actText !== "reaction") return;
-        if (spellActivationFilter === "other" && ["action", "bonus action", "reaction"].includes(actText))
+        if (
+          spellActivationFilter === "other" &&
+          ["action", "bonus action", "reaction"].includes(actText)
+        )
           return;
       }
       if (spellConcentrationFilter && !s.concentration) return;
@@ -847,7 +866,8 @@ export default function SpellbookPanel({
             </div>
           </TooltipTrigger>
           <TooltipContent className="text-xs">
-            {isPact ? "Pact" : "Level"} {s.level} Slots: {available} / {s.max} remaining (Click to toggle)
+            {isPact ? "Pact" : "Level"} {s.level} Slots: {available} / {s.max} remaining (Click to
+            toggle)
           </TooltipContent>
         </Tooltip>
         <span className="font-mono text-[9px] text-muted-foreground">
@@ -873,7 +893,9 @@ export default function SpellbookPanel({
     const costlyComponent =
       parseComponentCost(spell.componentsDescription) || parseComponentCost(spell.description);
     const matchingInventoryItem = costlyComponent
-      ? localInventory.find((i) => i.name.toLowerCase().includes(costlyComponent.item.toLowerCase()))
+      ? localInventory.find((i) =>
+          i.name.toLowerCase().includes(costlyComponent.item.toLowerCase()),
+        )
       : null;
 
     const isSorcerer = member.classes.toLowerCase().includes("sorcerer");
@@ -998,7 +1020,8 @@ export default function SpellbookPanel({
             <div className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-2.5 flex items-center gap-2 text-[10px] text-accent leading-normal animate-pulse">
               <span className="text-xs">✨</span>
               <span>
-                <strong>Innate Sorcery Active:</strong> +1 Spell Save DC (DC {sorcDC}) & Advantage on Sorcerer Spell Attacks.
+                <strong>Innate Sorcery Active:</strong> +1 Spell Save DC (DC {sorcDC}) & Advantage
+                on Sorcerer Spell Attacks.
               </span>
             </div>
           )}
@@ -1009,9 +1032,12 @@ export default function SpellbookPanel({
               <span className="text-xs">🌌</span>
               <span>
                 <strong>Starry Form ({localStarryForm}) Active:</strong>{" "}
-                {localStarryForm === "Archer" && "Luminous Archer attack is available under Actions (1d8+WIS Radiant, BA)."}
-                {localStarryForm === "Chalice" && "When casting a healing spell, a creature within 30 ft regains an extra 1d8+WIS HP."}
-                {localStarryForm === "Dragon" && "Guaranteed minimum d20 roll of 10 on Intelligence/Wisdom checks and Concentration saves."}
+                {localStarryForm === "Archer" &&
+                  "Luminous Archer attack is available under Actions (1d8+WIS Radiant, BA)."}
+                {localStarryForm === "Chalice" &&
+                  "When casting a healing spell, a creature within 30 ft regains an extra 1d8+WIS HP."}
+                {localStarryForm === "Dragon" &&
+                  "Guaranteed minimum d20 roll of 10 on Intelligence/Wisdom checks and Concentration saves."}
               </span>
             </div>
           )}
@@ -1021,7 +1047,8 @@ export default function SpellbookPanel({
             <div className="mb-4 rounded-lg border border-accent/30 bg-accent/5 p-2.5 flex items-center gap-2 text-[10px] text-accent leading-normal animate-pulse">
               <span className="text-xs">👑</span>
               <span>
-                <strong>Mantle of Majesty Active:</strong> Cast Command as a Bonus Action for free! Command shortcut added to Actions.
+                <strong>Mantle of Majesty Active:</strong> Cast Command as a Bonus Action for free!
+                Command shortcut added to Actions.
               </span>
             </div>
           )}
@@ -1077,7 +1104,11 @@ export default function SpellbookPanel({
                   </span>
                 ) : (
                   <span>
-                    Missing required component: <strong>{costlyComponent.item} worth {costlyComponent.cost} gp</strong>. Not found in live inventory!
+                    Missing required component:{" "}
+                    <strong>
+                      {costlyComponent.item} worth {costlyComponent.cost} gp
+                    </strong>
+                    . Not found in live inventory!
                   </span>
                 )}
               </div>
@@ -1136,9 +1167,7 @@ export default function SpellbookPanel({
                           <span className="text-[8.5px] opacity-75 font-mono">({cost} SP)</span>
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-[280px] text-xs">
-                        {mmDesc}
-                      </TooltipContent>
+                      <TooltipContent className="max-w-[280px] text-xs">{mmDesc}</TooltipContent>
                     </Tooltip>
                   );
                 })}
@@ -1527,7 +1556,8 @@ export default function SpellbookPanel({
                     Consult the Codex
                   </h4>
                   <p className="text-[10px] leading-relaxed max-w-[200px] text-muted-foreground/80 font-sans">
-                    Select a spell from the directory to prepare your incantation and channel spell slots.
+                    Select a spell from the directory to prepare your incantation and channel spell
+                    slots.
                   </p>
                 </div>
               )}
@@ -1545,7 +1575,8 @@ export default function SpellbookPanel({
                     const isExpanded = !!expandedItems[`spell-${c.name}`];
                     const schoolTheme = getSchoolTheme(c.school);
                     const SchoolIcon = schoolTheme.icon;
-                    const isCasting = castingSpellState?.active && castingSpellState.spellName === c.name;
+                    const isCasting =
+                      castingSpellState?.active && castingSpellState.spellName === c.name;
 
                     return (
                       <div
@@ -1641,24 +1672,34 @@ export default function SpellbookPanel({
                       const isExpanded = !!expandedItems[`spell-${spell.name}`];
                       const schoolTheme = getSchoolTheme(spell.school);
                       const SchoolIcon = schoolTheme.icon;
-                      const isCasting = castingSpellState?.active && castingSpellState.spellName === spell.name;
+                      const isCasting =
+                        castingSpellState?.active && castingSpellState.spellName === spell.name;
                       const castOptions = getCastSlotOptions(spell.level);
                       const isSpellPrepared = getIsPrepared(spell);
                       const isAlways = !!spell.alwaysPrepared;
 
                       const costlyComponent =
-                        parseComponentCost(spell.componentsDescription) || parseComponentCost(spell.description);
+                        parseComponentCost(spell.componentsDescription) ||
+                        parseComponentCost(spell.description);
                       const matchingInventoryItem = costlyComponent
-                        ? localInventory.find((i) => i.name.toLowerCase().includes(costlyComponent.item.toLowerCase()))
+                        ? localInventory.find((i) =>
+                            i.name.toLowerCase().includes(costlyComponent.item.toLowerCase()),
+                          )
                         : null;
 
                       const isSorcerer = member.classes.toLowerCase().includes("sorcerer");
                       const metamagicOptions = localMetamagic || [];
-                      const spAction = displayActions.find((a) => a.name.toLowerCase().includes("sorcery points"));
-                      const spEffective = spAction ? localResources.getEffectiveResource(spAction) : null;
+                      const spAction = displayActions.find((a) =>
+                        a.name.toLowerCase().includes("sorcery points"),
+                      );
+                      const spEffective = spAction
+                        ? localResources.getEffectiveResource(spAction)
+                        : null;
                       const currentSP = spEffective?.uses?.current ?? 0;
                       const sorcDC = (() => {
-                        const sc = member.spellcasting?.find((s) => s.className.toLowerCase() === "sorcerer");
+                        const sc = member.spellcasting?.find(
+                          (s) => s.className.toLowerCase() === "sorcerer",
+                        );
                         return sc ? sc.saveDc + (localInnateSorcery ? 1 : 0) : null;
                       })();
 
@@ -1750,7 +1791,8 @@ export default function SpellbookPanel({
                                 <div className="rounded-lg border border-accent/30 bg-accent/5 p-2 flex items-center gap-1.5 text-[9px] text-accent leading-normal animate-pulse">
                                   <span>✨</span>
                                   <span>
-                                    <strong>Innate Sorcery Active:</strong> DC +1 (DC {sorcDC}) & Advantage on Attacks
+                                    <strong>Innate Sorcery Active:</strong> DC +1 (DC {sorcDC}) &
+                                    Advantage on Attacks
                                   </span>
                                 </div>
                               )}
@@ -1760,9 +1802,11 @@ export default function SpellbookPanel({
                                   <span>🌌</span>
                                   <span>
                                     <strong>Starry Form ({localStarryForm}) Active:</strong>{" "}
-                                    {localStarryForm === "Archer" && "Archer attack added to Actions."}
+                                    {localStarryForm === "Archer" &&
+                                      "Archer attack added to Actions."}
                                     {localStarryForm === "Chalice" && "Extra 1d8+WIS heal."}
-                                    {localStarryForm === "Dragon" && "Min 10 on Int/Wis/Concentration check."}
+                                    {localStarryForm === "Dragon" &&
+                                      "Min 10 on Int/Wis/Concentration check."}
                                   </span>
                                 </div>
                               )}
@@ -1804,11 +1848,13 @@ export default function SpellbookPanel({
                                 >
                                   {matchingInventoryItem && matchingInventoryItem.quantity > 0 ? (
                                     <span>
-                                      ✔️ Live inventory: {matchingInventoryItem.quantity}x {matchingInventoryItem.name}
+                                      ✔️ Live inventory: {matchingInventoryItem.quantity}x{" "}
+                                      {matchingInventoryItem.name}
                                     </span>
                                   ) : (
                                     <span>
-                                      ⚠️ Missing component: {costlyComponent.item} ({costlyComponent.cost} gp)
+                                      ⚠️ Missing component: {costlyComponent.item} (
+                                      {costlyComponent.cost} gp)
                                     </span>
                                   )}
                                 </div>
@@ -1864,14 +1910,17 @@ export default function SpellbookPanel({
                                   <div className="flex gap-1.5 select-none">
                                     {castOptions.map((opt) => {
                                       const metamagicSufficient = selectedMetamagicName
-                                        ? currentSP >= getMetamagicCost(selectedMetamagicName, spell.level)
+                                        ? currentSP >=
+                                          getMetamagicCost(selectedMetamagicName, spell.level)
                                         : true;
 
                                       return (
                                         <button
                                           key={`${opt.isPact ? "p" : "s"}-${opt.level}`}
                                           disabled={!metamagicSufficient}
-                                          onClick={() => handleCastSpell(spell, opt.isPact, opt.level)}
+                                          onClick={() =>
+                                            handleCastSpell(spell, opt.isPact, opt.level)
+                                          }
                                           className={`flex-1 py-1 rounded text-[8px] font-bold transition-all hover:scale-[1.03] text-center cursor-pointer border disabled:opacity-40 disabled:cursor-not-allowed
                                           ${
                                             opt.isPact
@@ -1880,7 +1929,8 @@ export default function SpellbookPanel({
                                           }`}
                                           title={`Cast using Level ${opt.level} Slot`}
                                         >
-                                          L{opt.level} {opt.isPact && "Pact"} ({opt.max - opt.used} left)
+                                          L{opt.level} {opt.isPact && "Pact"} ({opt.max - opt.used}{" "}
+                                          left)
                                         </button>
                                       );
                                     })}

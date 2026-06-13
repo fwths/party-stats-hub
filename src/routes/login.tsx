@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { ShieldAlert, Lock, ArrowRight, Dices } from "lucide-react";
+import { ShieldAlert, Lock, ArrowRight, Dices, Eye, EyeOff } from "lucide-react";
 import { loginFn, checkAuthFn } from "@/lib/auth-fns";
 
 export const Route = createFileRoute("/login")({
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/login")({
 function LoginComponent() {
   const router = useRouter();
   const [passcode, setPasscode] = useState("");
+  const [showPasscode, setShowPasscode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -77,14 +78,23 @@ function LoginComponent() {
             <div className="relative">
               <input
                 id="passcode"
-                type="password"
+                type={showPasscode ? "text" : "password"}
                 required
                 disabled={loading}
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 placeholder="••••••••••••"
-                className="w-full pl-4 pr-12 py-3 bg-secondary/40 border border-border/80 focus:border-purple-500/70 focus:ring-1 focus:ring-purple-500/40 rounded-xl outline-none transition-all placeholder:text-muted-foreground/40 text-foreground"
+                className="w-full pl-4 pr-20 py-3 bg-secondary/40 border border-border/80 focus:border-purple-500/70 focus:ring-1 focus:ring-purple-500/40 rounded-xl outline-none transition-all placeholder:text-muted-foreground/40 text-foreground"
               />
+              <button
+                type="button"
+                onClick={() => setShowPasscode((prev) => !prev)}
+                disabled={loading || !passcode}
+                className="absolute right-10 top-2.5 p-1 text-muted-foreground hover:text-foreground disabled:text-muted-foreground/20 transition-colors cursor-pointer"
+                title={showPasscode ? "Hide passcode" : "Show passcode"}
+              >
+                {showPasscode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
               <button
                 type="submit"
                 disabled={loading || !passcode}

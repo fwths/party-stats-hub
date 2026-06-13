@@ -45,7 +45,7 @@ function LoginComponent() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 relative overflow-hidden select-none">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 relative overflow-hidden">
       {/* Background Orbs */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.08),transparent_50%)]" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-[100px] animate-pulse" />

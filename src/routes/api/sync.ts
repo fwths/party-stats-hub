@@ -4,9 +4,17 @@ import { getAllKv, setKv, deleteKv } from "@/lib/db.server";
 export const Route = createFileRoute("/api/sync")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         try {
-          const data = getAllKv();
+          const { isAuthenticated } = await import("@/lib/auth.server");
+          if (!(await isAuthenticated(request.headers))) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+              status: 401,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          const data = await getAllKv();
           return new Response(JSON.stringify(data), {
             headers: {
               "Content-Type": "application/json",
@@ -23,6 +31,14 @@ export const Route = createFileRoute("/api/sync")({
       },
       POST: async ({ request }) => {
         try {
+          const { isAuthenticated } = await import("@/lib/auth.server");
+          if (!(await isAuthenticated(request.headers))) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+              status: 401,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
           const body = await request.json();
 
           // Handle batch syncs (e.g. initial migration or multiple modifications)
@@ -37,9 +53,9 @@ export const Route = createFileRoute("/api/sync")({
 
                 if (isAllowedKey) {
                   if (item.value === null) {
-                    deleteKv(item.key);
+                    await deleteKv(item.key);
                   } else {
-                    setKv(item.key, item.value);
+                    await setKv(item.key, item.value);
                   }
                 }
               }
@@ -71,9 +87,9 @@ export const Route = createFileRoute("/api/sync")({
           }
 
           if (value === null) {
-            deleteKv(key);
+            await deleteKv(key);
           } else {
-            setKv(key, value);
+            await setKv(key, value);
           }
 
           return new Response(JSON.stringify({ success: true }), {

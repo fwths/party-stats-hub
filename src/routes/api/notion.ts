@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getKv, setKv } from "@/lib/db.server";
 
 export const Route = createFileRoute("/api/notion")({
   server: {
@@ -7,7 +8,11 @@ export const Route = createFileRoute("/api/notion")({
         try {
           const body = await request.json();
           const { parentId, parentType, title, markdown } = body;
-          const token = body.token || "ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU";
+          const token =
+            body.token ||
+            process.env.NOTION_TOKEN ||
+            process.env.NOTION_API_KEY ||
+            "";
 
           if (!token || !parentId || !title) {
             return new Response(
@@ -116,20 +121,64 @@ export const Route = createFileRoute("/api/notion")({
         }
       },
       GET: async ({ request }) => {
-        try {
-          const url = new URL(request.url);
-          const token =
-            url.searchParams.get("token") || "ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU";
-          const pageId = url.searchParams.get("pageId");
-          const parentId = url.searchParams.get("parentId");
-          const parentType = url.searchParams.get("parentType");
+        const url = new URL(request.url);
+        const token =
+          url.searchParams.get("token") ||
+          process.env.NOTION_TOKEN ||
+          process.env.NOTION_API_KEY ||
+          "";
+        const pageId = url.searchParams.get("pageId");
+        const parentId = url.searchParams.get("parentId");
+        const parentType = url.searchParams.get("parentType");
 
-          if (!token) {
-            return new Response(JSON.stringify({ error: "Missing token parameter." }), {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            });
+        // Generate cache key based on query parameters (excluding token)
+        let cacheKey = "notion:";
+        if (pageId) {
+          const isDatabase = url.searchParams.get("isDatabase") === "true";
+          cacheKey += `page:${pageId}:${isDatabase}`;
+        } else if (
+          parentId &&
+          parentId !== "workspace" &&
+          parentId !== "undefined" &&
+          parentId !== "null" &&
+          parentId.trim() !== ""
+        ) {
+          cacheKey += `parent:${parentId}:${parentType}`;
+        } else {
+          const searchQuery = url.searchParams.get("searchQuery") || "";
+          const workspaceSearch = url.searchParams.get("workspaceSearch") === "true";
+          cacheKey += `search:${workspaceSearch}:${searchQuery}`;
+        }
+
+        const getCachedResponse = async () => {
+          try {
+            const cachedData = await getKv(cacheKey);
+            if (cachedData) {
+              const parsed = JSON.parse(cachedData);
+              return new Response(JSON.stringify({ ...parsed, success: true, fromCache: true }), {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+          } catch (err) {
+            console.warn("Failed to read from cache:", err);
           }
+          return null;
+        };
+
+        if (!token) {
+          const cached = await getCachedResponse();
+          if (cached) return cached;
+          return new Response(JSON.stringify({ error: "Missing token parameter." }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const executeAndCache = async () => {
+          try {
+            const response = await (async () => {
+              try {
 
           // Case 1: Fetch content of a specific page and convert to markdown
           if (pageId) {
@@ -575,12 +624,47 @@ export const Route = createFileRoute("/api/notion")({
             status: 400,
             headers: { "Content-Type": "application/json" },
           });
-        } catch (e: any) {
-          return new Response(JSON.stringify({ error: e.message || "Internal server error" }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+              } catch (e: any) {
+                return new Response(JSON.stringify({ error: e.message || "Internal server error" }), {
+                  status: 500,
+                  headers: { "Content-Type": "application/json" },
+                });
+              }
+            })();
+
+            if (response.ok) {
+              const bodyText = await response.clone().text();
+              try {
+                const parsed = JSON.parse(bodyText);
+                if (parsed.success) {
+                  await setKv(cacheKey, bodyText);
+                }
+              } catch (cacheErr) {
+                console.warn("Failed to parse or write response to cache:", cacheErr);
+              }
+              return response;
+            } else {
+              const cached = await getCachedResponse();
+              if (cached) {
+                console.info(`Notion API returned status ${response.status}, serving from cache.`);
+                return cached;
+              }
+              return response;
+            }
+          } catch (e: any) {
+            const cached = await getCachedResponse();
+            if (cached) {
+              console.info(`Notion fetch failed (${e.message}), serving from cache.`);
+              return cached;
+            }
+            return new Response(JSON.stringify({ error: e.message || "Internal server error" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+        };
+
+        return await executeAndCache();
       },
     },
   },

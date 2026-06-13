@@ -92,7 +92,7 @@ export const getParty = createServerFn({ method: "GET" })
     try {
       // Dynamic import to prevent bundler trying to resolve node:sqlite in client context
       const { getAllKv } = await import("./db.server");
-      const kv = getAllKv();
+      const kv = await getAllKv();
       members = mergeDbOverrides(members, kv);
     } catch (err) {
       console.warn("[Server Overrides] Failed to load or merge SQLite overrides:", err);

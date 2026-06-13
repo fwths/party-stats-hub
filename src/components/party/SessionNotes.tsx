@@ -96,9 +96,7 @@ export default function SessionNotes() {
 
   // --- 3. Notion Config & Integration State ---
   const [showNotionSettings, setShowNotionSettings] = useState(false);
-  const [notionToken, setNotionToken] = useState(
-    "ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU",
-  );
+  const [notionToken, setNotionToken] = useState("");
   const [notionParentId, setNotionParentId] = useState("");
   const [notionParentType, setNotionParentType] = useState<"database" | "page" | "workspace">(
     "workspace",
@@ -283,7 +281,7 @@ export default function SessionNotes() {
         const stored = localStorage.getItem("mob.notion-config.v1");
         if (stored) {
           const parsed = JSON.parse(stored);
-          setNotionToken(parsed.token || "ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU");
+          setNotionToken(parsed.token || "");
           setNotionParentId(parsed.parentId || "");
           setNotionParentType(parsed.parentType || "workspace");
         }

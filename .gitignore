@@ -39,3 +39,11 @@ char-132900149.json
 char-132940690.json
 char-97349530.json
 read_review.ps1
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.production.local
+.env.*
+

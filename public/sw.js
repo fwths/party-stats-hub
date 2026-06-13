@@ -1,9 +1,10 @@
-const CACHE_NAME = "mob-stats-cache-v1";
+const CACHE_NAME = "mob-stats-cache-v2";
 const ASSETS_TO_CACHE = [
   "/",
   "/favicon.png",
   "/pwa-192x192.png",
   "/pwa-512x512.png",
+  "/merged-logo.png",
   "/manifest.webmanifest",
 ];
 

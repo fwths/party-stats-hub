@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CharacterIdRouteImport } from './routes/character.$id'
 import { Route as ApiSyncRouteImport } from './routes/api/sync'
 import { Route as ApiPartyRouteImport } from './routes/api/party'
 import { Route as ApiNotionRouteImport } from './routes/api/notion'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,6 +49,7 @@ const ApiNotionRoute = ApiNotionRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/api/notion': typeof ApiNotionRoute
   '/api/party': typeof ApiPartyRoute
   '/api/sync': typeof ApiSyncRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/api/notion': typeof ApiNotionRoute
   '/api/party': typeof ApiPartyRoute
   '/api/sync': typeof ApiSyncRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/api/notion': typeof ApiNotionRoute
   '/api/party': typeof ApiPartyRoute
   '/api/sync': typeof ApiSyncRoute
@@ -65,12 +74,25 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/notion' | '/api/party' | '/api/sync' | '/character/$id'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/api/notion'
+    | '/api/party'
+    | '/api/sync'
+    | '/character/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/notion' | '/api/party' | '/api/sync' | '/character/$id'
+  to:
+    | '/'
+    | '/login'
+    | '/api/notion'
+    | '/api/party'
+    | '/api/sync'
+    | '/character/$id'
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/api/notion'
     | '/api/party'
     | '/api/sync'
@@ -79,6 +101,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   ApiNotionRoute: typeof ApiNotionRoute
   ApiPartyRoute: typeof ApiPartyRoute
   ApiSyncRoute: typeof ApiSyncRoute
@@ -87,6 +110,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -127,6 +157,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   ApiNotionRoute: ApiNotionRoute,
   ApiPartyRoute: ApiPartyRoute,
   ApiSyncRoute: ApiSyncRoute,

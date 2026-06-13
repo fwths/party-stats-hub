@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  redirect,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -74,6 +75,20 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  beforeLoad: async ({ location }) => {
+    if (location.pathname === "/login") {
+      return;
+    }
+    if (typeof window === "undefined") {
+      const { checkAuthFn } = await import("@/lib/auth-fns");
+      const { authenticated } = await checkAuthFn();
+      if (!authenticated) {
+        throw redirect({
+          to: "/login",
+        });
+      }
+    }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -165,6 +180,21 @@ function RootComponent() {
 
   useEffect(() => {
     import("@/lib/sync-engine").then((m) => m.initSyncEngine());
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      import("@/lib/auth-fns").then(async (m) => {
+        try {
+          const { authenticated } = await m.checkAuthFn();
+          if (!authenticated && window.location.pathname !== "/login") {
+            window.location.href = "/login";
+          }
+        } catch (err) {
+          console.warn("Client-side auth check failed:", err);
+        }
+      });
+    }
   }, []);
 
   useEffect(() => {

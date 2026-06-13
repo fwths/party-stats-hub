@@ -11,7 +11,8 @@ import {
   COOKIE_KEY,
 } from "@/lib/party";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Users, Activity, Package, Swords, BookOpen, Info } from "lucide-react";
+import { Users, Activity, Package, Swords, BookOpen, Info, LogOut } from "lucide-react";
+import { logoutFn } from "@/lib/auth-fns";
 
 import { RefreshButton } from "@/components/party/RefreshButton";
 import { PartyHighlights } from "@/components/party/PartyHighlights";
@@ -113,6 +114,15 @@ export default function Index() {
     setShowInstallBtn(false);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logoutFn();
+      window.location.href = "/login";
+    } catch (e) {
+      console.warn("Logout failed:", e);
+    }
+  };
+
   return (
     <main className="min-h-screen text-foreground animate-fade-in">
       <div className="bg-particles" />
@@ -120,10 +130,17 @@ export default function Index() {
       <TooltipProvider delayDuration={100}>
         <div className="mx-auto max-w-6xl 2xl:max-w-[1600px] px-4 py-6 relative z-10">
           <header className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-4">
-            <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent select-none">
-              Mother of Bob{" "}
-              <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
-            </h1>
+            <div className="flex items-center gap-3">
+              <img
+                src="/merged-logo.png?v=2"
+                alt="Mother of Bob Logo"
+                className="w-10 h-10 object-contain select-none pointer-events-none"
+              />
+              <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent select-none">
+                Mother of Bob{" "}
+                <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
+              </h1>
+            </div>
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               <AmbientAudio />
               <ThemeSelector />
@@ -144,6 +161,12 @@ export default function Index() {
               <a className="underline hover:text-accent font-medium" href="/api/party">
                 JSON
               </a>
+              <button
+                onClick={handleLogout}
+                className="rounded border border-border bg-secondary/60 hover:bg-destructive/15 hover:text-destructive hover:border-destructive/40 px-2.5 py-1 text-foreground transition-all duration-200 cursor-pointer flex items-center gap-1.5 active:scale-95"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Logout
+              </button>
               <Suspense fallback={null}>
                 <RefreshButton ids={ids} />
               </Suspense>

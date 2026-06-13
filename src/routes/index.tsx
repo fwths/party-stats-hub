@@ -25,6 +25,7 @@ import { SharedInventory } from "@/components/party/SharedInventory";
 import { AmbientAudio } from "@/components/party/AmbientAudio";
 import SessionNotes from "@/components/party/SessionNotes";
 import RulesReference from "@/components/party/RulesReference";
+import { DMTools } from "@/components/party/DMTools";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -165,7 +166,7 @@ export default function Index() {
 function PartyDashboard({ ids }: { ids: number[] }) {
   const { data } = useSuspenseQuery(partyQueryOptions(ids));
   const [activeTab, setActiveTab] = useState<
-    "grid" | "combat" | "inventory" | "roller" | "notes" | "rules"
+    "grid" | "combat" | "inventory" | "roller" | "notes" | "rules" | "dm"
   >("grid");
 
   const validMembers = data.members.filter((m) => !m.error);
@@ -243,6 +244,17 @@ function PartyDashboard({ ids }: { ids: number[] }) {
           <Info size={12} />
           <span>Rules Reference</span>
         </button>
+        <button
+          onClick={() => setActiveTab("dm")}
+          className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+            activeTab === "dm"
+              ? "border border-amber-500/40 bg-amber-500/15 text-amber-500 shadow-sm"
+              : "border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Swords size={12} />
+          <span>DM Tools</span>
+        </button>
       </div>
 
       <div className="transition-all duration-300">
@@ -280,6 +292,12 @@ function PartyDashboard({ ids }: { ids: number[] }) {
         {activeTab === "rules" && (
           <div className="animate-fade-in">
             <RulesReference />
+          </div>
+        )}
+
+        {activeTab === "dm" && (
+          <div className="animate-fade-in">
+            <DMTools members={data.members} />
           </div>
         )}
       </div>

@@ -349,7 +349,8 @@ export function getFullyModifiedStats(member: PartyMember) {
       const remoteItem = member.inventory?.find((ri) => ri.name === item.name);
 
       if (remoteItem) {
-        const remoteActive = remoteItem.equipped && (!requiresAttunement(remoteItem) || remoteItem.attuned);
+        const remoteActive =
+          remoteItem.equipped && (!requiresAttunement(remoteItem) || remoteItem.attuned);
         if (remoteActive && !isActive) {
           ac -= item.armorClass;
           acNotes.push(`-${item.armorClass} from unequipping/unattuning ${item.name}`);
@@ -500,9 +501,7 @@ export function getFullyModifiedStats(member: PartyMember) {
     const localShield =
       localActiveInfusions.includes("Shield, +1") ||
       localActiveInfusions.includes("Repulsion Shield");
-    const hasShield = inventory.some(
-      (i) => i.equipped && i.armorTypeId === 4,
-    );
+    const hasShield = inventory.some((i) => i.equipped && i.armorTypeId === 4);
 
     if (hasShield) {
       const shieldDiff = (localShield ? 1 : 0) - (remoteShield ? 1 : 0);
@@ -527,10 +526,7 @@ export function getFullyModifiedStats(member: PartyMember) {
     const remoteArmor = remoteActive.some((name) => armorInfusionNames.includes(name));
     const localArmor = localActiveInfusions.some((name) => armorInfusionNames.includes(name));
     const hasArmor = inventory.some(
-      (i) =>
-        i.equipped &&
-        i.type?.toLowerCase().includes("armor") &&
-        (i.armorTypeId ?? 0) <= 3,
+      (i) => i.equipped && i.type?.toLowerCase().includes("armor") && (i.armorTypeId ?? 0) <= 3,
     );
 
     if (hasArmor) {

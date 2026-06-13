@@ -763,7 +763,12 @@ export function computeAttacks(
   return attacks;
 }
 
-export function mapSpell(def: any, level: number, prepared = true, alwaysPrepared = false): PreparedSpell {
+export function mapSpell(
+  def: any,
+  level: number,
+  prepared = true,
+  alwaysPrepared = false,
+): PreparedSpell {
   return {
     level,
     name: def.name,

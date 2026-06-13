@@ -164,6 +164,10 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
+    import("@/lib/sync-engine").then((m) => m.initSyncEngine());
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker

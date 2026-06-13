@@ -30,14 +30,13 @@ export function readStoredIdsFromCookie(): number[] | null {
   return parseCookieIds(getCookie(document.cookie, COOKIE_KEY));
 }
 
-export const getStoredIdsServer = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { getRequestHeaders } = await import("@tanstack/react-start/server");
-    const headers = getRequestHeaders();
-    const cookieHeader = headers.get("cookie") ?? "";
-    const cookieVal = getCookie(cookieHeader, COOKIE_KEY);
-    return parseCookieIds(cookieVal);
-  });
+export const getStoredIdsServer = createServerFn({ method: "GET" }).handler(async () => {
+  const { getRequestHeaders } = await import("@tanstack/react-start/server");
+  const headers = getRequestHeaders();
+  const cookieHeader = headers.get("cookie") ?? "";
+  const cookieVal = getCookie(cookieHeader, COOKIE_KEY);
+  return parseCookieIds(cookieVal);
+});
 
 export function readStoredIds(): number[] | null {
   const fromCookie = readStoredIdsFromCookie();
@@ -66,4 +65,3 @@ export function partyQueryOptions(ids: number[] | null) {
     refetchOnWindowFocus: true,
   });
 }
-

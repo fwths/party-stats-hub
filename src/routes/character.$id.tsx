@@ -5,7 +5,12 @@ import { ArrowLeft } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CharacterDetailView } from "@/components/party/CharacterDetailView";
 import { PartyGridSkeleton } from "@/components/party/PartyGrid";
-import { partyQueryOptions, readStoredIds, getStoredIdsServer, readStoredIdsFromCookie } from "@/lib/party";
+import {
+  partyQueryOptions,
+  readStoredIds,
+  getStoredIdsServer,
+  readStoredIdsFromCookie,
+} from "@/lib/party";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { ThemeSelector } from "@/components/party/ThemeSelector";
 
@@ -76,7 +81,10 @@ function CharacterDetail() {
             >
               <ArrowLeft size={14} /> Back to party
             </Link>
-            <ThemeSelector />
+            <div className="flex items-center gap-2">
+              <div id="character-header-actions" className="flex items-center" />
+              <ThemeSelector />
+            </div>
           </header>
           <Suspense fallback={<PartyGridSkeleton />}>
             <CharacterDetailInner />

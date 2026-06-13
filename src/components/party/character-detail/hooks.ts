@@ -284,9 +284,14 @@ export function useLocalHpState(
   };
 
   const regainHitDie = (die: string, count: number = 1) => {
+    const pools = parseHitDice(hitDiceStr);
+    const pool = pools.find((p) => p.die === die);
+    if (!pool) return;
+
     setLocalData((prev) => {
       const spent = prev.spentHitDice[die] ?? 0;
-      const amountToRegain = Math.min(count, spent);
+      const maxRegain = spent - (pool.remaining - pool.total);
+      const amountToRegain = Math.min(count, maxRegain);
       if (amountToRegain <= 0) return prev;
       return {
         ...prev,
@@ -306,11 +311,17 @@ export function useLocalHpState(
   };
 
   const longRest = () => {
+    const pools = parseHitDice(hitDiceStr);
+    const newSpent: Record<string, number> = {};
+    pools.forEach((pool) => {
+      newSpent[pool.die] = pool.remaining - pool.total;
+    });
+
     setLocalData((prev) => {
       return {
         hpCurrent: hpMax,
         tempHp: 0,
-        spentHitDice: {},
+        spentHitDice: newSpent,
         deathSaves: { successes: 0, failures: 0, stabilized: false },
       };
     });

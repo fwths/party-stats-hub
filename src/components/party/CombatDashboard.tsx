@@ -1,9 +1,10 @@
 import { PartyMember } from "@/lib/dndbeyond.functions";
-import { Heart, ShieldAlert, Activity, Wand2, Coffee, Moon } from "lucide-react";
+import { Heart, ShieldAlert, Activity, Wand2, Hourglass, Tent } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getShortName } from "@/lib/utils";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 import { useRouter } from "@tanstack/react-router";
+import { parseHitDice } from "./character-detail/hooks";
 
 interface CombatDashboardProps {
   members: PartyMember[];
@@ -94,19 +95,25 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
     if (
       !window.confirm(
         "Are you sure you want to perform a Long Rest for the entire party?\n" +
-          "This restores all characters to max HP, resets all spell/pact slots and resources, clears death saves, and removes custom conditions.",
+          "This restores all characters to max HP and full hit dice, resets all spell/pact slots and resources, clears death saves, and removes custom conditions.",
       )
     ) {
       return;
     }
 
     activeMembers.forEach((member) => {
-      // 1. Clear all local HP overrides, restoring characters to max HP, tempHp: 0, spentHitDice: {}, and clear death saves
+      // 1. Clear all local HP overrides, restoring characters to max HP, tempHp: 0, spentHitDice, and clear death saves
       const hpKey = `party-stats:hp:${member.id}`;
+      const pools = parseHitDice(member.hitDice);
+      const spentHitDice: Record<string, number> = {};
+      pools.forEach((pool) => {
+        spentHitDice[pool.die] = pool.remaining - pool.total;
+      });
+
       const hpData = {
         hpCurrent: member.hpMax,
         tempHp: 0,
-        spentHitDice: {},
+        spentHitDice,
         deathSaves: { successes: 0, failures: 0, stabilized: false },
       };
       localStorage.setItem(hpKey, JSON.stringify(hpData));
@@ -187,14 +194,14 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
             onClick={handleShortRest}
             className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 px-2.5 py-1 text-xs font-semibold text-amber-400 transition-all duration-200 cursor-pointer shadow-[0_0_8px_rgba(245,158,11,0.05)] hover:shadow-[0_0_12px_rgba(245,158,11,0.15)]"
           >
-            <Coffee size={12} />
+            <Hourglass size={12} />
             <span>Short Rest</span>
           </button>
           <button
             onClick={handleLongRest}
             className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 px-2.5 py-1 text-xs font-semibold text-emerald-400 transition-all duration-200 cursor-pointer shadow-[0_0_8px_rgba(16,185,129,0.05)] hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]"
           >
-            <Moon size={12} />
+            <Tent size={12} />
             <span>Long Rest</span>
           </button>
         </div>

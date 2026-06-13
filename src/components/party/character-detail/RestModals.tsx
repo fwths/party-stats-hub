@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Hourglass, Tent } from "lucide-react";
 import { PartyMember } from "@/lib/dndbeyond.functions";
 import { parseHitDice } from "./hooks";
 
@@ -52,7 +52,8 @@ export function RestModals({
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-xl border border-border bg-popover p-5 shadow-2xl animate-in zoom-in-95 duration-150">
             <h3 className="font-heading text-lg font-bold text-foreground mb-1.5 flex items-center gap-2">
-              ⏰ Take a Short Rest
+              <Hourglass size={18} className="text-accent/80" />
+              <span>Take a Short Rest</span>
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
               Restores pact magic spell slots and resets matching class resources. You can also roll
@@ -169,11 +170,12 @@ export function RestModals({
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-xl border border-border bg-popover p-5 shadow-2xl animate-in zoom-in-95 duration-150">
             <h3 className="font-heading text-lg font-bold text-foreground mb-1.5 flex items-center gap-2">
-              💤 Take a Long Rest
+              <Tent size={18} className="text-accent/80" />
+              <span>Take a Long Rest</span>
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Are you sure you want to take a Long Rest? This will fully restore Hit Points, regain
-              half of spent hit dice, reset all spell slots, and reset long-rest class resources.
+              Are you sure you want to take a Long Rest? This will fully restore Hit Points, fully restore
+              hit dice, reset all spell slots, and reset long-rest class resources.
             </p>
             <div className="flex justify-end gap-2">
               <button

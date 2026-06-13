@@ -664,7 +664,7 @@ export function getModifiedHitDice(
       const total = parseInt(m[2], 10);
       const die = `d${m[3]}`;
       const spent = spentHitDice[die] ?? 0;
-      const remaining = Math.max(0, parseInt(m[1], 10) - spent);
+      const remaining = Math.min(total, Math.max(0, parseInt(m[1], 10) - spent));
       return `${remaining}/${total}${die}`;
     }
     return part.trim();

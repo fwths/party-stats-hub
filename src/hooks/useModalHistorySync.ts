@@ -7,6 +7,8 @@ export function useModalHistorySync(
   condition: boolean = true,
 ) {
   const pushedStateRef = useRef<boolean>(false);
+  const setIsOpenRef = useRef(setIsOpen);
+  setIsOpenRef.current = setIsOpen;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -15,7 +17,7 @@ export function useModalHistorySync(
     const handlePopState = (event: PopStateEvent) => {
       if (pushedStateRef.current) {
         pushedStateRef.current = false;
-        setIsOpen(false);
+        setIsOpenRef.current(false);
       }
     };
 
@@ -41,5 +43,6 @@ export function useModalHistorySync(
         window.history.back();
       }
     };
-  }, [isOpen, condition, stateKey, setIsOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, condition, stateKey]);
 }

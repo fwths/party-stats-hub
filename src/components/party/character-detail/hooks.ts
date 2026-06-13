@@ -849,4 +849,3 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
     setCustomItems,
   ] as const;
 }
-

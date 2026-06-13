@@ -493,7 +493,24 @@ export default function InventoryPanel({
     }
   };
 
-  const filteredInventory = localInventory.filter((item) => {
+  const groupedInventory = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const groupedMap = new Map<string, any>();
+    localInventory.forEach((item) => {
+      const key = item.name.toLowerCase().trim();
+      const existing = groupedMap.get(key);
+      if (existing) {
+        existing.quantity = (existing.quantity || 1) + (item.quantity || 1);
+        if (item.equipped) existing.equipped = true;
+        if (item.attuned) existing.attuned = true;
+      } else {
+        groupedMap.set(key, { ...item, quantity: item.quantity || 1 });
+      }
+    });
+    return Array.from(groupedMap.values());
+  }, [localInventory]);
+
+  const filteredInventory = groupedInventory.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(invSearchTerm.toLowerCase()) ||
       (item.type && item.type.toLowerCase().includes(invSearchTerm.toLowerCase())) ||
@@ -519,6 +536,42 @@ export default function InventoryPanel({
 
     return true;
   });
+
+  const inventorySections = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sections: { title: string; items: any[] }[] = [
+      { title: "⚔️ Weapons", items: [] },
+      { title: "🛡️ Armor & Shields", items: [] },
+      { title: "✨ Magic Items", items: [] },
+      { title: "🧪 Consumables", items: [] },
+      { title: "🎒 Adventuring Gear & Other", items: [] },
+    ];
+
+    filteredInventory.forEach((item) => {
+      const t = (item.type || "").toLowerCase();
+      const isWeapon = t.includes("weapon") || !!item.damage;
+      const isArmor =
+        t.includes("armor") || t.includes("shield") || typeof item.armorClass === "number";
+      const isMagic =
+        item.magic || (item.rarity && item.rarity !== "Common" && item.rarity !== "Mundane");
+      const isConsumable =
+        t.includes("potion") || t.includes("scroll") || t.includes("elixir") || t.includes("wand");
+
+      if (isWeapon) {
+        sections[0].items.push(item);
+      } else if (isArmor) {
+        sections[1].items.push(item);
+      } else if (isConsumable) {
+        sections[3].items.push(item);
+      } else if (isMagic) {
+        sections[2].items.push(item);
+      } else {
+        sections[4].items.push(item);
+      }
+    });
+
+    return sections.filter((s) => s.items.length > 0);
+  }, [filteredInventory]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -889,8 +942,7 @@ export default function InventoryPanel({
 
             <div className="rounded-xl border border-border/40 bg-secondary/5 p-3 min-h-[350px] max-h-[550px] overflow-y-auto custom-scrollbar">
               {(() => {
-                const items = filteredInventory;
-                if (items.length === 0) {
+                if (filteredInventory.length === 0) {
                   return (
                     <div className="flex flex-col items-center justify-center py-12 text-center select-none">
                       <span className="text-xl">🔍</span>
@@ -901,114 +953,130 @@ export default function InventoryPanel({
                   );
                 }
                 return (
-                  <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                    {items.map((item, idx) => {
-                      const theme = getRarityTheme(item.rarity);
-                      const isSelected =
-                        selectedInvItem?.name === item.name &&
-                        selectedInvItem?.equipped === item.equipped;
-                      return (
-                        <div
-                          key={`${item.name}-${idx}`}
-                          onClick={() => setSelectedInvItem(item)}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg border p-2.5 transition-all duration-200 cursor-pointer relative overflow-hidden group select-none",
-                            theme.bg,
-                            isSelected
-                              ? "border-gold shadow-[0_0_10px_color-mix(in_oklab,var(--gold)_20%,transparent)] bg-[color-mix(in_oklab,var(--gold)_6%,var(--secondary))]"
-                              : `${theme.border} hover:scale-[1.01] hover:bg-secondary/30`,
-                          )}
-                        >
-                          <div
-                            className={`absolute -right-6 -bottom-6 h-12 w-12 rounded-full bg-gradient-to-br ${theme.gradient} blur-md pointer-events-none group-hover:scale-125 transition-transform duration-500`}
-                          />
-
-                          <div
-                            className={cn(
-                              "h-8 w-8 rounded border flex items-center justify-center shrink-0",
-                              isSelected ? "border-gold/40 bg-gold/10" : theme.badge,
-                            )}
-                          >
-                            {(() => {
-                              const t = item.type.toLowerCase();
-                              const iconSize = 14;
-                              const iconClass = cn(
-                                item.attuned
-                                  ? "text-gold"
-                                  : item.magic
-                                    ? "text-accent"
-                                    : "text-muted-foreground/80",
-                              );
-
-                              if (t.includes("weapon") || item.damage) {
-                                return <Sword size={iconSize} className={iconClass} />;
-                              }
-                              if (t.includes("shield")) {
-                                return <Shield size={iconSize} className={iconClass} />;
-                              }
-                              if (t.includes("armor")) {
-                                return <Shirt size={iconSize} className={iconClass} />;
-                              }
-                              if (t.includes("potion") || t.includes("elixir")) {
-                                return <FlaskConical size={iconSize} className={iconClass} />;
-                              }
-                              if (t.includes("scroll")) {
-                                return <Scroll size={iconSize} className={iconClass} />;
-                              }
-                              if (
-                                t.includes("ring") ||
-                                t.includes("jewelry") ||
-                                t.includes("amulet") ||
-                                t.includes("cloak")
-                              ) {
-                                return <Gem size={iconSize} className={iconClass} />;
-                              }
-                              if (t.includes("wand") || t.includes("staff") || t.includes("rod")) {
-                                return <Wand size={iconSize} className={iconClass} />;
-                              }
-                              return <Package size={iconSize} className={iconClass} />;
-                            })()}
-                          </div>
-
-                          <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                            <span className="text-xs font-bold text-foreground truncate group-hover:text-accent transition-colors">
-                              {item.name}
-                            </span>
-                            <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground tracking-wide font-medium uppercase truncate">
-                              <span>{item.type}</span>
-                              {item.rarity &&
-                                item.rarity !== "Mundane" &&
-                                item.rarity !== "Common" && (
-                                  <>
-                                    <span>•</span>
-                                    <span className={theme.text}>{item.rarity}</span>
-                                  </>
+                  <div className="space-y-5">
+                    {inventorySections.map((sec) => (
+                      <div key={sec.title} className="space-y-2">
+                        <h4 className="text-[10px] font-bold text-accent uppercase tracking-wider pl-1.5 select-none flex items-center gap-1.5 border-b border-border/10 pb-1.5">
+                          <span>{sec.title}</span>
+                          <span className="text-muted-foreground font-mono font-medium">
+                            ({sec.items.length})
+                          </span>
+                        </h4>
+                        <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                          {sec.items.map((item, idx) => {
+                            const theme = getRarityTheme(item.rarity);
+                            const isSelected =
+                              selectedInvItem?.name === item.name &&
+                              selectedInvItem?.equipped === item.equipped;
+                            return (
+                              <div
+                                key={`${item.name}-${idx}`}
+                                onClick={() => setSelectedInvItem(item)}
+                                className={cn(
+                                  "flex items-center gap-3 rounded-lg border p-2.5 transition-all duration-200 cursor-pointer relative overflow-hidden group select-none",
+                                  theme.bg,
+                                  isSelected
+                                    ? "border-gold shadow-[0_0_10px_color-mix(in_oklab,var(--gold)_20%,transparent)] bg-[color-mix(in_oklab,var(--gold)_6%,var(--secondary))]"
+                                    : `${theme.border} hover:scale-[1.01] hover:bg-secondary/30`,
                                 )}
-                            </div>
-                          </div>
+                              >
+                                <div
+                                  className={`absolute -right-6 -bottom-6 h-12 w-12 rounded-full bg-gradient-to-br ${theme.gradient} blur-md pointer-events-none group-hover:scale-125 transition-transform duration-500`}
+                                />
 
-                          <div className="flex flex-col items-end gap-1.5 shrink-0 select-none">
-                            {item.quantity > 1 && (
-                              <span className="font-mono text-[9px] font-bold text-muted-foreground bg-secondary/70 border border-border/30 rounded px-1">
-                                ×{item.quantity}
-                              </span>
-                            )}
-                            <div className="flex items-center gap-1">
-                              {item.equipped && (
-                                <span className="text-[8px] font-bold text-teal-400 bg-teal-500/10 border border-teal-500/25 rounded px-1 uppercase tracking-wider">
-                                  EQ
-                                </span>
-                              )}
-                              {item.attuned && (
-                                <span className="text-[8px] font-bold text-gold bg-gold/10 border border-gold/25 rounded px-1 uppercase tracking-wider">
-                                  AT
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                                <div
+                                  className={cn(
+                                    "h-8 w-8 rounded border flex items-center justify-center shrink-0",
+                                    isSelected ? "border-gold/40 bg-gold/10" : theme.badge,
+                                  )}
+                                >
+                                  {(() => {
+                                    const t = item.type.toLowerCase();
+                                    const iconSize = 14;
+                                    const iconClass = cn(
+                                      item.attuned
+                                        ? "text-gold"
+                                        : item.magic
+                                          ? "text-accent"
+                                          : "text-muted-foreground/80",
+                                    );
+
+                                    if (t.includes("weapon") || item.damage) {
+                                      return <Sword size={iconSize} className={iconClass} />;
+                                    }
+                                    if (t.includes("shield")) {
+                                      return <Shield size={iconSize} className={iconClass} />;
+                                    }
+                                    if (t.includes("armor")) {
+                                      return <Shirt size={iconSize} className={iconClass} />;
+                                    }
+                                    if (t.includes("potion") || t.includes("elixir")) {
+                                      return <FlaskConical size={iconSize} className={iconClass} />;
+                                    }
+                                    if (t.includes("scroll")) {
+                                      return <Scroll size={iconSize} className={iconClass} />;
+                                    }
+                                    if (
+                                      t.includes("ring") ||
+                                      t.includes("jewelry") ||
+                                      t.includes("amulet") ||
+                                      t.includes("cloak")
+                                    ) {
+                                      return <Gem size={iconSize} className={iconClass} />;
+                                    }
+                                    if (
+                                      t.includes("wand") ||
+                                      t.includes("staff") ||
+                                      t.includes("rod")
+                                    ) {
+                                      return <Wand size={iconSize} className={iconClass} />;
+                                    }
+                                    return <Package size={iconSize} className={iconClass} />;
+                                  })()}
+                                </div>
+
+                                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                                  <span className="text-xs font-bold text-foreground truncate group-hover:text-accent transition-colors">
+                                    {item.name}
+                                  </span>
+                                  <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground tracking-wide font-medium uppercase truncate">
+                                    <span>{item.type}</span>
+                                    {item.rarity &&
+                                      item.rarity !== "Mundane" &&
+                                      item.rarity !== "Common" && (
+                                        <>
+                                          <span>•</span>
+                                          <span className={theme.text}>{item.rarity}</span>
+                                        </>
+                                      )}
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-col items-end gap-1.5 shrink-0 select-none">
+                                  {item.quantity > 1 && (
+                                    <span className="font-mono text-[9px] font-bold text-muted-foreground bg-secondary/70 border border-border/30 rounded px-1">
+                                      ×{item.quantity}
+                                    </span>
+                                  )}
+                                  <div className="flex items-center gap-1">
+                                    {item.equipped && (
+                                      <span className="text-[8px] font-bold text-teal-400 bg-teal-500/10 border border-teal-500/25 rounded px-1 uppercase tracking-wider">
+                                        EQ
+                                      </span>
+                                    )}
+                                    {item.attuned && (
+                                      <span className="text-[8px] font-bold text-gold bg-gold/10 border border-gold/25 rounded px-1 uppercase tracking-wider">
+                                        AT
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
                 );
               })()}
@@ -1019,7 +1087,7 @@ export default function InventoryPanel({
             {selectedInvItem ? (
               (() => {
                 const activeInvItem =
-                  localInventory.find(
+                  groupedInventory.find(
                     (item) =>
                       item.name === selectedInvItem.name &&
                       item.equipped === selectedInvItem.equipped,

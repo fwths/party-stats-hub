@@ -597,7 +597,7 @@ export default function SpellbookPanel({
       if (!open) setSelectedSpellName(null);
     },
     "isSpellOpen",
-    typeof window !== "undefined" ? window.innerWidth < 1024 : true
+    typeof window !== "undefined" ? window.innerWidth < 1024 : true,
   );
 
   const isStarsDruid = useMemo(() => {

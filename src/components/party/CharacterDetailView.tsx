@@ -2518,6 +2518,10 @@ export function CharacterDetailView({
   const [showHpControl, setShowHpControl] = useState(false);
   const [restModal, setRestModal] = useState<{ type: "short" | "long" } | null>(null);
   const [showSyncConfirm, setShowSyncConfirm] = useState(false);
+  const [isClientMounted, setIsClientMounted] = useState(false);
+  useEffect(() => {
+    setIsClientMounted(true);
+  }, []);
   const [shortRestHealInput, setShortRestHealInput] = useState("0");
   const [shortRestDiceSpend, setShortRestDiceSpend] = useState<Record<string, number>>({});
   const [spellSearch, setSpellSearch] = useState("");
@@ -3634,7 +3638,6 @@ export function CharacterDetailView({
                   />
                 </span>
               </TooltipTrigger>
-              <TooltipContent>Inspiration</TooltipContent>
             </Tooltip>
           )}
         </div>
@@ -6490,32 +6493,24 @@ export function CharacterDetailView({
 
   const sessionControls = (
     <Panel title="Session Rest" icon={Moon} padding="p-3.5 py-3">
-      <div className="flex flex-wrap gap-1.5 items-center">
+      <div className="flex gap-2 items-center">
         <button
           onClick={() => {
             setShortRestHealInput("0");
             setShortRestDiceSpend({});
             setRestModal({ type: "short" });
           }}
-          className="flex-1 min-w-[90px] rounded-lg border border-border bg-secondary/35 px-2.5 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center justify-center gap-1"
+          className="flex-1 rounded-lg border border-border bg-secondary/35 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center justify-center gap-1"
         >
-          ⏰ Short
+          ⏰ Short Rest
         </button>
         <button
           onClick={() => {
             setRestModal({ type: "long" });
           }}
-          className="flex-1 min-w-[90px] rounded-lg border border-border bg-secondary/35 px-2.5 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center justify-center gap-1"
+          className="flex-1 rounded-lg border border-border bg-secondary/35 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center justify-center gap-1"
         >
-          💤 Long
-        </button>
-        <button
-          onClick={() => {
-            setShowSyncConfirm(true);
-          }}
-          className="flex-1 min-w-[90px] inline-flex items-center justify-center gap-1 rounded-lg border border-border bg-secondary/35 px-2.5 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground hover:border-destructive hover:text-destructive hover:bg-secondary/60 cursor-pointer focus:outline-none"
-        >
-          <RefreshCw size={11} /> Sync DDB
+          💤 Long Rest
         </button>
       </div>
     </Panel>
@@ -6720,6 +6715,19 @@ export function CharacterDetailView({
 
   return (
     <div className="flex flex-col gap-4 relative">
+      {isClientMounted && document.getElementById("character-header-actions")
+        ? createPortal(
+            <button
+              onClick={() => setShowSyncConfirm(true)}
+              className="rounded-lg border border-border/50 bg-secondary/35 px-2.5 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center gap-1.5 transition-all duration-200"
+              title="Reset local changes and sync with D&D Beyond"
+            >
+              <RefreshCw size={12} />
+              <span className="hidden sm:inline">Sync DDB</span>
+            </button>,
+            document.getElementById("character-header-actions")!,
+          )
+        : null}
       <section className="card-arcane relative rounded-xl border border-border/40 p-5 shadow-lg">
         <div className="grid gap-6 md:grid-cols-[1.3fr_1fr] items-start">
           <div className="w-full">{heroContent}</div>

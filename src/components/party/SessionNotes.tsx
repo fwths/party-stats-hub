@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
+import DEFAULT_JOURNAL from "./default-journal.md?raw";
 import {
   Plus,
   Trash2,
@@ -70,7 +71,9 @@ export default function SessionNotes() {
   // --- 1. Session Notes (Scratchpad) State ---
   const [notes, setNotes] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem(NOTE_KEY) ?? "";
+      const stored = localStorage.getItem(NOTE_KEY);
+      if (stored !== null) return stored;
+      return DEFAULT_JOURNAL;
     }
     return "";
   });
@@ -278,13 +281,20 @@ export default function SessionNotes() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("mob.notion-config.v1");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setNotionToken(parsed.token || "");
-          setNotionParentId(parsed.parentId || "");
-          setNotionParentType(parsed.parentType || "workspace");
+        let stored = localStorage.getItem("mob.notion-config.v1");
+        if (!stored) {
+          const defaultConfig = {
+            token: "default",
+            parentId: "",
+            parentType: "workspace",
+          };
+          localStorage.setItem("mob.notion-config.v1", JSON.stringify(defaultConfig));
+          stored = JSON.stringify(defaultConfig);
         }
+        const parsed = JSON.parse(stored);
+        setNotionToken(parsed.token || "");
+        setNotionParentId(parsed.parentId || "");
+        setNotionParentType(parsed.parentType || "workspace");
       } catch (err) {
         console.warn("Failed to load Notion config:", err);
       }

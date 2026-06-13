@@ -8,11 +8,13 @@ export const Route = createFileRoute("/api/notion")({
         try {
           const body = await request.json();
           const { parentId, parentType, title, markdown } = body;
-          const token =
-            body.token ||
-            process.env.NOTION_TOKEN ||
-            process.env.NOTION_API_KEY ||
-            "";
+          let token = body.token || "";
+          if (!token || token === "default") {
+            token =
+              process.env.NOTION_TOKEN ||
+              process.env.NOTION_API_KEY ||
+              "";
+          }
 
           if (!token || !parentId || !title) {
             return new Response(
@@ -122,11 +124,13 @@ export const Route = createFileRoute("/api/notion")({
       },
       GET: async ({ request }) => {
         const url = new URL(request.url);
-        const token =
-          url.searchParams.get("token") ||
-          process.env.NOTION_TOKEN ||
-          process.env.NOTION_API_KEY ||
-          "";
+        let token = url.searchParams.get("token") || "";
+        if (!token || token === "default") {
+          token =
+            process.env.NOTION_TOKEN ||
+            process.env.NOTION_API_KEY ||
+            "";
+        }
         const pageId = url.searchParams.get("pageId");
         const parentId = url.searchParams.get("parentId");
         const parentType = url.searchParams.get("parentType");

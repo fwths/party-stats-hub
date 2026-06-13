@@ -15,17 +15,42 @@ async function initDb() {
   fs = fsModule.default || fsModule;
   path = pathModule.default || pathModule;
 
-  const dbDir = path.join(process.cwd(), "data");
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
-  const dbPath = path.join(dbDir, "party-stats.db");
-
   const globalForDb = globalThis as unknown as {
     dbInstance: any;
   };
 
-  dbInstance = globalForDb.dbInstance ?? new DatabaseSync(dbPath);
+  if (globalForDb.dbInstance) {
+    dbInstance = globalForDb.dbInstance;
+    return dbInstance;
+  }
+
+  let dbPath = "";
+  try {
+    const dbDir = path.join(process.cwd(), "data");
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    dbPath = path.join(dbDir, "party-stats.db");
+    
+    // Attempt to open and write to verify permissions
+    dbInstance = new DatabaseSync(dbPath);
+    dbInstance.exec("CREATE TABLE IF NOT EXISTS __write_test (id INTEGER PRIMARY KEY); DROP TABLE __write_test;");
+    console.log("Database initialized successfully at default path:", dbPath);
+  } catch (error) {
+    console.warn("Failed to initialize database at default path, attempting temp fallback. Error:", error);
+    try {
+      const tempDir = process.env.TEMP || process.env.TMP || "/tmp";
+      const tempDbPath = path.join(tempDir, "party-stats.db");
+      
+      dbInstance = new DatabaseSync(tempDbPath);
+      dbInstance.exec("CREATE TABLE IF NOT EXISTS __write_test (id INTEGER PRIMARY KEY); DROP TABLE __write_test;");
+      dbPath = tempDbPath;
+      console.log("Database initialized successfully at temp path:", dbPath);
+    } catch (tempError) {
+      console.error("Critical: Failed to initialize database in both default and temp path:", tempError);
+      throw tempError;
+    }
+  }
 
   if (process.env.NODE_ENV !== "production") {
     globalForDb.dbInstance = dbInstance;

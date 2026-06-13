@@ -15,21 +15,26 @@ export const checkAuthFn = createServerFn({ method: "GET" })
 export const loginFn = createServerFn({ method: "POST" })
   .inputValidator(z.object({ passcode: z.string() }))
   .handler(async ({ data }) => {
-    const { verifyPasscode, startSession } = await import("@/lib/auth.server");
-    const isValid = verifyPasscode(data.passcode);
-    if (!isValid) {
-      throw new Error("Invalid campaign passcode");
+    try {
+      const { verifyPasscode, startSession } = await import("@/lib/auth.server");
+      const isValid = verifyPasscode(data.passcode);
+      if (!isValid) {
+        throw new Error("Invalid campaign passcode");
+      }
+
+      const { cookieString } = await startSession();
+
+      // Set HTTP-only session cookie
+      const { setResponseHeaders } = await import("@tanstack/react-start/server");
+      setResponseHeaders({
+        "Set-Cookie": cookieString,
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error("SERVER_LOGIN_ERROR:", error);
+      throw error;
     }
-
-    const { cookieString } = await startSession();
-
-    // Set HTTP-only session cookie
-    const { setResponseHeaders } = await import("@tanstack/react-start/server");
-    setResponseHeaders({
-      "Set-Cookie": cookieString,
-    });
-
-    return { success: true };
   });
 
 // Server function to log out and clear cookie

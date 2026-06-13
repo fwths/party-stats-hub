@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export type ThemeId = "abyssal" | "emerald" | "crimson" | "slate" | "amber" | "parchment";
+export type ThemeId = "abyssal" | "emerald" | "crimson" | "slate" | "amber" | "parchment" | "minimal" | "minimal-light";
 
 export interface ThemePreset {
   id: ThemeId;
@@ -185,6 +185,80 @@ export const THEME_PRESETS: ThemePreset[] = [
       "--sidebar-ring": "oklch(0.40 0.12 40)",
     },
   },
+  {
+    id: "minimal",
+    name: "Minimalist",
+    dotColor: "#ffffff",
+    variables: {
+      "--background": "oklch(0.12 0 0)",
+      "--foreground": "oklch(0.98 0 0)",
+      "--card": "oklch(0.16 0 0)",
+      "--card-foreground": "oklch(0.98 0 0)",
+      "--popover": "oklch(0.16 0 0)",
+      "--popover-foreground": "oklch(0.98 0 0)",
+      "--primary": "oklch(0.98 0 0)",
+      "--primary-foreground": "oklch(0.12 0 0)",
+      "--secondary": "oklch(0.20 0 0)",
+      "--secondary-foreground": "oklch(0.98 0 0)",
+      "--muted": "oklch(0.20 0 0)",
+      "--muted-foreground": "oklch(0.65 0 0)",
+      "--accent": "oklch(0.98 0 0)",
+      "--accent-foreground": "oklch(0.12 0 0)",
+      "--border": "oklch(0.25 0 0)",
+      "--input": "oklch(0.25 0 0)",
+      "--ring": "oklch(0.98 0 0)",
+      "--sidebar": "oklch(0.16 0 0)",
+      "--sidebar-primary": "oklch(0.98 0 0)",
+      "--sidebar-accent": "oklch(0.20 0 0)",
+      "--sidebar-border": "oklch(0.25 0 0)",
+      "--sidebar-ring": "oklch(0.80 0 0)",
+
+      "--gold": "oklch(0.98 0 0)",
+      "--stat-str": "oklch(0.80 0 0)",
+      "--stat-dex": "oklch(0.80 0 0)",
+      "--stat-con": "oklch(0.80 0 0)",
+      "--stat-int": "oklch(0.80 0 0)",
+      "--stat-wis": "oklch(0.80 0 0)",
+      "--stat-cha": "oklch(0.80 0 0)",
+    },
+  },
+  {
+    id: "minimal-light",
+    name: "Minimalist Light",
+    dotColor: "#000000",
+    variables: {
+      "--background": "oklch(0.98 0 0)",
+      "--foreground": "oklch(0.12 0 0)",
+      "--card": "oklch(0.99 0 0)",
+      "--card-foreground": "oklch(0.12 0 0)",
+      "--popover": "oklch(0.98 0 0)",
+      "--popover-foreground": "oklch(0.12 0 0)",
+      "--primary": "oklch(0.12 0 0)",
+      "--primary-foreground": "oklch(0.98 0 0)",
+      "--secondary": "oklch(0.94 0 0)",
+      "--secondary-foreground": "oklch(0.12 0 0)",
+      "--muted": "oklch(0.94 0 0)",
+      "--muted-foreground": "oklch(0.45 0 0)",
+      "--accent": "oklch(0.12 0 0)",
+      "--accent-foreground": "oklch(0.98 0 0)",
+      "--border": "oklch(0.85 0 0)",
+      "--input": "oklch(0.85 0 0)",
+      "--ring": "oklch(0.12 0 0)",
+      "--sidebar": "oklch(0.98 0 0)",
+      "--sidebar-primary": "oklch(0.12 0 0)",
+      "--sidebar-accent": "oklch(0.94 0 0)",
+      "--sidebar-border": "oklch(0.85 0 0)",
+      "--sidebar-ring": "oklch(0.12 0 0)",
+
+      "--gold": "oklch(0.12 0 0)",
+      "--stat-str": "oklch(0.12 0 0)",
+      "--stat-dex": "oklch(0.12 0 0)",
+      "--stat-con": "oklch(0.12 0 0)",
+      "--stat-int": "oklch(0.12 0 0)",
+      "--stat-wis": "oklch(0.12 0 0)",
+      "--stat-cha": "oklch(0.12 0 0)",
+    },
+  },
 ];
 
 const STORAGE_KEY = "party-stats-theme-preset";
@@ -192,30 +266,49 @@ const STORAGE_KEY = "party-stats-theme-preset";
 export function applyTheme(themeId: ThemeId) {
   const theme = THEME_PRESETS.find((t) => t.id === themeId) || THEME_PRESETS[0];
   const root = document.documentElement;
+  
+  // Clean up any stale variables from previous themes
+  THEME_PRESETS.forEach(preset => {
+    Object.keys(preset.variables).forEach(key => {
+      root.style.removeProperty(key);
+    });
+  });
+
+  // Apply new theme variables
   Object.entries(theme.variables).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });
+  
+  // Toggle dark mode class
+  if (themeId === "parchment" || themeId === "minimal-light") {
+    root.classList.remove("dark");
+  } else {
+    root.classList.add("dark");
+  }
 }
 
 export function useThemePreset() {
-  const [currentTheme, setCurrentTheme] = useState<ThemeId>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(STORAGE_KEY) as ThemeId;
-      if (saved && THEME_PRESETS.some((t) => t.id === saved)) {
-        return saved;
-      }
-    }
-    return "abyssal";
-  });
+  const [currentTheme, setCurrentTheme] = useState<ThemeId>("abyssal");
 
+  // Sync state with localStorage on client mount to avoid SSR hydration mismatch
   useEffect(() => {
-    applyTheme(currentTheme);
-    localStorage.setItem(STORAGE_KEY, currentTheme);
-  }, [currentTheme]);
+    const saved = localStorage.getItem(STORAGE_KEY) as ThemeId;
+    if (saved && THEME_PRESETS.some((t) => t.id === saved)) {
+      setCurrentTheme(saved);
+    }
+  }, []);
+
+  const handleSetTheme = (themeId: ThemeId) => {
+    setCurrentTheme(themeId);
+    applyTheme(themeId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, themeId);
+    }
+  };
 
   return {
     currentTheme,
-    setTheme: setCurrentTheme,
+    setTheme: handleSetTheme,
     presets: THEME_PRESETS,
   };
 }

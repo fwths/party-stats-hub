@@ -53,52 +53,51 @@ export const ABILITY_DETAILS: Record<
 > = {
   STR: {
     Icon: Dumbbell,
-    colorClass: "text-rose-400/90",
-    borderClass: "border-rose-500/20",
-    bgClass: "bg-rose-500/5",
-    glowClass: "shadow-rose-500/5",
-    hoverGlowClass: "hover:shadow-rose-500/15 hover:border-rose-500/40 hover:bg-rose-500/10",
+    colorClass: "text-stat-str",
+    borderClass: "border-stat-str/20",
+    bgClass: "bg-stat-str/5",
+    glowClass: "shadow-stat-str/5",
+    hoverGlowClass: "hover:shadow-stat-str/15 hover:border-stat-str/40 hover:bg-stat-str/10",
   },
   DEX: {
     Icon: Zap,
-    colorClass: "text-emerald-400/90",
-    borderClass: "border-emerald-500/20",
-    bgClass: "bg-emerald-500/5",
-    glowClass: "shadow-emerald-500/5",
-    hoverGlowClass:
-      "hover:shadow-emerald-500/15 hover:border-emerald-500/40 hover:bg-emerald-500/10",
+    colorClass: "text-stat-dex",
+    borderClass: "border-stat-dex/20",
+    bgClass: "bg-stat-dex/5",
+    glowClass: "shadow-stat-dex/5",
+    hoverGlowClass: "hover:shadow-stat-dex/15 hover:border-stat-dex/40 hover:bg-stat-dex/10",
   },
   CON: {
     Icon: Heart,
-    colorClass: "text-amber-500/90",
-    borderClass: "border-amber-500/20",
-    bgClass: "bg-amber-500/5",
-    glowClass: "shadow-amber-500/5",
-    hoverGlowClass: "hover:shadow-amber-500/15 hover:border-amber-500/40 hover:bg-amber-500/10",
+    colorClass: "text-stat-con",
+    borderClass: "border-stat-con/20",
+    bgClass: "bg-stat-con/5",
+    glowClass: "shadow-stat-con/5",
+    hoverGlowClass: "hover:shadow-stat-con/15 hover:border-stat-con/40 hover:bg-stat-con/10",
   },
   INT: {
     Icon: BookOpen,
-    colorClass: "text-sky-400/90",
-    borderClass: "border-sky-500/20",
-    bgClass: "bg-sky-500/5",
-    glowClass: "shadow-sky-500/5",
-    hoverGlowClass: "hover:shadow-sky-500/15 hover:border-sky-500/40 hover:bg-sky-500/10",
+    colorClass: "text-stat-int",
+    borderClass: "border-stat-int/20",
+    bgClass: "bg-stat-int/5",
+    glowClass: "shadow-stat-int/5",
+    hoverGlowClass: "hover:shadow-stat-int/15 hover:border-stat-int/40 hover:bg-stat-int/10",
   },
   WIS: {
     Icon: Compass,
-    colorClass: "text-teal-400/90",
-    borderClass: "border-teal-500/20",
-    bgClass: "bg-teal-500/5",
-    glowClass: "shadow-teal-500/5",
-    hoverGlowClass: "hover:shadow-teal-500/15 hover:border-teal-500/40 hover:bg-teal-500/10",
+    colorClass: "text-stat-wis",
+    borderClass: "border-stat-wis/20",
+    bgClass: "bg-stat-wis/5",
+    glowClass: "shadow-stat-wis/5",
+    hoverGlowClass: "hover:shadow-stat-wis/15 hover:border-stat-wis/40 hover:bg-stat-wis/10",
   },
   CHA: {
     Icon: Crown,
-    colorClass: "text-gold/90",
-    borderClass: "border-gold/25",
-    bgClass: "bg-gold/5",
-    glowClass: "shadow-gold/5",
-    hoverGlowClass: "hover:shadow-gold/20 hover:border-gold/50 hover:bg-gold/10",
+    colorClass: "text-stat-cha",
+    borderClass: "border-stat-cha/20",
+    bgClass: "bg-stat-cha/5",
+    glowClass: "shadow-stat-cha/5",
+    hoverGlowClass: "hover:shadow-stat-cha/15 hover:border-stat-cha/40 hover:bg-stat-cha/10",
   },
 };
 
@@ -526,17 +525,17 @@ function getItemRarityClass(rarity?: string) {
   const norm = rarity?.toLowerCase().replace(/\s+/g, "") || "";
   switch (norm) {
     case "artifact":
-      return "border-rose-500/50 bg-rose-500/10 text-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.3)] font-bold";
+      return "border-ui-rose/50 bg-ui-rose/10 text-ui-rose shadow-[0_0_8px_color-mix(in_oklab,var(--color-ui-rose)_30%,transparent)] font-bold";
     case "legendary":
-      return "border-gold/50 bg-gold/10 text-gold shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_30%,transparent)] font-bold animate-pulse";
+      return "border-gold/50 bg-gold/10 text-gold shadow-[0_0_8px_color-mix(in_oklab,var(--color-gold)_30%,transparent)] font-bold animate-pulse";
     case "veryrare":
-      return "border-fuchsia-500/50 bg-fuchsia-500/10 text-fuchsia-300 shadow-[0_0_6px_rgba(217,70,239,0.25)] font-semibold";
+      return "border-ui-fuchsia/50 bg-ui-fuchsia/10 text-ui-fuchsia shadow-[0_0_6px_color-mix(in_oklab,var(--color-ui-fuchsia)_25%,transparent)] font-semibold";
     case "rare":
-      return "border-violet-500/50 bg-violet-500/10 text-violet-300 font-semibold";
+      return "border-ui-violet/50 bg-ui-violet/10 text-ui-violet font-semibold";
     case "uncommon":
-      return "border-sky-500/40 bg-sky-500/5 text-sky-300";
+      return "border-ui-sky/40 bg-ui-sky/5 text-ui-sky";
     case "common":
-      return "border-emerald-500/30 bg-emerald-500/5 text-emerald-300/90";
+      return "border-ui-emerald/30 bg-ui-emerald/5 text-ui-emerald";
     default:
       return "border-border/30 bg-secondary/20 text-foreground/90 hover:border-accent/30";
   }
@@ -601,11 +600,11 @@ export function InventoryList({
   const attunedCount = items.filter((i) => i.attuned).length;
 
   const coinTypes = [
-    { key: "pp", label: "PP", color: "text-teal-400 bg-teal-500/10 border-teal-500/30" },
+    { key: "pp", label: "PP", color: "text-ui-teal bg-ui-teal/10 border-ui-teal/30" },
     { key: "gp", label: "GP", color: "text-gold bg-gold/10 border-gold/30" },
-    { key: "ep", label: "EP", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/30" },
-    { key: "sp", label: "SP", color: "text-slate-300 bg-slate-400/10 border-slate-400/30" },
-    { key: "cp", label: "CP", color: "text-amber-600 bg-amber-700/10 border-amber-700/30" },
+    { key: "ep", label: "EP", color: "text-ui-cyan bg-ui-cyan/10 border-ui-cyan/30" },
+    { key: "sp", label: "SP", color: "text-muted-foreground bg-muted/30 border-border/50" },
+    { key: "cp", label: "CP", color: "text-ui-orange bg-ui-orange/10 border-ui-orange/30" },
   ] as const;
 
   const activeCoins = coinTypes.filter((c) => (currencies?.[c.key] ?? 0) > 0);
@@ -756,10 +755,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
     .filter(Boolean);
 
   const getAvatarRingClass = (pct: number) => {
-    if (pct <= 25)
-      return "ring-2 ring-destructive/80 shadow-[0_0_12px_var(--hp-critical)] animate-pulse";
-    if (pct <= 60) return "ring-2 ring-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.35)]";
-    return "ring-2 ring-primary/50 shadow-[0_0_10px_rgba(109,40,217,0.3)] border-glow-primary";
+    if (pct <= 25) return "ring-2 ring-hp-critical/80 shadow-[0_0_12px_color-mix(in_oklab,var(--color-hp-critical)_50%,transparent)]";
+    if (pct <= 60) return "ring-2 ring-hp-wounded/60 shadow-[0_0_10px_color-mix(in_oklab,var(--color-hp-wounded)_35%,transparent)]";
+    return "ring-2 ring-hp-good/50 shadow-[0_0_10px_color-mix(in_oklab,var(--color-hp-good)_30%,transparent)]";
   };
   const avatarRing = getAvatarRingClass(hpPct);
 
@@ -809,6 +807,14 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                 </TooltipTrigger>
                 <TooltipContent>Inspiration</TooltipContent>
               </Tooltip>
+            )}
+            {(member as any).isNative && (
+              <span 
+                className="ml-auto shrink-0 rounded border border-ui-emerald/40 bg-ui-emerald/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-ui-emerald select-none"
+                title="Built natively in Party Stats Hub"
+              >
+                Native
+              </span>
             )}
           </div>
           <p className="truncate text-xs text-muted-foreground">
@@ -872,7 +878,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               <span className="flex items-center gap-1 font-medium text-muted-foreground group/hp select-none">
                 <Heart
                   size={11}
-                  className="text-rose-500 drop-shadow-[0_0_3px_rgba(244,63,94,0.4)] transition-transform duration-300 group-hover/hp:animate-heartbeat"
+                  className="text-ui-rose drop-shadow-[0_0_3px_color-mix(in_oklab,var(--color-ui-rose)_40%,transparent)] transition-transform duration-300 group-hover/hp:animate-heartbeat"
                 />
                 <span>HP</span>
                 {hitDice && hitDice !== "—" && (

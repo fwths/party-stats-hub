@@ -257,15 +257,11 @@ function PartyDashboard({ ids }: { ids: number[] }) {
           <span>Campaign Journal</span>
         </button>
         <button
-          onClick={() => setActiveTab("rules")}
-          className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-            activeTab === "rules"
-              ? "border border-accent/40 bg-accent/15 text-accent shadow-sm"
-              : "border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
-          }`}
+          onClick={() => { window.location.href = "/compendium"; }}
+          className="flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
         >
           <Info size={12} />
-          <span>Rules Reference</span>
+          <span>SRD Compendium</span>
         </button>
         <button
           onClick={() => setActiveTab("dm")}

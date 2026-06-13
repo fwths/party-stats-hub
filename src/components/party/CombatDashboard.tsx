@@ -184,7 +184,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
     <div className="card-arcane mb-6 rounded-xl border border-border p-5 shadow-xl transition-all duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/40 pb-3 mb-4 select-none">
         <div className="flex items-center gap-2.5">
-          <Activity size={16} className="text-rose-500 animate-pulse" />
+          <Activity size={16} className="text-ui-rose animate-pulse" />
           <h2 className="text-sm font-bold uppercase tracking-widest text-foreground bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
             Combat Status Overview
           </h2>
@@ -192,14 +192,14 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={handleShortRest}
-            className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 px-2.5 py-1 text-xs font-semibold text-amber-400 transition-all duration-200 cursor-pointer shadow-[0_0_8px_rgba(245,158,11,0.05)] hover:shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+            className="flex items-center gap-1.5 rounded-lg bg-ui-amber/10 hover:bg-ui-amber/20 border border-ui-amber/30 hover:border-ui-amber/50 px-2.5 py-1 text-xs font-semibold text-ui-amber transition-all duration-200 cursor-pointer shadow-[0_0_8px_rgba(245,158,11,0.05)] hover:shadow-[0_0_12px_rgba(245,158,11,0.15)]"
           >
             <Hourglass size={12} />
             <span>Short Rest</span>
           </button>
           <button
             onClick={handleLongRest}
-            className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 px-2.5 py-1 text-xs font-semibold text-emerald-400 transition-all duration-200 cursor-pointer shadow-[0_0_8px_rgba(16,185,129,0.05)] hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+            className="flex items-center gap-1.5 rounded-lg bg-ui-emerald/10 hover:bg-ui-emerald/20 border border-ui-emerald/30 hover:border-ui-emerald/50 px-2.5 py-1 text-xs font-semibold text-ui-emerald transition-all duration-200 cursor-pointer shadow-[0_0_8px_rgba(16,185,129,0.05)] hover:shadow-[0_0_12px_rgba(16,185,129,0.15)]"
           >
             <Tent size={12} />
             <span>Long Rest</span>
@@ -211,8 +211,8 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
         {/* HP alerts column */}
         <div className="rounded-lg bg-secondary/15 border border-border/30 p-4 flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-wider text-rose-400 select-none">
-              <Heart size={13} className="text-rose-500" />
+            <div className="flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-wider text-ui-rose select-none">
+              <Heart size={13} className="text-ui-rose" />
               <span>Health Warnings</span>
             </div>
 
@@ -236,7 +236,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
                 {bloodiedMembers.map((m) => (
                   <div
                     key={`bloodied-${m.id}`}
-                    className="flex items-center justify-between rounded border border-amber-500/35 bg-amber-500/5 px-2.5 py-1.5 text-xs text-amber-500"
+                    className="flex items-center justify-between rounded border border-ui-amber/35 bg-ui-amber/5 px-2.5 py-1.5 text-xs text-ui-amber"
                   >
                     <span className="font-semibold">{getShortName(m.name)}</span>
                     <span className="text-[9px] font-mono select-all">
@@ -251,8 +251,8 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
 
         {/* Active status conditions column */}
         <div className="rounded-lg bg-secondary/15 border border-border/30 p-4">
-          <div className="flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-wider text-sky-400 select-none">
-            <ShieldAlert size={13} className="text-sky-400" />
+          <div className="flex items-center gap-2 mb-3 text-xs font-bold uppercase tracking-wider text-ui-sky select-none">
+            <ShieldAlert size={13} className="text-ui-sky" />
             <span>Active Conditions</span>
           </div>
 
@@ -265,8 +265,8 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
               {conditionList.map((c, i) => (
                 <Tooltip key={`${c.charId}-${c.conditionName}-${i}`}>
                   <TooltipTrigger asChild>
-                    <span className="inline-flex cursor-help items-center gap-1.5 rounded-full border border-sky-500/25 bg-sky-500/10 px-2.5 py-1 text-xs text-sky-400 font-medium select-all shadow-sm">
-                      <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping" />
+                    <span className="inline-flex cursor-help items-center gap-1.5 rounded-full border border-ui-sky/25 bg-ui-sky/10 px-2.5 py-1 text-xs text-ui-sky font-medium select-all shadow-sm">
+                      <span className="h-1.5 w-1.5 rounded-full bg-ui-sky animate-ping" />
                       <span>{c.conditionName}</span>
                     </span>
                   </TooltipTrigger>

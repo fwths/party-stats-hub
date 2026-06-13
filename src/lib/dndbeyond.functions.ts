@@ -7,6 +7,27 @@ export * from "./dndbeyond.types";
 export * from "./dndbeyond.parser";
 
 async function fetchCharacter(id: number): Promise<PartyMember> {
+  if (id >= 900000000) {
+    if (typeof window === "undefined") {
+      try {
+        const fs = await import("node:fs/promises");
+        const path = await import("node:path");
+        const filePath = path.join(process.cwd(), `native-char-${id}.json`);
+        const content = await fs.readFile(filePath, "utf-8");
+        const payload = JSON.parse(content);
+        if (payload?.success && payload?.data) {
+          const member = payload.data as PartyMember;
+          // Mark it as native so the UI knows
+          (member as any).isNative = true;
+          return member;
+        }
+      } catch (e) {
+        console.warn(`Failed to read native character ${id}:`, e);
+      }
+    }
+    return errorMember(id, "Native character not found");
+  }
+
   let payload: any = null;
   let source: "live" | "cache" = "live";
   let fetchError = "";

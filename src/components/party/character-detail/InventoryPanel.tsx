@@ -738,7 +738,7 @@ export default function InventoryPanel({
                   )}
 
                   {quickAddSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1.5 z-[110] max-h-60 overflow-y-auto rounded-lg border border-border bg-[#18181b] p-1.5 shadow-2xl animate-in fade-in duration-100">
+                    <div className="absolute left-0 right-0 mt-1.5 z-[110] max-h-60 overflow-y-auto rounded-lg border border-border bg-popover p-1.5 shadow-2xl animate-in fade-in duration-100">
                       <div className="text-[9px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider flex justify-between items-center select-none">
                         <span>✨ Quick Add to Inventory</span>
                         {isFetchingDetail && (
@@ -1303,7 +1303,7 @@ export default function InventoryPanel({
       {/* Add Custom Item Modal */}
       {showAddItemModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-xl border border-border bg-[#0d0d0f] p-5 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+          <div className="relative w-full max-w-lg rounded-xl border border-border bg-background p-5 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-border/40 pb-2.5 mb-4 select-none">
               <h3 className="font-heading text-sm font-bold text-accent uppercase tracking-wider flex items-center gap-1.5">
                 <span>🎒 Add Custom Item</span>
@@ -1340,7 +1340,7 @@ export default function InventoryPanel({
             </div>
 
             {filteredPresets.length > 0 && (
-              <div className="absolute left-5 right-5 mt-[78px] z-[130] max-h-56 overflow-y-auto rounded-lg border border-border bg-[#18181b] p-1.5 shadow-2xl animate-in fade-in duration-100">
+              <div className="absolute left-5 right-5 mt-[78px] z-[130] max-h-56 overflow-y-auto rounded-lg border border-border bg-popover p-1.5 shadow-2xl animate-in fade-in duration-100">
                 <div className="text-[9px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">
                   Matches ({filteredPresets.length})
                 </div>
@@ -1514,7 +1514,7 @@ export default function InventoryPanel({
                   <select
                     value={newItemType}
                     onChange={(e) => setNewItemType(e.target.value)}
-                    className="rounded-lg border border-border bg-[#0d0d0f] p-2 text-foreground focus:border-accent focus:outline-none transition-colors"
+                    className="rounded-lg border border-border bg-background p-2 text-foreground focus:border-accent focus:outline-none transition-colors"
                   >
                     {[
                       "Weapon",
@@ -1549,7 +1549,7 @@ export default function InventoryPanel({
                   <select
                     value={newItemRarity}
                     onChange={(e) => setNewItemRarity(e.target.value)}
-                    className="rounded-lg border border-border bg-[#0d0d0f] p-2 text-foreground focus:border-accent focus:outline-none transition-colors"
+                    className="rounded-lg border border-border bg-background p-2 text-foreground focus:border-accent focus:outline-none transition-colors"
                   >
                     {[
                       "Mundane",

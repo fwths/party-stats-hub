@@ -424,7 +424,7 @@ export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTr
                 className={`text-sm font-bold uppercase tracking-wide px-2 py-0.5 rounded border ${
                   activeTurnCombatant.type === "player"
                     ? "bg-accent/10 border-accent/30 text-accent"
-                    : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                    : "bg-ui-amber/10 border-ui-amber/30 text-ui-amber"
                 }`}
               >
                 {activeTurnCombatant.name}
@@ -438,7 +438,7 @@ export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTr
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handleRollMonstersInitiative}
-            className="rounded border border-amber-500/30 hover:border-amber-500/60 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-semibold px-2.5 py-1 text-xs cursor-pointer select-none active:scale-95 transition-all"
+            className="rounded border border-ui-amber/30 hover:border-ui-amber/60 bg-ui-amber/10 hover:bg-ui-amber/20 text-ui-amber font-semibold px-2.5 py-1 text-xs cursor-pointer select-none active:scale-95 transition-all"
           >
             Roll Monsters Init
           </button>
@@ -530,7 +530,7 @@ export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTr
                     )
                   ) : (
                     <div
-                      className={`w-8 h-8 rounded-full border flex items-center justify-center ${isDead ? "bg-destructive/20 border-destructive/40 text-destructive" : "bg-amber-500/10 border-amber-500/30 text-amber-400"}`}
+                      className={`w-8 h-8 rounded-full border flex items-center justify-center ${isDead ? "bg-destructive/20 border-destructive/40 text-destructive" : "bg-ui-amber/10 border-ui-amber/30 text-ui-amber"}`}
                     >
                       <Skull size={14} />
                     </div>
@@ -572,10 +572,10 @@ export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTr
                           isDead
                             ? "bg-zinc-600"
                             : c.hpCurrent <= c.hpMax / 5
-                              ? "bg-rose-600"
+                              ? "bg-ui-rose"
                               : c.hpCurrent <= c.hpMax / 2
-                                ? "bg-amber-500"
-                                : "bg-emerald-500"
+                                ? "bg-ui-amber"
+                                : "bg-ui-emerald"
                         }`}
                         style={{ width: `${Math.min(100, (c.hpCurrent / c.hpMax) * 100)}%` }}
                       />
@@ -595,14 +595,14 @@ export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTr
                     />
                     <button
                       onClick={() => applyCustomHpChange(c.id, "damage")}
-                      className="rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 p-1 hover:bg-rose-500/20 active:scale-95 transition-all text-xs font-semibold px-2 cursor-pointer h-[26px]"
+                      className="rounded bg-ui-rose/10 border border-ui-rose/30 text-ui-rose p-1 hover:bg-ui-rose/20 active:scale-95 transition-all text-xs font-semibold px-2 cursor-pointer h-[26px]"
                       title="Damage"
                     >
                       Dmg
                     </button>
                     <button
                       onClick={() => applyCustomHpChange(c.id, "heal")}
-                      className="rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-1 hover:bg-emerald-500/20 active:scale-95 transition-all text-xs font-semibold px-2 cursor-pointer h-[26px]"
+                      className="rounded bg-ui-emerald/10 border border-ui-emerald/30 text-ui-emerald p-1 hover:bg-ui-emerald/20 active:scale-95 transition-all text-xs font-semibold px-2 cursor-pointer h-[26px]"
                       title="Heal"
                     >
                       Heal
@@ -677,7 +677,7 @@ export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTr
 
               {/* Stat Block expansion (Monsters only) */}
               {isMonster && expandedMonsterIndex === c.monsterIndex && (
-                <div className="pl-6 select-text border-l border-amber-600/30 animate-fade-in">
+                <div className="pl-6 select-text border-l border-ui-amber/30 animate-fade-in">
                   {loadingDetails ? (
                     <div className="text-xs text-muted-foreground py-6 text-center">
                       Loading stat block details...

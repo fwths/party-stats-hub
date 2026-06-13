@@ -914,7 +914,7 @@ export default function SpellbookPanel({
       <div className="flex flex-col h-full relative">
         <MagicalSealWatermark school={spell.school} />
         {isCasting && (
-          <div className="absolute inset-0 bg-black/75 backdrop-blur-md flex flex-col items-center justify-center z-50 animate-[fade-in_0.2s_ease-out] rounded-xl">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-md flex flex-col items-center justify-center z-50 animate-[fade-in_0.2s_ease-out] rounded-xl">
             <div className="relative flex items-center justify-center mb-4">
               <div className="absolute w-28 h-28 border border-accent/40 rounded-full border-dashed animate-[spin_12s_linear_infinite]" />
               <div className="absolute w-24 h-24 border-2 border-accent/20 rounded-full animate-[spin_8s_linear_infinite] [animation-direction:reverse]" />
@@ -938,7 +938,7 @@ export default function SpellbookPanel({
           </div>
         )}
 
-        <div className="p-4 border-b border-border/20 bg-[#16151c]/90 backdrop-blur-xs flex items-start justify-between gap-3 shrink-0 z-10">
+        <div className="p-4 border-b border-border/20 bg-background/90 backdrop-blur-xs flex items-start justify-between gap-3 shrink-0 z-10">
           <div className="flex-1 min-w-0">
             <h3 className="text-xl font-heading font-extrabold text-foreground tracking-wide flex items-center gap-2">
               <SchoolIcon className={`w-5 h-5 ${schoolTheme.text} shrink-0`} />
@@ -977,7 +977,7 @@ export default function SpellbookPanel({
           </div>
         </div>
 
-        <div className="px-4 py-3 border-b border-border/10 bg-[#16151c]/50 backdrop-blur-xs shrink-0 z-10">
+        <div className="px-4 py-3 border-b border-border/10 bg-background/50 backdrop-blur-xs shrink-0 z-10">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
             <div className="p-2 rounded border border-border/20 bg-secondary/20">
               <div className="text-muted-foreground flex items-center justify-center gap-1 text-[8px] uppercase tracking-wider font-bold mb-1">
@@ -1129,7 +1129,7 @@ export default function SpellbookPanel({
           )}
         </div>
 
-        <div className="p-4 border-t border-border/20 bg-[#16151c]/95 backdrop-blur-xs shrink-0 flex flex-col gap-2.5 z-10">
+        <div className="p-4 border-t border-border/20 bg-background/95 backdrop-blur-xs shrink-0 flex flex-col gap-2.5 z-10">
           {isSorcerer && metamagicOptions.length > 0 && spAction && spell.level > 0 && (
             <div className="border-b border-border/15 pb-3.5 mb-1">
               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
@@ -1585,7 +1585,7 @@ export default function SpellbookPanel({
                         ${isExpanded ? "border-accent/40 bg-accent/5" : "border-border/50 bg-secondary/45"}`}
                       >
                         {isCasting && (
-                          <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 animate-fade-in">
+                          <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 animate-fade-in">
                             <Sparkles className="text-gold w-4 h-4 animate-bounce mb-1" />
                             <span className="text-[8px] font-bold text-accent uppercase tracking-wider animate-pulse">
                               Casting Cantrip
@@ -1710,7 +1710,7 @@ export default function SpellbookPanel({
                           ${isExpanded ? "border-accent/40 bg-accent/5" : "border-border/50 bg-secondary/45"}`}
                         >
                           {isCasting && (
-                            <div className="absolute inset-0 bg-black/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 animate-fade-in">
+                            <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center z-10 animate-fade-in">
                               <Sparkles className="text-gold w-4 h-4 animate-bounce mb-1" />
                               <span className="text-[8px] font-bold text-accent uppercase tracking-wider animate-pulse">
                                 Casting L{castingSpellState?.slotLevel}
@@ -1966,7 +1966,7 @@ export default function SpellbookPanel({
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-md bg-[#100f14]/95 border-l border-border/50 h-full flex flex-col shadow-2xl animate-slide-in-right relative"
+                className="w-full max-w-md bg-background/95 border-l border-border/50 h-full flex flex-col shadow-2xl animate-slide-in-right relative"
               >
                 <div className="flex-1 overflow-y-auto animate-fade-in relative z-10">
                   {renderCodexDetail(selectedSpell)}

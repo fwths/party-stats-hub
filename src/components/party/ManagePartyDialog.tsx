@@ -138,6 +138,21 @@ export function ManagePartyDialog({
           {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
         </div>
 
+        <div className="mb-2 border-t border-border/50 pt-2 mt-3 pb-1">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Or build your own
+          </label>
+          <div className="mt-1">
+            <button
+              onClick={() => { window.location.href = "/builder"; }}
+              className="w-full rounded border border-accent/60 bg-accent/15 px-3 py-2 text-sm text-accent hover:bg-accent/25 transition-colors flex justify-center items-center gap-2 font-medium"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+              Create Character Natively
+            </button>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between border-t border-border pt-3 text-xs">
           <button onClick={reset} className="text-muted-foreground underline hover:text-accent">
             Reset to defaults

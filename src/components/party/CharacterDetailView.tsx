@@ -291,19 +291,19 @@ const DND_ITEM_PRESETS: ItemPreset[] = [
 ];
 
 const DAMAGE_TYPE_THEMES: Record<string, { bg: string; text: string; border: string }> = {
-  fire: { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/30" },
-  cold: { bg: "bg-cyan-500/10", text: "text-cyan-400", border: "border-cyan-500/30" },
-  lightning: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/30" },
-  thunder: { bg: "bg-sky-500/10", text: "text-sky-400", border: "border-sky-500/30" },
-  acid: { bg: "bg-lime-500/10", text: "text-lime-400", border: "border-lime-500/30" },
-  poison: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/30" },
-  radiant: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/30" },
-  necrotic: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/30" },
-  force: { bg: "bg-indigo-500/10", text: "text-indigo-400", border: "border-indigo-500/30" },
-  psychic: { bg: "bg-pink-500/10", text: "text-pink-400", border: "border-pink-500/30" },
-  slashing: { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/20" },
-  piercing: { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/20" },
-  bludgeoning: { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/20" },
+  fire: { bg: "bg-ui-red/10", text: "text-ui-red", border: "border-ui-red/30" },
+  cold: { bg: "bg-ui-cyan/10", text: "text-ui-cyan", border: "border-ui-cyan/30" },
+  lightning: { bg: "bg-ui-blue/10", text: "text-ui-blue", border: "border-ui-blue/30" },
+  thunder: { bg: "bg-ui-sky/10", text: "text-ui-sky", border: "border-ui-sky/30" },
+  acid: { bg: "bg-ui-lime/10", text: "text-ui-lime", border: "border-ui-lime/30" },
+  poison: { bg: "bg-ui-emerald/10", text: "text-ui-emerald", border: "border-ui-emerald/30" },
+  radiant: { bg: "bg-ui-amber/10", text: "text-ui-amber", border: "border-ui-amber/30" },
+  necrotic: { bg: "bg-ui-purple/10", text: "text-ui-purple", border: "border-ui-purple/30" },
+  force: { bg: "bg-ui-indigo/10", text: "text-ui-indigo", border: "border-ui-indigo/30" },
+  psychic: { bg: "bg-ui-pink/10", text: "text-ui-pink", border: "border-ui-pink/30" },
+  slashing: { bg: "bg-muted/30", text: "text-muted-foreground", border: "border-border/50" },
+  piercing: { bg: "bg-muted/30", text: "text-muted-foreground", border: "border-border/50" },
+  bludgeoning: { bg: "bg-muted/30", text: "text-muted-foreground", border: "border-border/50" },
 };
 
 const SCHOOL_THEMES: Record<
@@ -318,67 +318,67 @@ const SCHOOL_THEMES: Record<
   }
 > = {
   abjuration: {
-    color: "cyan",
-    bg: "bg-cyan-500/10",
-    text: "text-cyan-400",
-    border: "border-cyan-500/30",
-    glow: "shadow-cyan-500/20",
+    color: "ui-cyan",
+    bg: "bg-ui-cyan/10",
+    text: "text-ui-cyan",
+    border: "border-ui-cyan/30",
+    glow: "shadow-ui-cyan/20",
     icon: Shield,
   },
   conjuration: {
-    color: "orange",
-    bg: "bg-orange-500/10",
-    text: "text-orange-400",
-    border: "border-orange-500/30",
-    glow: "shadow-orange-500/20",
+    color: "ui-orange",
+    bg: "bg-ui-orange/10",
+    text: "text-ui-orange",
+    border: "border-ui-orange/30",
+    glow: "shadow-ui-orange/20",
     icon: Layers,
   },
   divination: {
-    color: "indigo",
-    bg: "bg-indigo-500/10",
-    text: "text-indigo-400",
-    border: "border-indigo-500/30",
-    glow: "shadow-indigo-500/20",
+    color: "ui-indigo",
+    bg: "bg-ui-indigo/10",
+    text: "text-ui-indigo",
+    border: "border-ui-indigo/30",
+    glow: "shadow-ui-indigo/20",
     icon: Eye,
   },
   enchantment: {
-    color: "pink",
-    bg: "bg-pink-500/10",
-    text: "text-pink-400",
-    border: "border-pink-500/30",
-    glow: "shadow-pink-500/20",
+    color: "ui-pink",
+    bg: "bg-ui-pink/10",
+    text: "text-ui-pink",
+    border: "border-ui-pink/30",
+    glow: "shadow-ui-pink/20",
     icon: Heart,
   },
   evocation: {
-    color: "red",
-    bg: "bg-red-500/10",
-    text: "text-red-400",
-    border: "border-red-500/30",
-    glow: "shadow-red-500/20",
+    color: "ui-red",
+    bg: "bg-ui-red/10",
+    text: "text-ui-red",
+    border: "border-ui-red/30",
+    glow: "shadow-ui-red/20",
     icon: Flame,
   },
   illusion: {
-    color: "purple",
-    bg: "bg-purple-500/10",
-    text: "text-purple-400",
-    border: "border-purple-500/30",
-    glow: "shadow-purple-500/20",
+    color: "ui-purple",
+    bg: "bg-ui-purple/10",
+    text: "text-ui-purple",
+    border: "border-ui-purple/30",
+    glow: "shadow-ui-purple/20",
     icon: Moon,
   },
   necromancy: {
-    color: "emerald",
-    bg: "bg-emerald-500/10",
-    text: "text-emerald-400",
-    border: "border-emerald-500/30",
-    glow: "shadow-emerald-500/20",
+    color: "ui-emerald",
+    bg: "bg-ui-emerald/10",
+    text: "text-ui-emerald",
+    border: "border-ui-emerald/30",
+    glow: "shadow-ui-emerald/20",
     icon: Skull,
   },
   transmutation: {
-    color: "amber",
-    bg: "bg-amber-500/10",
-    text: "text-amber-400",
-    border: "border-amber-500/30",
-    glow: "shadow-amber-500/20",
+    color: "ui-amber",
+    bg: "bg-ui-amber/10",
+    text: "text-ui-amber",
+    border: "border-ui-amber/30",
+    glow: "shadow-ui-amber/20",
     icon: RefreshCw,
   },
 };
@@ -387,11 +387,11 @@ const getSchoolTheme = (schoolName?: string) => {
   const normalized = schoolName?.toLowerCase() || "";
   return (
     SCHOOL_THEMES[normalized] || {
-      color: "slate",
-      bg: "bg-slate-500/10",
-      text: "text-slate-400",
-      border: "border-slate-500/20",
-      glow: "shadow-slate-500/10",
+      color: "muted",
+      bg: "bg-muted/30",
+      text: "text-muted-foreground",
+      border: "border-border/50",
+      glow: "shadow-border/10",
       icon: BookOpen,
     }
   );
@@ -3605,9 +3605,9 @@ export function CharacterDetailView({
   // === HERO ===
   const getAvatarRingClass = (pct: number) => {
     if (pct <= 25)
-      return "ring-4 ring-destructive/80 shadow-[0_0_20px_var(--hp-critical)] animate-pulse";
-    if (pct <= 60) return "ring-4 ring-amber-500/60 shadow-[0_0_16px_rgba(245,158,11,0.4)]";
-    return "ring-4 ring-primary/50 shadow-[0_0_16px_rgba(109,40,217,0.35)] border-glow-primary";
+      return "ring-4 ring-hp-critical/80 shadow-[0_0_20px_color-mix(in_oklab,var(--color-hp-critical)_80%,transparent)] animate-pulse";
+    if (pct <= 60) return "ring-4 ring-hp-wounded/60 shadow-[0_0_16px_color-mix(in_oklab,var(--color-hp-wounded)_40%,transparent)]";
+    return "ring-4 ring-hp-good/50 shadow-[0_0_16px_color-mix(in_oklab,var(--color-hp-good)_35%,transparent)]";
   };
   const avatarRing = getAvatarRingClass(hpPct);
 
@@ -3815,7 +3815,7 @@ export function CharacterDetailView({
       <div>
         <div className="mb-1.5 flex items-baseline justify-between text-sm">
           <span className="flex items-center gap-1.5 font-medium text-muted-foreground select-none">
-            <Heart size={14} className="text-rose-500 drop-shadow-[0_0_4px_rgba(244,63,94,0.5)]" />
+            <Heart size={14} className="text-ui-rose drop-shadow-[0_0_4px_color-mix(in_oklab,var(--color-ui-rose)_50%,transparent)]" />
             <span>Hit Points</span>
             {displayHitDice && displayHitDice !== "—" && (
               <span className="ml-1 font-mono text-[10px] text-muted-foreground/75">
@@ -4123,8 +4123,8 @@ export function CharacterDetailView({
                         className={cn(
                           "shrink-0 text-[8px] px-1 rounded font-bold uppercase tracking-wider scale-90 select-none border",
                           badge.type === "adv"
-                            ? "bg-emerald-500/25 text-emerald-400 border-emerald-500/35 animate-pulse"
-                            : "bg-rose-500/25 text-rose-400 border-rose-500/35",
+                            ? "bg-ui-emerald/25 text-ui-emerald border-ui-emerald/35 animate-pulse"
+                            : "bg-ui-rose/25 text-ui-rose border-ui-rose/35",
                         )}
                       >
                         {badge.label}
@@ -4294,17 +4294,17 @@ export function CharacterDetailView({
                     className={cn(
                       "shrink-0 text-[8px] px-1 rounded font-bold uppercase tracking-wider scale-90 select-none border",
                       badge.type === "conflict"
-                        ? "bg-gradient-to-r from-emerald-500/25 to-rose-500/25 border-amber-500/40 text-amber-300"
+                        ? "bg-gradient-to-r from-ui-emerald/25 to-ui-rose/25 border-ui-amber/40 text-ui-amber"
                         : badge.type === "adv"
-                          ? "bg-emerald-500/25 text-emerald-400 border-emerald-500/35"
-                          : "bg-rose-500/25 text-rose-400 border-rose-500/35",
+                          ? "bg-ui-emerald/25 text-ui-emerald border-ui-emerald/35"
+                          : "bg-ui-rose/25 text-ui-rose border-ui-rose/35",
                     )}
                   >
                     {badge.type === "conflict" ? (
                       <>
-                        <span className="text-emerald-400">{badge.label.split("|")[0]}</span>
+                        <span className="text-ui-emerald">{badge.label.split("|")[0]}</span>
                         <span className="text-muted-foreground/60 mx-px">|</span>
-                        <span className="text-rose-400">{badge.label.split("|")[1]}</span>
+                        <span className="text-ui-rose">{badge.label.split("|")[1]}</span>
                       </>
                     ) : (
                       badge.label
@@ -4406,17 +4406,17 @@ export function CharacterDetailView({
                     className={cn(
                       "shrink-0 text-[8px] px-1 rounded font-bold uppercase tracking-wider scale-90 select-none border",
                       badge.type === "conflict"
-                        ? "bg-gradient-to-r from-emerald-500/25 to-rose-500/25 border-amber-500/40 text-amber-300"
+                        ? "bg-gradient-to-r from-ui-emerald/25 to-ui-rose/25 border-ui-amber/40 text-ui-amber"
                         : badge.type === "adv"
-                          ? "bg-emerald-500/25 text-emerald-400 border-emerald-500/35"
-                          : "bg-rose-500/25 text-rose-400 border-rose-500/35",
+                          ? "bg-ui-emerald/25 text-ui-emerald border-ui-emerald/35"
+                          : "bg-ui-rose/25 text-ui-rose border-ui-rose/35",
                     )}
                   >
                     {badge.type === "conflict" ? (
                       <>
-                        <span className="text-emerald-400">{badge.label.split("|")[0]}</span>
+                        <span className="text-ui-emerald">{badge.label.split("|")[0]}</span>
                         <span className="text-muted-foreground/60 mx-px">|</span>
-                        <span className="text-rose-400">{badge.label.split("|")[1]}</span>
+                        <span className="text-ui-rose">{badge.label.split("|")[1]}</span>
                       </>
                     ) : (
                       badge.label
@@ -5574,7 +5574,7 @@ export function CharacterDetailView({
                   </span>
                 ))}
                 {def.passivePerception && (
-                  <span className="rounded-md bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 text-teal-400 font-semibold uppercase tracking-wide">
+                  <span className="rounded-md bg-ui-teal/10 border border-ui-teal/20 px-2 py-0.5 text-ui-teal font-semibold uppercase tracking-wide">
                     👁️ Passive Perception: {def.passivePerception}
                   </span>
                 )}
@@ -6879,7 +6879,7 @@ export function CharacterDetailView({
                 </div>
 
                 {filteredPresets.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 z-[110] max-h-56 overflow-y-auto rounded-lg border border-border bg-[#18181b] p-1.5 shadow-2xl animate-in fade-in duration-100">
+                  <div className="absolute left-0 right-0 mt-1 z-[110] max-h-56 overflow-y-auto rounded-lg border border-border bg-popover p-1.5 shadow-2xl animate-in fade-in duration-100">
                     <div className="text-[9px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">
                       Matches ({filteredPresets.length})
                     </div>

@@ -20,6 +20,10 @@ export function ThemeSelector() {
         return "bg-amber-500 shadow-amber-500/50";
       case "parchment":
         return "bg-amber-200 border border-amber-800/40 shadow-amber-800/10";
+      case "minimal":
+        return "bg-zinc-300 border border-zinc-500/30 shadow-white/20";
+      case "minimal-light":
+        return "bg-zinc-800 border border-zinc-500/30 shadow-black/20";
     }
   };
 

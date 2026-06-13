@@ -368,7 +368,7 @@ export function AmbientAudio() {
         onClick={handleFireToggle}
         className={`flex items-center justify-center p-1 rounded transition-colors duration-200 cursor-pointer ${
           fireActive
-            ? "text-rose-500 bg-rose-500/10 border border-rose-500/30"
+            ? "text-ui-rose bg-ui-rose/10 border border-ui-rose/30"
             : "text-muted-foreground/60 border border-transparent hover:text-foreground"
         }`}
       >
@@ -391,7 +391,7 @@ export function AmbientAudio() {
         onClick={handleWindToggle}
         className={`flex items-center justify-center p-1 rounded transition-colors duration-200 cursor-pointer ${
           windActive
-            ? "text-sky-400 bg-sky-400/10 border border-sky-400/30"
+            ? "text-ui-sky bg-ui-sky/10 border border-ui-sky/30"
             : "text-muted-foreground/60 border border-transparent hover:text-foreground"
         }`}
       >

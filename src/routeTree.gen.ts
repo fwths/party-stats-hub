@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as CompendiumRouteImport } from './routes/compendium'
+import { Route as BuilderRouteImport } from './routes/builder'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CharacterIdRouteImport } from './routes/character.$id'
 import { Route as ApiSyncRouteImport } from './routes/api/sync'
@@ -19,6 +21,16 @@ import { Route as ApiNotionRouteImport } from './routes/api/notion'
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompendiumRoute = CompendiumRouteImport.update({
+  id: '/compendium',
+  path: '/compendium',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuilderRoute = BuilderRouteImport.update({
+  id: '/builder',
+  path: '/builder',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -49,6 +61,8 @@ const ApiNotionRoute = ApiNotionRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/builder': typeof BuilderRoute
+  '/compendium': typeof CompendiumRoute
   '/login': typeof LoginRoute
   '/api/notion': typeof ApiNotionRoute
   '/api/party': typeof ApiPartyRoute
@@ -57,6 +71,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/builder': typeof BuilderRoute
+  '/compendium': typeof CompendiumRoute
   '/login': typeof LoginRoute
   '/api/notion': typeof ApiNotionRoute
   '/api/party': typeof ApiPartyRoute
@@ -66,6 +82,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/builder': typeof BuilderRoute
+  '/compendium': typeof CompendiumRoute
   '/login': typeof LoginRoute
   '/api/notion': typeof ApiNotionRoute
   '/api/party': typeof ApiPartyRoute
@@ -76,6 +94,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/builder'
+    | '/compendium'
     | '/login'
     | '/api/notion'
     | '/api/party'
@@ -84,6 +104,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/builder'
+    | '/compendium'
     | '/login'
     | '/api/notion'
     | '/api/party'
@@ -92,6 +114,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/builder'
+    | '/compendium'
     | '/login'
     | '/api/notion'
     | '/api/party'
@@ -101,6 +125,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BuilderRoute: typeof BuilderRoute
+  CompendiumRoute: typeof CompendiumRoute
   LoginRoute: typeof LoginRoute
   ApiNotionRoute: typeof ApiNotionRoute
   ApiPartyRoute: typeof ApiPartyRoute
@@ -115,6 +141,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compendium': {
+      id: '/compendium'
+      path: '/compendium'
+      fullPath: '/compendium'
+      preLoaderRoute: typeof CompendiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/builder': {
+      id: '/builder'
+      path: '/builder'
+      fullPath: '/builder'
+      preLoaderRoute: typeof BuilderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -157,6 +197,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BuilderRoute: BuilderRoute,
+  CompendiumRoute: CompendiumRoute,
   LoginRoute: LoginRoute,
   ApiNotionRoute: ApiNotionRoute,
   ApiPartyRoute: ApiPartyRoute,

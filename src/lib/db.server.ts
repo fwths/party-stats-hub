@@ -1,3 +1,5 @@
+import notionSeed from "./notion-cache-seed.json";
+
 let DatabaseSync: any;
 let fs: any;
 let path: any;
@@ -225,7 +227,12 @@ export async function getKv(key: string): Promise<string | null> {
   const db = await initDb();
   const stmt = db.prepare("SELECT value FROM kv_store WHERE key = ?");
   const row = stmt.get(key) as { value: string } | undefined;
-  return row ? row.value : null;
+  if (row) return row.value;
+
+  if (key.startsWith("notion:") && (notionSeed as Record<string, string>)[key]) {
+    return (notionSeed as Record<string, string>)[key];
+  }
+  return null;
 }
 
 export async function setKv(key: string, value: string): Promise<void> {
@@ -264,6 +271,14 @@ export async function getKvWithPrefix(prefix: string): Promise<Record<string, st
   const result: Record<string, string> = {};
   for (const row of rows) {
     result[row.key] = row.value;
+  }
+
+  if (prefix.startsWith("notion")) {
+    for (const [k, v] of Object.entries(notionSeed)) {
+      if (k.startsWith(prefix) && !result[k]) {
+        result[k] = v;
+      }
+    }
   }
   return result;
 }

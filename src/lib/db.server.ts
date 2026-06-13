@@ -3,17 +3,129 @@ let fs: any;
 let path: any;
 let dbInstance: any;
 
+// A high-fidelity in-memory Mock Database for platforms that use 'unenv' or don't support SQLite
+class MockDatabase {
+  kv = new Map<string, { value: string; updated_at: number }>();
+  sessions = new Map<string, { expires_at: number }>();
+
+  exec(sql: string) {
+    // No-op for mock DB setup
+  }
+
+  prepare(sql: string) {
+    const trimmed = sql.trim().replace(/\s+/g, ' ');
+    const self = this;
+
+    // 1. SELECT value FROM kv_store WHERE key = ?
+    if (trimmed.includes("SELECT value FROM kv_store WHERE key = ?")) {
+      return {
+        get: (key: string) => {
+          const row = self.kv.get(key);
+          return row ? { value: row.value } : undefined;
+        }
+      };
+    }
+
+    // 2. INSERT INTO kv_store
+    if (trimmed.includes("INSERT INTO kv_store")) {
+      return {
+        run: (key: string, value: string, updatedAt: number) => {
+          self.kv.set(key, { value, updated_at: updatedAt });
+        }
+      };
+    }
+
+    // 3. DELETE FROM kv_store WHERE key = ?
+    if (trimmed.includes("DELETE FROM kv_store WHERE key = ?")) {
+      return {
+        run: (key: string) => {
+          self.kv.delete(key);
+        }
+      };
+    }
+
+    // 4. SELECT key, value FROM kv_store WHERE key LIKE ?
+    if (trimmed.includes("SELECT key, value FROM kv_store WHERE key LIKE ?")) {
+      return {
+        all: (prefix: string) => {
+          const prefixClean = prefix.replace('%', '');
+          const results: Array<{ key: string; value: string }> = [];
+          for (const [k, v] of self.kv.entries()) {
+            if (k.startsWith(prefixClean)) {
+              results.push({ key: k, value: v.value });
+            }
+          }
+          return results;
+        }
+      };
+    }
+
+    // 5. SELECT key, value FROM kv_store
+    if (trimmed.includes("SELECT key, value FROM kv_store")) {
+      return {
+        all: () => {
+          const results: Array<{ key: string; value: string }> = [];
+          for (const [k, v] of self.kv.entries()) {
+            results.push({ key: k, value: v.value });
+          }
+          return results;
+        }
+      };
+    }
+
+    // 6. INSERT INTO sessions (id, expires_at)
+    if (trimmed.includes("INSERT INTO sessions")) {
+      return {
+        run: (id: string, expiresAt: number) => {
+          self.sessions.set(id, { expires_at: expiresAt });
+        }
+      };
+    }
+
+    // 7. SELECT expires_at FROM sessions WHERE id = ?
+    if (trimmed.includes("SELECT expires_at FROM sessions WHERE id = ?")) {
+      return {
+        get: (id: string) => {
+          const row = self.sessions.get(id);
+          return row ? { expires_at: row.expires_at } : undefined;
+        }
+      };
+    }
+
+    // 8. DELETE FROM sessions WHERE id = ?
+    if (trimmed.includes("DELETE FROM sessions WHERE id = ?")) {
+      return {
+        run: (id: string) => {
+          self.sessions.delete(id);
+        }
+      };
+    }
+
+    // 9. DELETE FROM sessions WHERE expires_at < ?
+    if (trimmed.includes("DELETE FROM sessions WHERE expires_at < ?")) {
+      return {
+        run: (now: number) => {
+          for (const [id, s] of self.sessions.entries()) {
+            if (s.expires_at < now) {
+              self.sessions.delete(id);
+            }
+          }
+        }
+      };
+    }
+
+    // Fallback Mock Statement
+    return {
+      get: () => undefined,
+      run: () => {},
+      all: () => []
+    };
+  }
+}
+
 // Helper to initialize database dynamically on server context only
 async function initDb() {
   if (dbInstance) return dbInstance;
-
-  const sqliteModule = await import("node:sqlite");
-  const fsModule = await import("node:fs");
-  const pathModule = await import("node:path");
-
-  DatabaseSync = sqliteModule.DatabaseSync;
-  fs = fsModule.default || fsModule;
-  path = pathModule.default || pathModule;
 
   const globalForDb = globalThis as unknown as {
     dbInstance: any;
@@ -24,6 +136,31 @@ async function initDb() {
     return dbInstance;
   }
 
+  // 1. Try importing standard node:sqlite dynamically
+  let sqliteModule: any = null;
+  let fsModule: any = null;
+  let pathModule: any = null;
+
+  try {
+    sqliteModule = await import("node:sqlite");
+    fsModule = await import("node:fs");
+    pathModule = await import("node:path");
+
+    DatabaseSync = sqliteModule.DatabaseSync;
+    fs = fsModule.default || fsModule;
+    path = pathModule.default || pathModule;
+    
+    if (!DatabaseSync) {
+      throw new Error("DatabaseSync is undefined in node:sqlite");
+    }
+  } catch (importError) {
+    console.warn("node:sqlite is not supported on this platform. Falling back to in-memory store. Error:", importError);
+    dbInstance = new MockDatabase();
+    globalForDb.dbInstance = dbInstance;
+    return dbInstance;
+  }
+
+  // 2. Try instantiating DatabaseSync at default path
   let dbPath = "";
   try {
     const dbDir = path.join(process.cwd(), "data");
@@ -31,24 +168,36 @@ async function initDb() {
       fs.mkdirSync(dbDir, { recursive: true });
     }
     dbPath = path.join(dbDir, "party-stats.db");
-    
-    // Attempt to open and write to verify permissions
+
     dbInstance = new DatabaseSync(dbPath);
     dbInstance.exec("CREATE TABLE IF NOT EXISTS __write_test (id INTEGER PRIMARY KEY); DROP TABLE __write_test;");
     console.log("Database initialized successfully at default path:", dbPath);
   } catch (error) {
+    const errStr = String(error);
+    if (errStr.includes("not implemented") || errStr.includes("is not a constructor")) {
+      console.warn("node:sqlite is a mock (unenv). Falling back to in-memory store.");
+      dbInstance = new MockDatabase();
+      globalForDb.dbInstance = dbInstance;
+      return dbInstance;
+    }
+
     console.warn("Failed to initialize database at default path, attempting temp fallback. Error:", error);
     try {
       const tempDir = process.env.TEMP || process.env.TMP || "/tmp";
       const tempDbPath = path.join(tempDir, "party-stats.db");
-      
+
       dbInstance = new DatabaseSync(tempDbPath);
       dbInstance.exec("CREATE TABLE IF NOT EXISTS __write_test (id INTEGER PRIMARY KEY); DROP TABLE __write_test;");
       dbPath = tempDbPath;
       console.log("Database initialized successfully at temp path:", dbPath);
     } catch (tempError) {
-      console.error("Critical: Failed to initialize database in both default and temp path:", tempError);
-      throw tempError;
+      const tempErrStr = String(tempError);
+      if (tempErrStr.includes("not implemented") || tempErrStr.includes("is not a constructor")) {
+        console.warn("DatabaseSync temp fallback threw unenv error. Falling back to in-memory store.");
+      } else {
+        console.warn("Failed to initialize database in both paths. Falling back to in-memory store. Error:", tempError);
+      }
+      dbInstance = new MockDatabase();
     }
   }
 

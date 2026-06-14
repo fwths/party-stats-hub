@@ -9,5 +9,8 @@ export default defineConfig({
   },
   vite: {
     plugins: [visualizer({ open: false, filename: "bundle-stats.html" })],
+    ssr: {
+      external: ["better-sqlite3"],
+    },
   },
 });

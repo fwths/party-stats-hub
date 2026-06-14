@@ -33,11 +33,11 @@ dist-ssr
 
 # Character Caches
 char-*.json
-
-char-131296315.json
-char-132900149.json
-char-132940690.json
-char-97349530.json
+!char-131296315.json
+!char-131593533.json
+!char-132900149.json
+!char-132940690.json
+!char-97349530.json
 read_review.ps1
 
 # Environment Variables
@@ -47,5 +47,51 @@ read_review.ps1
 .env.production.local
 .env.*
 
-char-132900149.json
-char-132940690.json
+books/
+*.txt
+*.json
+!package.json
+!tsconfig.json
+!tsconfig.node.json
+!tsconfig.app.json
+!artificer_subclasses.json
+!artificer_tables.json
+!artificer_plans.json
+!artificer_final_data.json
+!src/data/**/*.json
+!parsed_classes/**/*.json
+
+# Databases
+*.db
+*.sqlite
+sqlite.db.bak
+
+# Raw Books & Copyrighted Material
+raw_books/
+*.zip
+
+# Build Artifacts
+bundle-stats.html
+
+# Temporary & Scratch
+scratch/
+.agents/
+2024_spells_repo/
+2024_srd_repo/
+
+# Cache Files
+native-char-*.json
+!native-char-900031162.json
+!native-char-900092897.json
+!native-char-900670469.json
+
+# Alternate Package Managers
+bun.lock
+bunfig.toml
+
+# Temporary Recovery/Candidate Files
+classes_candidate_*.js
+classes_candidate_*.ts
+classes_recovered.js
+classes_recovered.ts
+extracted_raw_data.json

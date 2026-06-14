@@ -245,7 +245,7 @@ function mergeDbOverrides(members: PartyMember[], kv: Record<string, string>): P
       try {
         const parsed = JSON.parse(slotsRaw);
         if (parsed.spellSlotsUsed && parsed.pactSlotsUsed) {
-          const getEffective = (slots: SpellSlotLevel[], isPact: boolean) => {
+          const getEffective = (slots: typeof member.spellSlots, isPact: boolean) => {
             return slots.map((s) => {
               const localUsed = (isPact ? parsed.pactSlotsUsed : parsed.spellSlotsUsed)[s.level];
               return {

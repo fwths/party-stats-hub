@@ -1,0 +1,1048 @@
+{
+  "id": "paladin",
+  "name": "Paladin",
+  "className": "Paladin",
+  "description": "Paladins are united by their oaths to stand against the forces of annihilation and corruption. Whether sworn before a god's altar, in a sacred glade before nature spirits, or in a moment of desperation and grief with the dead as the only witnesses, a Paladin's oath is a powerful bond. It is a source of power that turns a devout warrior into a blessed champion.",
+  "primaryAbility": [
+    "Strength",
+    "Charisma"
+  ],
+  "hitPoints": {
+    "hitDice": 10,
+    "hitDiceType": "d10",
+    "hpAtFirstLevel": "10 + Constitution modifier",
+    "hpAtHigherLevels": "1d10 (or 6) + Constitution modifier"
+  },
+  "proficiencies": {
+    "savingThrows": [
+      "Wisdom",
+      "Charisma"
+    ],
+    "skills": {
+      "choose": 2,
+      "options": [
+        "Athletics",
+        "Insight",
+        "Intimidation",
+        "Medicine",
+        "Persuasion",
+        "Religion"
+      ]
+    },
+    "weapons": [
+      "Simple",
+      "Martial"
+    ],
+    "armor": [
+      "Light",
+      "Medium",
+      "Heavy",
+      "Shields"
+    ],
+    "tools": []
+  },
+  "startingEquipment": {
+    "defaultBundle": [
+      "Chain Mail",
+      "Shield",
+      "Longsword",
+      "6 Javelins",
+      "Holy Symbol",
+      "Priest's Pack",
+      "9 GP"
+    ],
+    "goldAlternative": "150 GP"
+  },
+  "weaponMastery": {
+    "levelGained": 1,
+    "weaponsKnownCount": 2
+  },
+  "multiclassing": {
+    "requirements": [
+      {
+        "ability": "Strength",
+        "minScore": 13
+      },
+      {
+        "ability": "Charisma",
+        "minScore": 13
+      }
+    ],
+    "proficienciesGained": {
+      "armor": [
+        "Light",
+        "Medium",
+        "Shields"
+      ],
+      "weapons": [
+        "Martial"
+      ]
+    }
+  },
+  "spellcasting": {
+    "ability": "Charisma",
+    "casterType": "Half",
+    "preparationType": "Prepared",
+    "spellcastingFocus": [
+      "Holy Symbol"
+    ],
+    "slotsByLevel": {
+      "1": [
+        2
+      ],
+      "2": [
+        2
+      ],
+      "3": [
+        3
+      ],
+      "4": [
+        3
+      ],
+      "5": [
+        4,
+        2
+      ],
+      "6": [
+        4,
+        2
+      ],
+      "7": [
+        4,
+        3
+      ],
+      "8": [
+        4,
+        3
+      ],
+      "9": [
+        4,
+        3,
+        2
+      ],
+      "10": [
+        4,
+        3,
+        2
+      ],
+      "11": [
+        4,
+        3,
+        3
+      ],
+      "12": [
+        4,
+        3,
+        3
+      ],
+      "13": [
+        4,
+        3,
+        3,
+        1
+      ],
+      "14": [
+        4,
+        3,
+        3,
+        1
+      ],
+      "15": [
+        4,
+        3,
+        3,
+        2
+      ],
+      "16": [
+        4,
+        3,
+        3,
+        2
+      ],
+      "17": [
+        4,
+        3,
+        3,
+        3,
+        1
+      ],
+      "18": [
+        4,
+        3,
+        3,
+        3,
+        1
+      ],
+      "19": [
+        4,
+        3,
+        3,
+        3,
+        2
+      ],
+      "20": [
+        4,
+        3,
+        3,
+        3,
+        2
+      ]
+    },
+    "spellsPreparedByLevel": {
+      "1": 2,
+      "2": 2,
+      "3": 3,
+      "4": 3,
+      "5": 4,
+      "6": 4,
+      "7": 5,
+      "8": 5,
+      "9": 6,
+      "10": 6,
+      "11": 7,
+      "12": 7,
+      "13": 8,
+      "14": 8,
+      "15": 9,
+      "16": 9,
+      "17": 10,
+      "18": 10,
+      "19": 11,
+      "20": 11
+    }
+  },
+  "epicBoonRecommendation": "Boon of Truesight",
+  "subclasses": [
+    {
+      "id": "oath-of-devotion",
+      "name": "Oath of Devotion",
+      "description": "The Oath of Devotion binds Paladins to the ideals of justice and order, standing as the classic knight in shining armor.",
+      "levelChosen": 3,
+      "source": "PHB 2024",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Protection from Evil and Good",
+            "Shield of Faith"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Aid",
+            "Zone of Truth"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Beacon of Hope",
+            "Dispel Magic"
+          ]
+        },
+        {
+          "levelGained": 13,
+          "spells": [
+            "Freedom of Movement",
+            "Guardian of Faith"
+          ]
+        },
+        {
+          "levelGained": 17,
+          "spells": [
+            "Commune",
+            "Flame Strike"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "oath-of-devotion-spells",
+            "name": "Oath of Devotion Spells",
+            "description": "The magic of your oath ensures you always have certain spells ready; when you reach a Paladin level specified in the Oath of Devotion Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "sacred-weapon",
+            "name": "Sacred Weapon",
+            "description": "When you take the Attack action, you can expend one use of your Channel Divinity to imbue one Melee weapon you are holding with positive energy. For 10 minutes, add your Charisma modifier to attack rolls (minimum +1), the weapon deals its normal type or Radiant damage (your choice), and emits Bright Light in a 20-foot radius and Dim Light 20 feet beyond.",
+            "levelRequired": 3
+          }
+        ],
+        "7": [
+          {
+            "id": "aura-of-devotion",
+            "name": "Aura of Devotion",
+            "description": "You and your allies have Immunity to the Charmed condition while in your Aura of Protection.",
+            "levelRequired": 7
+          }
+        ],
+        "15": [
+          {
+            "id": "smite-of-protection",
+            "name": "Smite of Protection",
+            "description": "Whenever you cast Divine Smite, you and your allies have Half Cover while in your Aura of Protection until the start of your next turn.",
+            "levelRequired": 15
+          }
+        ],
+        "20": [
+          {
+            "id": "holy-nimbus",
+            "name": "Holy Nimbus",
+            "description": "As a Bonus Action, you can imbue your Aura of Protection with holy power for 10 minutes. You gain advantage on saves against Fiends/Undead, enemies in the aura take Radiant damage equal to your Charisma modifier + PB at the start of their turns, and the aura sheds sunlight. Once used, can't be used again until Long Rest or by expending a level 5 spell slot.",
+            "levelRequired": 20,
+            "actionType": "Bonus Action",
+            "recovery": "Long Rest"
+          }
+        ]
+      }
+    },
+    {
+      "id": "oath-of-glory",
+      "name": "Oath of Glory",
+      "description": "Paladins who take the Oath of Glory believe they and their companions are destined to achieve glory through deeds of heroism.",
+      "levelChosen": 3,
+      "source": "PHB 2024 / TCOE",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Guiding Bolt",
+            "Heroism"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Enhance Ability",
+            "Magic Weapon"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Haste",
+            "Protection from Energy"
+          ]
+        },
+        {
+          "levelGained": 13,
+          "spells": [
+            "Compulsion",
+            "Freedom of Movement"
+          ]
+        },
+        {
+          "levelGained": 17,
+          "spells": [
+            "Legend Lore",
+            "Yolande's Regal Presence"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "oath-of-glory-spells",
+            "name": "Oath of Glory Spells",
+            "description": "You always have the listed spells prepared when you reach the corresponding Paladin level.",
+            "levelRequired": 3
+          },
+          {
+            "id": "inspiring-smite",
+            "name": "Inspiring Smite",
+            "description": "Immediately after you cast Divine Smite, you can expend one use of your Channel Divinity and distribute Temporary Hit Points to creatures within 30 feet. The total HP equals 2d8 + Paladin level.",
+            "levelRequired": 3
+          },
+          {
+            "id": "peerless-athlete",
+            "name": "Peerless Athlete",
+            "description": "As a Bonus Action, expend one use of your Channel Divinity to gain advantage on Strength (Athletics) and Dexterity (Acrobatics) checks and increase jump distance by 10 feet for 1 hour.",
+            "levelRequired": 3,
+            "actionType": "Bonus Action"
+          }
+        ],
+        "7": [
+          {
+            "id": "aura-of-alacrity",
+            "name": "Aura of Alacrity",
+            "description": "Your Speed increases by 10 feet. In addition, whenever an ally enters your Aura of Protection for the first time on a turn or starts their turn there, their Speed increases by 10 feet until the end of their next turn.",
+            "levelRequired": 7
+          }
+        ],
+        "15": [
+          {
+            "id": "glorious-defense",
+            "name": "Glorious Defense",
+            "description": "When you or a creature within 10 feet is hit, use your Reaction to add Charisma modifier to its AC. If the attack misses, you can make a weapon attack against the attacker as part of this reaction. Can be used Charisma modifier times per Long Rest.",
+            "levelRequired": 15,
+            "actionType": "Reaction",
+            "recovery": "Long Rest"
+          }
+        ],
+        "20": [
+          {
+            "id": "living-legend",
+            "name": "Living Legend",
+            "description": "As a Bonus Action, empower yourself for 10 minutes: gain advantage on Charisma checks, use reaction to reroll failed saving throws, and force one missed weapon attack per turn to hit. Once used, can't be used again until Long Rest or by expending a level 5 spell slot.",
+            "levelRequired": 20,
+            "actionType": "Bonus Action",
+            "recovery": "Long Rest"
+          }
+        ]
+      }
+    },
+    {
+      "id": "oath-of-the-ancients",
+      "name": "Oath of the Ancients",
+      "description": "The Oath of the Ancients binds Paladins to cherish and preserve life, light, art, and laughter in the world.",
+      "levelChosen": 3,
+      "source": "PHB 2024",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Ensnaring Strike",
+            "Speak with Animals"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Misty Step",
+            "Moonbeam"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Plant Growth",
+            "Protection from Energy"
+          ]
+        },
+        {
+          "levelGained": 13,
+          "spells": [
+            "Ice Storm",
+            "Stoneskin"
+          ]
+        },
+        {
+          "levelGained": 17,
+          "spells": [
+            "Commune with Nature",
+            "Tree Stride"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "oath-of-the-ancients-spells",
+            "name": "Oath of the Ancients Spells",
+            "description": "You always have the listed spells prepared when you reach the corresponding Paladin level.",
+            "levelRequired": 3
+          },
+          {
+            "id": "natures-wrath",
+            "name": "Nature's Wrath",
+            "description": "As a Magic action, you can expend one use of your Channel Divinity to force each creature of your choice within 15 feet to succeed on a Strength saving throw or be Restrained by spectral vines for 1 minute (repeating save at the end of each turn).",
+            "levelRequired": 3,
+            "actionType": "Action"
+          }
+        ],
+        "7": [
+          {
+            "id": "aura-of-warding",
+            "name": "Aura of Warding",
+            "description": "You and your allies have Resistance to Necrotic, Psychic, and Radiant damage while in your Aura of Protection.",
+            "levelRequired": 7
+          }
+        ],
+        "15": [
+          {
+            "id": "undying-sentinel",
+            "name": "Undying Sentinel",
+            "description": "When reduced to 0 HP but not killed, you can drop to 1 HP instead and regain HP equal to three times your Paladin level. Regained on a Long Rest. Additionally, you cannot be aged magically and cease visibly aging.",
+            "levelRequired": 15,
+            "recovery": "Long Rest"
+          }
+        ],
+        "20": [
+          {
+            "id": "elder-champion",
+            "name": "Elder Champion",
+            "description": "As a Bonus Action, channel primal power for 1 minute: enemies in the aura have disadvantage on saves against your spells/Channel Divinity, regain 10 HP at the start of your turns, and cast action spells as a Bonus Action. Once used, can't be used again until Long Rest or by expending a level 5 spell slot.",
+            "levelRequired": 20,
+            "actionType": "Bonus Action",
+            "recovery": "Long Rest"
+          }
+        ]
+      }
+    },
+    {
+      "id": "oath-of-vengeance",
+      "name": "Oath of Vengeance",
+      "description": "The Oath of Vengeance is a solemn commitment to punish evildoers and make them pay for their crimes at any cost.",
+      "levelChosen": 3,
+      "source": "PHB 2024",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Bane",
+            "Hunter's Mark"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Hold Person",
+            "Misty Step"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Haste",
+            "Protection from Energy"
+          ]
+        },
+        {
+          "levelGained": 13,
+          "spells": [
+            "Banishment",
+            "Dimension Door"
+          ]
+        },
+        {
+          "levelGained": 17,
+          "spells": [
+            "Hold Monster",
+            "Scrying"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "oath-of-vengeance-spells",
+            "name": "Oath of Vengeance Spells",
+            "description": "You always have the listed spells prepared when you reach the corresponding Paladin level.",
+            "levelRequired": 3
+          },
+          {
+            "id": "vow-of-enmity",
+            "name": "Vow of Enmity",
+            "description": "When you take the Attack action, expend one use of your Channel Divinity to gain advantage on attack rolls against a creature you see within 30 feet for 1 minute. If it drops to 0 HP, transfer the vow to another creature within 30 feet (no action required).",
+            "levelRequired": 3
+          }
+        ],
+        "7": [
+          {
+            "id": "relentless-avenger",
+            "name": "Relentless Avenger",
+            "description": "When you hit a creature with an Opportunity Attack, reduce its Speed to 0 until the end of the turn and move up to half your Speed as part of the reaction without provoking Opportunity Attacks.",
+            "levelRequired": 7
+          }
+        ],
+        "15": [
+          {
+            "id": "soul-of-vengeance",
+            "name": "Soul of Vengeance",
+            "description": "Immediately after a creature under your Vow of Enmity hits or misses with an attack roll, you can take a Reaction to make a melee attack against it.",
+            "levelRequired": 15,
+            "actionType": "Reaction"
+          }
+        ],
+        "20": [
+          {
+            "id": "avenging-angel",
+            "name": "Avenging Angel",
+            "description": "As a Bonus Action, gain benefits for 10 minutes: fly speed of 60 feet (hover), and enemies starting their turn in the aura must succeed on a Wisdom save or be Frightened for 1 minute (attack rolls against them have advantage). Once used, can't be used again until Long Rest or by expending a level 5 spell slot.",
+            "levelRequired": 20,
+            "actionType": "Bonus Action",
+            "recovery": "Long Rest"
+          }
+        ]
+      }
+    },
+    {
+      "id": "oath-of-conquest",
+      "name": "Oath of Conquest",
+      "description": "The Oath of Conquest calls to paladins who seek glory in battle and the absolute subjugation of their enemies.",
+      "levelChosen": 3,
+      "source": "XGE",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Armor of Agathys",
+            "Command"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Hold Person",
+            "Spiritual Weapon"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Bestow Curse",
+            "Fear"
+          ]
+        },
+        {
+          "levelGained": 13,
+          "spells": [
+            "Dominate Beast",
+            "Stoneskin"
+          ]
+        },
+        {
+          "levelGained": 17,
+          "spells": [
+            "Cloudkill",
+            "Dominate Person"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "oath-of-conquest-spells",
+            "name": "Oath Spells",
+            "description": "You gain oath spells at the paladin levels listed in the Oath of Conquest Spells table.",
+            "levelRequired": 3
+          },
+          {
+            "id": "conquering-presence",
+            "name": "Channel Divinity: Conquering Presence",
+            "description": "As an action, you can force each creature of your choice within 30 feet that can see you to make a Wisdom saving throw or be Frightened of you for 1 minute (repeating save at the end of each turn).",
+            "levelRequired": 3,
+            "actionType": "Action"
+          },
+          {
+            "id": "guided-strike",
+            "name": "Channel Divinity: Guided Strike",
+            "description": "When you make an attack roll, you can use your Channel Divinity to gain a +10 bonus to the roll (choose after seeing the roll but before knowing if it hits).",
+            "levelRequired": 3
+          }
+        ],
+        "7": [
+          {
+            "id": "aura-of-conquest",
+            "name": "Aura of Conquest",
+            "description": "You emanate a 10-foot aura while not incapacitated. If a creature is Frightened of you, its speed is 0 in the aura, and it takes psychic damage equal to half your Paladin level if it starts its turn there. Increases to 30 feet at level 18.",
+            "levelRequired": 7
+          }
+        ],
+        "15": [
+          {
+            "id": "scornful-rebuke",
+            "name": "Scornful Rebuke",
+            "description": "Whenever a creature hits you with an attack, it takes psychic damage equal to your Charisma modifier (minimum of 1) while you are not incapacitated.",
+            "levelRequired": 15
+          }
+        ],
+        "20": [
+          {
+            "id": "invincible-conqueror",
+            "name": "Invincible Conqueror",
+            "description": "As an action, become an avatar of conquest for 1 minute: gain resistance to all damage, make one additional attack when taking Attack action, and melee attacks crit on 19 or 20. Once used, can't be used again until Long Rest.",
+            "levelRequired": 20,
+            "actionType": "Action",
+            "recovery": "Long Rest"
+          }
+        ]
+      }
+    },
+    {
+      "id": "oath-of-redemption",
+      "name": "Oath of Redemption",
+      "description": "The Oath of Redemption sets a paladin on a difficult path of peace and benevolence, using violence only as a last resort.",
+      "levelChosen": 3,
+      "source": "XGE",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Sanctuary",
+            "Sleep"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Calm Emotions",
+            "Hold Person"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Counterspell",
+            "Hypnotic Pattern"
+          ]
+        },
+        {
+          "levelGained": 13,
+          "spells": [
+            "Otiluke's Resilient Sphere",
+            "Stoneskin"
+          ]
+        },
+        {
+          "levelGained": 17,
+          "spells": [
+            "Hold Monster",
+            "Wall of Force"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "oath-of-redemption-spells",
+            "name": "Oath Spells",
+            "description": "You gain oath spells at the paladin levels listed in the Oath of Redemption Spells table.",
+            "levelRequired": 3
+          },
+          {
+            "id": "emissary-of-peace",
+            "name": "Channel Divinity: Emissary of Peace",
+            "description": "As a bonus action, grant yourself a +5 bonus to Charisma (Persuasion) checks for 10 minutes.",
+            "levelRequired": 3,
+            "actionType": "Bonus Action"
+          },
+          {
+            "id": "rebuke-the-violent",
+            "name": "Channel Divinity: Rebuke the Violent",
+            "description": "Immediately after an attacker within 30 feet deals damage to a creature other than you, use your reaction to force them to make a Wisdom saving throw. On a failure, they take Radiant damage equal to the damage they dealt (half damage on success).",
+            "levelRequired": 3,
+            "actionType": "Reaction"
+          }
+        ],
+        "7": [
+          {
+            "id": "aura-of-the-guardian",
+            "name": "Aura of the Guardian",
+            "description": "When a creature within 10 feet of you takes damage, you can use your reaction to take that damage instead. This damage cannot be reduced in any way. Aura increases to 30 feet at level 18.",
+            "levelRequired": 7,
+            "actionType": "Reaction"
+          }
+        ],
+        "15": [
+          {
+            "id": "protective-spirit",
+            "name": "Protective Spirit",
+            "description": "Regain HP equal to 1d6 + half Paladin level if you end your turn in combat with fewer than half your hit points remaining and are not incapacitated.",
+            "levelRequired": 15
+          }
+        ],
+        "20": [
+          {
+            "id": "emissary-of-redemption",
+            "name": "Emissary of Redemption",
+            "description": "You gain resistance to all damage dealt by other creatures. Whenever a creature hits you with an attack, it takes radiant damage equal to half the damage you take. This benefit is suppressed against any creature you attack or deal damage to until you finish a Long Rest.",
+            "levelRequired": 20
+          }
+        ]
+      }
+    },
+    {
+      "id": "oath-of-the-watchers",
+      "name": "Oath of the Watchers",
+      "description": "The Oath of the Watchers binds paladins to protect mortal realms from the predations of extraplanar threats.",
+      "levelChosen": 3,
+      "source": "TCOE",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Alarm",
+            "Detect Magic"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Moonbeam",
+            "See Invisibility"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Counterspell",
+            "Nondetection"
+          ]
+        },
+        {
+          "levelGained": 13,
+          "spells": [
+            "Aura of Purity",
+            "Banishment"
+          ]
+        },
+        {
+          "levelGained": 17,
+          "spells": [
+            "Hold Monster",
+            "Scrying"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "oath-of-the-watchers-spells",
+            "name": "Oath Spells",
+            "description": "You gain oath spells at the paladin levels listed in the Oath of the Watchers Spells table.",
+            "levelRequired": 3
+          },
+          {
+            "id": "watchers-will",
+            "name": "Channel Divinity: Watcher's Will",
+            "description": "As an action, choose creatures you see within 30 feet up to your Charisma modifier. For 1 minute, you and the chosen creatures have advantage on Intelligence, Wisdom, and Charisma saving throws.",
+            "levelRequired": 3,
+            "actionType": "Action"
+          },
+          {
+            "id": "abjure-the-extraplanar",
+            "name": "Channel Divinity: Abjure the Extraplanar",
+            "description": "As an action, present your holy symbol; each aberration, celestial, elemental, fey, or fiend within 30 feet that can hear you must make a Wisdom save or be turned for 1 minute.",
+            "levelRequired": 3,
+            "actionType": "Action"
+          }
+        ],
+        "7": [
+          {
+            "id": "aura-of-the-sentinel",
+            "name": "Aura of the Sentinel",
+            "description": "You emit an aura of alertness. You and allies within 10 feet gain a bonus to initiative equal to your proficiency bonus. Range increases to 30 feet at level 18.",
+            "levelRequired": 7
+          }
+        ],
+        "15": [
+          {
+            "id": "vigilant-rebuke",
+            "name": "Vigilant Rebuke",
+            "description": "Whenever you or a creature you see within 30 feet succeeds on an Intelligence, Wisdom, or Charisma saving throw, use your reaction to deal 2d8 + Charisma modifier force damage to the creature that forced the save.",
+            "levelRequired": 15,
+            "actionType": "Reaction"
+          }
+        ],
+        "20": [
+          {
+            "id": "mortal-bulwark",
+            "name": "Mortal Bulwark",
+            "description": "As a bonus action, gain benefits for 1 minute: truesight 120 feet, advantage on attacks against aberrations, celestials, elementals, fey, and fiends, and when you hit a creature you can force it to make a Charisma save or be banished to its native plane. Once used, can't be used again until Long Rest.",
+            "levelRequired": 20,
+            "actionType": "Bonus Action",
+            "recovery": "Long Rest"
+          }
+        ]
+      }
+    }
+  ],
+  "featuresByLevel": {
+    "1": [
+      {
+        "id": "lay-on-hands",
+        "name": "Lay On Hands",
+        "description": "Your blessed touch can heal wounds. You have a pool of healing power that replenishes when you finish a Long Rest. With that pool, you can restore a total number of Hit Points equal to five times your Paladin level.\nAs a Bonus Action, you can touch a creature (which could be yourself) and draw power from the pool of healing to restore a number of Hit Points to that creature, up to the maximum amount remaining in the pool.\nYou can also expend 5 Hit Points from the pool of healing power to remove the Poisoned condition from the creature; those points don't also restore Hit Points to the creature.",
+        "levelRequired": 1,
+        "actionType": "Bonus Action",
+        "recovery": "Long Rest",
+        "uses": "5 x Paladin level HP"
+      },
+      {
+        "id": "spellcasting",
+        "name": "Spellcasting",
+        "description": "You have learned to cast spells through prayer and meditation.",
+        "levelRequired": 1
+      },
+      {
+        "id": "weapon-mastery",
+        "name": "Weapon Mastery",
+        "description": "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency, such as Longswords and Javelins.\nWhenever you finish a Long Rest, you can change the kinds of weapons you chose.",
+        "levelRequired": 1,
+        "recovery": "Long Rest"
+      }
+    ],
+    "2": [
+      {
+        "id": "fighting-style",
+        "name": "Fighting Style",
+        "description": "You gain a Fighting Style feat of your choice. Instead of choosing one of those feats, you can choose the Blessed Warrior option.",
+        "levelRequired": 2
+      },
+      {
+        "id": "paladins-smite",
+        "name": "Paladin's Smite",
+        "description": "You always have the Divine Smite spell prepared. In addition, you can cast it without expending a spell slot, but you must finish a Long Rest before you can cast it in this way again.",
+        "levelRequired": 2,
+        "recovery": "Long Rest",
+        "uses": "1"
+      }
+    ],
+    "3": [
+      {
+        "id": "channel-divinity",
+        "name": "Channel Divinity",
+        "description": "You can channel divine energy directly from the Outer Planes, using it to fuel magical effects. You start with one such effect: Divine Sense. Other Paladin features give additional Channel Divinity effect options. Each time you use this class's Channel Divinity, you choose which effect from this class to create.\nYou can use this class's Channel Divinity twice. You regain one of its expended uses when you finish a Short Rest, and you regain all expended uses when you finish a Long Rest. You gain an additional use when you reach Paladin level 11.\n\nDivine Sense. As a Bonus Action, you can open your awareness to detect Celestials, Fiends, and Undead. For the next 10 minutes or until you have the Incapacitated condition, you know the location of any creature of those types within 60 feet of yourself, and you know its creature type. Within the same radius, you also detect the presence of any place or object that has been consecrated or desecrated.",
+        "levelRequired": 3,
+        "actionType": "Bonus Action",
+        "recovery": "Short or Long Rest",
+        "uses": "2"
+      },
+      {
+        "id": "paladin-subclass",
+        "name": "Paladin Subclass",
+        "description": "You gain a Paladin subclass of your choice.",
+        "levelRequired": 3
+      }
+    ],
+    "4": [
+      {
+        "id": "ability-score-improvement-4",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "levelRequired": 4
+      }
+    ],
+    "5": [
+      {
+        "id": "extra-attack",
+        "name": "Extra Attack",
+        "description": "You can attack twice instead of once whenever you take the Attack action on your turn.",
+        "levelRequired": 5,
+        "actionType": "Action"
+      },
+      {
+        "id": "faithful-steed",
+        "name": "Faithful Steed",
+        "description": "You can call on the aid of an otherworldly steed. You always have the Find Steed spell prepared. You can also cast the spell once without expending a spell slot, and you regain the ability to do so when you finish a Long Rest.",
+        "levelRequired": 5,
+        "recovery": "Long Rest",
+        "uses": "1"
+      }
+    ],
+    "6": [
+      {
+        "id": "aura-of-protection",
+        "name": "Aura of Protection",
+        "description": "You radiate a protective, unseeable aura in a 10-foot Emanation that originates from you. The aura is inactive while you have the Incapacitated condition.\nYou and your allies in the aura gain a bonus to saving throws equal to your Charisma modifier (minimum bonus of +1).",
+        "levelRequired": 6
+      }
+    ],
+    "7": [
+      {
+        "id": "subclass-feature-7",
+        "name": "Subclass Feature",
+        "description": "You gain a feature from your Paladin subclass.",
+        "levelRequired": 7
+      }
+    ],
+    "8": [
+      {
+        "id": "ability-score-improvement-8",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "levelRequired": 8
+      }
+    ],
+    "9": [
+      {
+        "id": "abjure-foes",
+        "name": "Abjure Foes",
+        "description": "As a Magic action, you can expend one use of this class's Channel Divinity to overwhelm foes with awe. As you present your Holy Symbol or weapon, you can target a number of creatures equal to your Charisma modifier (minimum of one creature) that you can see within 60 feet of yourself. Each target must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute or until it takes any damage. While Frightened in this way, a target can do only one of the following on its turns: move, take an action, or take a Bonus Action.",
+        "levelRequired": 9,
+        "actionType": "Action",
+        "savingThrow": "Wisdom",
+        "duration": "1 minute"
+      }
+    ],
+    "10": [
+      {
+        "id": "aura-of-courage",
+        "name": "Aura of Courage",
+        "description": "You and your allies have Immunity to the Frightened condition while in your Aura of Protection. If a Frightened ally enters the aura, that condition has no effect on that ally while there.",
+        "levelRequired": 10
+      }
+    ],
+    "11": [
+      {
+        "id": "radiant-strikes",
+        "name": "Radiant Strikes",
+        "description": "Your strikes now carry supernatural power. When you hit a target with an attack roll using a Melee weapon or an Unarmed Strike, the target takes an extra 1d8 Radiant damage.",
+        "levelRequired": 11,
+        "damageType": "Radiant"
+      }
+    ],
+    "12": [
+      {
+        "id": "ability-score-improvement-12",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "levelRequired": 12
+      }
+    ],
+    "13": [],
+    "14": [
+      {
+        "id": "restoring-touch",
+        "name": "Restoring Touch",
+        "description": "When you use Lay On Hands on a creature, you can also remove one or more of the following conditions from the creature: Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned. You must expend 5 Hit Points from the healing pool of Lay On Hands for each of these conditions you remove; those points don't also restore Hit Points to the creature.",
+        "levelRequired": 14
+      }
+    ],
+    "15": [
+      {
+        "id": "subclass-feature-15",
+        "name": "Subclass Feature",
+        "description": "You gain a feature from your Paladin subclass.",
+        "levelRequired": 15
+      }
+    ],
+    "16": [
+      {
+        "id": "ability-score-improvement-16",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "levelRequired": 16
+      }
+    ],
+    "17": [],
+    "18": [
+      {
+        "id": "aura-expansion",
+        "name": "Aura Expansion",
+        "description": "Your Aura of Protection is now a 30-foot Emanation.",
+        "levelRequired": 18
+      }
+    ],
+    "19": [
+      {
+        "id": "epic-boon",
+        "name": "Epic Boon",
+        "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of Truesight is recommended.",
+        "levelRequired": 19
+      }
+    ],
+    "20": [
+      {
+        "id": "subclass-feature-20",
+        "name": "Subclass Feature",
+        "description": "You gain a feature from your Paladin subclass.",
+        "levelRequired": 20
+      }
+    ]
+  }
+}

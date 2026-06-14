@@ -3606,7 +3606,8 @@ export function CharacterDetailView({
   const getAvatarRingClass = (pct: number) => {
     if (pct <= 25)
       return "ring-4 ring-hp-critical/80 shadow-[0_0_20px_color-mix(in_oklab,var(--color-hp-critical)_80%,transparent)] animate-pulse";
-    if (pct <= 60) return "ring-4 ring-hp-wounded/60 shadow-[0_0_16px_color-mix(in_oklab,var(--color-hp-wounded)_40%,transparent)]";
+    if (pct <= 60)
+      return "ring-4 ring-hp-wounded/60 shadow-[0_0_16px_color-mix(in_oklab,var(--color-hp-wounded)_40%,transparent)]";
     return "ring-4 ring-hp-good/50 shadow-[0_0_16px_color-mix(in_oklab,var(--color-hp-good)_35%,transparent)]";
   };
   const avatarRing = getAvatarRingClass(hpPct);
@@ -3815,7 +3816,10 @@ export function CharacterDetailView({
       <div>
         <div className="mb-1.5 flex items-baseline justify-between text-sm">
           <span className="flex items-center gap-1.5 font-medium text-muted-foreground select-none">
-            <Heart size={14} className="text-ui-rose drop-shadow-[0_0_4px_color-mix(in_oklab,var(--color-ui-rose)_50%,transparent)]" />
+            <Heart
+              size={14}
+              className="text-ui-rose drop-shadow-[0_0_4px_color-mix(in_oklab,var(--color-ui-rose)_50%,transparent)]"
+            />
             <span>Hit Points</span>
             {displayHitDice && displayHitDice !== "—" && (
               <span className="ml-1 font-mono text-[10px] text-muted-foreground/75">

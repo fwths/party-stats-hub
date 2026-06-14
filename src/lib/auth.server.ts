@@ -38,7 +38,9 @@ export function verifyPasscode(passcode: string): boolean {
   return passcode.trim() === expected.trim();
 }
 
-export async function startSession(expiresInDays = 30): Promise<{ id: string; expiresAt: number; cookieString: string }> {
+export async function startSession(
+  expiresInDays = 30,
+): Promise<{ id: string; expiresAt: number; cookieString: string }> {
   // Generate a cryptographically random session token
   let sessionId: string;
   if (typeof crypto !== "undefined" && crypto.randomUUID) {

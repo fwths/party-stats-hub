@@ -1,0 +1,1398 @@
+{
+  "id": "warlock",
+  "name": "Warlock",
+  "className": "Warlock",
+  "description": "Warlocks quest for knowledge that lies hidden in the fabric of the multiverse. They often begin their search for magical power by delving into tomes of forbidden lore, dabbling in invocations meant to attract the power of extraplanar beings, or seeking places of power where the influence of these beings can be felt.",
+  "primaryAbility": [
+    "Charisma"
+  ],
+  "hitPoints": {
+    "hitDice": 8,
+    "hitDiceType": "d8",
+    "hpAtFirstLevel": "8 + your Constitution modifier",
+    "hpAtHigherLevels": "1d8 (or 5) + your Constitution modifier per Warlock level after 1st"
+  },
+  "proficiencies": {
+    "savingThrows": [
+      "Wisdom",
+      "Charisma"
+    ],
+    "skills": {
+      "choose": 2,
+      "options": [
+        "Arcana",
+        "Deception",
+        "History",
+        "Intimidation",
+        "Investigation",
+        "Nature",
+        "Religion"
+      ]
+    },
+    "weapons": [
+      "Simple weapons"
+    ],
+    "armor": [
+      "Light armor"
+    ],
+    "tools": []
+  },
+  "startingEquipment": {
+    "defaultBundle": [
+      "Leather Armor",
+      "Sickle",
+      "2 Daggers",
+      "Arcane Focus (orb)",
+      "Book (occult lore)",
+      "Scholar's Pack",
+      "15 GP"
+    ],
+    "goldAlternative": "100 GP"
+  },
+  "spellcasting": {
+    "ability": "Charisma",
+    "casterType": "Pact",
+    "preparationType": "Prepared",
+    "spellcastingFocus": [
+      "Arcane Focus"
+    ],
+    "slotsByLevel": {
+      "1": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "2": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "3": [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "4": [
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "5": [
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "6": [
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "7": [
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "8": [
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "9": [
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "10": [
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "11": [
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0
+      ],
+      "12": [
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0
+      ],
+      "13": [
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0
+      ],
+      "14": [
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0
+      ],
+      "15": [
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0
+      ],
+      "16": [
+        0,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        0,
+        0
+      ],
+      "17": [
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0
+      ],
+      "18": [
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0
+      ],
+      "19": [
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0
+      ],
+      "20": [
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "cantripsKnownByLevel": {
+      "1": 2,
+      "2": 2,
+      "3": 2,
+      "4": 3,
+      "5": 3,
+      "6": 3,
+      "7": 3,
+      "8": 3,
+      "9": 3,
+      "10": 4,
+      "11": 4,
+      "12": 4,
+      "13": 4,
+      "14": 4,
+      "15": 4,
+      "16": 4,
+      "17": 4,
+      "18": 4,
+      "19": 4,
+      "20": 4
+    },
+    "spellsPreparedByLevel": {
+      "1": 2,
+      "2": 3,
+      "3": 4,
+      "4": 5,
+      "5": 6,
+      "6": 7,
+      "7": 8,
+      "8": 9,
+      "9": 10,
+      "10": 10,
+      "11": 11,
+      "12": 11,
+      "13": 12,
+      "14": 12,
+      "15": 13,
+      "16": 13,
+      "17": 14,
+      "18": 14,
+      "19": 15,
+      "20": 15
+    }
+  },
+  "multiclassing": {
+    "requirements": [
+      {
+        "ability": "Charisma",
+        "minScore": 13
+      }
+    ],
+    "proficienciesGained": {
+      "armor": [
+        "Light armor"
+      ]
+    }
+  },
+  "featuresByLevel": {
+    "1": [
+      {
+        "id": "warlock-1-1",
+        "name": "Eldritch Invocations",
+        "description": "You have unearthed Eldritch Invocations, pieces of forbidden knowledge that imbue you with an abiding magical ability or other lessons. You gain one invocation of your choice, such as Pact of the Tome."
+      },
+      {
+        "id": "warlock-1-2",
+        "name": "Pact Magic",
+        "description": "Through occult ceremony, you have formed a pact with a mysterious entity to gain magical powers. The entity is a voice in the shadows—its identity unclear—but its boon to you is concrete: the ability to cast spells."
+      }
+    ],
+    "2": [
+      {
+        "id": "warlock-2-1",
+        "name": "Magical Cunning",
+        "description": "You can perform an esoteric rite for 1 minute. At the end of it, you regain expended Pact Magic spell slots but no more than a number equal to half your maximum (round up).",
+        "actionType": "Special",
+        "duration": "1 minute",
+        "recovery": "Long Rest",
+        "uses": "1"
+      }
+    ],
+    "3": [
+      {
+        "id": "warlock-3-1",
+        "name": "Warlock Subclass",
+        "description": "You gain a Warlock subclass of your choice. A subclass is a specialization that grants you features at certain Warlock levels."
+      }
+    ],
+    "4": [
+      {
+        "id": "warlock-4-1",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. You gain this feature again at Warlock levels 8, 12, and 16."
+      }
+    ],
+    "5": [],
+    "6": [
+      {
+        "id": "warlock-6-1",
+        "name": "Subclass Feature",
+        "description": "You gain a feature from your Warlock subclass."
+      }
+    ],
+    "7": [],
+    "8": [
+      {
+        "id": "warlock-8-1",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      }
+    ],
+    "9": [
+      {
+        "id": "warlock-9-1",
+        "name": "Contact Patron",
+        "description": "In the past, you usually contacted your patron through intermediaries. Now you can communicate directly; you always have the Contact Other Plane spell prepared. With this feature, you can cast the spell without expending a spell slot to contact your patron, and you automatically succeed on the spell's saving throw.",
+        "actionType": "Action",
+        "recovery": "Long Rest",
+        "uses": "1"
+      }
+    ],
+    "10": [
+      {
+        "id": "warlock-10-1",
+        "name": "Subclass Feature",
+        "description": "You gain a feature from your Warlock subclass."
+      }
+    ],
+    "11": [
+      {
+        "id": "warlock-11-1",
+        "name": "Mystic Arcanum (Level 6)",
+        "description": "Your patron grants you a magical secret called an arcanum. Choose one level 6 Warlock spell as this arcanum. You can cast your arcanum spell once without expending a spell slot, and you must finish a Long Rest before you can cast it in this way again.",
+        "actionType": "Action",
+        "recovery": "Long Rest",
+        "uses": "1"
+      }
+    ],
+    "12": [
+      {
+        "id": "warlock-12-1",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      }
+    ],
+    "13": [
+      {
+        "id": "warlock-13-1",
+        "name": "Mystic Arcanum (Level 7)",
+        "description": "Choose one level 7 Warlock spell as your arcanum. You can cast your arcanum spell once without expending a spell slot, and you must finish a Long Rest before you can cast it in this way again.",
+        "actionType": "Action",
+        "recovery": "Long Rest",
+        "uses": "1"
+      }
+    ],
+    "14": [
+      {
+        "id": "warlock-14-1",
+        "name": "Subclass Feature",
+        "description": "You gain a feature from your Warlock subclass."
+      }
+    ],
+    "15": [
+      {
+        "id": "warlock-15-1",
+        "name": "Mystic Arcanum (Level 8)",
+        "description": "Choose one level 8 Warlock spell as your arcanum. You can cast your arcanum spell once without expending a spell slot, and you must finish a Long Rest before you can cast it in this way again.",
+        "actionType": "Action",
+        "recovery": "Long Rest",
+        "uses": "1"
+      }
+    ],
+    "16": [
+      {
+        "id": "warlock-16-1",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      }
+    ],
+    "17": [
+      {
+        "id": "warlock-17-1",
+        "name": "Mystic Arcanum (Level 9)",
+        "description": "Choose one level 9 Warlock spell as your arcanum. You can cast your arcanum spell once without expending a spell slot, and you must finish a Long Rest before you can cast it in this way again.",
+        "actionType": "Action",
+        "recovery": "Long Rest",
+        "uses": "1"
+      }
+    ],
+    "18": [],
+    "19": [
+      {
+        "id": "warlock-19-1",
+        "name": "Epic Boon",
+        "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of Fate is recommended."
+      }
+    ],
+    "20": [
+      {
+        "id": "warlock-20-1",
+        "name": "Eldritch Master",
+        "description": "When you use your Magical Cunning feature, you regain all your expended Pact Magic spell slots."
+      }
+    ]
+  },
+  "classTable": {
+    "headers": [
+      "Level",
+      "Proficiency Bonus",
+      "Features",
+      "Eldritch Invocations",
+      "Cantrips",
+      "Prepared Spells",
+      "Spell Slots",
+      "Slot Level"
+    ],
+    "rows": [
+      [
+        "1",
+        "+2",
+        "Eldritch Invocations, Pact Magic",
+        "1",
+        "2",
+        "2",
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "+2",
+        "Magical Cunning",
+        "2",
+        "2",
+        "3",
+        "2",
+        "1"
+      ],
+      [
+        "3",
+        "+2",
+        "Warlock Subclass",
+        "3",
+        "2",
+        "4",
+        "2",
+        "2"
+      ],
+      [
+        "4",
+        "+2",
+        "Ability Score Improvement",
+        "3",
+        "3",
+        "5",
+        "2",
+        "2"
+      ],
+      [
+        "5",
+        "+3",
+        "-",
+        "5",
+        "3",
+        "6",
+        "2",
+        "3"
+      ],
+      [
+        "6",
+        "+3",
+        "Subclass feature",
+        "5",
+        "3",
+        "7",
+        "2",
+        "3"
+      ],
+      [
+        "7",
+        "+3",
+        "-",
+        "6",
+        "3",
+        "8",
+        "2",
+        "4"
+      ],
+      [
+        "8",
+        "+3",
+        "Ability Score Improvement",
+        "6",
+        "3",
+        "9",
+        "2",
+        "4"
+      ],
+      [
+        "9",
+        "+4",
+        "Contact Patron",
+        "7",
+        "3",
+        "10",
+        "2",
+        "5"
+      ],
+      [
+        "10",
+        "+4",
+        "Subclass feature",
+        "7",
+        "4",
+        "10",
+        "2",
+        "5"
+      ],
+      [
+        "11",
+        "+4",
+        "Mystic Arcanum (level 6 spell)",
+        "7",
+        "4",
+        "11",
+        "3",
+        "5"
+      ],
+      [
+        "12",
+        "+4",
+        "Ability Score Improvement",
+        "8",
+        "4",
+        "11",
+        "3",
+        "5"
+      ],
+      [
+        "13",
+        "+5",
+        "Mystic Arcanum (level 7 spell)",
+        "8",
+        "4",
+        "12",
+        "3",
+        "5"
+      ],
+      [
+        "14",
+        "+5",
+        "Subclass feature",
+        "8",
+        "4",
+        "12",
+        "3",
+        "5"
+      ],
+      [
+        "15",
+        "+5",
+        "Mystic Arcanum (level 8 spell)",
+        "9",
+        "4",
+        "13",
+        "3",
+        "5"
+      ],
+      [
+        "16",
+        "+5",
+        "Ability Score Improvement",
+        "9",
+        "4",
+        "13",
+        "3",
+        "5"
+      ],
+      [
+        "17",
+        "+6",
+        "Mystic Arcanum (level 9 spell)",
+        "9",
+        "4",
+        "14",
+        "4",
+        "5"
+      ],
+      [
+        "18",
+        "+6",
+        "-",
+        "10",
+        "4",
+        "14",
+        "4",
+        "5"
+      ],
+      [
+        "19",
+        "+6",
+        "Epic Boon",
+        "10",
+        "4",
+        "15",
+        "4",
+        "5"
+      ],
+      [
+        "20",
+        "+6",
+        "Eldritch Master",
+        "10",
+        "4",
+        "15",
+        "4",
+        "5"
+      ]
+    ]
+  },
+  "subclasses": [
+    {
+      "id": "archfey-patron",
+      "name": "Archfey Patron",
+      "description": "Your pact draws on the power of the Feywild. When you choose this subclass, you might make a deal with an archfey, such as the Prince of Frost; the Queen of Air and Darkness, ruler of the Gloaming Court; Titania of the Summer Court; or an ancient hag.",
+      "source": "Player's Handbook (2024)",
+      "levelChosen": 3,
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Calm Emotions",
+            "Faerie Fire",
+            "Misty Step",
+            "Phantasmal Force",
+            "Sleep"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Blink",
+            "Plant Growth"
+          ]
+        },
+        {
+          "levelGained": 7,
+          "spells": [
+            "Dominate Beast",
+            "Greater Invisibility"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Dominate Person",
+            "Seeming"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "archfey-steps-of-the-fey",
+            "name": "Steps of the Fey",
+            "description": "Your patron grants you the ability to move between the boundaries of the planes. You can cast Misty Step without expending a spell slot a number of times equal to your Charisma modifier (minimum of once), and you regain all expended uses when you finish a Long Rest. In addition, whenever you cast that spell, you can choose one of the following additional effects:\nRefreshing Step. Immediately after you teleport, you or one creature you can see within 10 feet of yourself gains 1d10 Temporary Hit Points.\nTaunting Step. Creatures within 5 feet of the space you left must succeed on a Wisdom saving throw against your spell save DC or have Disadvantage on attack rolls against creatures other than you until the start of your next turn.",
+            "uses": {
+              "base": 1,
+              "abilityModifier": "Charisma"
+            },
+            "recovery": {
+              "longRest": "All"
+            }
+          }
+        ],
+        "6": [
+          {
+            "id": "archfey-misty-escape",
+            "name": "Misty Escape",
+            "description": "You can cast Misty Step as a Reaction in response to taking damage. In addition, the following effects are now among your Steps of the Fey options:\nDisappearing Step. You have the Invisible condition until the start of your next turn or until immediately after you make an attack roll, deal damage, or cast a spell.\nDreadful Step. Creatures within 5 feet of the space you left or the space you appear in (your choice) must succeed on a Wisdom saving throw against your spell save DC or take 2d10 Psychic damage.",
+            "actionType": "Reaction"
+          }
+        ],
+        "10": [
+          {
+            "id": "archfey-beguiling-defenses",
+            "name": "Beguiling Defenses",
+            "description": "Your patron teaches you how to guard your mind and body. You are immune to the Charmed condition. In addition, immediately after a creature you can see hits you with an attack roll, you can take a Reaction to reduce the damage you take by half (round down), and you can force the attacker to make a Wisdom saving throw against your spell save DC. On a failed save, the attacker takes Psychic damage equal to the damage you take. Once you use this Reaction, you can't use it again until you finish a Long Rest unless you expend a Pact Magic spell slot (no action required) to restore your use of it.",
+            "actionType": "Reaction",
+            "recovery": {
+              "longRest": "All"
+            }
+          }
+        ],
+        "14": [
+          {
+            "id": "archfey-bewitching-magic",
+            "name": "Bewitching Magic",
+            "description": "Your patron grants you the ability to weave your magic with teleportation. Immediately after you cast an Enchantment or Illusion spell using an action and a spell slot, you can cast Misty Step as part of the same action and without expending a spell slot."
+          }
+        ]
+      }
+    },
+    {
+      "id": "celestial-patron",
+      "name": "Celestial Patron",
+      "description": "Your pact draws on the Upper Planes, the realms of everlasting bliss. You might enter an agreement with an empyrean, a couatl, a sphinx, a unicorn, or another heavenly entity.",
+      "source": "Player's Handbook (2024)",
+      "levelChosen": 3,
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Aid",
+            "Cure Wounds",
+            "Guiding Bolt",
+            "Lesser Restoration",
+            "Light",
+            "Sacred Flame"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Daylight",
+            "Revivify"
+          ]
+        },
+        {
+          "levelGained": 7,
+          "spells": [
+            "Guardian of Faith",
+            "Wall of Fire"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Greater Restoration",
+            "Summon Celestial"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "celestial-healing-light",
+            "name": "Healing Light",
+            "description": "You gain the ability to channel celestial energy to heal wounds. You have a pool of d6s to fuel this healing. The number of dice in the pool equals 1 plus your Warlock level. As a Bonus Action, you can heal yourself or one creature you can see within 60 feet of yourself, expending dice from the pool. The maximum number of dice you can expend at once equals your Charisma modifier (minimum of one die). Roll the dice you expend, and restore a number of Hit Points equal to the roll's total. Your pool regains all expended dice when you finish a Long Rest.",
+            "actionType": "Bonus Action",
+            "uses": {
+              "base": 1,
+              "scalingByLevel": {
+                "3": 4,
+                "4": 5,
+                "5": 6,
+                "6": 7,
+                "7": 8,
+                "8": 9,
+                "9": 10,
+                "10": 11,
+                "11": 12,
+                "12": 13,
+                "13": 14,
+                "14": 15,
+                "15": 16,
+                "16": 17,
+                "17": 18,
+                "18": 19,
+                "19": 20,
+                "20": 21
+              }
+            },
+            "recovery": {
+              "longRest": "All"
+            }
+          }
+        ],
+        "6": [
+          {
+            "id": "celestial-radiant-soul",
+            "name": "Radiant Soul",
+            "description": "Your link to your patron allows you to serve as a conduit for radiant energy. You have Resistance to Radiant damage. Once per turn, when a spell you cast deals Radiant or Fire damage, you can add your Charisma modifier to that spell's damage against one of the spell's targets."
+          }
+        ],
+        "10": [
+          {
+            "id": "celestial-celestial-resilience",
+            "name": "Celestial Resilience",
+            "description": "You gain Temporary Hit Points whenever you use your Magical Cunning feature or finish a Short or Long Rest. These Temporary Hit Points equal your Warlock level plus your Charisma modifier. Additionally, choose up to five creatures you can see when you gain the points. Those creatures each gain Temporary Hit Points equal to half your Warlock level plus your Charisma modifier."
+          }
+        ],
+        "14": [
+          {
+            "id": "celestial-searing-vengeance",
+            "name": "Searing Vengeance",
+            "description": "When you or an ally within 60 feet of you is about to make a Death Saving Throw, you can unleash radiant energy to save the creature. The creature regains Hit Points equal to half its Hit Point maximum and can end the Prone condition on itself. Each creature of your choice that is within 30 feet of the creature takes Radiant damage equal to 2d8 plus your Charisma modifier, and each has the Blinded condition until the end of the current turn. Once you use this feature, you can't use it again until you finish a Long Rest.",
+            "recovery": {
+              "longRest": "All"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "fiend-patron",
+      "name": "Fiend Patron",
+      "description": "Your pact draws on the Lower Planes, the realms of perdition. You might forge a bargain with a demon lord such as Demogorgon or Orcus; an archdevil such as Asmodeus; or a pit fiend, balor, yugoloth, or night hag that is especially mighty.",
+      "source": "Player's Handbook (2024)",
+      "levelChosen": 3,
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Burning Hands",
+            "Command",
+            "Scorching Ray",
+            "Suggestion"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Fireball",
+            "Stinking Cloud"
+          ]
+        },
+        {
+          "levelGained": 7,
+          "spells": [
+            "Fire Shield",
+            "Wall of Fire"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Geas",
+            "Insect Plague"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "fiend-dark-ones-blessing",
+            "name": "Dark One's Blessing",
+            "description": "When you reduce an enemy to 0 Hit Points, you gain Temporary Hit Points equal to your Charisma modifier plus your Warlock level (minimum of 1 Temporary Hit Point). You also gain this benefit if someone else reduces an enemy within 10 feet of you to 0 Hit Points."
+          }
+        ],
+        "6": [
+          {
+            "id": "fiend-dark-ones-own-luck",
+            "name": "Dark One's Own Luck",
+            "description": "You can call on your fiendish patron to alter fate in your favor. When you make an ability check or a saving throw, you can use this feature to add 1d10 to your roll. You can do so after seeing the roll but before any of the roll's effects occur. You can use this feature a number of times equal to your Charisma modifier (minimum of once), but you can use it no more than once per roll. You regain all expended uses when you finish a Long Rest.",
+            "uses": {
+              "base": 1,
+              "abilityModifier": "Charisma"
+            },
+            "recovery": {
+              "longRest": "All"
+            }
+          }
+        ],
+        "10": [
+          {
+            "id": "fiend-fiendish-resilience",
+            "name": "Fiendish Resilience",
+            "description": "Choose one damage type, other than Force, whenever you finish a Short or Long Rest. You have Resistance to that damage type until you choose a different one with this feature."
+          }
+        ],
+        "14": [
+          {
+            "id": "fiend-hurl-through-hell",
+            "name": "Hurl Through Hell",
+            "description": "Once per turn when you hit a creature with an attack roll, you can try to instantly transport the target through the Lower Planes. The target must succeed on a Charisma saving throw against your spell save DC, or the target disappears and hurtles through a nightmare landscape. The target takes 8d10 Psychic damage if it isn't a Fiend, and it has the Incapacitated condition until the end of your next turn, when it returns to the space it previously occupied or the nearest unoccupied space. Once you use this feature, you can't use it again until you finish a Long Rest unless you expend a Pact Magic spell slot (no action required) to restore your use of it.",
+            "recovery": {
+              "longRest": "All"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "great-old-one-patron",
+      "name": "Great Old One Patron",
+      "description": "When you choose this subclass, you might bind yourself to an unspeakable being from the Far Realm or an elder god-a being such as Tharizdun, Hadar, or Great Cthulhu.",
+      "source": "Player's Handbook (2024)",
+      "levelChosen": 3,
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Detect Thoughts",
+            "Dissonant Whispers",
+            "Phantasmal Force",
+            "Tasha's Hideous Laughter"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Clairvoyance",
+            "Hunger of Hadar"
+          ]
+        },
+        {
+          "levelGained": 7,
+          "spells": [
+            "Confusion",
+            "Summon Aberration"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Modify Memory",
+            "Telekinesis"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "great-old-one-awakened-mind",
+            "name": "Awakened Mind",
+            "description": "You can form a telepathic connection between your mind and the mind of another. As a Bonus Action, choose one creature you can see within 30 feet of yourself. You and the chosen creature can communicate telepathically with each other while the two of you are within a number of miles of each other equal to your Charisma modifier (minimum of 1 mile). Mentally use a language the other knows to understand each other. The telepathic connection lasts for a number of minutes equal to your Warlock level. It ends early if you connect with a different creature.",
+            "actionType": "Bonus Action"
+          },
+          {
+            "id": "great-old-one-psychic-spells",
+            "name": "Psychic Spells",
+            "description": "When you cast a Warlock spell that deals damage, you can change its damage type to Psychic. In addition, when you cast a Warlock spell that is an Enchantment or Illusion, you can do so without Verbal or Somatic components."
+          }
+        ],
+        "6": [
+          {
+            "id": "great-old-one-clairvoyant-combatant",
+            "name": "Clairvoyant Combatant",
+            "description": "When you form a telepathic bond with a creature using your Awakened Mind, you can force that creature to make a Wisdom saving throw against your spell save DC. On a failed save, the creature has Disadvantage on attack rolls against you, and you have Advantage on attack rolls against that creature for the duration of the bond. Once you use this feature, you can't use it again until you finish a Short or Long Rest unless you expend a Pact Magic spell slot (no action required) to restore your use of it."
+          }
+        ],
+        "10": [
+          {
+            "id": "great-old-one-eldritch-hex",
+            "name": "Eldritch Hex",
+            "description": "Your alien patron grants you a powerful curse. You always have the Hex spell prepared. When you cast Hex and choose an ability, the target also has Disadvantage on saving throws of the chosen ability for the duration of the spell."
+          },
+          {
+            "id": "great-old-one-thought-shield",
+            "name": "Thought Shield",
+            "description": "Your thoughts can't be read by telepathy or other means unless you allow it. You also have Resistance to Psychic damage, and whenever a creature deals Psychic damage to you, that creature takes the same amount of damage that you take."
+          }
+        ],
+        "14": [
+          {
+            "id": "great-old-one-create-thrall",
+            "name": "Create Thrall",
+            "description": "When you cast Summon Aberration, you can modify it so that it doesn't require Concentration. If you do so, the spell's duration becomes 1 minute for that casting, and when summoned, the Aberration has a number of Temporary Hit Points equal to your Warlock level plus your Charisma modifier. In addition, the first time each turn the Aberration hits a creature under the effect of your Hex, the Aberration deals extra Psychic damage to the target equal to the bonus damage of that spell."
+          }
+        ]
+      }
+    },
+    {
+      "id": "the-hexblade",
+      "name": "The Hexblade",
+      "description": "You have made your pact with a mysterious entity from the Shadowfell—a force that manifests in sentient magic weapons carved from the stuff of shadow.",
+      "source": "Xanathar's Guide to Everything",
+      "levelChosen": 3,
+      "expandedSpellList": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Shield",
+            "Wrathful Smite",
+            "Blur",
+            "Branding Smite"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Blink",
+            "Elemental Weapon"
+          ]
+        },
+        {
+          "levelGained": 7,
+          "spells": [
+            "Phantasmal Killer",
+            "Staggering Smite"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Banishing Smite",
+            "Cone of Cold"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "hexblade-hexblades-curse",
+            "name": "Hexblade's Curse",
+            "description": "As a bonus action, choose one creature you can see within 30 feet of you. The target is cursed for 1 minute. Until the curse ends, you gain a bonus to damage rolls against the target equal to your proficiency bonus, attack rolls critical on 19-20, and if the target dies, you regain HP equal to your warlock level + Charisma modifier (minimum of 1). Once used, cannot be used again until short or long rest.",
+            "actionType": "Bonus Action",
+            "recovery": {
+              "shortRest": "All",
+              "longRest": "All"
+            }
+          },
+          {
+            "id": "hexblade-hex-warrior",
+            "name": "Hex Warrior",
+            "description": "You gain proficiency with medium armor, shields, and martial weapons. Whenever you finish a long rest, you can touch one weapon you are proficient with (lacking two-handed). Use Charisma for its attack and damage rolls. Extends to Pact of the Blade pact weapons."
+          }
+        ],
+        "6": [
+          {
+            "id": "hexblade-accursed-specter",
+            "name": "Accursed Specter",
+            "description": "When you slay a humanoid, bind its spirit as a specter. Specter gains temporary HP equal to half your warlock level. It obeys your commands, and gains attack bonus equal to Charisma modifier. Remains until end of next long rest. Once used, cannot be used again until long rest.",
+            "recovery": {
+              "longRest": "All"
+            }
+          }
+        ],
+        "10": [
+          {
+            "id": "hexblade-armor-of-hexes",
+            "name": "Armor of Hexes",
+            "description": "If the target cursed by Hexblade's Curse hits you with an attack, roll d6. On 4 or higher, the attack misses instead.",
+            "actionType": "Reaction"
+          }
+        ],
+        "14": [
+          {
+            "id": "hexblade-master-of-hexes",
+            "name": "Master of Hexes",
+            "description": "When Hexblade's Curse target dies, apply the curse to another creature within 30 feet."
+          }
+        ]
+      }
+    },
+    {
+      "id": "the-fathomless",
+      "name": "The Fathomless",
+      "description": "You have plunged into a pact with the deeps. An entity of the ocean, the Elemental Plane of Water, or another otherworldly sea now allows you to draw on its thalassic power.",
+      "source": "Tasha's Cauldron of Everything",
+      "levelChosen": 3,
+      "expandedSpellList": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Create or Destroy Water",
+            "Thunderwave",
+            "Gust of Wind",
+            "Silence"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Lightning Bolt",
+            "Sleet Storm"
+          ]
+        },
+        {
+          "levelGained": 7,
+          "spells": [
+            "Control Water",
+            "Summon Elemental"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Bigby's Hand",
+            "Cone of Cold"
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "fathomless-tentacle-of-the-deeps",
+            "name": "Tentacle of the Deeps",
+            "description": "As a bonus action, summon a 10-foot-long spectral tentacle within 60 feet (lasts 1 minute). Make melee spell attack against a creature within 10 feet of it. Deals 1d8 cold damage (2d8 at 10th level) and reduces speed by 10 feet. Repeat attack as a bonus action. Uses per long rest equal to proficiency bonus.",
+            "actionType": "Bonus Action",
+            "uses": {
+              "base": 2,
+              "scalingByLevel": {
+                "3": 2,
+                "4": 2,
+                "5": 3,
+                "6": 3,
+                "7": 3,
+                "8": 3,
+                "9": 4,
+                "10": 4,
+                "11": 4,
+                "12": 4,
+                "13": 5,
+                "14": 5,
+                "15": 5,
+                "16": 5,
+                "17": 6,
+                "18": 6,
+                "19": 6,
+                "20": 6
+              }
+            },
+            "recovery": {
+              "longRest": "All"
+            }
+          },
+          {
+            "id": "fathomless-gift-of-the-sea",
+            "name": "Gift of the Sea",
+            "description": "You gain a swimming speed of 40 feet, and you can breathe underwater."
+          }
+        ],
+        "6": [
+          {
+            "id": "fathomless-oceanic-soul",
+            "name": "Oceanic Soul",
+            "description": "Gain resistance to cold damage. Submerged speech allows you to understand any submerged creature."
+          },
+          {
+            "id": "fathomless-guardian-coil",
+            "name": "Guardian Coil",
+            "description": "When you or a creature you can see takes damage within 10 feet of the tentacle, take reaction to reduce damage by 1d8 (2d8 at 10th level).",
+            "actionType": "Reaction"
+          }
+        ],
+        "10": [
+          {
+            "id": "fathomless-grasping-tentacles",
+            "name": "Grasping Tentacles",
+            "description": "Learn Evard's black tentacles (doesn't count against spells known). Cast once per long rest without spell slot. Gain temporary HP equal to warlock level on casting. Concentration cannot be broken by damage.",
+            "recovery": {
+              "longRest": "All"
+            }
+          }
+        ],
+        "14": [
+          {
+            "id": "fathomless-fathomless-plunge",
+            "name": "Fathomless Plunge",
+            "description": "Teleport yourself and up to five creatures within 30 feet up to 1 mile away to a body of water you've seen. Once used, cannot be used again until short or long rest.",
+            "recovery": {
+              "shortRest": "All",
+              "longRest": "All"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "the-genie",
+      "name": "The Genie",
+      "description": "You have made a pact with a noble genie, ruling vast fiefs on the Elemental Planes.",
+      "source": "Tasha's Cauldron of Everything",
+      "levelChosen": 3,
+      "expandedSpellList": [
+        {
+          "levelGained": 3,
+          "spells": [
+            "Detect Evil and Good",
+            "Phantasmal Force"
+          ]
+        },
+        {
+          "levelGained": 5,
+          "spells": [
+            "Create Food and Water"
+          ]
+        },
+        {
+          "levelGained": 7,
+          "spells": [
+            "Phantasmal Killer"
+          ]
+        },
+        {
+          "levelGained": 9,
+          "spells": [
+            "Creation"
+          ]
+        },
+        {
+          "levelGained": 17,
+          "spells": [
+            "Wish"
+          ]
+        }
+      ],
+      "options": [
+        {
+          "id": "genie-kind",
+          "name": "Genie Kind",
+          "description": "Choose your patron's genie kind.",
+          "levelRequired": 3,
+          "choices": [
+            {
+              "id": "genie-kind-dao",
+              "name": "Dao (Earth)",
+              "description": "Earth element genie patron.",
+              "spellsGained": [
+                "Sanctuary",
+                "Spike Growth",
+                "Meld into Stone",
+                "Stone Shape",
+                "Wall of Stone"
+              ]
+            },
+            {
+              "id": "genie-kind-djinni",
+              "name": "Djinni (Air)",
+              "description": "Air element genie patron.",
+              "spellsGained": [
+                "Thunderwave",
+                "Gust of Wind",
+                "Wind Wall",
+                "Greater Invisibility",
+                "Seeming"
+              ]
+            },
+            {
+              "id": "genie-kind-efreeti",
+              "name": "Efreeti (Fire)",
+              "description": "Fire element genie patron.",
+              "spellsGained": [
+                "Burning Hands",
+                "Scorching Ray",
+                "Fireball",
+                "Fire Shield",
+                "Flame Strike"
+              ]
+            },
+            {
+              "id": "genie-kind-marid",
+              "name": "Marid (Water)",
+              "description": "Water element genie patron.",
+              "spellsGained": [
+                "Fog Cloud",
+                "Blur",
+                "Sleet Storm",
+                "Control Water",
+                "Cone of Cold"
+              ]
+            }
+          ]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "genie-genies-vessel",
+            "name": "Genie's Vessel",
+            "description": "Your patron gifts you a magical vessel. While touching it, you can use:\nBottled Respite: As an action, enter the vessel's cylinder interior (lasts up to twice proficiency bonus hours). Once entered, cannot enter again until long rest.\nGenie's Wrath: Once per turn when you hit with an attack, deal extra damage equal to your proficiency bonus of the element type associated with your patron.",
+            "actionType": "Action"
+          }
+        ],
+        "6": [
+          {
+            "id": "genie-elemental-gift",
+            "name": "Elemental Gift",
+            "description": "Gain resistance to damage type associated with genie kind. Bonus action flying speed 30 feet (hover) for 10 minutes (proficiency bonus times per long rest).",
+            "actionType": "Bonus Action",
+            "uses": {
+              "base": 2,
+              "scalingByLevel": {
+                "3": 2,
+                "4": 2,
+                "5": 3,
+                "6": 3,
+                "7": 3,
+                "8": 3,
+                "9": 4,
+                "10": 4,
+                "11": 4,
+                "12": 4,
+                "13": 5,
+                "14": 5,
+                "15": 5,
+                "16": 5,
+                "17": 6,
+                "18": 6,
+                "19": 6,
+                "20": 6
+              }
+            },
+            "recovery": {
+              "longRest": "All"
+            }
+          }
+        ],
+        "10": [
+          {
+            "id": "genie-sanctuary-vessel",
+            "name": "Sanctuary Vessel",
+            "description": "Draw up to five creatures into your vessel with you. Eject as a bonus action. Remaining inside 10 minutes grants short rest benefit, adding proficiency bonus to Hit Dice healing."
+          }
+        ],
+        "14": [
+          {
+            "id": "genie-limited-wish",
+            "name": "Limited Wish",
+            "description": "Entreat patron to cast a spell of 6th level or lower with casting time 1 action (from any class spell list, ignoring costs). Once used, cannot be used again until 1d4 long rests."
+          }
+        ]
+      }
+    }
+  ]
+}

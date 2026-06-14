@@ -144,10 +144,25 @@ export function ManagePartyDialog({
           </label>
           <div className="mt-1">
             <button
-              onClick={() => { window.location.href = "/builder"; }}
+              onClick={() => {
+                window.location.href = "/builder";
+              }}
               className="w-full rounded border border-accent/60 bg-accent/15 px-3 py-2 text-sm text-accent hover:bg-accent/25 transition-colors flex justify-center items-center gap-2 font-medium"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="M12 5v14" />
+              </svg>
               Create Character Natively
             </button>
           </div>

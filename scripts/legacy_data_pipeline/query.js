@@ -1,0 +1,1 @@
+const db = require('better-sqlite3')('sqlite.db'); const tables = db.prepare('SELECT name FROM sqlite_master WHERE type=''table''').all(); tables.forEach(t => { try { console.log(t.name + ': ' + db.prepare('SELECT count(*) as c FROM ' + t.name).get().c); } catch(e) {} });

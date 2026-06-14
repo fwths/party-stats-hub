@@ -11,7 +11,17 @@ import {
   COOKIE_KEY,
 } from "@/lib/party";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Users, Activity, Package, Swords, BookOpen, Info, LogOut } from "lucide-react";
+import {
+  Users,
+  Activity,
+  Package,
+  Swords,
+  BookOpen,
+  Info,
+  LogOut,
+  Pencil,
+  Check,
+} from "lucide-react";
 import { logoutFn } from "@/lib/auth-fns";
 
 import { RefreshButton } from "@/components/party/RefreshButton";
@@ -65,6 +75,19 @@ export default function Index() {
   useModalHistorySync(managing, setManaging, "isManagingParty");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+  const [isEditingCampaign, setIsEditingCampaign] = useState(false);
+  const [campaignName, setCampaignName] = useState(() => {
+    return typeof window !== "undefined"
+      ? localStorage.getItem("party-stats-campaign-name") || "Mother of Bob (MOB)"
+      : "Mother of Bob (MOB)";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("party-stats-campaign-name", campaignName);
+    }
+  }, [campaignName]);
 
   useEffect(() => {
     try {
@@ -136,10 +159,53 @@ export default function Index() {
                 alt="Mother of Bob Logo"
                 className="w-10 h-10 object-contain select-none pointer-events-none"
               />
-              <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent select-none">
-                Mother of Bob{" "}
-                <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
-              </h1>
+              {isEditingCampaign ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={campaignName}
+                    onChange={(e) => setCampaignName(e.target.value)}
+                    className="font-heading text-3xl font-bold tracking-tight bg-transparent border-b border-accent focus:outline-none text-foreground w-64"
+                    autoFocus
+                    onKeyDown={(e) => e.key === "Enter" && setIsEditingCampaign(false)}
+                    onBlur={() => setIsEditingCampaign(false)}
+                  />
+                  <button
+                    onClick={() => setIsEditingCampaign(false)}
+                    className="p-1 rounded bg-accent/20 text-accent hover:bg-accent/40 cursor-pointer"
+                  >
+                    <Check size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 group relative">
+                  <h1
+                    className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent select-none cursor-text"
+                    onClick={() => setIsEditingCampaign(true)}
+                  >
+                    {(() => {
+                      const match = campaignName.match(/^(.*?)\s*(\(.*?\))$/);
+                      if (match) {
+                        return (
+                          <>
+                            {match[1]}{" "}
+                            <span className="text-muted-foreground/40 text-xl tracking-normal">
+                              {match[2]}
+                            </span>
+                          </>
+                        );
+                      }
+                      return campaignName;
+                    })()}
+                  </h1>
+                  <button
+                    onClick={() => setIsEditingCampaign(true)}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-secondary/60 text-muted-foreground transition-opacity cursor-pointer"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               <AmbientAudio />
@@ -257,7 +323,9 @@ function PartyDashboard({ ids }: { ids: number[] }) {
           <span>Campaign Journal</span>
         </button>
         <button
-          onClick={() => { window.location.href = "/compendium"; }}
+          onClick={() => {
+            window.location.href = "/compendium";
+          }}
           className="flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
         >
           <Info size={12} />

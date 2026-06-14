@@ -4,22 +4,25 @@ Welcome to the Session Notes journal. This journal is pre-populated with your im
 
 ## Prologue
 
-- 100 years before campaign: [Dureya Wagon Company](pageId:30d23ac1-bdd8-8053-94d6-cbfa152b8e86)  is formed under [Kel’ Tumal Birch](pageId:30d23ac1-bdd8-8040-b304-e3bdf950acd8) 
-Due to the company’s activities and growing power, it was destroyed by the [Dwendalian Empire](pageId:30d23ac1-bdd8-80f7-ac10-d839e4c246c0) 
+- 100 years before campaign: [Dureya Wagon Company](pageId:30d23ac1-bdd8-8053-94d6-cbfa152b8e86) is formed under [Kel’ Tumal Birch](pageId:30d23ac1-bdd8-8040-b304-e3bdf950acd8)
+  Due to the company’s activities and growing power, it was destroyed by the [Dwendalian Empire](pageId:30d23ac1-bdd8-80f7-ac10-d839e4c246c0)
+
 # Current Events
 
 ### Session 1
 
-- [Arion “Ari” Starfire](pageId:30d23ac1-bdd8-80a0-b687-e30d87a19b55)  and [Qemuel](pageId:30d23ac1-bdd8-801f-9d94-dfc385e4c5dd)  meet at the Pink Pony Club in [Westruun](pageId:30d23ac1-bdd8-8000-9ee3-c2ce438971be) , where Ari had worked for several months.
+- [Arion “Ari” Starfire](pageId:30d23ac1-bdd8-80a0-b687-e30d87a19b55) and [Qemuel](pageId:30d23ac1-bdd8-801f-9d94-dfc385e4c5dd) meet at the Pink Pony Club in [Westruun](pageId:30d23ac1-bdd8-8000-9ee3-c2ce438971be) , where Ari had worked for several months.
 - [Willow Alatáriel](pageId:30d23ac1-bdd8-8089-acbb-c179859ca9b9), [Echo](pageId:30d23ac1-bdd8-8050-bcdf-d66f7555616e) and [Dresana Silvakias](pageId:30d23ac1-bdd8-8047-ab47-ed92ef5e742a) meet near Willow's grove and travel to [Port Damali](pageId:30d23ac1-bdd8-8003-9813-dd689961fafb) , where they meet Ari at Last Call Inn.
-- Ari's boss, [Jeremy](pageId:30d23ac1-bdd8-8036-91e1-c600cd654214) , sends Willow, Echo, Dresana, and Ari to [Lautrek](pageId:30d23ac1-bdd8-8065-bfbe-f6eae75a55a4)  to investigate missing shipments and locate a missing associate.
+- Ari's boss, [Jeremy](pageId:30d23ac1-bdd8-8036-91e1-c600cd654214) , sends Willow, Echo, Dresana, and Ari to [Lautrek](pageId:30d23ac1-bdd8-8065-bfbe-f6eae75a55a4) to investigate missing shipments and locate a missing associate.
 - The group captures an unnamed druid who attacked Lautrek village over logging activities.
+
 ### Session 2
 
-- At Jeremy's request, the party investigates and stops an attack by [Boris Karlow](pageId:30d23ac1-bdd8-80ef-86a6-e54a4cd68692)  during [Agran Moore](pageId:30d23ac1-bdd8-80f9-a562-c7ec9a52b9dc) 's festival. Boris, irritated by the noise, attacks using clay animation magic but is captured alive.
+- At Jeremy's request, the party investigates and stops an attack by [Boris Karlow](pageId:30d23ac1-bdd8-80ef-86a6-e54a4cd68692) during [Agran Moore](pageId:30d23ac1-bdd8-80f9-a562-c7ec9a52b9dc) 's festival. Boris, irritated by the noise, attacks using clay animation magic but is captured alive.
+
 ### Session 3
 
-- The party defends [Sevirol](pageId:30d23ac1-bdd8-80ae-96c0-df74b676f68b) against a massive attack by gnolls, ogres, shadows, and insect creatures. Former priest [Corellian](pageId:30d23ac1-bdd8-80be-84cb-dee10d837696) is suspected. Earl [Min Tanyth](pageId:30d23ac1-bdd8-8090-aa75-fa1f4d421b96)  rewards them with a house.
+- The party defends [Sevirol](pageId:30d23ac1-bdd8-80ae-96c0-df74b676f68b) against a massive attack by gnolls, ogres, shadows, and insect creatures. Former priest [Corellian](pageId:30d23ac1-bdd8-80be-84cb-dee10d837696) is suspected. Earl [Min Tanyth](pageId:30d23ac1-bdd8-8090-aa75-fa1f4d421b96) rewards them with a house.
 - They board a ship from Port Damali with the intention of getting to [Nicodranas](pageId:30d23ac1-bdd8-809f-974b-e5212388c0dd) .
 
 ---
@@ -32,18 +35,20 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - In Port Zoon, the group reunites with Qemuel and witnesses an attack on Sparkwinkle & Redberry that ends in an explosion.
 - The party shares information with [Shaani](pageId:30d23ac1-bdd8-801e-9654-f28d9de1aeb0) about the attacks, DWC, and their operations.
 - Shaani assigns the party to retrieve Larkenite from [Zu Berg](pageId:30d23ac1-bdd8-80c7-83e9-e5f358819582) .
-- In Nicodranas, Captain [Baleth Eldrasol](pageId:30d23ac1-bdd8-8011-ab37-ea0ecbd99e05)  and historian [Radberth Stoneheart](pageId:30d23ac1-bdd8-807b-8178-d8836323e7d3)  reveal the Dureya Wagon Company's true goal: combining engineering with magic.
+- In Nicodranas, Captain [Baleth Eldrasol](pageId:30d23ac1-bdd8-8011-ab37-ea0ecbd99e05) and historian [Radberth Stoneheart](pageId:30d23ac1-bdd8-807b-8178-d8836323e7d3) reveal the Dureya Wagon Company's true goal: combining engineering with magic.
 - Radbert informs them that Corellian's home is in [Hupert’s Cove](pageId:30d23ac1-bdd8-805f-a219-cbe8c4f342e9) , near Zu Berg.
 - [Opal](pageId:30d23ac1-bdd8-8072-856d-f8b1200a872a) assigns Arion “Ari” Starfire to aid a resistance movement in [Rothengorm](pageId:30d23ac1-bdd8-80e0-85c3-f45439ed3958) , where martial law is in effect.
+
 ### Sessions 7-8
 
 - En route to Zu Berg for the Larkenite, the party is attacked by orcs and goliaths wielding weapons from DWC sites.
-- They capture [Bom Gor](pageId:30d23ac1-bdd8-806e-b3e8-d6390e26972f) r, a [Zunkan Tribe](pageId:30d23ac1-bdd8-80f4-903b-db908161ef39)  soldier, who admits to tracking them.
+- They capture [Bom Gor](pageId:30d23ac1-bdd8-806e-b3e8-d6390e26972f) r, a [Zunkan Tribe](pageId:30d23ac1-bdd8-80f4-903b-db908161ef39) soldier, who admits to tracking them.
 - The party spends a quiet night in Zu Berg before heading to Hupert's Cove.
 - In Hupert’s Cove, they discover Corellian's hidden laboratory and battle his shadow magic-powered soldiers.
 - They encounter [Rosie Gove](pageId:30d23ac1-bdd8-806f-ac1d-d2954b801411) 's ghost, who reveals Corellian's true identity as Arthur Jones, her former fiancé.
 - After finding crucial information in notes and journals, the party performs a ritual to free Rosie's soul, succeeding despite Corellian's interference.
 - The party enters Shaft 3 of the Zu Berg mines for Larkenite. They defeat a large earthworm, and while Qemuel mines the ore, Ari, Echo, and Willow save three survivors from a search party by distracting smaller worms.
+
 ### Session 9
 
 - They travel from Zu Berg to Nicodranas on foot, then board the Daphne, Shaani's ship, with the Larkenite.
@@ -63,12 +68,14 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - After securing lodging at The Blood Hound B&B, they search for [Lane Ignio](pageId:30d23ac1-bdd8-8030-81eb-f71983c24ed0) , consulting with [Carys](pageId:30d23ac1-bdd8-8032-a012-dd925cebe5a5) , a bartender in the Pentamarket, and two Everlight priests in the local temple.
 - They learn Lane frequents The Leaky Tap and investigate there.
 - At the pub, they find the proprietor, [Claudia](pageId:30d23ac1-bdd8-80b0-9793-ed73b3916941) , under attack by four assailants. In the ensuing fight, they kill two attackers and subdue the other two.
+
 ### Session 11
 
 - The party converses with Claudia at The Leaky Tap. She reveals the attackers were Myriad members, and that Lane Ignio is being held at Bertha's Watering Hole by a Myriad member named Juran.
 - Claudia reveals herself as a dryad using magic to conceal her true nature. She and Lane were working to disrupt the Myriad's shining dew operation, a drug produced by harvesting Fey Realm creatures.
 - Important revelations from Claudia:
 - The party infiltrates Bertha's Watering Hole:
+
 ### Session 12
 
 - Claudia informed the party that Elysia and Lane had been relocated after the first location was discovered.
@@ -76,6 +83,7 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - Infiltration:
 - Rescue:
 - Aftermath at the Leaky Tap:
+
 ### Session 13
 
 - Arrival in the Fey Realm:
@@ -83,14 +91,17 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - Corellian:
 - Dark Pockets in the Feywild:
 - Dureya Wagon Company:
+
 ### Session 14
 
 - The party departed from the College of Glamour and made their way to the Fey Crossing.
+
 ### Session 15
 
 - After Ranniel closed the crossing, the party returned to the college to rest and gather supplies. They also brewed healing potions for their journey ahead.
 - Ranniel shared additional information about the dark spots (intrusions) in the Fey Realm:
 - The party decided to accompany Ranniel to this final intrusion.
+
 ### Session 16
 
 - MoB defeated the moorbounder ambush and continued toward their destination.
@@ -107,7 +118,7 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 
 ## Session 17
 
-- They decided the best course of action was to travel to [Shadycreek Run](pageId:30d23ac1-bdd8-8047-bcf9-d31311fadd11)  and, from there, proceed to Site 2 and the shrine.
+- They decided the best course of action was to travel to [Shadycreek Run](pageId:30d23ac1-bdd8-8047-bcf9-d31311fadd11) and, from there, proceed to Site 2 and the shrine.
 - Before setting off, Willow suggested taking a short detour to rest and enjoy some leisure time along the way.
 - Ranniel teleported the group to Ank’Harel on the continent of Marquet. There, they explored the city: visiting local bars, market stalls, and taverns; shopping, eating, drinking, and even gambling a bit. Ari performed for the locals and then rested for the night.
 - While in Ank’Harel, Willow contacted Jeremy to ask about potential contacts in Shadycreek Run. He recommended Jadi Bruk, a kobold living in the North Clover neighborhood, near Savalirwood.
@@ -115,6 +126,7 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - During their journey toward the city, the group was attacked by wraiths at night but successfully fended them off.
 - Upon arrival in Shadycreek Run, they noticed that some guards and townsfolk were wearing distinctive colors, some more subtle than others.
 - The party rented a room at The Wrong Cushion. Before resting, Qemuel shared intelligence from Shaani about Site 2:
+
 ## Session 18
 
 - The next day, they made their way to the northern part of the town, searching for [Jadi Bruk](pageId:30d23ac1-bdd8-8002-a9e0-e00222be9d64) .
@@ -128,6 +140,7 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - The party spent the night at the kobolds’ place and started the journey to the Dunrock Mountains the next day.
 - After a four-day trek facing blizzards, bandits, a griffin, and wolves, they reached the foot of the mountains.
 - During the first watch, nearby (humanoid) activity suggested they could be close.
+
 ## Session 19
 
 - The party traveled southeast along the mountain and located a path leading to a tunnel.
@@ -140,7 +153,6 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - Current Site Status:
 - Willow contacted Qemuel telepathically for an update:
 
-
 ## Session 20
 
 ### Exploring the site
@@ -149,11 +161,13 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - Willow sent a Sending to Lathar Tanyth asking about the crystals.
 - He replied that they are “programmable” and mined in Tal’Dorei, north of Westruun.
 - Willow used Detect Magic and studied one crystal, discovering they could be tampered with using magic.
+
 ### Sabotage plan
 
 - Plan: Dresana distracts guards on each level while Willow and Ari create “magic leaks” in the crystals.
 - The plan worked: All 15 crystals were sabotaged (some more heavily than others).
 - They left the site while maintaining the ruse that they were members of the Order.
+
 ### Echo / Qemuel side (revealed later)
 
 - Echo and Qemuel entered the site while invisible.
@@ -162,6 +176,7 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - They found shelter, but tensions about Qem’s secrecy led to Echo leaving and returning to the party’s previous campsite.
 - Qemuel and Jorys also went there, and eventually the rest of the party arrived.
 - They exchanged recon information.
+
 ### Names / groups mentioned
 
 - Raizan Crone & Zorlak – weapon merchants dealing with the Order.
@@ -170,6 +185,7 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - Eldera – mentioned in related context.
 - Druvis – Ravenite from old Draconia, possible ally and likely member of Scars of Scale and Tooth.
 - Doctor Alasrine – doctor from Site 3 who tried to remove Jorys’ armor.
+
 ### Next day
 
 - Returning to the site was considered not viable.
@@ -179,6 +195,7 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - The party climbed the mountain again, following Echo’s guidance, aiming for the summit shrine to contact the Heralds.
 - On the way, Willow sent a Sending to Eirem asking about the situation at the site.
 - He replied that things were worrying:
+
 ### Herald contact
 
 - The party reached the shrine and Echo contacted one Herald.
@@ -186,16 +203,19 @@ Due to the company’s activities and growing power, it was destroyed by the [Dw
 - Star map
 - Incursion locations identified
 - Ranniel Contact
+
 ### Next Steps
 
 - Before ultimately returning to Zadash they will first go to Rothengorm to help with the situation there.
 - Afterwards they will meet Ranniel in Zadash and decide the next steps.
+
 ## Session 21
 
 - The party departed the shrine, deciding to head west, pass by [Nogvurot](pageId:32223ac1-bdd8-8092-ae5b-ec6c7854d35e) and [Rexxentrum](pageId:30d23ac1-bdd8-807e-8bbd-d18a7bcf5b9f) , and ultimately make their way south toward Rothengorm.
 - As they got closer to Nogvurot, they stumbled upon an inn during nightfall.
 - When they woke up, the inn appeared long abandoned and mostly ruined.
 - During the night, they were attacked by a group.
+
 ## Session 22
 
 They passed by Nogvurot without spending the night and continued toward [Rexxentrum](pageId:30d23ac1-bdd8-807e-8bbd-d18a7bcf5b9f) .

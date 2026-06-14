@@ -41,24 +41,22 @@ export async function initSyncEngine() {
   const originalSetItem = localStorage.setItem;
   const originalRemoveItem = localStorage.removeItem;
 
-  localStorage.setItem = function (key, value) {
-    originalSetItem.apply(this, arguments);
+  localStorage.setItem = function (...args: [string, string]) {
+    originalSetItem.apply(this, args);
+    const [key, value] = args;
     const isSyncable =
-      key.startsWith("party-stats:") ||
-      key === "mob.conditions.v1" ||
-      key === "mob.partyIds.v1";
+      key.startsWith("party-stats:") || key === "mob.conditions.v1" || key === "mob.partyIds.v1";
 
     if (isSyncable) {
       queueSync(key, value);
     }
   };
 
-  localStorage.removeItem = function (key) {
-    originalRemoveItem.apply(this, arguments);
+  localStorage.removeItem = function (...args: [string]) {
+    originalRemoveItem.apply(this, args);
+    const [key] = args;
     const isSyncable =
-      key.startsWith("party-stats:") ||
-      key === "mob.conditions.v1" ||
-      key === "mob.partyIds.v1";
+      key.startsWith("party-stats:") || key === "mob.conditions.v1" || key === "mob.partyIds.v1";
 
     if (isSyncable) {
       queueSync(key, null);
@@ -83,9 +81,7 @@ export async function initSyncEngine() {
       const key = localStorage.key(i);
       if (
         key &&
-        (key.startsWith("party-stats:") ||
-          key === "mob.conditions.v1" ||
-          key === "mob.partyIds.v1")
+        (key.startsWith("party-stats:") || key === "mob.conditions.v1" || key === "mob.partyIds.v1")
       ) {
         localKeys.push(key);
       }

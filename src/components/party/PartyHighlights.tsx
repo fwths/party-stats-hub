@@ -375,7 +375,8 @@ export function PartyHighlights({ ids }: { ids: number[] }) {
                           : {
                               icon: Crown,
                               colorClass: "text-stat-cha bg-stat-cha/10",
-                              borderClass: "border-border/30 hover:border-stat-cha/55 hover:bg-stat-cha/5",
+                              borderClass:
+                                "border-border/30 hover:border-stat-cha/55 hover:bg-stat-cha/5",
                               glowClass: "bg-stat-cha/8",
                             };
               const Icon = details.icon;

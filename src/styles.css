@@ -130,10 +130,10 @@
   --sidebar-border: oklch(0.25 0.04 270);
   --sidebar-ring: oklch(0.66 0.21 305);
   --stat-str: oklch(0.65 0.15 20);
-  --stat-dex: oklch(0.70 0.12 145);
+  --stat-dex: oklch(0.7 0.12 145);
   --stat-con: oklch(0.75 0.15 70);
   --stat-int: oklch(0.65 0.12 240);
-  --stat-wis: oklch(0.70 0.12 180);
+  --stat-wis: oklch(0.7 0.12 180);
   --stat-cha: oklch(0.82 0.1 85);
 
   /* Adaptive UI Colors - Light Mode (Darker shades for readability on white) */
@@ -176,29 +176,29 @@
   --input: oklch(0.23 0.03 270);
   --ring: oklch(0.66 0.21 305);
   --stat-str: oklch(0.65 0.15 20);
-  --stat-dex: oklch(0.70 0.12 145);
+  --stat-dex: oklch(0.7 0.12 145);
   --stat-con: oklch(0.75 0.15 70);
   --stat-int: oklch(0.65 0.12 240);
-  --stat-wis: oklch(0.70 0.12 180);
+  --stat-wis: oklch(0.7 0.12 180);
   --stat-cha: oklch(0.82 0.1 85);
 
   /* Adaptive UI Colors - Dark Mode (Lighter/Glowing shades for dark backgrounds) */
-  --ui-red: oklch(0.65 0.20 25);
-  --ui-rose: oklch(0.65 0.20 15);
-  --ui-orange: oklch(0.70 0.18 45);
+  --ui-red: oklch(0.65 0.2 25);
+  --ui-rose: oklch(0.65 0.2 15);
+  --ui-orange: oklch(0.7 0.18 45);
   --ui-amber: oklch(0.75 0.18 70);
-  --ui-yellow: oklch(0.80 0.16 95);
+  --ui-yellow: oklch(0.8 0.16 95);
   --ui-lime: oklch(0.75 0.16 130);
-  --ui-emerald: oklch(0.70 0.16 150);
-  --ui-teal: oklch(0.70 0.14 180);
+  --ui-emerald: oklch(0.7 0.16 150);
+  --ui-teal: oklch(0.7 0.14 180);
   --ui-cyan: oklch(0.75 0.14 210);
-  --ui-sky: oklch(0.70 0.16 240);
+  --ui-sky: oklch(0.7 0.16 240);
   --ui-blue: oklch(0.65 0.18 260);
   --ui-indigo: oklch(0.65 0.18 285);
   --ui-violet: oklch(0.65 0.18 300);
   --ui-purple: oklch(0.65 0.18 315);
-  --ui-fuchsia: oklch(0.65 0.20 330);
-  --ui-pink: oklch(0.70 0.16 350);
+  --ui-fuchsia: oklch(0.65 0.2 330);
+  --ui-pink: oklch(0.7 0.16 350);
 }
 
 @layer base {
@@ -576,3 +576,4 @@ select option {
   background-color: var(--card) !important;
   color: var(--foreground) !important;
 }
+body[style] { overflow: auto !important; pointer-events: auto !important; padding-right: 0 !important; margin-right: 0 !important; }

@@ -91,7 +91,7 @@ export function createNativePartyMember(state: any): PartyMember {
 }
 
 export const saveNativeCharacter = createServerFn({ method: "POST" })
-  .inputValidator((input: any) => input)
+  .validator((input: any) => input)
   .handler(async ({ data }) => {
     const filePath = path.join(process.cwd(), `native-char-${data.id}.json`);
     await fs.writeFile(filePath, JSON.stringify({ success: true, data }, null, 2), "utf-8");
@@ -99,7 +99,7 @@ export const saveNativeCharacter = createServerFn({ method: "POST" })
   });
 
 export const getNativeCharacter = createServerFn({ method: "GET" })
-  .inputValidator((input?: { id?: number }) => input)
+  .validator((input?: { id?: number }) => input)
   .handler(async ({ data }) => {
     if (!data?.id) return null;
     try {

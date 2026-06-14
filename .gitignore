@@ -60,6 +60,7 @@ books/
 !artificer_final_data.json
 !src/data/**/*.json
 !parsed_classes/**/*.json
+!src/lib/notion-cache-seed.json
 
 # Databases
 *.db

@@ -12,7 +12,7 @@ export const checkAuthFn = createServerFn({ method: "GET" }).handler(async () =>
 
 // Server function to authenticate via passcode
 export const loginFn = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ passcode: z.string() }))
+  .validator(z.object({ passcode: z.string() }))
   .handler(async ({ data }) => {
     try {
       const { verifyPasscode, startSession } = await import("@/lib/auth.server");

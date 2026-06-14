@@ -100,7 +100,7 @@ export async function loadParty(ids: number[] = PARTY_CHARACTER_IDS): Promise<Pa
 }
 
 export const getParty = createServerFn({ method: "GET" })
-  .inputValidator((input?: { ids?: number[] }) => {
+  .validator((input?: { ids?: number[] }) => {
     const ids = Array.isArray(input?.ids)
       ? input!.ids!.filter((n) => Number.isInteger(n) && n > 0).slice(0, 12)
       : [];

@@ -1,15 +1,11 @@
-import { SRDRule, SRDSpecies, SRDClass, SRDRace } from "../data/srd";
-import { races } from "../data/srd/races";
-import { classes } from "../data/srd/classes";
-
-export type { SRDRule, SRDSpecies, SRDClass, SRDRace };
+import { rules, races, classes, SRDRule, SRDRace, SRDClass } from "../data/srd";
 
 export function getRule(id: string): SRDRule | undefined {
-  return undefined;
+  return rules.find((r) => r.id === id);
 }
 
 export function getAllRules(): SRDRule[] {
-  return [];
+  return rules;
 }
 
 export function getRace(id: string): SRDRace | undefined {

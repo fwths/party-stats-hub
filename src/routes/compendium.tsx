@@ -64,7 +64,7 @@ function CompendiumComponent() {
       setIsLoading(false);
     };
     loadData();
-  }, [activeTab]);
+  }, [activeTab, items.length, monsters.length, spells.length]);
 
   const getActiveData = () => {
     switch (activeTab) {

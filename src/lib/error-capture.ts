@@ -9,10 +9,20 @@ function record(error: unknown) {
 }
 
 if (typeof globalThis.addEventListener === "function") {
-  globalThis.addEventListener("error", (event) => record((event as any)?.error ?? event));
-  globalThis.addEventListener("unhandledrejection", (event) =>
-    record((event as any)?.reason ?? event),
-  );
+  globalThis.addEventListener("error", (event: ErrorEvent | Event) => {
+    if ("error" in event) {
+      record(event.error);
+    } else {
+      record(event);
+    }
+  });
+  globalThis.addEventListener("unhandledrejection", (event: PromiseRejectionEvent | Event) => {
+    if ("reason" in event) {
+      record(event.reason);
+    } else {
+      record(event);
+    }
+  });
 }
 
 export function consumeLastCapturedError(): unknown {

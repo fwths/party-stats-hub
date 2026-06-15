@@ -10,11 +10,11 @@ export function createNativePartyMember(state: any): PartyMember {
   const race = getRace(state.raceId);
   const cls = getClass(state.classId);
 
-  const conMod = Math.floor((state.abilities.CON - 10) / 2);
   const hpMax = cls
-    ? cls.hitPoints.hitDice +
-      conMod +
-      (state.level - 1) * (Math.floor(cls.hitPoints.hitDice / 2) + 1 + conMod)
+    ? cls.hitDice +
+      Math.floor((state.abilities.CON - 10) / 2) +
+      (state.level - 1) *
+        (Math.floor(cls.hitDice / 2) + 1 + Math.floor((state.abilities.CON - 10) / 2))
     : 10;
 
   const proficiencyBonus = Math.ceil(state.level / 4) + 1;
@@ -27,7 +27,7 @@ export function createNativePartyMember(state: any): PartyMember {
     modifier: Math.floor(((score as number) - 10) / 2),
   }));
 
-  const member = {
+  const member: PartyMember = {
     id,
     name: state.name || "Unnamed",
     avatarUrl: null,
@@ -64,34 +64,14 @@ export function createNativePartyMember(state: any): PartyMember {
     tools: [],
     armorProficiencies: [],
     weaponProficiencies: [],
-    hitDice: `${state.level}/${state.level}d${cls?.hitPoints.hitDice || 8}`,
-    specialSpeeds: [],
-    spellcasting: [],
-    feats: [],
-    alignment: "Unknown",
-    currencies: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
-    weightCarried: 0,
-    carryingCapacity: (state.abilities.STR || 10) * 15,
-    attacks: [],
-    cantrips: [],
-    preparedSpells: [],
-    allSpells: [],
-    features: [],
-    characteristics: { personalityTraits: "", ideals: "", bonds: "", flaws: "", appearance: "" },
-    activeArmorModel: null,
-    activeInfusions: [],
-    infusions: [],
-    metamagic: [],
-    totemAspects: [],
-    weaponMasteries: [],
-    creatures: [],
-  } as PartyMember;
+    hitDice: `${state.level}/${state.level}d${cls?.hitDice || 8}`,
+  };
 
   return member;
 }
 
 export const saveNativeCharacter = createServerFn({ method: "POST" })
-  .validator((input: any) => input)
+  .inputValidator((input: any) => input)
   .handler(async ({ data }) => {
     const filePath = path.join(process.cwd(), `native-char-${data.id}.json`);
     await fs.writeFile(filePath, JSON.stringify({ success: true, data }, null, 2), "utf-8");
@@ -99,7 +79,7 @@ export const saveNativeCharacter = createServerFn({ method: "POST" })
   });
 
 export const getNativeCharacter = createServerFn({ method: "GET" })
-  .validator((input?: { id?: number }) => input)
+  .inputValidator((input?: { id?: number }) => input)
   .handler(async ({ data }) => {
     if (!data?.id) return null;
     try {

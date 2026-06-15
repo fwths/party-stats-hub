@@ -1,6 +1,6 @@
 let isSyncingFromServer = false;
 const syncQueue: Record<string, string | null> = {};
-let syncTimeout: any = null;
+let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Debounced synchronization to save local edits to server
 function queueSync(key: string, value: string | null) {

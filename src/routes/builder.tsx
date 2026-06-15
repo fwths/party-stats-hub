@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { User, Swords, Dices, Save, ChevronRight, ChevronLeft } from "lucide-react";
-import { getClassesFromDb, getSpeciesFromDb, getSubclassesFromDb } from "@/lib/db-functions";
+import { getAllRaces, getAllClasses, SRDRace, SRDClass } from "@/lib/srd-engine";
 import {
   Card,
   CardContent,
@@ -20,12 +20,6 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/builder")({
-  loader: async () => {
-    const classes = await getClassesFromDb();
-    const species = await getSpeciesFromDb();
-    const subclasses = await getSubclassesFromDb();
-    return { classes, species, subclasses };
-  },
   component: BuilderWizard,
 });
 
@@ -63,7 +57,6 @@ function BuilderWizard() {
     try {
       const { createNativePartyMember, saveNativeCharacter } = await import("@/lib/native-engine");
       const { STORAGE_KEY, COOKIE_KEY } = await import("@/lib/party");
-      const { PARTY_CHARACTER_IDS } = await import("@/lib/party-config");
 
       const newMember = createNativePartyMember(character);
       const newId = await saveNativeCharacter({ data: newMember });
@@ -73,8 +66,6 @@ function BuilderWizard() {
       let ids: number[] = [];
       if (raw) {
         ids = JSON.parse(raw);
-      } else {
-        ids = [...PARTY_CHARACTER_IDS];
       }
       ids.push(newId);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
@@ -177,7 +168,7 @@ function BuilderWizard() {
 // Subcomponents for steps
 
 function StepRace({ character, updateCharacter }: any) {
-  const { species: races } = Route.useLoaderData();
+  const races = getAllRaces();
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-4xl mx-auto">
       <div className="bg-secondary/20 p-6 rounded-xl border border-border/30">
@@ -199,7 +190,7 @@ function StepRace({ character, updateCharacter }: any) {
           Choose your Heritage
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {races.map((race: any) => (
+          {races.map((race) => (
             <Card
               key={race.id}
               className={`cursor-pointer transition-all duration-300 relative overflow-hidden group ${
@@ -222,24 +213,66 @@ function StepRace({ character, updateCharacter }: any) {
                   {race.description}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2 pt-4 border-t border-border/30">
-                  <span className="text-xs font-bold bg-accent/10 border border-accent/20 text-accent px-2.5 py-1 rounded-md shadow-sm">
-                    Size: {race.size}
-                  </span>
-                  <span className="text-xs font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-2.5 py-1 rounded-md shadow-sm">
-                    Speed: {race.speed} ft
-                  </span>
+                  {race.abilityBonuses.map((b: any) => (
+                    <span
+                      key={b.ability}
+                      className="text-xs font-bold bg-accent/10 border border-accent/20 text-accent px-2.5 py-1 rounded-md shadow-sm"
+                    >
+                      +{b.bonus} {b.ability}
+                    </span>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       </div>
+
+      {character.raceId && races.find((r) => r.id === character.raceId)?.subraces && (
+        <div className="mt-8 bg-secondary/20 p-6 rounded-xl border border-border/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+            Choose Subrace / Lineage
+          </label>
+          <div className="max-w-md">
+            <Select
+              value={character.subraceId || ""}
+              onValueChange={(val) => updateCharacter({ subraceId: val })}
+            >
+              <SelectTrigger className="w-full bg-background/50 border-border/50 focus:ring-primary shadow-sm h-12">
+                <SelectValue placeholder="Select a subrace...">
+                  {character.subraceId
+                    ? races
+                        .find((r) => r.id === character.raceId)
+                        ?.subraces?.find((s) => s.id === character.subraceId)?.name
+                    : undefined}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {races
+                  .find((r) => r.id === character.raceId)
+                  ?.subraces?.map((sub) => (
+                    <SelectItem
+                      key={sub.id}
+                      value={sub.id}
+                      className="py-3 focus:bg-primary/10 cursor-pointer"
+                    >
+                      <div className="font-bold text-primary">{sub.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1 max-w-xs whitespace-normal">
+                        {sub.description}
+                      </div>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 function StepClass({ character, updateCharacter }: any) {
-  const { classes, subclasses: allSubclasses } = Route.useLoaderData();
+  const classes = getAllClasses();
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-4xl mx-auto">
       <div>
@@ -248,7 +281,7 @@ function StepClass({ character, updateCharacter }: any) {
           Choose your Path
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {classes.map((cls: any) => (
+          {classes.map((cls) => (
             <Card
               key={cls.id}
               className={`cursor-pointer transition-all duration-300 relative overflow-hidden group ${
@@ -273,7 +306,11 @@ function StepClass({ character, updateCharacter }: any) {
                 <div className="mt-5 flex gap-4 text-xs pt-4 border-t border-border/30">
                   <div className="bg-secondary/50 px-2.5 py-1.5 rounded-md">
                     <span className="font-bold text-foreground">Hit Dice:</span>{" "}
-                    <span className="text-amber-500">{cls.hitDiceType}</span>
+                    <span className="text-amber-500">d{cls.hitDice}</span>
+                  </div>
+                  <div className="bg-secondary/50 px-2.5 py-1.5 rounded-md">
+                    <span className="font-bold text-foreground">Saves:</span>{" "}
+                    <span className="text-amber-500">{cls.saves.join(", ")}</span>
                   </div>
                 </div>
               </CardContent>
@@ -301,44 +338,45 @@ function StepClass({ character, updateCharacter }: any) {
             </div>
           </div>
 
-          {character.level >= 3 &&
-            allSubclasses.some((s: any) => s.classId === character.classId) && (
-              <div className="mt-8 pt-6 border-t border-border/30 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 text-amber-500">
-                  Choose Subclass / Path (Level 3+)
-                </label>
-                <div className="max-w-md">
-                  <Select
-                    value={character.subclassId || ""}
-                    onValueChange={(val) => updateCharacter({ subclassId: val })}
-                  >
-                    <SelectTrigger className="w-full bg-background/50 border-amber-500/30 focus:ring-amber-500 shadow-sm h-12">
-                      <SelectValue placeholder="Select a subclass...">
-                        {character.subclassId
-                          ? allSubclasses.find((s: any) => s.id === character.subclassId)?.name
-                          : undefined}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px] overflow-y-auto">
-                      {allSubclasses
-                        .filter((sub: any) => sub.classId === character.classId)
-                        .map((sub: any) => (
-                          <SelectItem
-                            key={sub.id}
-                            value={sub.id}
-                            className="py-3 focus:bg-amber-500/10 cursor-pointer"
-                          >
-                            <div className="font-bold text-amber-500">{sub.name}</div>
-                            <div className="text-xs text-muted-foreground/80 mt-1 max-w-xs whitespace-normal group-focus:text-muted-foreground">
-                              {sub.description}
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          {character.level >= 3 && classes.find((c) => c.id === character.classId)?.subclasses && (
+            <div className="mt-8 pt-6 border-t border-border/30 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 text-amber-500">
+                Choose Subclass / Path (Level 3+)
+              </label>
+              <div className="max-w-md">
+                <Select
+                  value={character.subclassId || ""}
+                  onValueChange={(val) => updateCharacter({ subclassId: val })}
+                >
+                  <SelectTrigger className="w-full bg-background/50 border-amber-500/30 focus:ring-amber-500 shadow-sm h-12">
+                    <SelectValue placeholder="Select a subclass...">
+                      {character.subclassId
+                        ? classes
+                            .find((c) => c.id === character.classId)
+                            ?.subclasses?.find((s) => s.id === character.subclassId)?.name
+                        : undefined}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes
+                      .find((c) => c.id === character.classId)
+                      ?.subclasses?.map((sub) => (
+                        <SelectItem
+                          key={sub.id}
+                          value={sub.id}
+                          className="py-3 focus:bg-amber-500/10 cursor-pointer"
+                        >
+                          <div className="font-bold text-amber-500">{sub.name}</div>
+                          <div className="text-xs text-muted-foreground/80 mt-1 max-w-xs whitespace-normal group-focus:text-muted-foreground">
+                            {sub.description}
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -354,7 +392,11 @@ function StepAbilities({ character, updateCharacter }: any) {
   };
 
   const getRacialBonus = (ab: string) => {
-    return 0; // DB species don't have abilityBonuses in 2024 rules natively via UI yet
+    if (!character.raceId) return 0;
+    const race = getAllRaces().find((r) => r.id === character.raceId);
+    if (!race) return 0;
+    const bonus = race.abilityBonuses.find((b) => b.ability === ab);
+    return bonus ? bonus.bonus : 0;
   };
 
   // Point Buy Logic
@@ -610,10 +652,10 @@ function StepAbilities({ character, updateCharacter }: any) {
 }
 
 function StepReview({ character, saveCharacter }: any) {
-  const { classes, species: races, subclasses: allSubclasses } = Route.useLoaderData();
-  const race = races.find((r: any) => r.id === character.raceId);
-  const cls = classes.find((c: any) => c.id === character.classId);
-  const subclass = allSubclasses.find((s: any) => s.id === character.subclassId);
+  const race = getAllRaces().find((r) => r.id === character.raceId);
+  const cls = getAllClasses().find((c) => c.id === character.classId);
+  const subrace = race?.subraces?.find((s) => s.id === character.subraceId);
+  const subclass = cls?.subclasses?.find((s) => s.id === character.subclassId);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-3xl mx-auto">
@@ -627,7 +669,7 @@ function StepReview({ character, saveCharacter }: any) {
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/50 backdrop-blur-md border border-border text-lg font-semibold text-muted-foreground shadow-sm">
           <span className="text-foreground">Level {character.level}</span>
           <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-          <span className="text-accent">{race?.name}</span>
+          <span className="text-accent">{subrace ? subrace.name : race?.name}</span>
           <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
           <span className="text-amber-500">{subclass ? subclass.name : cls?.name}</span>
         </div>
@@ -635,7 +677,7 @@ function StepReview({ character, saveCharacter }: any) {
 
       <div className="grid grid-cols-3 md:grid-cols-6 gap-3 my-8">
         {Object.entries(character.abilities).map(([ab, base]: [string, any]) => {
-          const racial = 0; // DB species don't have abilityBonuses array
+          const racial = race?.abilityBonuses.find((b) => b.ability === ab)?.bonus || 0;
           const total = base + racial;
           const mod = Math.floor((total - 10) / 2);
           return (

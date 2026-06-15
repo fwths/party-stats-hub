@@ -827,7 +827,7 @@ function parseMarkdownToNotionBlocks(markdown: string): any[] {
   let codeBuffer: string[] = [];
   let codeLanguage = "plain text";
 
-  for (let line of lines) {
+  for (const line of lines) {
     const trimmed = line.trim();
 
     // Check code blocks

@@ -24,10 +24,10 @@ export interface SRDClass {
   id: string;
   name: string;
   description: string;
-  hitDice: number;
+  hitDice?: number;
   primaryAbility: string[];
-  saves: string[];
-  featuresByLevel: Record<
+  saves?: string[];
+  featuresByLevel?: Record<
     number,
     { name: string; description: string; [key: string]: unknown }[]
   >;

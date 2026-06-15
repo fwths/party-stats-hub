@@ -29,12 +29,13 @@ export interface SRDClass {
   saves: string[];
   featuresByLevel: Record<
     number,
-    { id?: string; name: string; description: string; levelRequired?: number }[]
+    { name: string; description: string; [key: string]: unknown }[]
   >;
   subclasses?: {
     id: string;
     name: string;
     description: string;
+    [key: string]: unknown;
   }[];
 }
 

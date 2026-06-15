@@ -9,6 +9,8 @@ export interface SRDRace {
   name: string;
   description: string;
   speed: number;
+  size?: string;
+  source?: string;
   abilityBonuses: { ability: string; bonus: number }[];
   features: { name: string; description: string }[];
   subraces?: {
@@ -37,6 +39,21 @@ export interface SRDClass {
     description: string;
     [key: string]: unknown;
   }[];
+  [key: string]: unknown;
+}
+
+export interface SRDSpell {
+  id: string;
+  name: string;
+  level: number;
+  school: string;
+  castingTime: string;
+  range: string;
+  components: string;
+  duration: string;
+  description: string;
+  classes: string[];
+  source?: string;
   [key: string]: unknown;
 }
 

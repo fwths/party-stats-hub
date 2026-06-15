@@ -485,7 +485,7 @@ export const ALIGNMENT_MAP: Record<number, string> = {
 };
 
 export function computeCarryingCapacity(strengthScore: number, modifiers: any[]): number {
-  let capacity = strengthScore * 15;
+  const capacity = strengthScore * 15;
   let multiplier = 1;
   let bonus = 0;
   for (const m of modifiers) {
@@ -617,7 +617,7 @@ export function computeAttacks(
       const diceStr = dmg.diceString;
       let damageFormula = "None";
       if (diceStr) {
-        let baseDmgBonus = useMod + magicBonus + genMods.damageBonus;
+        const baseDmgBonus = useMod + magicBonus + genMods.damageBonus;
 
         const dmgOverride = getCvValue(item_id, 13);
         const dmgBonusCv = getCvValue(item_id, 12);
@@ -702,7 +702,8 @@ export function computeAttacks(
         const isProf = !!a.isProficient;
         const fixedToHit = a.fixedToHit;
 
-        let baseAtkBonus = typeof fixedToHit === "number" ? fixedToHit : (isProf ? pb : 0) + useMod;
+        const baseAtkBonus =
+          typeof fixedToHit === "number" ? fixedToHit : (isProf ? pb : 0) + useMod;
 
         const toHitOverride = getCvValue(action_id, 11);
         const toHitBonus = getCvValue(action_id, 10);

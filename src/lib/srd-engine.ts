@@ -1,7 +1,7 @@
 import { rules, races, classes, SRDRule, SRDRace, SRDClass } from "../data/srd";
 
 export function getRule(id: string): SRDRule | undefined {
-  return rules.find(r => r.id === id);
+  return rules.find((r) => r.id === id);
 }
 
 export function getAllRules(): SRDRule[] {
@@ -9,7 +9,7 @@ export function getAllRules(): SRDRule[] {
 }
 
 export function getRace(id: string): SRDRace | undefined {
-  return races.find(r => r.id === id);
+  return races.find((r) => r.id === id);
 }
 
 export function getAllRaces(): SRDRace[] {
@@ -17,7 +17,7 @@ export function getAllRaces(): SRDRace[] {
 }
 
 export function getClass(id: string): SRDClass | undefined {
-  return classes.find(c => c.id === id);
+  return classes.find((c) => c.id === id);
 }
 
 export function getAllClasses(): SRDClass[] {

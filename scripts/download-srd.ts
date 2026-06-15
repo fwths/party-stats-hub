@@ -1,16 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const ENDPOINTS = [
-  "spells",
-  "monsters",
-  "magicitems",
-];
+const ENDPOINTS = ["spells", "monsters", "magicitems"];
 
 async function fetchAll(endpoint: string) {
   let results: any[] = [];
   let url = `https://api.open5e.com/v1/${endpoint}/?limit=100`;
-  
+
   while (url) {
     console.log(`Fetching ${url}...`);
     const res = await fetch(url);

@@ -6,12 +6,17 @@ import * as path from "node:path";
 
 export function createNativePartyMember(state: any): PartyMember {
   const id = Math.floor(Math.random() * 1000000) + 900000000; // Native IDs are 900M+
-  
+
   const race = getRace(state.raceId);
   const cls = getClass(state.classId);
-  
-  const hpMax = cls ? cls.hitDice + Math.floor((state.abilities.CON - 10) / 2) + ((state.level - 1) * (Math.floor(cls.hitDice / 2) + 1 + Math.floor((state.abilities.CON - 10) / 2))) : 10;
-  
+
+  const hpMax = cls
+    ? cls.hitDice +
+      Math.floor((state.abilities.CON - 10) / 2) +
+      (state.level - 1) *
+        (Math.floor(cls.hitDice / 2) + 1 + Math.floor((state.abilities.CON - 10) / 2))
+    : 10;
+
   const proficiencyBonus = Math.ceil(state.level / 4) + 1;
   const wisMod = Math.floor((state.abilities.WIS - 10) / 2);
   const intMod = Math.floor((state.abilities.INT - 10) / 2);
@@ -19,7 +24,7 @@ export function createNativePartyMember(state: any): PartyMember {
   const abilities = Object.entries(state.abilities).map(([name, score]) => ({
     name,
     score: score as number,
-    modifier: Math.floor(((score as number) - 10) / 2)
+    modifier: Math.floor(((score as number) - 10) / 2),
   }));
 
   const member: PartyMember = {
@@ -59,7 +64,7 @@ export function createNativePartyMember(state: any): PartyMember {
     tools: [],
     armorProficiencies: [],
     weaponProficiencies: [],
-    hitDice: `${state.level}/${state.level}d${cls?.hitDice || 8}`
+    hitDice: `${state.level}/${state.level}d${cls?.hitDice || 8}`,
   };
 
   return member;

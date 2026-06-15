@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 
-export type ThemeId = "abyssal" | "emerald" | "crimson" | "slate" | "amber" | "parchment" | "minimal" | "minimal-light";
+export type ThemeId =
+  | "abyssal"
+  | "emerald"
+  | "crimson"
+  | "slate"
+  | "amber"
+  | "parchment"
+  | "minimal"
+  | "minimal-light";
 
 export interface ThemePreset {
   id: ThemeId;
@@ -266,10 +274,10 @@ const STORAGE_KEY = "party-stats-theme-preset";
 export function applyTheme(themeId: ThemeId) {
   const theme = THEME_PRESETS.find((t) => t.id === themeId) || THEME_PRESETS[0];
   const root = document.documentElement;
-  
+
   // Clean up any stale variables from previous themes
-  THEME_PRESETS.forEach(preset => {
-    Object.keys(preset.variables).forEach(key => {
+  THEME_PRESETS.forEach((preset) => {
+    Object.keys(preset.variables).forEach((key) => {
       root.style.removeProperty(key);
     });
   });
@@ -278,7 +286,7 @@ export function applyTheme(themeId: ThemeId) {
   Object.entries(theme.variables).forEach(([key, value]) => {
     root.style.setProperty(key, value);
   });
-  
+
   // Toggle dark mode class
   if (themeId === "parchment" || themeId === "minimal-light") {
     root.classList.remove("dark");

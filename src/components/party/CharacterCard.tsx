@@ -755,8 +755,10 @@ export function CharacterCard({ member }: { member: PartyMember }) {
     .filter(Boolean);
 
   const getAvatarRingClass = (pct: number) => {
-    if (pct <= 25) return "ring-2 ring-hp-critical/80 shadow-[0_0_12px_color-mix(in_oklab,var(--color-hp-critical)_50%,transparent)]";
-    if (pct <= 60) return "ring-2 ring-hp-wounded/60 shadow-[0_0_10px_color-mix(in_oklab,var(--color-hp-wounded)_35%,transparent)]";
+    if (pct <= 25)
+      return "ring-2 ring-hp-critical/80 shadow-[0_0_12px_color-mix(in_oklab,var(--color-hp-critical)_50%,transparent)]";
+    if (pct <= 60)
+      return "ring-2 ring-hp-wounded/60 shadow-[0_0_10px_color-mix(in_oklab,var(--color-hp-wounded)_35%,transparent)]";
     return "ring-2 ring-hp-good/50 shadow-[0_0_10px_color-mix(in_oklab,var(--color-hp-good)_30%,transparent)]";
   };
   const avatarRing = getAvatarRingClass(hpPct);
@@ -809,7 +811,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               </Tooltip>
             )}
             {(member as any).isNative && (
-              <span 
+              <span
                 className="ml-auto shrink-0 rounded border border-ui-emerald/40 bg-ui-emerald/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-ui-emerald select-none"
                 title="Built natively in Party Stats Hub"
               >

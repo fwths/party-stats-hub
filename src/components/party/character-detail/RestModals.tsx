@@ -174,8 +174,8 @@ export function RestModals({
               <span>Take a Long Rest</span>
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Are you sure you want to take a Long Rest? This will fully restore Hit Points, fully restore
-              hit dice, reset all spell slots, and reset long-rest class resources.
+              Are you sure you want to take a Long Rest? This will fully restore Hit Points, fully
+              restore hit dice, reset all spell slots, and reset long-rest class resources.
             </p>
             <div className="flex justify-end gap-2">
               <button

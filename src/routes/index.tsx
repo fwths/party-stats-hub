@@ -12,8 +12,6 @@ import {
 } from "@/lib/party";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Users, Activity, Package, Swords, BookOpen, Info, LogOut } from "lucide-react";
-import { logoutFn } from "@/lib/auth-fns";
-
 import { RefreshButton } from "@/components/party/RefreshButton";
 import { PartyHighlights } from "@/components/party/PartyHighlights";
 import { PartyGrid, PartyGridSkeleton } from "@/components/party/PartyGrid";
@@ -116,6 +114,7 @@ export default function Index() {
 
   const handleLogout = async () => {
     try {
+      const { logoutFn } = await import("@/lib/auth-fns");
       await logoutFn();
       window.location.href = "/login";
     } catch (e) {
@@ -257,7 +256,9 @@ function PartyDashboard({ ids }: { ids: number[] }) {
           <span>Campaign Journal</span>
         </button>
         <button
-          onClick={() => { window.location.href = "/compendium"; }}
+          onClick={() => {
+            window.location.href = "/compendium";
+          }}
           className="flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
         >
           <Info size={12} />

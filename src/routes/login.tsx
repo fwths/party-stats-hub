@@ -1,7 +1,6 @@
 import { createFileRoute, useRouter, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { ShieldAlert, Lock, ArrowRight, Dices, Eye, EyeOff } from "lucide-react";
-import { loginFn, checkAuthFn } from "@/lib/auth-fns";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -11,6 +10,7 @@ export const Route = createFileRoute("/login")({
     ],
   }),
   loader: async () => {
+    const { checkAuthFn } = await import("@/lib/auth-fns");
     const { authenticated } = await checkAuthFn();
     if (authenticated) {
       throw redirect({
@@ -34,12 +34,13 @@ function LoginComponent() {
     setLoading(true);
 
     try {
+      const { loginFn } = await import("@/lib/auth-fns");
       await loginFn({ data: { passcode } });
       // Invalidate all query data and redirect to dashboard
       await router.invalidate();
       window.location.href = "/";
-    } catch (err: any) {
-      setError(err?.message || "Incorrect passcode. Please try again.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Incorrect passcode. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -50,7 +51,10 @@ function LoginComponent() {
       {/* Background Orbs */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(168,85,247,0.08),transparent_50%)]" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/5 rounded-full blur-[100px] animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/5 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: "2s" }} />
+      <div
+        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/5 rounded-full blur-[100px] animate-pulse"
+        style={{ animationDelay: "2s" }}
+      />
 
       <div className="relative w-full max-w-md bg-card/65 backdrop-blur-md border border-border/60 rounded-2xl p-8 shadow-2xl relative z-10 animate-fade-in border-t-purple-500/30">
         <header className="text-center mb-8">
@@ -72,7 +76,10 @@ function LoginComponent() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label htmlFor="passcode" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <label
+              htmlFor="passcode"
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+            >
               Campaign Passcode
             </label>
             <div className="relative">

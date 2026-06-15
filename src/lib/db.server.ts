@@ -15,7 +15,7 @@ class MockDatabase {
   }
 
   prepare(sql: string) {
-    const trimmed = sql.trim().replace(/\s+/g, ' ');
+    const trimmed = sql.trim().replace(/\s+/g, " ");
     const self = this;
 
     // 1. SELECT value FROM kv_store WHERE key = ?
@@ -24,7 +24,7 @@ class MockDatabase {
         get: (key: string) => {
           const row = self.kv.get(key);
           return row ? { value: row.value } : undefined;
-        }
+        },
       };
     }
 
@@ -33,7 +33,7 @@ class MockDatabase {
       return {
         run: (key: string, value: string, updatedAt: number) => {
           self.kv.set(key, { value, updated_at: updatedAt });
-        }
+        },
       };
     }
 
@@ -42,7 +42,7 @@ class MockDatabase {
       return {
         run: (key: string) => {
           self.kv.delete(key);
-        }
+        },
       };
     }
 
@@ -50,7 +50,7 @@ class MockDatabase {
     if (trimmed.includes("SELECT key, value FROM kv_store WHERE key LIKE ?")) {
       return {
         all: (prefix: string) => {
-          const prefixClean = prefix.replace('%', '');
+          const prefixClean = prefix.replace("%", "");
           const results: Array<{ key: string; value: string }> = [];
           for (const [k, v] of self.kv.entries()) {
             if (k.startsWith(prefixClean)) {
@@ -58,7 +58,7 @@ class MockDatabase {
             }
           }
           return results;
-        }
+        },
       };
     }
 
@@ -71,7 +71,7 @@ class MockDatabase {
             results.push({ key: k, value: v.value });
           }
           return results;
-        }
+        },
       };
     }
 
@@ -80,7 +80,7 @@ class MockDatabase {
       return {
         run: (id: string, expiresAt: number) => {
           self.sessions.set(id, { expires_at: expiresAt });
-        }
+        },
       };
     }
 
@@ -90,7 +90,7 @@ class MockDatabase {
         get: (id: string) => {
           const row = self.sessions.get(id);
           return row ? { expires_at: row.expires_at } : undefined;
-        }
+        },
       };
     }
 
@@ -99,7 +99,7 @@ class MockDatabase {
       return {
         run: (id: string) => {
           self.sessions.delete(id);
-        }
+        },
       };
     }
 
@@ -112,7 +112,7 @@ class MockDatabase {
               self.sessions.delete(id);
             }
           }
-        }
+        },
       };
     }
 
@@ -120,7 +120,7 @@ class MockDatabase {
     return {
       get: () => undefined,
       run: () => {},
-      all: () => []
+      all: () => [],
     };
   }
 }
@@ -151,12 +151,15 @@ async function initDb() {
     DatabaseSync = sqliteModule.DatabaseSync;
     fs = fsModule.default || fsModule;
     path = pathModule.default || pathModule;
-    
+
     if (!DatabaseSync) {
       throw new Error("DatabaseSync is undefined in node:sqlite");
     }
   } catch (importError) {
-    console.warn("node:sqlite is not supported on this platform. Falling back to in-memory store. Error:", importError);
+    console.warn(
+      "node:sqlite is not supported on this platform. Falling back to in-memory store. Error:",
+      importError,
+    );
     dbInstance = new MockDatabase();
     globalForDb.dbInstance = dbInstance;
     return dbInstance;
@@ -172,7 +175,9 @@ async function initDb() {
     dbPath = path.join(dbDir, "party-stats.db");
 
     dbInstance = new DatabaseSync(dbPath);
-    dbInstance.exec("CREATE TABLE IF NOT EXISTS __write_test (id INTEGER PRIMARY KEY); DROP TABLE __write_test;");
+    dbInstance.exec(
+      "CREATE TABLE IF NOT EXISTS __write_test (id INTEGER PRIMARY KEY); DROP TABLE __write_test;",
+    );
     console.log("Database initialized successfully at default path:", dbPath);
   } catch (error) {
     const errStr = String(error);
@@ -183,21 +188,31 @@ async function initDb() {
       return dbInstance;
     }
 
-    console.warn("Failed to initialize database at default path, attempting temp fallback. Error:", error);
+    console.warn(
+      "Failed to initialize database at default path, attempting temp fallback. Error:",
+      error,
+    );
     try {
       const tempDir = process.env.TEMP || process.env.TMP || "/tmp";
       const tempDbPath = path.join(tempDir, "party-stats.db");
 
       dbInstance = new DatabaseSync(tempDbPath);
-      dbInstance.exec("CREATE TABLE IF NOT EXISTS __write_test (id INTEGER PRIMARY KEY); DROP TABLE __write_test;");
+      dbInstance.exec(
+        "CREATE TABLE IF NOT EXISTS __write_test (id INTEGER PRIMARY KEY); DROP TABLE __write_test;",
+      );
       dbPath = tempDbPath;
       console.log("Database initialized successfully at temp path:", dbPath);
     } catch (tempError) {
       const tempErrStr = String(tempError);
       if (tempErrStr.includes("not implemented") || tempErrStr.includes("is not a constructor")) {
-        console.warn("DatabaseSync temp fallback threw unenv error. Falling back to in-memory store.");
+        console.warn(
+          "DatabaseSync temp fallback threw unenv error. Falling back to in-memory store.",
+        );
       } else {
-        console.warn("Failed to initialize database in both paths. Falling back to in-memory store. Error:", tempError);
+        console.warn(
+          "Failed to initialize database in both paths. Falling back to in-memory store. Error:",
+          tempError,
+        );
       }
       dbInstance = new MockDatabase();
     }

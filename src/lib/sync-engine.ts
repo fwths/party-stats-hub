@@ -1,6 +1,6 @@
 let isSyncingFromServer = false;
 const syncQueue: Record<string, string | null> = {};
-let syncTimeout: any = null;
+let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Debounced synchronization to save local edits to server
 function queueSync(key: string, value: string | null) {
@@ -44,9 +44,7 @@ export async function initSyncEngine() {
   localStorage.setItem = function (key, value) {
     originalSetItem.apply(this, arguments);
     const isSyncable =
-      key.startsWith("party-stats:") ||
-      key === "mob.conditions.v1" ||
-      key === "mob.partyIds.v1";
+      key.startsWith("party-stats:") || key === "mob.conditions.v1" || key === "mob.partyIds.v1";
 
     if (isSyncable) {
       queueSync(key, value);
@@ -56,9 +54,7 @@ export async function initSyncEngine() {
   localStorage.removeItem = function (key) {
     originalRemoveItem.apply(this, arguments);
     const isSyncable =
-      key.startsWith("party-stats:") ||
-      key === "mob.conditions.v1" ||
-      key === "mob.partyIds.v1";
+      key.startsWith("party-stats:") || key === "mob.conditions.v1" || key === "mob.partyIds.v1";
 
     if (isSyncable) {
       queueSync(key, null);
@@ -83,9 +79,7 @@ export async function initSyncEngine() {
       const key = localStorage.key(i);
       if (
         key &&
-        (key.startsWith("party-stats:") ||
-          key === "mob.conditions.v1" ||
-          key === "mob.partyIds.v1")
+        (key.startsWith("party-stats:") || key === "mob.conditions.v1" || key === "mob.partyIds.v1")
       ) {
         localKeys.push(key);
       }

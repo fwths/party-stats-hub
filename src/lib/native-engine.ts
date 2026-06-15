@@ -10,11 +10,12 @@ export function createNativePartyMember(state: any): PartyMember {
   const race = getRace(state.raceId);
   const cls = getClass(state.classId);
 
+  const hitDice = cls?.hitDice ?? 8;
   const hpMax = cls
-    ? cls.hitDice +
+    ? hitDice +
       Math.floor((state.abilities.CON - 10) / 2) +
       (state.level - 1) *
-        (Math.floor(cls.hitDice / 2) + 1 + Math.floor((state.abilities.CON - 10) / 2))
+        (Math.floor(hitDice / 2) + 1 + Math.floor((state.abilities.CON - 10) / 2))
     : 10;
 
   const proficiencyBonus = Math.ceil(state.level / 4) + 1;

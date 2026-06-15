@@ -28,7 +28,7 @@ export function createNativePartyMember(state: any): PartyMember {
     modifier: Math.floor(((score as number) - 10) / 2),
   }));
 
-  const member: PartyMember = {
+  const member = {
     id,
     name: state.name || "Unnamed",
     avatarUrl: null,
@@ -66,7 +66,7 @@ export function createNativePartyMember(state: any): PartyMember {
     armorProficiencies: [],
     weaponProficiencies: [],
     hitDice: `${state.level}/${state.level}d${cls?.hitDice || 8}`,
-  };
+  } as unknown as PartyMember;
 
   return member;
 }

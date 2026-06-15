@@ -27,7 +27,7 @@ export const loginFn = createServerFn({ method: "POST" })
       const { setResponseHeaders } = await import("@tanstack/react-start/server");
       setResponseHeaders({
         "Set-Cookie": cookieString,
-      });
+      } as any);
 
       return { success: true };
     } catch (error: any) {
@@ -45,7 +45,7 @@ export const logoutFn = createServerFn({ method: "POST" }).handler(async () => {
 
   setResponseHeaders({
     "Set-Cookie": cookieString,
-  });
+  } as any);
 
   return { success: true };
 });

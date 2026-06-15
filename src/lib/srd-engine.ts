@@ -1,4 +1,5 @@
 import { rules, races, classes, SRDRule, SRDRace, SRDClass } from "../data/srd";
+export type { SRDRule, SRDRace, SRDClass } from "../data/srd";
 
 export function getRule(id: string): SRDRule | undefined {
   return rules.find((r) => r.id === id);

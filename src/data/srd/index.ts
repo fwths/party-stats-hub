@@ -37,6 +37,7 @@ export interface SRDClass {
     description: string;
     [key: string]: unknown;
   }[];
+  [key: string]: unknown;
 }
 
 export const rules: SRDRule[] = [

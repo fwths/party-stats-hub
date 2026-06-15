@@ -24,15 +24,20 @@ export interface SRDClass {
   id: string;
   name: string;
   description: string;
-  hitDice: number;
+  hitDice?: number;
   primaryAbility: string[];
-  saves: string[];
-  featuresByLevel: Record<number, { name: string; description: string }[]>;
+  saves?: string[];
+  featuresByLevel?: Record<
+    number,
+    { name: string; description: string; [key: string]: unknown }[]
+  >;
   subclasses?: {
     id: string;
     name: string;
     description: string;
+    [key: string]: unknown;
   }[];
+  [key: string]: unknown;
 }
 
 export const rules: SRDRule[] = [

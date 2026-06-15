@@ -27,5 +27,5 @@ export function getAllClasses(): SRDClass[] {
 export function getLevelFeatures(classId: string, level: number) {
   const cls = getClass(classId);
   if (!cls) return [];
-  return cls.featuresByLevel[level] || [];
+  return cls.featuresByLevel?.[level] || [];
 }

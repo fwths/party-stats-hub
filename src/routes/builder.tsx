@@ -310,7 +310,7 @@ function StepClass({ character, updateCharacter }: any) {
                   </div>
                   <div className="bg-secondary/50 px-2.5 py-1.5 rounded-md">
                     <span className="font-bold text-foreground">Saves:</span>{" "}
-                    <span className="text-amber-500">{cls.saves.join(", ")}</span>
+                    <span className="text-amber-500">{(cls.saves ?? []).join(", ")}</span>
                   </div>
                 </div>
               </CardContent>

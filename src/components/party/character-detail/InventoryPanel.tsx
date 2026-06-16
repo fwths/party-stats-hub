@@ -494,7 +494,6 @@ export default function InventoryPanel({
   };
 
   const groupedInventory = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const groupedMap = new Map<string, any>();
     localInventory.forEach((item) => {
       const key = item.name.toLowerCase().trim();
@@ -538,7 +537,6 @@ export default function InventoryPanel({
   });
 
   const inventorySections = useMemo(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sections: { title: string; items: any[] }[] = [
       { title: "⚔️ Weapons", items: [] },
       { title: "🛡️ Armor & Shields", items: [] },

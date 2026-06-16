@@ -15,65 +15,62 @@ import { getAllRules, getAllRaces, getAllClasses } from "@/lib/srd-engine";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-import { getClassesFromDb, getSpellsFromDb } from "@/lib/db-functions";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getClassesFromDb,
+  getSpeciesFromDb,
+  getSpellsFromDb,
+  getMonstersFromDb,
+  getMagicItemsFromDb,
+} from "@/lib/db-functions";
 
 export const Route = createFileRoute("/compendium")({
   component: CompendiumComponent,
   loader: async () => {
     const dbClasses = await getClassesFromDb();
-    const dbSpells = await getSpellsFromDb();
-    return { dbClasses, dbSpells };
+    const dbSpecies = await getSpeciesFromDb();
+    return { dbClasses, dbSpecies };
   },
 });
 
 type TabType = "rules" | "races" | "classes" | "spells" | "monsters" | "items";
 
 function CompendiumComponent() {
-  const { dbClasses, dbSpells } = Route.useLoaderData();
+  const { dbClasses, dbSpecies } = Route.useLoaderData();
   const rules = getAllRules();
-  const races = getAllRaces();
-
-  const [spells, setSpells] = useState<any[]>(dbSpells);
-  const [classes, setClasses] = useState<any[]>(dbClasses);
-  const [monsters, setMonsters] = useState<any[]>([]);
-  const [items, setItems] = useState<any[]>([]);
 
   const [activeTab, setActiveTab] = useState<TabType>("rules");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(rules[0]?.id || null);
   const [search, setSearch] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    // Fetch external data when tabs are clicked
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        if (activeTab === "spells" && spells.length === 0) {
-          const res = await fetch("/data/srd/spells.json");
-          setSpells(await res.json());
-        } else if (activeTab === "monsters" && monsters.length === 0) {
-          const res = await fetch("/data/srd/monsters.json");
-          setMonsters(await res.json());
-        } else if (activeTab === "items" && items.length === 0) {
-          const res = await fetch("/data/srd/magicitems.json");
-          setItems(await res.json());
-        }
-      } catch (e) {
-        console.error("Failed to load SRD data:", e);
-      }
-      setIsLoading(false);
-    };
-    loadData();
-  }, [activeTab, items.length, monsters.length, spells.length]);
+  const { data: spells = [], isLoading: loadingSpells } = useQuery({
+    queryKey: ["db-spells"],
+    queryFn: () => getSpellsFromDb(),
+    enabled: activeTab === "spells",
+  });
+
+  const { data: monsters = [], isLoading: loadingMonsters } = useQuery({
+    queryKey: ["db-monsters"],
+    queryFn: () => getMonstersFromDb(),
+    enabled: activeTab === "monsters",
+  });
+
+  const { data: items = [], isLoading: loadingItems } = useQuery({
+    queryKey: ["db-items"],
+    queryFn: () => getMagicItemsFromDb(),
+    enabled: activeTab === "items",
+  });
+
+  const isLoading = loadingSpells || loadingMonsters || loadingItems;
 
   const getActiveData = () => {
     switch (activeTab) {
       case "rules":
         return rules;
       case "races":
-        return races;
+        return dbSpecies;
       case "classes":
-        return classes;
+        return dbClasses;
       case "spells":
         return spells;
       case "monsters":
@@ -142,10 +139,10 @@ function CompendiumComponent() {
                 onClick={() => {
                   setActiveTab("races");
                   setSearch("");
-                  setSelectedItemId(races[0]?.id);
+                  setSelectedItemId(dbSpecies[0]?.id);
                 }}
               >
-                <User className="h-4 w-4 mr-2" /> Races
+                <User className="h-4 w-4 mr-2" /> Species
               </Button>
               <Button
                 variant={activeTab === "spells" ? "default" : "secondary"}
@@ -266,15 +263,68 @@ function CompendiumComponent() {
                     {selectedItem.content}
                   </div>
                 )}
-
-                {/* Open5e Text fields (desc) */}
-                {selectedItem.desc && (
-                  <div className="whitespace-pre-wrap text-foreground/90">{selectedItem.desc}</div>
+                
+                {/* Species Badges */}
+                {activeTab === "species" && (
+                   <div className="flex flex-wrap gap-3 mb-6 mt-4">
+                     {selectedItem.abilityScoreIncreasesJson && (
+                        <span className="text-sm font-bold bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-md shadow-sm">
+                          ASI: {Object.entries(JSON.parse(selectedItem.abilityScoreIncreasesJson)).map(([k,v]) => `+${v} ${k.toUpperCase()}`).join(", ")}
+                        </span>
+                     )}
+                     {selectedItem.sensesJson && (
+                        <span className="text-sm font-bold bg-green-500/10 border border-green-500/20 text-green-500 px-3 py-1.5 rounded-md shadow-sm">
+                          Senses: {Object.entries(JSON.parse(selectedItem.sensesJson)).map(([k,v]) => `${k} ${v}ft`).join(", ")}
+                        </span>
+                     )}
+                     {selectedItem.languagesJson && (
+                        <span className="text-sm font-bold bg-purple-500/10 border border-purple-500/20 text-purple-500 px-3 py-1.5 rounded-md shadow-sm">
+                          Languages: {JSON.parse(selectedItem.languagesJson).join(", ")}
+                        </span>
+                     )}
+                   </div>
                 )}
-                {selectedItem.higher_level && (
+
+                {/* Open5e Text fields (desc) & DB Spells */}
+                {(selectedItem.desc || selectedItem.description) && activeTab !== "rules" && activeTab !== "classes" && activeTab !== "races" && (
+                  <div className="whitespace-pre-wrap text-foreground/90">
+                    {selectedItem.desc || selectedItem.description}
+                  </div>
+                )}
+                {(selectedItem.higher_level || selectedItem.higherLevel) && (
                   <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
                     <strong className="text-primary block mb-1">At Higher Levels:</strong>
-                    <span className="text-foreground/90">{selectedItem.higher_level}</span>
+                    <span className="text-foreground/90">
+                      {selectedItem.higher_level || selectedItem.higherLevel}
+                    </span>
+                  </div>
+                )}
+
+                {/* DB Species Features */}
+                {selectedItem.featuresJson && (
+                  <div>
+                    <h3 className="text-2xl font-bold mt-6 mb-4 border-b border-border/40 pb-2">
+                      Species Features
+                    </h3>
+                    <ul className="space-y-4">
+                      {JSON.parse(selectedItem.featuresJson || "[]").map(
+                        (feature: any, idx: number) => (
+                          <li
+                            key={idx}
+                            className="bg-secondary/20 p-4 rounded-lg border border-border/30"
+                          >
+                            <strong className="text-primary block text-lg mb-1">
+                              {feature.name}
+                            </strong>
+                            {feature.html ? (
+                              <div className="text-foreground/80 prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: feature.html }} />
+                            ) : (
+                              <span className="text-foreground/80">{feature.description}</span>
+                            )}
+                          </li>
+                        ),
+                      )}
+                    </ul>
                   </div>
                 )}
 
@@ -301,7 +351,7 @@ function CompendiumComponent() {
                 )}
 
                 {/* Classes Features */}
-                {selectedItem.hitDice && selectedItem.primaryAbility && (
+                {selectedItem.hitDice && (
                   <div>
                     <div className="grid grid-cols-2 gap-4 mb-8">
                       <div className="bg-secondary/30 p-5 rounded-xl border border-border/30">
@@ -318,7 +368,9 @@ function CompendiumComponent() {
                           Primary Abilities
                         </span>
                         <span className="text-2xl font-black text-primary">
-                          {selectedItem.primaryAbility.join(", ")}
+                          {selectedItem.primaryAbilityJson
+                            ? JSON.parse(selectedItem.primaryAbilityJson).join(", ")
+                            : ""}
                         </span>
                       </div>
                     </div>
@@ -326,7 +378,7 @@ function CompendiumComponent() {
                     <h3 className="text-2xl font-bold mt-8 mb-4 border-b border-border/40 pb-2">
                       Class Features
                     </h3>
-                    {Object.entries(selectedItem.featuresByLevel).map(
+                    {selectedItem.featuresByLevel && Object.entries(selectedItem.featuresByLevel).map(
                       ([level, features]: [string, any]) => (
                         <div key={level} className="mt-6">
                           <h4 className="font-bold text-xl text-primary inline-flex items-center gap-2 mb-3 bg-primary/10 px-3 py-1 rounded-md">
@@ -352,22 +404,23 @@ function CompendiumComponent() {
                 )}
 
                 {/* Monster Stats Grid */}
-                {selectedItem.hit_points && (
+                {(selectedItem.challengeRating !== undefined || selectedItem.challenge_rating !== undefined) && (
                   <div className="mt-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
                       <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-lg text-center">
                         <span className="block text-destructive font-bold uppercase tracking-wider text-[10px]">
                           Armor Class
                         </span>
-                        <span className="text-2xl font-black">{selectedItem.armor_class}</span>
+                        <span className="text-2xl font-black">
+                          {selectedItem.acJson ? JSON.parse(selectedItem.acJson)[0]?.value : selectedItem.armor_class}
+                        </span>
                       </div>
                       <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-lg text-center">
                         <span className="block text-emerald-500 font-bold uppercase tracking-wider text-[10px]">
                           Hit Points
                         </span>
-                        <span className="text-2xl font-black">{selectedItem.hit_points}</span>
-                        <span className="block text-[10px] text-muted-foreground">
-                          {selectedItem.hit_dice}
+                        <span className="text-2xl font-black">
+                          {selectedItem.hpJson ? JSON.parse(selectedItem.hpJson).average : selectedItem.hit_points}
                         </span>
                       </div>
                       <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg text-center">
@@ -375,32 +428,35 @@ function CompendiumComponent() {
                           Speed
                         </span>
                         <span className="text-lg font-bold">
-                          {Object.entries(selectedItem.speed || {})
-                            .map(([k, v]) => `${k} ${v}ft`)
-                            .join(", ")}
+                          {selectedItem.speedJson ? 
+                            Object.entries(JSON.parse(selectedItem.speedJson)).map(([k, v]) => `${k} ${v}ft`).join(", ") :
+                            (selectedItem.speed ? Object.entries(selectedItem.speed).map(([k, v]) => `${k} ${v}ft`).join(", ") : "30ft")
+                          }
                         </span>
                       </div>
                       <div className="bg-purple-500/10 border border-purple-500/20 p-3 rounded-lg text-center">
                         <span className="block text-purple-500 font-bold uppercase tracking-wider text-[10px]">
                           Challenge
                         </span>
-                        <span className="text-2xl font-black">{selectedItem.challenge_rating}</span>
+                        <span className="text-2xl font-black">
+                          {selectedItem.challengeRating ?? selectedItem.challenge_rating}
+                        </span>
                       </div>
                     </div>
 
                     {/* Monster Actions */}
-                    {selectedItem.actions && selectedItem.actions.length > 0 && (
+                    {(selectedItem.actionsJson || selectedItem.actions) && (
                       <div className="mt-8">
                         <h3 className="text-2xl font-bold border-b border-destructive/50 text-destructive pb-2 mb-4">
                           Actions
                         </h3>
                         <div className="space-y-4">
-                          {selectedItem.actions.map((act: any, i: number) => (
+                          {(selectedItem.actionsJson ? JSON.parse(selectedItem.actionsJson) : selectedItem.actions).map((act: any, i: number) => (
                             <div key={i} className="p-4 bg-secondary/10 rounded-lg">
                               <strong className="text-lg block text-foreground mb-1">
                                 {act.name}
                               </strong>
-                              <span className="text-foreground/80">{act.desc}</span>
+                              <span className="text-foreground/80">{act.desc || act.description}</span>
                             </div>
                           ))}
                         </div>

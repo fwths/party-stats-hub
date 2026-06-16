@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Dice5, Shield, Heart } from "lucide-react";
 
 interface MonsterStatBlockProps {

@@ -29,10 +29,7 @@ export interface SRDClass {
   hitDice?: number;
   primaryAbility: string[];
   saves?: string[];
-  featuresByLevel?: Record<
-    number,
-    { name: string; description: string; [key: string]: unknown }[]
-  >;
+  featuresByLevel?: Record<number, { name: string; description: string; [key: string]: unknown }[]>;
   subclasses?: {
     id: string;
     name: string;

@@ -33,11 +33,6 @@ dist-ssr
 
 # Character Caches
 char-*.json
-!char-131296315.json
-!char-131593533.json
-!char-132900149.json
-!char-132940690.json
-!char-97349530.json
 read_review.ps1
 
 # Environment Variables
@@ -54,10 +49,6 @@ books/
 !tsconfig.json
 !tsconfig.node.json
 !tsconfig.app.json
-!artificer_subclasses.json
-!artificer_tables.json
-!artificer_plans.json
-!artificer_final_data.json
 !src/data/**/*.json
 !parsed_classes/**/*.json
 !src/lib/notion-cache-seed.json
@@ -82,9 +73,6 @@ scratch/
 
 # Cache Files
 native-char-*.json
-!native-char-900031162.json
-!native-char-900092897.json
-!native-char-900670469.json
 
 # Alternate Package Managers
 bun.lock

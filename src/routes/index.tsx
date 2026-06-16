@@ -45,7 +45,7 @@ export const Route = createFileRoute("/")({
     } else {
       ids = readStoredIdsFromCookie();
     }
-    await context.queryClient.ensureQueryData(partyQueryOptions(ids));
+    context.queryClient.prefetchQuery(partyQueryOptions(ids));
     return { ids };
   },
   component: Index,

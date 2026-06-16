@@ -96,6 +96,13 @@ export const species = sqliteTable("species", {
   featuresJson: text("features_json").notNull(), // array of traits/features
   source: text("source"),
   page: integer("page"),
+  abilityScoreIncreasesJson: text("ability_score_increases_json"),
+  languagesJson: text("languages_json"),
+  resistancesJson: text("resistances_json"),
+  immunitiesJson: text("immunities_json"),
+  sensesJson: text("senses_json"),
+  proficienciesJson: text("proficiencies_json"),
+  isLineage: integer("is_lineage", { mode: "boolean" }).default(false),
 });
 
 export const backgrounds = sqliteTable("backgrounds", {

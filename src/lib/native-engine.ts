@@ -1,21 +1,17 @@
 import { PartyMember } from "./dndbeyond.types";
-import { getRace, getClass } from "./srd-engine";
+
 import { createServerFn } from "@tanstack/react-start";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-export function createNativePartyMember(state: any): PartyMember {
+export function createNativePartyMember(state: any, raceData: any, classData: any): PartyMember {
   const id = Math.floor(Math.random() * 1000000) + 900000000; // Native IDs are 900M+
 
-  const race = getRace(state.raceId);
-  const cls = getClass(state.classId);
-
-  const hitDice = cls?.hitDice ?? 8;
-  const hpMax = cls
+  const hitDice = classData?.hitDice ?? 8;
+  const hpMax = classData
     ? hitDice +
       Math.floor((state.abilities.CON - 10) / 2) +
-      (state.level - 1) *
-        (Math.floor(hitDice / 2) + 1 + Math.floor((state.abilities.CON - 10) / 2))
+      (state.level - 1) * (Math.floor(hitDice / 2) + 1 + Math.floor((state.abilities.CON - 10) / 2))
     : 10;
 
   const proficiencyBonus = Math.ceil(state.level / 4) + 1;
@@ -32,9 +28,9 @@ export function createNativePartyMember(state: any): PartyMember {
     id,
     name: state.name || "Unnamed",
     avatarUrl: null,
-    race: race?.name || "Unknown",
+    race: raceData?.name || "Unknown",
     background: "Custom",
-    classes: cls?.name || "Unknown",
+    classes: classData?.name || "Unknown",
     subclasses: [],
     level: state.level || 1,
     hpMax,
@@ -48,7 +44,7 @@ export function createNativePartyMember(state: any): PartyMember {
     passiveInsight: 10 + wisMod,
     armorClass: 10 + Math.floor((state.abilities.DEX - 10) / 2),
     initiative: Math.floor((state.abilities.DEX - 10) / 2),
-    speed: race?.speed || 30,
+    speed: raceData?.speed || 30,
     proficiencyBonus,
     senses: [],
     skills: [],
@@ -72,16 +68,14 @@ export function createNativePartyMember(state: any): PartyMember {
 }
 
 export const saveNativeCharacter = createServerFn({ method: "POST" })
-  .inputValidator((input: any) => input)
-  .handler(async ({ data }) => {
+  .handler(async ({ data }: { data: { character: PartyMember } }) => {
     const filePath = path.join(process.cwd(), `native-char-${data.id}.json`);
     await fs.writeFile(filePath, JSON.stringify({ success: true, data }, null, 2), "utf-8");
     return data.id;
   });
 
 export const getNativeCharacter = createServerFn({ method: "GET" })
-  .inputValidator((input?: { id?: number }) => input)
-  .handler(async ({ data }) => {
+  .handler(async ({ data }: { data: { id: number } }) => {
     if (!data?.id) return null;
     try {
       const filePath = path.join(process.cwd(), `native-char-${data.id}.json`);

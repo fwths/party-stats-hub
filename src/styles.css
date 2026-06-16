@@ -576,4 +576,9 @@ select option {
   background-color: var(--card) !important;
   color: var(--foreground) !important;
 }
-body[style] { overflow: auto !important; pointer-events: auto !important; padding-right: 0 !important; margin-right: 0 !important; }
+body[style] {
+  overflow: auto !important;
+  pointer-events: auto !important;
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+}

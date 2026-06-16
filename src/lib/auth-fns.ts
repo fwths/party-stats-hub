@@ -12,11 +12,11 @@ export const checkAuthFn = createServerFn({ method: "GET" }).handler(async () =>
 
 // Server function to authenticate via passcode
 export const loginFn = createServerFn({ method: "POST" })
-  .validator(z.object({ passcode: z.string() }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }: { data: { passcode: string } }) => {
+    const payload = data as { passcode: string };
     try {
       const { verifyPasscode, startSession } = await import("@/lib/auth.server");
-      const isValid = verifyPasscode(data.passcode);
+      const isValid = verifyPasscode(payload.passcode);
       if (!isValid) {
         throw new Error("Invalid campaign passcode");
       }

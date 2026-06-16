@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { PartyMember } from "@/lib/dndbeyond.functions";
 import { MonsterStatBlock } from "./MonsterStatBlock";

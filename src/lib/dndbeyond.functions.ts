@@ -100,14 +100,12 @@ export async function loadParty(ids: number[] = PARTY_CHARACTER_IDS): Promise<Pa
 }
 
 export const getParty = createServerFn({ method: "GET" })
-  .validator((input?: { ids?: number[] }) => {
-    const ids = Array.isArray(input?.ids)
+  .handler(async ({ data }: { data?: { ids?: number[] } }) => {
+    const input = data as { ids?: number[] } | undefined;
+    const inputIds = Array.isArray(input?.ids)
       ? input!.ids!.filter((n) => Number.isInteger(n) && n > 0).slice(0, 12)
       : [];
-    return { ids };
-  })
-  .handler(async ({ data }) => {
-    const ids = data.ids.length > 0 ? data.ids : PARTY_CHARACTER_IDS;
+    const ids = inputIds.length > 0 ? inputIds : PARTY_CHARACTER_IDS;
     let members = await loadParty(ids);
 
     try {
@@ -181,7 +179,9 @@ function mergeDbOverrides(members: PartyMember[], kv: Record<string, string>): P
     if (infusionsRaw) {
       try {
         activeInfusions = JSON.parse(infusionsRaw);
-      } catch {}
+      } catch (e) {
+        console.warn(`Failed to parse infusions for character ${id}:`, e);
+      }
     }
 
     // 4. Item Overrides & Custom Items
@@ -207,7 +207,9 @@ function mergeDbOverrides(members: PartyMember[], kv: Record<string, string>): P
           }),
           ...localCustomItems,
         ];
-      } catch {}
+      } catch (e) {
+        console.warn(`Failed to parse item overrides for character ${id}:`, e);
+      }
     }
 
     // 5. Armor Model
@@ -223,7 +225,9 @@ function mergeDbOverrides(members: PartyMember[], kv: Record<string, string>): P
     if (totemRaw) {
       try {
         totemAspects = totemRaw === "null" ? [] : JSON.parse(totemRaw);
-      } catch {}
+      } catch (e) {
+        console.warn(`Failed to parse totem aspects for character ${id}:`, e);
+      }
     }
 
     // 7. Rage State
@@ -258,7 +262,9 @@ function mergeDbOverrides(members: PartyMember[], kv: Record<string, string>): P
           spellSlots = getEffective(member.spellSlots, false);
           pactSlots = getEffective(member.pactSlots, true);
         }
-      } catch {}
+      } catch (e) {
+        console.warn(`Failed to parse slots for character ${id}:`, e);
+      }
     }
 
     // 9. Class Resources
@@ -280,7 +286,9 @@ function mergeDbOverrides(members: PartyMember[], kv: Record<string, string>): P
             };
           });
         }
-      } catch {}
+      } catch (e) {
+        console.warn(`Failed to parse resources for character ${id}:`, e);
+      }
     }
 
     // 10. Metamagic
@@ -289,7 +297,9 @@ function mergeDbOverrides(members: PartyMember[], kv: Record<string, string>): P
     if (metamagicRaw) {
       try {
         metamagic = metamagicRaw === "null" ? [] : JSON.parse(metamagicRaw);
-      } catch {}
+      } catch (e) {
+        console.warn(`Failed to parse metamagic for character ${id}:`, e);
+      }
     }
 
     // 11. Weapon Masteries
@@ -298,7 +308,9 @@ function mergeDbOverrides(members: PartyMember[], kv: Record<string, string>): P
     if (masteriesRaw) {
       try {
         weaponMasteries = masteriesRaw === "null" ? [] : JSON.parse(masteriesRaw);
-      } catch {}
+      } catch (e) {
+        console.warn(`Failed to parse masteries for character ${id}:`, e);
+      }
     }
 
     return {

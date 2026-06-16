@@ -51,7 +51,7 @@ export const Route = createFileRoute("/character/$id")({
     const resolvedIds = ids ?? PARTY_CHARACTER_IDS;
     const effectiveIds = resolvedIds.includes(charId) ? resolvedIds : [...resolvedIds, charId];
 
-    await context.queryClient.ensureQueryData(partyQueryOptions(effectiveIds));
+    context.queryClient.prefetchQuery(partyQueryOptions(effectiveIds));
     return { ids };
   },
   component: CharacterDetail,

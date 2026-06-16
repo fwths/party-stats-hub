@@ -1,0 +1,946 @@
+{
+  "id": "cleric",
+  "name": "Cleric",
+  "className": "Cleric",
+  "description": "Clerics draw power from the realms of the gods and harness it to work miracles.",
+  "primaryAbility": ["Wisdom"],
+  "hitPoints": {
+    "hitDice": 8,
+    "hitDiceType": "d8",
+    "hpAtFirstLevel": "8 + Constitution modifier",
+    "hpAtHigherLevels": "1d8 (or 5) + Constitution modifier"
+  },
+  "subclassTitle": "Cleric Subclass",
+  "proficiencies": {
+    "savingThrows": ["Wisdom", "Charisma"],
+    "skills": {
+      "choose": 2,
+      "options": ["History", "Insight", "Medicine", "Persuasion", "Religion"]
+    },
+    "weapons": ["Simple weapons"],
+    "armor": ["Light armor", "Medium armor", "Shields"],
+    "tools": []
+  },
+  "startingEquipment": {
+    "defaultBundle": ["Chain Shirt", "Shield", "Mace", "Holy Symbol", "Priest's Pack", "7 GP"],
+    "goldAlternative": "110 GP"
+  },
+  "spellcasting": {
+    "ability": "Wisdom",
+    "casterType": "Full",
+    "preparationType": "Prepared",
+    "spellcastingFocus": ["Holy Symbol"],
+    "slotsByLevel": {
+      "1": [2, 0, 0, 0, 0, 0, 0, 0, 0],
+      "2": [3, 0, 0, 0, 0, 0, 0, 0, 0],
+      "3": [4, 2, 0, 0, 0, 0, 0, 0, 0],
+      "4": [4, 3, 0, 0, 0, 0, 0, 0, 0],
+      "5": [4, 3, 2, 0, 0, 0, 0, 0, 0],
+      "6": [4, 3, 3, 0, 0, 0, 0, 0, 0],
+      "7": [4, 3, 3, 1, 0, 0, 0, 0, 0],
+      "8": [4, 3, 3, 2, 0, 0, 0, 0, 0],
+      "9": [4, 3, 3, 3, 1, 0, 0, 0, 0],
+      "10": [4, 3, 3, 3, 2, 0, 0, 0, 0],
+      "11": [4, 3, 3, 3, 2, 1, 0, 0, 0],
+      "12": [4, 3, 3, 3, 2, 1, 0, 0, 0],
+      "13": [4, 3, 3, 3, 2, 1, 1, 0, 0],
+      "14": [4, 3, 3, 3, 2, 1, 1, 0, 0],
+      "15": [4, 3, 3, 3, 2, 1, 1, 1, 0],
+      "16": [4, 3, 3, 3, 2, 1, 1, 1, 0],
+      "17": [4, 3, 3, 3, 2, 1, 1, 1, 1],
+      "18": [4, 3, 3, 3, 3, 1, 1, 1, 1],
+      "19": [4, 3, 3, 3, 3, 2, 1, 1, 1],
+      "20": [4, 3, 3, 3, 3, 2, 2, 1, 1]
+    },
+    "cantripsKnownByLevel": {
+      "1": 3,
+      "2": 3,
+      "3": 3,
+      "4": 4,
+      "5": 4,
+      "6": 4,
+      "7": 4,
+      "8": 4,
+      "9": 4,
+      "10": 5,
+      "11": 5,
+      "12": 5,
+      "13": 5,
+      "14": 5,
+      "15": 5,
+      "16": 5,
+      "17": 5,
+      "18": 5,
+      "19": 5,
+      "20": 5
+    },
+    "spellsPreparedByLevel": {
+      "1": 4,
+      "2": 5,
+      "3": 6,
+      "4": 7,
+      "5": 9,
+      "6": 10,
+      "7": 11,
+      "8": 12,
+      "9": 14,
+      "10": 15,
+      "11": 16,
+      "12": 16,
+      "13": 17,
+      "14": 17,
+      "15": 18,
+      "16": 18,
+      "17": 19,
+      "18": 20,
+      "19": 21,
+      "20": 22
+    }
+  },
+  "epicBoonRecommendation": "Boon of Fate",
+  "multiclassing": {
+    "requirements": [
+      {
+        "ability": "Wisdom",
+        "minScore": 13
+      }
+    ],
+    "proficienciesGained": {
+      "armor": ["Light armor", "Medium armor", "Shields"]
+    }
+  },
+  "featuresByLevel": {
+    "1": [
+      {
+        "id": "spellcasting",
+        "name": "Spellcasting",
+        "description": "You have learned to cast spells through prayer and meditation. Wisdom is your spellcasting ability. You can use a Holy Symbol as a Spellcasting Focus.",
+        "levelRequired": 1
+      },
+      {
+        "id": "divine-order",
+        "name": "Divine Order",
+        "description": "You have dedicated yourself to one of the following sacred roles of your choice: Protector or Thaumaturge.",
+        "levelRequired": 1,
+        "options": [
+          {
+            "id": "divine-order-options",
+            "name": "Divine Order Options",
+            "description": "Choose either Protector or Thaumaturge.",
+            "choices": [
+              {
+                "id": "protector",
+                "name": "Protector",
+                "description": "Trained for battle, you gain proficiency with Martial weapons and training with Heavy armor."
+              },
+              {
+                "id": "thaumaturge",
+                "name": "Thaumaturge",
+                "description": "You know one extra cantrip from the Cleric spell list. In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1)."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "2": [
+      {
+        "id": "channel-divinity",
+        "name": "Channel Divinity",
+        "description": "You can channel divine energy directly from the Outer Planes to fuel magical effects. You start with two such effects: Divine Spark and Turn Undead. You can use this class's Channel Divinity twice. You regain one expended use when you finish a Short Rest, and all expended uses when you finish a Long Rest.",
+        "levelRequired": 2,
+        "recovery": "Short or Long Rest",
+        "uses": "2 at 2nd level, increasing to 3 at 6th level, and 4 at 18th level."
+      },
+      {
+        "id": "divine-spark",
+        "name": "Channel Divinity: Divine Spark",
+        "description": "As a Magic action, you point your Holy Symbol at another creature you can see within 30 feet of yourself and focus divine energy at it. Roll 1d8 and add your Wisdom modifier. You either restore Hit Points to the creature equal to that total or force the creature to make a Constitution saving throw. On a failed save, the creature takes Necrotic or Radiant damage (your choice) equal to that total. On a successful save, the creature takes half as much damage.",
+        "levelRequired": 2,
+        "actionType": "Action",
+        "savingThrow": "Constitution",
+        "damageType": "Necrotic or Radiant"
+      },
+      {
+        "id": "turn-undead",
+        "name": "Channel Divinity: Turn Undead",
+        "description": "As a Magic action, you present your Holy Symbol and censure Undead creatures. Each Undead of your choice within 30 feet of you must make a Wisdom saving throw. If the creature fails its save, it has the Frightened and Incapacitated conditions for 1 minute. For that duration, it tries to move as far from you as it can on its turns.",
+        "levelRequired": 2,
+        "actionType": "Action",
+        "savingThrow": "Wisdom",
+        "duration": "1 minute"
+      }
+    ],
+    "3": [
+      {
+        "id": "cleric-subclass",
+        "name": "Cleric Subclass",
+        "description": "You gain a Cleric subclass of your choice.",
+        "levelRequired": 3
+      }
+    ],
+    "4": [
+      {
+        "id": "ability-score-improvement-4",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "levelRequired": 4
+      }
+    ],
+    "5": [
+      {
+        "id": "sear-undead",
+        "name": "Sear Undead",
+        "description": "Whenever you use Turn Undead, you can roll a number of d8s equal to your Wisdom modifier (minimum of 1d8) and add the rolls together. Each Undead that fails its saving throw against that use of Turn Undead takes Radiant damage equal to the roll's total. This damage doesn't end the turn effect.",
+        "levelRequired": 5,
+        "damageType": "Radiant"
+      }
+    ],
+    "6": [
+      {
+        "id": "subclass-feature-6",
+        "name": "Subclass Feature",
+        "description": "You gain a feature from your Cleric subclass.",
+        "levelRequired": 6
+      }
+    ],
+    "7": [
+      {
+        "id": "blessed-strikes",
+        "name": "Blessed Strikes",
+        "description": "Divine power infuses you in battle. You gain one of the following options of your choice: Divine Strike or Potent Spellcasting.",
+        "levelRequired": 7,
+        "options": [
+          {
+            "id": "blessed-strikes-options",
+            "name": "Blessed Strikes Options",
+            "description": "Choose Divine Strike or Potent Spellcasting.",
+            "choices": [
+              {
+                "id": "divine-strike",
+                "name": "Divine Strike",
+                "description": "Once on each of your turns when you hit a creature with an attack roll using a weapon, you can cause the target to take an extra 1d8 Necrotic or Radiant damage (your choice)."
+              },
+              {
+                "id": "potent-spellcasting",
+                "name": "Potent Spellcasting",
+                "description": "Add your Wisdom modifier to the damage you deal with any Cleric cantrip."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "8": [
+      {
+        "id": "ability-score-improvement-8",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "levelRequired": 8
+      }
+    ],
+    "9": [],
+    "10": [
+      {
+        "id": "divine-intervention",
+        "name": "Divine Intervention",
+        "description": "You can call on your deity or pantheon to intervene on your behalf. As a Magic action, choose any Cleric spell of level 5 or lower that doesn't require a Reaction to cast. As part of the same action, you cast that spell without expending a spell slot or needing Material components. You can't use this feature again until you finish a Long Rest.",
+        "levelRequired": 10,
+        "actionType": "Action",
+        "recovery": "Long Rest",
+        "uses": "1/Long Rest"
+      }
+    ],
+    "11": [],
+    "12": [
+      {
+        "id": "ability-score-improvement-12",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "levelRequired": 12
+      }
+    ],
+    "13": [],
+    "14": [
+      {
+        "id": "improved-blessed-strikes",
+        "name": "Improved Blessed Strikes",
+        "description": "The option you chose for Blessed Strikes grows more powerful. Divine Strike extra damage increases to 2d8. For Potent Spellcasting, when you cast a Cleric cantrip and deal damage to a creature with it, you can give vitality to yourself or another creature within 60 feet, granting Temporary Hit Points equal to twice your Wisdom modifier.",
+        "levelRequired": 14
+      }
+    ],
+    "15": [],
+    "16": [
+      {
+        "id": "ability-score-improvement-16",
+        "name": "Ability Score Improvement",
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "levelRequired": 16
+      }
+    ],
+    "17": [
+      {
+        "id": "subclass-feature-17",
+        "name": "Subclass Feature",
+        "description": "You gain a feature from your Cleric subclass.",
+        "levelRequired": 17
+      }
+    ],
+    "18": [],
+    "19": [
+      {
+        "id": "epic-boon",
+        "name": "Epic Boon",
+        "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of Fate is recommended.",
+        "levelRequired": 19
+      }
+    ],
+    "20": [
+      {
+        "id": "greater-divine-intervention",
+        "name": "Greater Divine Intervention",
+        "description": "You can call on even more powerful divine intervention. When you use your Divine Intervention feature, you can choose Wish when you select a spell. If you do so, you can't use Divine Intervention again until you finish 2d4 Long Rests.",
+        "levelRequired": 20,
+        "recovery": "Long Rest",
+        "uses": "Once per 2d4 Long Rests when used for Wish"
+      }
+    ]
+  },
+  "subclasses": [
+    {
+      "id": "life-domain",
+      "name": "Life Domain",
+      "description": "The Life Domain focuses on the positive energy that helps sustain all life in the multiverse. Clerics who tap into this domain are masters of healing, using that life force to cure many hurts.",
+      "levelChosen": 3,
+      "source": "PHB 2024",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": ["Aid", "Bless", "Cure Wounds", "Lesser Restoration"]
+        },
+        {
+          "levelGained": 5,
+          "spells": ["Mass Healing Word", "Revivify"]
+        },
+        {
+          "levelGained": 7,
+          "spells": ["Aura of Life", "Death Ward"]
+        },
+        {
+          "levelGained": 9,
+          "spells": ["Greater Restoration", "Mass Cure Wounds"]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "life-domain-spells",
+            "name": "Life Domain Spells",
+            "description": "Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the Life Domain Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "life-disciple-of-life",
+            "name": "Disciple of Life",
+            "description": "When a spell you cast with a spell slot restores Hit Points to a creature, that creature regains additional Hit Points on the turn you cast the spell. The additional Hit Points equal 2 plus the spell slot's level.",
+            "levelRequired": 3
+          },
+          {
+            "id": "life-preserve-life",
+            "name": "Preserve Life",
+            "description": "As a Magic action, you present your Holy Symbol and expend a use of your Channel Divinity to evoke healing energy that can restore a number of Hit Points equal to five times your Cleric level. Choose Bloodied creatures within 30 feet of yourself (which can include you), and divide those Hit Points among them. This feature can restore a creature to no more than half its Hit Point maximum.",
+            "levelRequired": 3,
+            "actionType": "Action"
+          }
+        ],
+        "6": [
+          {
+            "id": "life-blessed-healer",
+            "name": "Blessed Healer",
+            "description": "The healing spells you cast on others heal you as well. Immediately after you cast a spell with a spell slot that restores Hit Points to one or more creatures other than yourself, you regain Hit Points equal to 2 plus the spell slot's level.",
+            "levelRequired": 6
+          }
+        ],
+        "17": [
+          {
+            "id": "life-supreme-healing",
+            "name": "Supreme Healing",
+            "description": "When you would normally roll one or more dice to restore Hit Points to a creature with a spell or Channel Divinity, don't roll those dice for the healing; instead use the highest number possible for each die.",
+            "levelRequired": 17
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-domain",
+      "name": "Light Domain",
+      "description": "The Light Domain emphasizes the divine power to bring about blazing fire and revelation. Clerics who wield this power are enlightened souls infused with radiance and the power of their deities' discerning vision.",
+      "levelChosen": 3,
+      "source": "PHB 2024",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": ["Burning Hands", "Faerie Fire", "Scorching Ray", "See Invisibility"]
+        },
+        {
+          "levelGained": 5,
+          "spells": ["Daylight", "Fireball"]
+        },
+        {
+          "levelGained": 7,
+          "spells": ["Arcane Eye", "Wall of Fire"]
+        },
+        {
+          "levelGained": 9,
+          "spells": ["Flame Strike", "Scrying"]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "light-domain-spells",
+            "name": "Light Domain Spells",
+            "description": "Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the Light Domain Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "light-radiance-of-the-dawn",
+            "name": "Radiance of the Dawn",
+            "description": "As a Magic action, you present your Holy Symbol and expend a use of your Channel Divinity to emit a flash of light in a 30-foot Emanation originating from yourself. Any magical Darkness in that area is dispelled. Additionally, each creature of your choice in that area must make a Constitution saving throw, taking Radiant damage equal to 2d10 plus your Cleric level on a failed save or half as much damage on a successful one.",
+            "levelRequired": 3,
+            "actionType": "Action"
+          },
+          {
+            "id": "light-warding-flare",
+            "name": "Warding Flare",
+            "description": "When a creature that you can see within 30 feet of yourself makes an attack roll, you can take a Reaction to impose Disadvantage on the attack roll. You can use this feature a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a Long Rest.",
+            "levelRequired": 3,
+            "actionType": "Reaction",
+            "recovery": "Long Rest"
+          }
+        ],
+        "6": [
+          {
+            "id": "light-improved-warding-flare",
+            "name": "Improved Warding Flare",
+            "description": "You regain all expended uses of your Warding Flare when you finish a Short or Long Rest. In addition, whenever you use Warding Flare, you can give the target of the triggering attack a number of Temporary Hit Points equal to 2d6 plus your Wisdom modifier.",
+            "levelRequired": 6,
+            "recovery": "Short or Long Rest"
+          }
+        ],
+        "17": [
+          {
+            "id": "light-corona-of-light",
+            "name": "Corona of Light",
+            "description": "As a Magic action, you can emit an aura of sunlight in a 60-foot Emanation originating from yourself. The aura lasts for 1 minute or until you dismiss it as a Bonus Action. While the aura persists, enemies in it have Disadvantage on saving throws against spells that deal Fire or Radiant damage.",
+            "levelRequired": 17,
+            "actionType": "Action"
+          }
+        ]
+      }
+    },
+    {
+      "id": "trickery-domain",
+      "name": "Trickery Domain",
+      "description": "The Trickery Domain offers magic of deception, illusion, and stealth. Clerics of trickster deities are a disruptive force in the world, puncturing pride, mocking tyrants, and helping the oppressed.",
+      "levelChosen": 3,
+      "source": "PHB 2024",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": ["Charm Person", "Disguise Self", "Invisibility", "Pass without Trace"]
+        },
+        {
+          "levelGained": 5,
+          "spells": ["Hypnotic Pattern", "Nondetection"]
+        },
+        {
+          "levelGained": 7,
+          "spells": ["Confusion", "Dimension Door"]
+        },
+        {
+          "levelGained": 9,
+          "spells": ["Dominate Person", "Modify Memory"]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "trickery-domain-spells",
+            "name": "Trickery Domain Spells",
+            "description": "Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the Trickery Domain Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "trickery-blessing-of-the-trickster",
+            "name": "Blessing of the Trickster",
+            "description": "As a Magic action, you can touch a willing creature other than yourself to give it Advantage on Dexterity (Stealth) checks. This blessing lasts until you finish a Long Rest or use it again.",
+            "levelRequired": 3,
+            "actionType": "Action",
+            "recovery": "Long Rest"
+          },
+          {
+            "id": "trickery-invoke-duplicity",
+            "name": "Invoke Duplicity",
+            "description": "As a Bonus Action, you can expend one use of your Channel Divinity to create a perfect illusion of yourself in an unoccupied space you can see within 30 feet. It lasts for 1 minute or until you have the Incapacitated condition. As a Bonus Action, you can move the illusion up to 30 feet. While the illusion persists, you gain the benefits below:\n- You can cast spells as though you were in the illusion's space.\n- When both you and your illusion are within 5 feet of a creature that can see the illusion, you have Advantage on attack rolls against that creature.",
+            "levelRequired": 3,
+            "actionType": "Bonus Action"
+          }
+        ],
+        "6": [
+          {
+            "id": "trickery-tricksters-transposition",
+            "name": "Trickster's Transposition",
+            "description": "Whenever you take the Bonus Action to move your Invoke Duplicity illusion, you can teleport, swap places with the illusion, and then move the illusion up to 30 feet.",
+            "levelRequired": 6,
+            "actionType": "Bonus Action"
+          }
+        ],
+        "17": [
+          {
+            "id": "trickery-improved-duplicity",
+            "name": "Improved Duplicity",
+            "description": "Your Invoke Duplicity illusion grows more powerful. You can now create up to two illusions at once, and when you or an ally attacks a creature within 5 feet of at least one of the illusions, the attacker has Advantage on the attack roll. In addition, when you swap places with an illusion using Trickster's Transposition, you can also teleport one willing ally within 5 feet of you to the illusion's previous space.",
+            "levelRequired": 17
+          }
+        ]
+      }
+    },
+    {
+      "id": "war-domain",
+      "name": "War Domain",
+      "description": "The War Domain excels in combat, favoring deities of war, honor, and courage. Clerics of this domain are holy warriors who inspire their companions and strike down their enemies with divine force.",
+      "levelChosen": 3,
+      "source": "PHB 2024",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": ["Divine Favor", "Shield of Faith", "Magic Weapon", "Spiritual Weapon"]
+        },
+        {
+          "levelGained": 5,
+          "spells": ["Crusader's Mantle", "Spirit Guardians"]
+        },
+        {
+          "levelGained": 7,
+          "spells": ["Fire Shield", "Freedom of Movement"]
+        },
+        {
+          "levelGained": 9,
+          "spells": ["Flame Strike", "Hold Monster"]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "war-domain-spells",
+            "name": "War Domain Spells",
+            "description": "Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the War Domain Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "war-war-priest",
+            "name": "War Priest",
+            "description": "When you take the Attack action, you can make one weapon attack as a Bonus Action. You can use this feature a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a Long Rest.",
+            "levelRequired": 3,
+            "actionType": "Bonus Action",
+            "recovery": "Long Rest"
+          },
+          {
+            "id": "war-guided-strike",
+            "name": "Guided Strike",
+            "description": "When you or a creature you can see within 30 feet of you makes an attack roll and misses, you can take a Reaction and expend a use of Channel Divinity to grant a +10 bonus to the attack roll, potentially turning a miss into a hit.",
+            "levelRequired": 3,
+            "actionType": "Reaction"
+          }
+        ],
+        "6": [
+          {
+            "id": "war-war-gods-blessing",
+            "name": "War God's Blessing",
+            "description": "You can use your Guided Strike feature to bolster yourself or an ally without expending Channel Divinity, up to a number of times equal to your Wisdom modifier. You regain all uses on a Long Rest.",
+            "levelRequired": 6,
+            "recovery": "Long Rest"
+          }
+        ],
+        "17": [
+          {
+            "id": "war-avatar-of-battle",
+            "name": "Avatar of Battle",
+            "description": "You gain Resistance to Bludgeoning, Piercing, and Slashing damage from nonmagical attacks.",
+            "levelRequired": 17
+          }
+        ]
+      }
+    },
+    {
+      "id": "forge-domain",
+      "name": "Forge Domain",
+      "description": "The gods of the forge are patrons of artisans who work with metal. Clerics of these deities seek to craft items, locate lost artifacts, and protect their communities with heavy armor and weapons.",
+      "levelChosen": 3,
+      "source": "XGE",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": ["Identify", "Searing Smite", "Heat Metal", "Magic Weapon"]
+        },
+        {
+          "levelGained": 5,
+          "spells": ["Elemental Weapon", "Protection from Energy"]
+        },
+        {
+          "levelGained": 7,
+          "spells": ["Fabricate", "Wall of Fire"]
+        },
+        {
+          "levelGained": 9,
+          "spells": ["Animate Objects", "Creation"]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "forge-domain-spells",
+            "name": "Forge Domain Spells",
+            "description": "Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the Forge Domain Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "forge-bonus-proficiencies",
+            "name": "Bonus Proficiencies",
+            "description": "You gain proficiency with heavy armor and smith's tools.",
+            "levelRequired": 3
+          },
+          {
+            "id": "forge-blessing-of-the-forge",
+            "name": "Blessing of the Forge",
+            "description": "At the end of a Long Rest, you can touch one nonmagical object that is a suit of armor or a simple or martial weapon. Until the end of your next Long Rest or until you die, the object becomes a magic item, granting a +1 bonus to AC if it's armor or a +1 bonus to attack and damage rolls if it's a weapon. Once you use this feature, you can't use it again until you finish a Long Rest.",
+            "levelRequired": 3,
+            "recovery": "Long Rest"
+          },
+          {
+            "id": "forge-artisans-blessing",
+            "name": "Artisan's Blessing",
+            "description": "You can use your Channel Divinity to conduct an hour-long ritual that crafts a nonmagical metal item worth no more than 100 gp. As part of this ritual, you must lay out metal, which can include coins, with a value equal to the creation.",
+            "levelRequired": 3
+          }
+        ],
+        "6": [
+          {
+            "id": "forge-soul-of-the-forge",
+            "name": "Soul of the Forge",
+            "description": "Your mastery of the forge grants you special abilities:\n- You gain resistance to fire damage.\n- While wearing heavy armor, you gain a +1 bonus to AC.",
+            "levelRequired": 6
+          }
+        ],
+        "17": [
+          {
+            "id": "forge-saint-of-forge-and-fire",
+            "name": "Saint of Forge and Fire",
+            "description": "Your blessed affinity with fire and metal becomes more powerful:\n- You gain immunity to fire damage.\n- While wearing heavy armor, you have resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks.",
+            "levelRequired": 17
+          }
+        ]
+      }
+    },
+    {
+      "id": "grave-domain",
+      "name": "Grave Domain",
+      "description": "Gods of the grave watch over the line between life and death. Followers of these deities seek to put wandering spirits to rest, destroy the undead, and ease the suffering of the dying.",
+      "levelChosen": 3,
+      "source": "XGE",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": ["Bane", "False Life", "Gentle Repose", "Ray of Enfeeblement"]
+        },
+        {
+          "levelGained": 5,
+          "spells": ["Revivify", "Vampiric Touch"]
+        },
+        {
+          "levelGained": 7,
+          "spells": ["Blight", "Death Ward"]
+        },
+        {
+          "levelGained": 9,
+          "spells": ["Antilife Shell", "Raise Dead"]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "grave-domain-spells",
+            "name": "Grave Domain Spells",
+            "description": "Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the Grave Domain Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "grave-circle-of-mortality",
+            "name": "Circle of Mortality",
+            "description": "When you would normally roll one or more dice to restore hit points with a spell to a creature at 0 hit points, you instead use the highest number possible for each die. In addition, you learn the Spare the Dying cantrip, which has a range of 30 feet and can be cast as a Bonus Action.",
+            "levelRequired": 3
+          },
+          {
+            "id": "grave-eyes-of-the-grave",
+            "name": "Eyes of the Grave",
+            "description": "As an action, you can open your awareness to magically detect undead. Until the end of your next turn, you know the location of any undead within 60 feet of you that isn't behind total cover and isn't protected from divination magic. You can use this feature a number of times equal to your Wisdom modifier (minimum of once) per Long Rest.",
+            "levelRequired": 3,
+            "actionType": "Action",
+            "recovery": "Long Rest"
+          },
+          {
+            "id": "grave-path-to-the-grave",
+            "name": "Path to the Grave",
+            "description": "As an action, you choose one creature you can see within 30 feet of you, expending a use of Channel Divinity to curse it until the end of your next turn. The next time you or an ally of yours hits the cursed creature with an attack, the creature has vulnerability to all of that attack's damage, and then the curse ends.",
+            "levelRequired": 3,
+            "actionType": "Action"
+          }
+        ],
+        "6": [
+          {
+            "id": "grave-sentinel-at-deaths-door",
+            "name": "Sentinel at Death's Door",
+            "description": "As a Reaction when you or a creature you can see within 30 feet of you suffers a critical hit, you can turn that hit into a normal hit. Any effects triggered by a critical hit are canceled. You can use this feature a number of times equal to your Wisdom modifier (minimum of once) per Long Rest.",
+            "levelRequired": 6,
+            "actionType": "Reaction",
+            "recovery": "Long Rest"
+          }
+        ],
+        "17": [
+          {
+            "id": "grave-keeper-of-souls",
+            "name": "Keeper of Souls",
+            "description": "When an enemy you can see dies within 60 feet of you, you or one creature of your choice that is within 60 feet of you regains hit points equal to the enemy's number of Hit Dice. You can use this feature only if you aren't incapacitated. Once you use it, you can't do so again until the start of your next turn.",
+            "levelRequired": 17
+          }
+        ]
+      }
+    },
+    {
+      "id": "order-domain",
+      "name": "Order Domain",
+      "description": "The Order Domain represents discipline, as well as devotion to the laws that govern a society, an institution, or a philosophy.",
+      "levelChosen": 3,
+      "source": "TCOE",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": ["Command", "Heroism", "Hold Person", "Zone of Truth"]
+        },
+        {
+          "levelGained": 5,
+          "spells": ["Mass Healing Word", "Slow"]
+        },
+        {
+          "levelGained": 7,
+          "spells": ["Compulsion", "Locate Creature"]
+        },
+        {
+          "levelGained": 9,
+          "spells": ["Commune", "Dominate Person"]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "order-domain-spells",
+            "name": "Order Domain Spells",
+            "description": "Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the Order Domain Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "order-bonus-proficiencies",
+            "name": "Bonus Proficiencies",
+            "description": "You gain proficiency with heavy armor. You also gain proficiency in the Intimidation or Persuasion skill (your choice).",
+            "levelRequired": 3
+          },
+          {
+            "id": "order-voice-of-authority",
+            "name": "Voice of Authority",
+            "description": "If you cast a spell of level 1+ with a spell slot and target an ally, that ally can use their Reaction to make one weapon attack against a target of your choice.",
+            "levelRequired": 3
+          },
+          {
+            "id": "order-orders-demand",
+            "name": "Order's Demand",
+            "description": "As an action, present your Holy Symbol and expend one Channel Divinity to force each creature of your choice within 30 feet to make a Wisdom saving throw. On a failed save, a creature is Charmed by you until the end of your next turn or until it takes damage. You can also force a Charmed creature to drop what it is holding.",
+            "levelRequired": 3,
+            "actionType": "Action"
+          }
+        ],
+        "6": [
+          {
+            "id": "order-embodiment-of-the-law",
+            "name": "Embodiment of the Law",
+            "description": "When you cast an Enchantment spell of level 1+ that has a casting time of 1 Action, you can cast it as a Bonus Action. You can do this Wisdom modifier times per Long Rest.",
+            "levelRequired": 6,
+            "actionType": "Bonus Action",
+            "recovery": "Long Rest"
+          }
+        ],
+        "17": [
+          {
+            "id": "order-orders-wrath",
+            "name": "Order's Wrath",
+            "description": "When you hit a creature with your Divine Strike or deal damage to it with a Cleric spell, select an ally: they deal an extra 2d8 force damage on their next hit against it.",
+            "levelRequired": 17
+          }
+        ]
+      }
+    },
+    {
+      "id": "peace-domain",
+      "name": "Peace Domain",
+      "description": "The Peace Domain inspires people to resolve conflict and stand up against forces that try to prevent peace from flourishing.",
+      "levelChosen": 3,
+      "source": "TCOE",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": ["Heroism", "Sanctuary", "Aid", "Warding Bond"]
+        },
+        {
+          "levelGained": 5,
+          "spells": ["Beacon of Hope", "Sending"]
+        },
+        {
+          "levelGained": 7,
+          "spells": ["Aura of Purity", "Otiluke's Resilient Sphere"]
+        },
+        {
+          "levelGained": 9,
+          "spells": ["Greater Restoration", "Rary's Telepathic Bond"]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "peace-domain-spells",
+            "name": "Peace Domain Spells",
+            "description": "Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the Peace Domain Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "peace-implement-of-peace",
+            "name": "Implement of Peace",
+            "description": "You gain proficiency in the Insight, Performance, or Persuasion skill (your choice).",
+            "levelRequired": 3
+          },
+          {
+            "id": "peace-emboldening-bond",
+            "name": "Emboldening Bond",
+            "description": "As an action, touch two creatures (or yourself and one other). For 10 minutes, once per turn, when within 30 feet of each other, they can add 1d4 to one attack roll, ability check, or saving throw. Can be used Proficiency Bonus times per Long Rest.",
+            "levelRequired": 3,
+            "actionType": "Action",
+            "recovery": "Long Rest"
+          },
+          {
+            "id": "peace-balm-of-peace",
+            "name": "Balm of Peace",
+            "description": "As an action, you can use your Channel Divinity to move up to your Speed. This movement doesn't provoke Opportunity Attacks, and when you move within 5 feet of any creature, you can heal it by 2d6 + Wisdom modifier.",
+            "levelRequired": 3,
+            "actionType": "Action"
+          }
+        ],
+        "6": [
+          {
+            "id": "peace-protective-bond",
+            "name": "Protective Bond",
+            "description": "When a creature affected by your Emboldening Bond takes damage, another bonded creature within 30 feet can use its Reaction to teleport to an unoccupied space within 5 feet of the target and take the damage instead.",
+            "levelRequired": 6,
+            "actionType": "Reaction"
+          }
+        ],
+        "17": [
+          {
+            "id": "peace-expansive-bond",
+            "name": "Expansive Bond",
+            "description": "The range of your Emboldening Bond increases to 60 feet. In addition, when a bonded creature teleports using Protective Bond, it gains Resistance to the damage of the triggering attack.",
+            "levelRequired": 17
+          }
+        ]
+      }
+    },
+    {
+      "id": "twilight-domain",
+      "name": "Twilight Domain",
+      "description": "The Twilight Domain guards the transition from day to night, offering rest, comfort, and protection against the horrors of the dark.",
+      "levelChosen": 3,
+      "source": "TCOE",
+      "alwaysPreparedSpells": [
+        {
+          "levelGained": 3,
+          "spells": ["Faerie Fire", "Sleep", "Moonbeam", "See Invisibility"]
+        },
+        {
+          "levelGained": 5,
+          "spells": ["Aura of Vitality", "Leomund's Tiny Hut"]
+        },
+        {
+          "levelGained": 7,
+          "spells": ["Aura of Life", "Greater Invisibility"]
+        },
+        {
+          "levelGained": 9,
+          "spells": ["Circle of Power", "Mislead"]
+        }
+      ],
+      "featuresByLevel": {
+        "3": [
+          {
+            "id": "twilight-domain-spells",
+            "name": "Twilight Domain Spells",
+            "description": "Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the Twilight Domain Spells table, you thereafter always have the listed spells prepared.",
+            "levelRequired": 3
+          },
+          {
+            "id": "twilight-bonus-proficiencies",
+            "name": "Bonus Proficiencies",
+            "description": "You gain proficiency with martial weapons and heavy armor.",
+            "levelRequired": 3
+          },
+          {
+            "id": "twilight-eyes-of-night",
+            "name": "Eyes of Night",
+            "description": "You gain Darkvision with a range of 300 feet. As an action, you can magically share this darkvision with willing creatures within 10 feet of you for 1 hour. Once you share it, you can't do so again until you finish a Long Rest unless you expend a spell slot of any level.",
+            "levelRequired": 3,
+            "recovery": "Long Rest"
+          },
+          {
+            "id": "twilight-vigilant-blessing",
+            "name": "Vigilant Blessing",
+            "description": "As an action, you touch a creature (which can be yourself) and give it Advantage on its next Initiative roll. This benefit ends once Initiative is rolled or you use this feature again.",
+            "levelRequired": 3,
+            "actionType": "Action"
+          },
+          {
+            "id": "twilight-twilight-sanctuary",
+            "name": "Twilight Sanctuary",
+            "description": "As a Magic action, present your Holy Symbol and expend Channel Divinity to create a 30-foot sphere of twilight centered on you that moves with you for 1 minute. At the end of an ally's turn in it, you can grant it 1d6 + Cleric level temp HP or end the Charmed or Frightened condition on it.",
+            "levelRequired": 3,
+            "actionType": "Action"
+          }
+        ],
+        "6": [
+          {
+            "id": "twilight-steps-of-night",
+            "name": "Steps of Night",
+            "description": "As a Bonus Action while you are in dim light or darkness, you can give yourself a Fly Speed equal to your walking speed for 1 minute. You can do this Proficiency Bonus times per Long Rest.",
+            "levelRequired": 6,
+            "actionType": "Bonus Action",
+            "recovery": "Long Rest"
+          }
+        ],
+        "17": [
+          {
+            "id": "twilight-twilight-shroud",
+            "name": "Twilight Shroud",
+            "description": "The twilight that you summon offers a protective embrace: you and your allies have Half Cover while in the sphere created by your Twilight Sanctuary.",
+            "levelRequired": 17
+          }
+        ]
+      }
+    }
+  ]
+}

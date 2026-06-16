@@ -34,6 +34,26 @@ async function seedAll() {
     console.log("----------------------------------------------");
     await seedSpecies(db);
     
+    // Export all tables to a JSON snapshot for edge runtime fallback
+    console.log("----------------------------------------------");
+    console.log("Exporting database snapshot for edge fallback...");
+    const fs = await import("fs");
+    const tables = ["classes", "subclasses", "spells", "species", "feats", "monsters", "weapons", "armor", "magic_items", "backgrounds"];
+    const snapshot: Record<string, any[]> = {};
+    for (const table of tables) {
+      try {
+        const rows = sqlite.prepare(`SELECT * FROM ${table}`).all();
+        snapshot[table] = rows as any[];
+        console.log(`  Exported ${(rows as any[]).length} rows from ${table}`);
+      } catch (e) {
+        console.warn(`  Skipped ${table} (may not exist)`);
+        snapshot[table] = [];
+      }
+    }
+    const snapshotPath = path.join(process.cwd(), "src/data/db-snapshot.json");
+    fs.writeFileSync(snapshotPath, JSON.stringify(snapshot));
+    console.log(`Snapshot saved to ${snapshotPath}`);
+    
     console.log("\n==============================================");
     console.log("✅ PIPELINE COMPLETE. ALL DATA INGESTED.");
     console.log("==============================================\n");

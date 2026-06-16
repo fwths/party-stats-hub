@@ -68,12 +68,46 @@ async function run() {
         darkvision = JSON.stringify({ Darkvision: r.darkvision });
       }
       
+      // Extract description (first string entry) and features (named sub-entries)
+      let description = "";
+      const features: { name: string; description: string }[] = [];
+      // Traits to skip as features (cosmetic, not gameplay)
+      const skipTraits = new Set(["age", "size", "alignment", "languages"]);
+      
+      if (r.entries) {
+        for (const entry of r.entries) {
+          if (typeof entry === "string") {
+            if (!description) description = entry;
+          } else if (entry && entry.name) {
+            // Named trait entry — extract its text content
+            let traitDesc = "";
+            if (entry.entries) {
+              traitDesc = entry.entries
+                .filter((e: any) => typeof e === "string")
+                .join(" ");
+            }
+            if (!skipTraits.has(entry.name.toLowerCase())) {
+              features.push({ name: entry.name, description: traitDesc });
+            }
+          }
+        }
+      }
+      // Clean 5etools formatting tags like {@damage 1d6}, {@spell}, etc.
+      const clean = (s: string) => s.replace(/\{@\w+\s+([^|}]+)(?:\|[^}]*)?\}/g, "$1");
+      description = clean(description);
+      features.forEach(f => f.description = clean(f.description));
+      
+      // If no introductory text, build description from first trait
+      if (!description && features.length > 0) {
+        description = features[0].description || `${name} is a playable species with traits like ${features.map(f => f.name).join(", ")}.`;
+      }
+
       output.push({
         id,
         name,
         source: mappedSource,
-        description: r.entries ? r.entries.map((e: any) => typeof e === 'string' ? e : e.name).join(' ') : "",
-        featuresJson: "[]",
+        description: description || `${name} is a playable species.`,
+        featuresJson: JSON.stringify(features),
         size,
         speed,
         abilityScoreIncreasesJson: "{}",

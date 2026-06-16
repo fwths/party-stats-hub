@@ -35,19 +35,31 @@ async function seedAll() {
     await seedSpecies(db);
     
     // Export all tables to a JSON snapshot for edge runtime fallback
+    // Uses drizzle queries to get camelCase column names matching the app's expectations
     console.log("----------------------------------------------");
     console.log("Exporting database snapshot for edge fallback...");
     const fs = await import("fs");
-    const tables = ["classes", "subclasses", "spells", "species", "feats", "monsters", "weapons", "armor", "magic_items", "backgrounds"];
+    const tableMap: Record<string, any> = {
+      classes: schema.classes,
+      subclasses: schema.subclasses,
+      spells: schema.spells,
+      species: schema.species,
+      feats: schema.feats,
+      monsters: schema.monsters,
+      weapons: schema.weapons,
+      armor: schema.armor,
+      magic_items: schema.magicItems,
+      backgrounds: schema.backgrounds,
+    };
     const snapshot: Record<string, any[]> = {};
-    for (const table of tables) {
+    for (const [key, table] of Object.entries(tableMap)) {
       try {
-        const rows = sqlite.prepare(`SELECT * FROM ${table}`).all();
-        snapshot[table] = rows as any[];
-        console.log(`  Exported ${(rows as any[]).length} rows from ${table}`);
+        const rows = await db.select().from(table);
+        snapshot[key] = rows;
+        console.log(`  Exported ${rows.length} rows from ${key}`);
       } catch (e) {
-        console.warn(`  Skipped ${table} (may not exist)`);
-        snapshot[table] = [];
+        console.warn(`  Skipped ${key} (may not exist)`);
+        snapshot[key] = [];
       }
     }
     const snapshotPath = path.join(process.cwd(), "src/data/db-snapshot.json");

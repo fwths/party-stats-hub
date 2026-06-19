@@ -703,6 +703,7 @@ export const characters = sqliteTable("characters", {
   featureUsesExpendedJson: text("feature_uses_expended_json").notNull(),
 
   activeEffectIdsJson: text("active_effect_ids_json").notNull(),
+  rawJson: text("raw_json"),
 });
 
 // JUNCTION TABLES

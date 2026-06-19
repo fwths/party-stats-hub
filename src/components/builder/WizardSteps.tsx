@@ -16,6 +16,9 @@ import {
   SKILL_OPTIONS,
   TOOL_OPTIONS,
   DRAGON_DAMAGE_BY_ANCESTRY,
+  ClassTheme,
+  CLASS_THEMES,
+  DEFAULT_THEME,
 } from "./BuilderConstants";
 import {
   BuilderState,
@@ -51,11 +54,17 @@ import {
   formatPrimaryAbility,
   parseJsonValue,
   getSpellcastingInfo,
+  getFeatChoiceLevels,
+  getPointsUsed,
+  getClassCantripChoices,
+  getClassPreparedSpellChoices,
+  getSpellcasters,
 } from "./BuilderUtils";
 
 interface StepProps {
   character: BuilderState;
   updateCharacter: (updates: Partial<BuilderState>) => void;
+  theme?: ClassTheme;
 }
 
 export function TraitChoicePicker({
@@ -406,7 +415,8 @@ export function OriginFeatChoicePanel({
   return null;
 }
 
-export function StepRace({ character, updateCharacter }: StepProps) {
+export function StepRace({ character, updateCharacter, theme }: StepProps) {
+  const activeTheme = theme || DEFAULT_THEME;
   const { species, speciesVariants } = useLoaderData({ from: "/builder" }) as any;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Player's Handbook");
@@ -461,7 +471,7 @@ export function StepRace({ character, updateCharacter }: StepProps) {
         <input
           type="text"
           value={character.name}
-          onChange={(e) => updateCharacter({ name: e.target.value })}
+          onChange={(e) => updateCharacter({ name: e.target.value, playerName: e.target.value })}
           className="w-full max-w-md p-3 rounded-lg border border-border/50 bg-background/50 backdrop-blur-sm text-xl font-heading focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
           placeholder="Enter name..."
         />
@@ -592,18 +602,27 @@ export function StepRace({ character, updateCharacter }: StepProps) {
                       value={character.speciesVariantId || ""}
                       onValueChange={(val) => updateCharacter({ speciesVariantId: val })}
                     >
-                      <SelectTrigger className="w-full bg-background border-border/60 focus:ring-emerald-500 rounded text-xs shadow-sm h-10">
+                      <SelectTrigger className={`w-full bg-background border-border/60 ${activeTheme.ring || "focus:ring-emerald-500"} rounded text-xs shadow-sm h-10`}>
                         <SelectValue placeholder="Choose a subrace/variant..." />
                       </SelectTrigger>
                       <SelectContent>
+                        {selectedRace && (
+                          <SelectItem 
+                            value="none" 
+                            className="py-2 focus:bg-[var(--theme-focus-bg)] cursor-pointer"
+                            style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                          >
+                            <div className="font-bold text-muted-foreground">Standard {selectedRace.name} (No Variant)</div>
+                          </SelectItem>
+                        )}
                         {subraces.map((sub: any) => (
-                          <SelectItem key={sub.id} value={sub.id} className="py-2 focus:bg-emerald-500/10 cursor-pointer">
+                          <SelectItem 
+                            key={sub.id} 
+                            value={sub.id} 
+                            className="py-2 focus:bg-[var(--theme-focus-bg)] cursor-pointer"
+                            style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                          >
                             <div className="font-bold text-amber-500">{sub.name}</div>
-                            {sub.description && (
-                              <div className="text-[10px] text-muted-foreground mt-0.5 whitespace-normal max-w-sm">
-                                {sub.description}
-                              </div>
-                            )}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -611,19 +630,29 @@ export function StepRace({ character, updateCharacter }: StepProps) {
                   </div>
                 )}
 
-                {selectedSubrace && selectedSubrace.featuresJson && (
-                  <div className="space-y-2 rounded-xl border border-border/30 bg-secondary/20 p-4 md:col-span-2">
+                {selectedSubrace && (
+                  <div className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4 md:col-span-2">
                     <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      {selectedSubrace.name} Features
+                      {selectedSubrace.name} Details
                     </div>
-                    <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                      {JSON.parse(selectedSubrace.featuresJson).map((feat: any, idx: number) => (
-                        <div key={idx} className="text-xs">
-                          <span className="font-extrabold italic text-amber-500 mr-1">{feat.name}.</span>
-                          <span className="text-foreground/80">{feat.description}</span>
+                    {selectedSubrace.description && (
+                      <p className="text-xs text-foreground/75 leading-relaxed bg-background/30 p-2.5 rounded-lg border border-border/20">
+                        {selectedSubrace.description}
+                      </p>
+                    )}
+                    {selectedSubrace.featuresJson && (
+                      <div className="space-y-2">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-amber-500/80">Features</div>
+                        <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                          {JSON.parse(selectedSubrace.featuresJson).map((feat: any, idx: number) => (
+                            <div key={idx} className="text-xs">
+                              <span className="font-extrabold italic text-amber-500 mr-1">{feat.name}.</span>
+                              <span className="text-foreground/80">{feat.description}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -967,7 +996,8 @@ export function StepBackground({ character, updateCharacter }: StepProps) {
   );
 }
 
-export function StepClass({ character, updateCharacter }: StepProps) {
+export function StepClass({ character, updateCharacter, theme }: StepProps) {
+  const activeTheme = theme || DEFAULT_THEME;
   const { classes, subclasses, classFeatures } = useLoaderData({ from: "/builder" }) as any;
   const availableSubclasses = subclasses.filter((s: any) => s.classId === character.classId);
   const subclassChoiceLevel =
@@ -1091,14 +1121,42 @@ export function StepClass({ character, updateCharacter }: StepProps) {
                         className="py-3 focus:bg-amber-500/10 cursor-pointer"
                       >
                         <div className="font-bold text-amber-500">{sub.name}</div>
-                        <div className="text-xs text-muted-foreground/80 mt-1 max-w-xs whitespace-normal group-focus:text-muted-foreground">
-                          {sub.description}
-                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {(() => {
+                const selectedSubclass = availableSubclasses.find((s: any) => s.id === character.subclassId);
+                const subclassFeatures = selectedSubclass
+                  ? (classFeatures || []).filter((cf: any) => cf.subclassId === selectedSubclass.id).sort((a: any, b: any) => a.levelRequired - b.levelRequired)
+                  : [];
+                return selectedSubclass ? (
+                  <div className="mt-4 p-4 rounded-xl border bg-card/65 text-card-foreground shadow-lg max-w-xl animate-in fade-in slide-in-from-top-2 duration-300"
+                       style={{ borderColor: `${getThemeHex(theme?.text)}33` }}>
+                    <h4 className="text-base font-bold text-amber-500 mb-1">{selectedSubclass.name} Path</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-4">{selectedSubclass.description}</p>
+                    
+                    {subclassFeatures.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/20 pb-1">Features Path</div>
+                        <div className="max-h-[200px] overflow-y-auto pr-1 space-y-2.5 scrollbar-thin">
+                          {subclassFeatures.map((feat: any) => (
+                            <div key={feat.id} className="text-xs space-y-0.5">
+                              <div className="flex justify-between items-center">
+                                <span className="font-bold text-foreground">{feat.name}</span>
+                                <span className="text-[9px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold">Level {feat.levelRequired}</span>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground leading-relaxed">{feat.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : null;
+              })()}
             </div>
           )}
 
@@ -1146,74 +1204,281 @@ export function StepClass({ character, updateCharacter }: StepProps) {
               />
             </div>
           )}
+
+          {/* Multiclassing Section */}
+          <div className="mt-10 pt-8 border-t border-border/30 bg-secondary/5 p-6 rounded-2xl border border-border/20 backdrop-blur-md">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h4 className={`text-xl font-bold ${activeTheme.text}`}>Multiclassing</h4>
+                <p className="text-xs text-muted-foreground">Add secondary classes to specialize your character path.</p>
+              </div>
+              <Button
+                variant="outline"
+                className={`${activeTheme.border} hover:${activeTheme.bg} ${activeTheme.text} font-semibold`}
+                onClick={() => {
+                  updateCharacter({
+                    multiClasses: [...(character.multiClasses || []), { classId: "", subclassId: null, level: 1 }]
+                  });
+                }}
+              >
+                + Add Class
+              </Button>
+            </div>
+
+            {(character.multiClasses || []).length > 0 && (
+              <div className="space-y-6">
+                {(character.multiClasses || []).map((mc, idx) => {
+                  const availableMcClasses = classes.filter(
+                    (cls: any) => cls.id !== character.classId && !(character.multiClasses || []).some((m, i) => i !== idx && m.classId === cls.id)
+                  );
+                  const mcSubclasses = subclasses.filter((sub: any) => sub.classId === mc.classId);
+                  const mcSubclassChoiceLevel = mcSubclasses.length > 0 ? getSubclassChoiceLevel(mcSubclasses) : 3;
+
+                  return (
+                    <div key={idx} className="p-5 rounded-xl border border-border/30 bg-card/20 space-y-4 relative animate-in fade-in slide-in-from-top-2 duration-300">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-4 right-4 text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          const updated = (character.multiClasses || []).filter((_, i) => i !== idx);
+                          updateCharacter({ multiClasses: updated });
+                        }}
+                      >
+                        Remove
+                      </Button>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                            Class
+                          </label>
+                          <Select
+                            value={mc.classId || ""}
+                            onValueChange={(val) => {
+                              const updated = (character.multiClasses || []).map((m, i) => {
+                                if (i === idx) {
+                                  return { ...m, classId: val, subclassId: null };
+                                }
+                                return m;
+                              });
+                              updateCharacter({ multiClasses: updated });
+                            }}
+                          >
+                            <SelectTrigger className={`w-full bg-background border-border/60 ${activeTheme.ring || "focus:ring-emerald-500"} rounded`}>
+                              <SelectValue placeholder="Select a class..." />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              {availableMcClasses.map((cls: any) => (
+                                <SelectItem 
+                                  key={cls.id} 
+                                  value={cls.id} 
+                                  className="py-2.5 focus:bg-[var(--theme-focus-bg)] cursor-pointer"
+                                  style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                                >
+                                  {cls.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {mc.classId && (
+                          <div className="space-y-1">
+                            <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                              Level
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="range"
+                                min="1"
+                                max="20"
+                                value={mc.level}
+                                onChange={(e) => {
+                                  const lvl = parseInt(e.target.value) || 1;
+                                  const updated = (character.multiClasses || []).map((m, i) => {
+                                    if (i === idx) {
+                                      return {
+                                        ...m,
+                                        level: lvl,
+                                        subclassId: lvl >= mcSubclassChoiceLevel ? m.subclassId : null
+                                      };
+                                    }
+                                    return m;
+                                  });
+                                  updateCharacter({ multiClasses: updated });
+                                }}
+                                style={{ accentColor: getThemeHex(activeTheme.text) }}
+                                className="flex-1 h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
+                              />
+                              <div className={`text-xl font-bold ${activeTheme.text} w-10 text-center bg-background border border-border rounded-lg py-1 shadow-inner`}>
+                                {mc.level}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {mc.classId && mc.level >= mcSubclassChoiceLevel && mcSubclasses.length > 0 && (
+                        <div className="space-y-1 max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+                          <label className={`block text-xs font-bold uppercase tracking-widest ${activeTheme.text}`}>
+                            Subclass (Level {mcSubclassChoiceLevel}+)
+                          </label>
+                          <Select
+                            value={mc.subclassId || ""}
+                            onValueChange={(val) => {
+                              const updated = (character.multiClasses || []).map((m, i) => {
+                                if (i === idx) {
+                                  return { ...m, subclassId: val };
+                                }
+                                return m;
+                              });
+                              updateCharacter({ multiClasses: updated });
+                            }}
+                          >
+                            <SelectTrigger className={`w-full bg-background border-border/60 ${activeTheme.ring || "focus:ring-emerald-500"} rounded`}>
+                              <SelectValue placeholder="Select a subclass...">
+                                {mc.subclassId
+                                  ? mcSubclasses.find((s: any) => s.id === mc.subclassId)?.name
+                                  : undefined}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[250px]">
+                              {mcSubclasses.map((sub: any) => (
+                                <SelectItem 
+                                  key={sub.id} 
+                                  value={sub.id} 
+                                  className="py-2.5 focus:bg-[var(--theme-focus-bg)] cursor-pointer"
+                                  style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                                >
+                                  <div className={`font-bold ${activeTheme.text}`}>{sub.name}</div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          {mc.subclassId && (
+                            (() => {
+                              const selSub = mcSubclasses.find((s: any) => s.id === mc.subclassId);
+                              const selSubFeatures = selSub
+                                ? (classFeatures || []).filter((cf: any) => cf.subclassId === selSub.id).sort((a: any, b: any) => a.levelRequired - b.levelRequired)
+                                : [];
+                              return selSub ? (
+                                <div className="mt-3 p-4 rounded-xl border bg-card/65 text-card-foreground shadow-lg max-w-sm animate-in fade-in slide-in-from-top-2 duration-300"
+                                     style={{ borderColor: `${getThemeHex(activeTheme.text)}33` }}>
+                                  <h4 className={`text-sm font-bold ${activeTheme.text} mb-1`}>{selSub.name} Path</h4>
+                                  <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">{selSub.description}</p>
+                                  
+                                  {selSubFeatures.length > 0 && (
+                                    <div className="space-y-2">
+                                      <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/20 pb-1">Features Path</div>
+                                      <div className="max-h-[150px] overflow-y-auto pr-1 space-y-2 scrollbar-thin">
+                                        {selSubFeatures.map((feat: any) => (
+                                          <div key={feat.id} className="text-[11px] space-y-0.5">
+                                            <div className="flex justify-between items-center">
+                                              <span className="font-semibold text-foreground">{feat.name}</span>
+                                              <span className="text-[8px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-semibold">Lvl {feat.levelRequired}</span>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground leading-relaxed">{feat.description}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null;
+                            })()
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-export function StepAbilities({ character, updateCharacter }: StepProps) {
-  const [method, setMethod] = useState<"standard" | "pointbuy" | "roll">("standard");
+export function StepAbilities({ character, updateCharacter, theme }: StepProps) {
+  const activeTheme = theme || DEFAULT_THEME;
+  const method = character.abilitiesMethod || "standard";
+  const [rollDetails, setRollDetails] = useState<Record<string, { rolls: number[]; dropped: number; total: number }>>({});
+  const [rollingStat, setRollingStat] = useState<string | null>(null);
+  const { feats, spells, classes, subclasses } = useLoaderData({ from: "/builder" }) as any;
+  const featLevels = getFeatChoiceLevels(character.classId, character.level);
+  const generalFeats = (feats || [])
+    .filter(
+      (f: any) =>
+        f.category === "General" ||
+        f.category === "Fighting Style" ||
+        f.category === "Epic Boon",
+    )
+    .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
   const updateStat = (ab: string, val: number) => {
     updateCharacter({ abilities: { ...character.abilities, [ab]: val } });
   };
 
-  // Point Buy Logic
-  const pointCosts: Record<number, number> = {
-    8: 0,
-    9: 1,
-    10: 2,
-    11: 3,
-    12: 4,
-    13: 5,
-    14: 7,
-    15: 9,
-  };
-  const getPointsUsed = () => {
-    let total = 0;
-    for (const ab of ABILITIES) {
-      const val = character.abilities[ab];
-      if (val >= 8 && val <= 15) {
-        total += pointCosts[val] || 0;
-      } else if (val > 15) {
-        total += 9 + (val - 15) * 2; // rough penalty for over 15 if manually entered before
-      }
+  const setMethod = (newMethod: "standard" | "pointbuy" | "roll") => {
+    if (newMethod === "standard") {
+      const newAbilities: any = {};
+      ABILITIES.forEach((ab) => (newAbilities[ab] = 0));
+      updateCharacter({ abilitiesMethod: "standard", abilities: newAbilities });
+    } else if (newMethod === "pointbuy") {
+      const newAbilities: any = {};
+      ABILITIES.forEach((ab) => (newAbilities[ab] = 8));
+      updateCharacter({ abilitiesMethod: "pointbuy", abilities: newAbilities });
+    } else {
+      updateCharacter({ abilitiesMethod: "roll" });
     }
-    return total;
   };
 
   // Standard Array Logic
   const standardArray = [15, 14, 13, 12, 10, 8];
 
   // Roll Logic
-  const roll4d6DropLowest = () => {
-    const rolls = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1).sort(
-      (a, b) => a - b,
-    );
-    return rolls[1] + rolls[2] + rolls[3];
+  const roll4d6DropLowestDetails = () => {
+    const rolls = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
+    const sorted = [...rolls].sort((a, b) => a - b);
+    const dropped = sorted[0];
+    const total = sorted[1] + sorted[2] + sorted[3];
+    return { rolls, dropped, total };
+  };
+
+  const rollSingleStat = (ab: string) => {
+    setRollingStat(ab);
+    let counter = 0;
+    const interval = setInterval(() => {
+      // Shuffling animation effect
+      updateStat(ab, Math.floor(Math.random() * 16) + 3);
+      counter++;
+      if (counter > 8) {
+        clearInterval(interval);
+        const { rolls, dropped, total } = roll4d6DropLowestDetails();
+        updateStat(ab, total);
+        setRollDetails((prev) => ({ ...prev, [ab]: { rolls, dropped, total } }));
+        setRollingStat(null);
+      }
+    }, 40);
   };
 
   const rollAll = () => {
-    const newAbilities = { ...character.abilities };
-    ABILITIES.forEach((ab) => {
-      newAbilities[ab] = roll4d6DropLowest();
+    ABILITIES.forEach((ab, idx) => {
+      setTimeout(() => {
+        rollSingleStat(ab);
+      }, idx * 120);
     });
-    updateCharacter({ abilities: newAbilities });
-  };
-
-  const setStandardArrayDefaults = () => {
-    // Just reset them all to 0 so user can pick
-    const newAbilities: any = {};
-    ABILITIES.forEach((ab) => (newAbilities[ab] = 0));
-    updateCharacter({ abilities: newAbilities });
   };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-4xl mx-auto">
       <div className="text-center mb-8">
         <h3 className="text-3xl font-bold mb-3 flex items-center justify-center gap-3">
-          <Dices className="text-emerald-500 h-8 w-8" />
+          <Dices className={`${activeTheme.text} h-8 w-8`} />
           Determine Attributes
         </h3>
         <p className="text-sm text-muted-foreground">
@@ -1226,9 +1491,8 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
           variant={method === "standard" ? "default" : "outline"}
           onClick={() => {
             setMethod("standard");
-            setStandardArrayDefaults();
           }}
-          className={method === "standard" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+          className={method === "standard" ? activeTheme.primaryBtn : ""}
         >
           Standard Array
         </Button>
@@ -1236,18 +1500,15 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
           variant={method === "pointbuy" ? "default" : "outline"}
           onClick={() => {
             setMethod("pointbuy");
-            const newAbilities: any = {};
-            ABILITIES.forEach((ab) => (newAbilities[ab] = 8));
-            updateCharacter({ abilities: newAbilities });
           }}
-          className={method === "pointbuy" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+          className={method === "pointbuy" ? activeTheme.primaryBtn : ""}
         >
           Point Buy
         </Button>
         <Button
           variant={method === "roll" ? "default" : "outline"}
           onClick={() => setMethod("roll")}
-          className={method === "roll" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+          className={method === "roll" ? activeTheme.primaryBtn : ""}
         >
           Roll / Manual
         </Button>
@@ -1259,9 +1520,9 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
             Points Remaining
           </span>
           <span
-            className={`text-3xl font-black ${27 - getPointsUsed() < 0 ? "text-destructive" : "text-emerald-500"}`}
+            className={`text-3xl font-black ${27 - getPointsUsed(character.abilities) < 0 ? "text-destructive" : activeTheme.text}`}
           >
-            {27 - getPointsUsed()}
+            {27 - getPointsUsed(character.abilities)}
           </span>
           <span className="text-sm text-muted-foreground ml-2">/ 27</span>
         </div>
@@ -1292,10 +1553,11 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
           return (
             <div
               key={ab}
-              className={`relative bg-card/50 p-6 rounded-2xl border flex flex-col items-center transition-all duration-300 hover:-translate-y-1 ${isHigh ? "border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]" : "border-border/40 hover:border-emerald-500/30 hover:shadow-md"}`}
+              className={`relative bg-card/50 p-6 rounded-2xl border flex flex-col items-center transition-all duration-300 hover:-translate-y-1 ${isHigh ? `${activeTheme.border} shadow-md` : "border-border/40 hover:border-primary/30 hover:shadow-md"}`}
+              style={isHigh ? { boxShadow: `0 0 20px ${getThemeHex(activeTheme.text)}26` } : {}}
             >
               {isHigh && (
-                <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 blur-xl rounded-full" />
+                <div className={`absolute top-0 right-0 w-16 h-16 ${activeTheme.glowBlur} blur-xl rounded-full`} />
               )}
 
               <span className="font-bold text-sm tracking-widest uppercase text-muted-foreground mb-3">
@@ -1303,13 +1565,13 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
               </span>
 
               <div
-                className={`text-5xl font-black mb-4 tracking-tighter drop-shadow-md ${isHigh ? "text-emerald-400" : "text-foreground"}`}
+                className={`text-5xl font-black mb-4 tracking-tighter drop-shadow-md ${isHigh ? activeTheme.text : "text-foreground"}`}
               >
                 {base === 0 ? "-" : total}
               </div>
 
               <div
-                className={`text-base font-bold px-4 py-1.5 rounded-full mb-6 border shadow-sm ${mod > 0 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : mod < 0 ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-secondary text-foreground border-border"}`}
+                className={`text-base font-bold px-4 py-1.5 rounded-full mb-6 border shadow-sm ${mod > 0 ? `${activeTheme.bg} ${activeTheme.text} ${activeTheme.border}` : mod < 0 ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-secondary text-foreground border-border"}`}
               >
                 {base === 0 ? "-" : mod > 0 ? `+${mod}` : mod}
               </div>
@@ -1325,11 +1587,15 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
                       value={base.toString()}
                       onValueChange={(val) => updateStat(ab, parseInt(val))}
                     >
-                      <SelectTrigger className="w-20 h-8 px-2 py-1 text-center font-mono font-bold bg-background border-border/60 focus:ring-emerald-500 rounded text-xs shadow-sm">
+                      <SelectTrigger className={`w-20 h-8 px-2 py-1 text-center font-mono font-bold bg-background border-border/60 ${activeTheme.ring} rounded text-xs shadow-sm`}>
                         <SelectValue placeholder="-" />
                       </SelectTrigger>
                       <SelectContent className="min-w-[4rem]">
-                        <SelectItem value="0" className="justify-center font-mono font-bold">
+                        <SelectItem 
+                          value="0" 
+                          className="justify-center font-mono font-bold focus:bg-[var(--theme-focus-bg)]"
+                          style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                        >
                           -
                         </SelectItem>
                         {standardArray.map((v) => {
@@ -1341,7 +1607,8 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
                               <SelectItem
                                 key={v}
                                 value={v.toString()}
-                                className="justify-center font-mono font-bold"
+                                className="justify-center font-mono font-bold focus:bg-[var(--theme-focus-bg)]"
+                                style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
                               >
                                 {v}
                               </SelectItem>
@@ -1368,19 +1635,32 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
                       </button>
                     </div>
                   ) : (
-                    <input
-                      type="number"
-                      min="1"
-                      max="18"
-                      className="w-16 p-1.5 text-center font-mono font-bold bg-background border border-border/60 rounded focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
-                      value={base}
-                      onChange={(e) => {
-                        let val = parseInt(e.target.value);
-                        if (isNaN(val)) val = 0;
-                        if (val > 18) val = 18;
-                        updateStat(ab, val);
-                      }}
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="18"
+                        className={`w-14 p-1 text-center font-mono font-bold bg-background border border-border/60 rounded focus:outline-none transition-all text-xs ${activeTheme.borderFocus} ${activeTheme.ring}`}
+                        value={base || ""}
+                        disabled={rollingStat === ab}
+                        onChange={(e) => {
+                          let val = parseInt(e.target.value);
+                          if (isNaN(val)) val = 0;
+                          if (val > 18) val = 18;
+                          updateStat(ab, val);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={rollingStat !== null}
+                        onClick={() => rollSingleStat(ab)}
+                        className={`h-7 px-2 text-[10px] font-bold ${activeTheme.border} hover:${activeTheme.bg} ${activeTheme.text}`}
+                      >
+                        {rollingStat === ab ? "..." : "Roll"}
+                      </Button>
+                    </div>
                   )}
                 </div>
                 {backgroundBonus > 0 && (
@@ -1393,10 +1673,600 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
                     </span>
                   </div>
                 )}
+                {method === "roll" && rollDetails[ab] && (
+                  <div className="text-[9px] text-muted-foreground bg-background/40 px-2 py-1 rounded border border-border/20 font-mono flex items-center justify-between w-full mt-2 animate-in fade-in duration-300">
+                    <span>Dice: [{rollDetails[ab].rolls.map((r, i) => {
+                      const lowestIndex = rollDetails[ab].rolls.indexOf(rollDetails[ab].dropped);
+                      const isDropped = i === lowestIndex;
+                      return (
+                        <span key={i} className={isDropped ? "line-through text-destructive font-semibold" : `${activeTheme.text} font-bold`}>
+                          {r}{i < 3 ? ", " : ""}
+                        </span>
+                      );
+                    })}]</span>
+                    <span className="text-foreground/80">Drop {rollDetails[ab].dropped}</span>
+                  </div>
+                )}
               </div>
             </div>
           );
         })}
+      </div>
+
+      {featLevels.length > 0 && (
+        <div className="mt-12 bg-secondary/20 p-6 rounded-xl border border-border/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <h4 className={`text-xl font-bold mb-4 ${activeTheme.text}`}>
+            Feats & Ability Score Improvements
+          </h4>
+          <p className="text-xs text-muted-foreground mb-6">
+            Select a feat or ability score improvement for each milestone.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {featLevels.map((lvl) => {
+              const selectedFeatId = character.highLevelFeatChoices?.[lvl] || "";
+              const selectedFeat = generalFeats.find((f: any) => f.id === selectedFeatId);
+
+              const allCantrips = (spells || [])
+                .filter((s: any) => Number(s.level || 0) === 0)
+                .sort((a: any, b: any) => a.name.localeCompare(b.name));
+              const allFirstLevelSpells = (spells || [])
+                .filter((s: any) => Number(s.level || 0) === 1)
+                .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+              return (
+                <div key={lvl} className="space-y-2">
+                  <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                    Level {lvl} Milestone Choice
+                  </label>
+                  <Select
+                    value={selectedFeatId}
+                    onValueChange={(val) => {
+                      const newChoices = { ...character.highLevelFeatChoices, [lvl]: val };
+                      updateCharacter({ highLevelFeatChoices: newChoices });
+                    }}
+                  >
+                    <SelectTrigger className={`w-full bg-background border-border/60 ${activeTheme.ring} rounded text-xs shadow-sm h-12`}>
+                      <SelectValue placeholder="Select a feat or ASI..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {generalFeats.map((feat: any) => (
+                        <SelectItem 
+                          key={feat.id} 
+                          value={feat.id} 
+                          className="py-2.5 focus:bg-[var(--theme-focus-bg)] cursor-pointer"
+                          style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                        >
+                          <div className={`font-bold ${activeTheme.text}`}>{feat.name}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5 whitespace-normal max-w-sm">
+                            {feat.prerequisite ? `Prerequisite: ${feat.prerequisite} | ` : ""}{feat.category}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedFeat && (
+                    <div className="text-xs text-muted-foreground bg-background/30 p-3 rounded-lg border border-border/20 mt-2 line-clamp-3 hover:line-clamp-none transition-all duration-300">
+                      {selectedFeat.description}
+                    </div>
+                  )}
+
+                  {/* Nested choices for specific feats */}
+                  {selectedFeat && (() => {
+                    const name = selectedFeat.name.toLowerCase();
+                    const extraKey = `${lvl}:${selectedFeatId}`;
+                    const extra = character.highLevelFeatExtraChoices?.[extraKey] || {};
+
+                    if (name === "skilled" || selectedFeatId === "skilled") {
+                      const skilledChoices = [...(extra.skills || []), ...(extra.tools || [])];
+                      return (
+                        <div 
+                          className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
+                          style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}
+                        >
+                          <div className={`text-xs font-bold ${activeTheme.text} uppercase tracking-widest`}>
+                            Skilled choices (Choose 3 skills or tools)
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {[0, 1, 2].map((i) => (
+                              <Select
+                                key={i}
+                                value={skilledChoices[i] || ""}
+                                onValueChange={(val) => {
+                                  const nextChoices = [...skilledChoices];
+                                  nextChoices[i] = val;
+                                  const finalChoices = nextChoices.filter(Boolean);
+                                  const nextSkills = finalChoices.filter(c => SKILL_OPTIONS.includes(c));
+                                  const nextTools = finalChoices.filter(c => TOOL_OPTIONS.includes(c));
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, skills: nextSkills, tools: nextTools }
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder={`Select option ${i + 1}`} />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[250px]">
+                                  <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase bg-secondary/50">Skills</div>
+                                  {SKILL_OPTIONS.map((skill) => (
+                                    <SelectItem key={skill} value={skill}>{skill}</SelectItem>
+                                  ))}
+                                  <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase bg-secondary/50 border-t border-border/20 mt-1">Tools</div>
+                                  {TOOL_OPTIONS.map((tool) => (
+                                    <SelectItem key={tool} value={tool}>{tool}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (name === "magic initiate" || selectedFeatId.startsWith("magic-initiate")) {
+                      const cantrips = extra.cantrips || [];
+                      const spellsList = extra.spells || [];
+                      return (
+                        <div 
+                          className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
+                          style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}
+                        >
+                          <div className={`text-xs font-bold ${activeTheme.text} uppercase tracking-widest`}>
+                            Magic Initiate choices
+                          </div>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Cantrip 1</span>
+                              <Select
+                                value={cantrips[0] || ""}
+                                onValueChange={(val) => {
+                                  const next = [...cantrips];
+                                  next[0] = val;
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, cantrips: next.filter(Boolean) }
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder="Select cantrip" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[250px]">
+                                  {allCantrips.map((spell: any) => (
+                                    <SelectItem key={spell.id} value={spell.id}>{spell.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Cantrip 2</span>
+                              <Select
+                                value={cantrips[1] || ""}
+                                onValueChange={(val) => {
+                                  const next = [...cantrips];
+                                  next[1] = val;
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, cantrips: next.filter(Boolean) }
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder="Select cantrip" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[250px]">
+                                  {allCantrips.map((spell: any) => (
+                                    <SelectItem key={spell.id} value={spell.id}>{spell.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">1st-Level Spell</span>
+                              <Select
+                                value={spellsList[0] || ""}
+                                onValueChange={(val) => {
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, spells: [val] }
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder="Select 1st-level spell" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[250px]">
+                                  {allFirstLevelSpells.map((spell: any) => (
+                                    <SelectItem key={spell.id} value={spell.id}>{spell.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Casting Ability</span>
+                              <Select
+                                value={extra.ability || ""}
+                                onValueChange={(val) => {
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, ability: val }
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder="Select ability" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[250px]">
+                                  <SelectItem value="INT">Intelligence</SelectItem>
+                                  <SelectItem value="WIS">Wisdom</SelectItem>
+                                  <SelectItem value="CHA">Charisma</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (name === "skill expert" || selectedFeatId === "skill-expert") {
+                      return (
+                        <div 
+                          className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
+                          style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}
+                        >
+                          <div className={`text-xs font-bold ${activeTheme.text} uppercase tracking-widest`}>
+                            Skill Expert choices
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">ASI (+1)</span>
+                              <Select
+                                value={extra.ability || ""}
+                                onValueChange={(val) => {
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, ability: val }
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder="Select ability" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ABILITIES.map((ab) => (
+                                    <SelectItem key={ab} value={ab}>{ab}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Proficiency</span>
+                              <Select
+                                value={extra.skills?.[0] || ""}
+                                onValueChange={(val) => {
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, skills: [val] }
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder="Select skill" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[250px]">
+                                  {SKILL_OPTIONS.map((skill) => (
+                                    <SelectItem key={skill} value={skill}>{skill}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Expertise</span>
+                              <Select
+                                value={extra.tools?.[0] || ""}
+                                onValueChange={(val) => {
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, tools: [val] }
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder="Select expertise" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[250px]">
+                                  {SKILL_OPTIONS.map((skill) => (
+                                    <SelectItem key={skill} value={skill}>{skill}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (name === "resilient" || selectedFeatId.startsWith("resilient")) {
+                      return (
+                        <div 
+                          className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
+                          style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}
+                        >
+                          <div className={`text-xs font-bold ${activeTheme.text} uppercase tracking-widest`}>
+                            Resilient choices
+                          </div>
+                          <div className="space-y-1 max-w-xs">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase">Save & ASI (+1)</span>
+                            <Select
+                              value={extra.ability || ""}
+                              onValueChange={(val) => {
+                                updateCharacter({
+                                  highLevelFeatExtraChoices: {
+                                    ...character.highLevelFeatExtraChoices,
+                                    [extraKey]: { ...extra, ability: val }
+                                  }
+                                });
+                              }}
+                            >
+                              <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder="Select ability" />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-[250px]">
+                                {ABILITIES.map((ab) => (
+                                  <SelectItem key={ab} value={ab}>{ab}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (name === "ability score improvement" || selectedFeatId === "ability-score-improvement" || selectedFeatId.startsWith("ability-score-improvement")) {
+                      const mode = extra.mode || "single";
+                      return (
+                        <div className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
+                             style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}>
+                          <div className={`text-xs font-bold uppercase tracking-widest ${activeTheme.text}`}>
+                            Ability Score Improvement Choices
+                          </div>
+                          
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`asi-mode-${lvl}`}
+                                checked={mode === "single"}
+                                onChange={() => {
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, mode: "single" }
+                                    }
+                                  });
+                                }}
+                                style={{ accentColor: getThemeHex(activeTheme.text) }}
+                              />
+                              +2 to One Score
+                            </label>
+                            <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`asi-mode-${lvl}`}
+                                checked={mode === "split"}
+                                onChange={() => {
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, mode: "split" }
+                                    }
+                                  });
+                                }}
+                                style={{ accentColor: getThemeHex(activeTheme.text) }}
+                              />
+                              +1 to Two Scores
+                            </label>
+                          </div>
+
+                          {mode === "single" ? (
+                            <div className="space-y-1 max-w-xs animate-in fade-in duration-300">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Select Ability (+2)</span>
+                              <Select
+                                value={extra.ability || ""}
+                                onValueChange={(val) => {
+                                  updateCharacter({
+                                    highLevelFeatExtraChoices: {
+                                      ...character.highLevelFeatExtraChoices,
+                                      [extraKey]: { ...extra, ability: val }
+                                    }
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="bg-background border-border/40 text-xs">
+                                  <SelectValue placeholder="Select ability" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[250px]">
+                                  {ABILITIES.map((ab) => (
+                                    <SelectItem key={ab} value={ab}>{ab}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in duration-300">
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Ability 1 (+1)</span>
+                                <Select
+                                  value={extra.ability1 || ""}
+                                  onValueChange={(val) => {
+                                    updateCharacter({
+                                      highLevelFeatExtraChoices: {
+                                        ...character.highLevelFeatExtraChoices,
+                                        [extraKey]: { ...extra, ability1: val }
+                                      }
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-background border-border/40 text-xs">
+                                    <SelectValue placeholder="Select ability" />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-[250px]">
+                                    {ABILITIES.map((ab) => (
+                                      <SelectItem key={ab} value={ab}>{ab}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Ability 2 (+1)</span>
+                                <Select
+                                  value={extra.ability2 || ""}
+                                  onValueChange={(val) => {
+                                    updateCharacter({
+                                      highLevelFeatExtraChoices: {
+                                        ...character.highLevelFeatExtraChoices,
+                                        [extraKey]: { ...extra, ability2: val }
+                                      }
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-background border-border/40 text-xs">
+                                    <SelectValue placeholder="Select ability" />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-[250px]">
+                                    {ABILITIES.map((ab) => (
+                                      <SelectItem key={ab} value={ab}>{ab}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return null;
+                  })()}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* HP Calculation Section */}
+      <div className="mt-12 bg-secondary/20 p-6 rounded-xl border border-border/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <h4 className={`text-xl font-bold mb-2 ${activeTheme.text}`}>HP Calculation Mode</h4>
+        <p className="text-xs text-muted-foreground mb-4">
+          Choose between fixed average hit points or manually rolling your level-up hit points.
+        </p>
+        <div className="flex gap-4">
+          <Button
+            type="button"
+            variant={character.hpType === "fixed" ? "default" : "outline"}
+            className={character.hpType === "fixed" ? activeTheme.primaryBtn : "border-border/60 hover:bg-secondary/40"}
+            onClick={() => updateCharacter({ hpType: "fixed" })}
+          >
+            Fixed (Average)
+          </Button>
+          <Button
+            type="button"
+            variant={character.hpType === "manual" ? "default" : "outline"}
+            className={character.hpType === "manual" ? activeTheme.primaryBtn : "border-border/60 hover:bg-secondary/40"}
+            onClick={() => updateCharacter({ hpType: "manual" })}
+          >
+            Manual (Rolled)
+          </Button>
+        </div>
+
+        {character.hpType === "manual" && (() => {
+          const primaryClassRecord = classes?.find((c: any) => c.id === character.classId);
+          const primaryHitDie = primaryClassRecord?.hitDice ?? 8;
+          
+          const levelClassInfo: Array<{ level: number; className: string; hitDie: number }> = [];
+          
+          for (let lvl = 2; lvl <= character.level; lvl++) {
+            levelClassInfo.push({
+              level: lvl,
+              className: primaryClassRecord?.name || "Primary Class",
+              hitDie: primaryHitDie,
+            });
+          }
+          
+          let currentLvl = character.level + 1;
+          if (character.multiClasses) {
+            for (const mc of character.multiClasses) {
+              const mcCls = classes?.find((c: any) => c.id === mc.classId);
+              const mcHitDie = mcCls?.hitDice ?? 8;
+              for (let i = 0; i < mc.level; i++) {
+                levelClassInfo.push({
+                  level: currentLvl,
+                  className: mcCls?.name || mc.classId,
+                  hitDie: mcHitDie,
+                });
+                currentLvl++;
+              }
+            }
+          }
+
+          if (levelClassInfo.length === 0) return null;
+
+          return (
+            <div className="mt-6 space-y-4 animate-in fade-in duration-300">
+              <h5 className="font-bold text-sm text-foreground">Manual Roll Values (Level 2 to {levelClassInfo[levelClassInfo.length - 1].level})</h5>
+              <p className="text-[11px] text-muted-foreground">Enter the rolled value for each level (excluding CON modifier, which is added automatically). The value must be between 1 and the class's hit die size.</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {levelClassInfo.map((info) => (
+                  <div key={info.level} className="space-y-1.5 p-3 rounded-lg bg-background/40 border border-border/30">
+                    <div className="flex justify-between items-center text-xs font-bold text-muted-foreground">
+                      <span>Lvl {info.level} ({info.className})</span>
+                      <span className={`text-[10px] ${activeTheme.text} font-mono`}>d{info.hitDie}</span>
+                    </div>
+                    <input
+                      type="number"
+                      min="1"
+                      max={info.hitDie}
+                      value={character.manualHpRolls?.[info.level] || ""}
+                      placeholder={`1-${info.hitDie}`}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        const nextRolls = { ...character.manualHpRolls, [info.level]: val };
+                        updateCharacter({ manualHpRolls: nextRolls });
+                      }}
+                      className={`w-full bg-background border border-border/60 ${activeTheme.borderFocus} focus:ring-1 ${activeTheme.ring} rounded px-2.5 py-1.5 text-sm font-semibold outline-none`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
@@ -1404,9 +2274,22 @@ export function StepAbilities({ character, updateCharacter }: StepProps) {
 
 export function StepSpells({ character, updateCharacter }: StepProps) {
   const { classes, classSpells, spells } = useLoaderData({ from: "/builder" }) as any;
-  const cls = classes.find((candidate: any) => candidate.id === character.classId);
+  const spellcasters = getSpellcasters(character, classes);
 
-  if (!isSpellcaster(cls)) {
+  if (!character.classId) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-3xl mx-auto text-center py-16">
+        <Wand2 className="h-10 w-10 text-muted-foreground mx-auto animate-pulse" />
+        <h3 className="text-2xl font-bold">Class Selection Required</h3>
+        <p className="text-muted-foreground">
+          Please select a class in the Path step first to determine spellcasting capabilities.
+        </p>
+      </div>
+    );
+  }
+
+  if (spellcasters.length === 0) {
+    const cls = classes.find((candidate: any) => candidate.id === character.classId);
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-3xl mx-auto text-center py-16">
         <Wand2 className="h-10 w-10 text-muted-foreground mx-auto" />
@@ -1418,21 +2301,58 @@ export function StepSpells({ character, updateCharacter }: StepProps) {
     );
   }
 
+  const [activeTabClassId, setActiveTabClassId] = useState<string>(
+    spellcasters[0]?.cls.id || ""
+  );
+
+  const currentClassId = spellcasters.some((s) => s.cls.id === activeTabClassId)
+    ? activeTabClassId
+    : (spellcasters[0]?.cls.id || "");
+
+  const currentSpellcaster = spellcasters.find((s) => s.cls.id === currentClassId);
+  if (!currentSpellcaster) return null;
+
+  const { cls: activeCls, level: activeLvl } = currentSpellcaster;
+
   const linkedSpellIds = new Set(
     classSpells
-      .filter((link: any) => (link.classId ?? link.class_id) === character.classId)
+      .filter((link: any) => (link.classId ?? link.class_id) === activeCls.id)
       .map((link: any) => link.spellId ?? link.spell_id),
   );
-  const maxSpellLevel = getMaxSpellLevel(character, cls);
-  const cantripLimit = getCantripLimit(character, cls);
-  const preparedLimit = getPreparedSpellLimit(character, cls);
+
+  const maxSpellLevel = getMaxSpellLevel(activeLvl, activeCls);
+  const cantripLimit = getCantripLimit(activeLvl, activeCls);
+  const preparedLimit = getPreparedSpellLimit(character.abilities, activeCls, activeLvl);
+
   const classSpellList = spells
     .filter((spell: any) => linkedSpellIds.has(spell.id))
     .sort((a: any, b: any) => a.level - b.level || a.name.localeCompare(b.name));
+
   const cantrips = classSpellList.filter((spell: any) => spell.level === 0);
   const leveledSpells = classSpellList.filter(
     (spell: any) => spell.level > 0 && spell.level <= maxSpellLevel,
   );
+
+  const selectedCantrips = getClassCantripChoices(character, currentClassId);
+  const selectedPrepared = getClassPreparedSpellChoices(character, currentClassId);
+
+  const handleCantripsChange = (choices: string[]) => {
+    const byClass = { ...character.cantripChoicesByClass, [currentClassId]: choices };
+    const updates: Partial<BuilderState> = { cantripChoicesByClass: byClass };
+    if (currentClassId === character.classId) {
+      updates.cantripChoices = choices;
+    }
+    updateCharacter(updates);
+  };
+
+  const handlePreparedChange = (choices: string[]) => {
+    const byClass = { ...character.preparedSpellChoicesByClass, [currentClassId]: choices };
+    const updates: Partial<BuilderState> = { preparedSpellChoicesByClass: byClass };
+    if (currentClassId === character.classId) {
+      updates.preparedSpellChoices = choices;
+    }
+    updateCharacter(updates);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-5xl mx-auto">
@@ -1441,31 +2361,561 @@ export function StepSpells({ character, updateCharacter }: StepProps) {
           <Wand2 className="text-primary h-8 w-8" />
           Choose Spells
         </h3>
-        <p className="text-sm text-muted-foreground">
-          {cls.name} uses {getSpellcastingInfo(cls).ability?.toUpperCase()} for spellcasting. Level{" "}
-          {character.level} spells up to level {maxSpellLevel} are available. Choose up to{" "}
-          {preparedLimit} prepared/known spell{preparedLimit === 1 ? "" : "s"}.
+        <p className="text-sm text-muted-foreground mb-6">
+          Configure spellbooks for your spellcasting classes.
         </p>
       </div>
 
-      {cantripLimit > 0 && (
-        <SpellChoiceList
-          title="Cantrips"
-          spells={cantrips}
-          selected={character.cantripChoices}
-          limit={cantripLimit}
-          exact
-          onChange={(choices) => updateCharacter({ cantripChoices: choices })}
-        />
+      {spellcasters.length > 1 && (
+        <div className="flex justify-center gap-3 mb-6 bg-secondary/20 p-1.5 rounded-xl border border-border/20 max-w-md mx-auto">
+          {spellcasters.map(({ cls: sCls, level: sLvl }) => (
+            <button
+              key={sCls.id}
+              type="button"
+              onClick={() => setActiveTabClassId(sCls.id)}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+                currentClassId === sCls.id
+                  ? "bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.3)]"
+                  : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+              }`}
+            >
+              {sCls.name} (Lvl {sLvl})
+            </button>
+          ))}
+        </div>
       )}
 
-      <SpellChoiceList
-        title="Prepared / Known Spells"
-        spells={leveledSpells}
-        selected={character.preparedSpellChoices}
-        limit={preparedLimit}
-        onChange={(choices) => updateCharacter({ preparedSpellChoices: choices })}
-      />
+      <div className="space-y-6 bg-card/20 p-6 rounded-2xl border border-border/30 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="border-b border-border/20 pb-4 mb-4">
+          <h4 className="font-extrabold text-amber-500 text-lg uppercase tracking-wide">{activeCls.name} Spellbook</h4>
+          <p className="text-xs text-muted-foreground mt-1">
+            Uses <span className="font-bold text-foreground">{getSpellcastingInfo(activeCls).ability?.toUpperCase()}</span> for spellcasting.
+            Level {activeLvl} spells up to level {maxSpellLevel} are available.
+            Choose exactly <span className="font-bold text-foreground">{cantripLimit}</span> cantrips and up to <span className="font-bold text-foreground">{preparedLimit}</span> prepared/known spells.
+          </p>
+        </div>
+
+        {cantripLimit > 0 && (
+          <SpellChoiceList
+            title="Cantrips"
+            spells={cantrips}
+            selected={selectedCantrips}
+            limit={cantripLimit}
+            exact
+            onChange={handleCantripsChange}
+          />
+        )}
+
+        <SpellChoiceList
+          title="Prepared / Known Spells"
+          spells={leveledSpells}
+          selected={selectedPrepared}
+          limit={preparedLimit}
+          onChange={handlePreparedChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+const getThemeHex = (themeText: string | undefined) => {
+  if (!themeText) return "#10b981";
+  const name = themeText.replace("text-", "").replace("-500", "").replace("-400", "");
+  const map: Record<string, string> = {
+    red: "#ef4444",
+    pink: "#ec4899",
+    amber: "#f59e0b",
+    emerald: "#10b981",
+    rose: "#f43f5e",
+    sky: "#0ea5e9",
+    yellow: "#eab308",
+    green: "#22c55e",
+    slate: "#94a3b8",
+    orange: "#f97316",
+    teal: "#14b8a6",
+    violet: "#8b5cf6",
+    cyan: "#06b6d4",
+  };
+  return map[name] || "#10b981";
+};
+
+export function StepBiography({ character, updateCharacter, theme }: StepProps) {
+  const activeTheme = theme || DEFAULT_THEME;
+  const { weapons, armor, magicItems, spells } = useLoaderData({ from: "/builder" }) as any;
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+
+  const catalogWeapons = (weapons || []).map((w: any) => ({
+    name: w.name,
+    type: "Weapon",
+    description: `${w.damageDice} ${w.damageType} | Properties: ${parseJsonValue(w.propertiesJson, []).join(", ") || "None"}`,
+    cost: w.cost,
+    weight: w.weight,
+    rarity: "Mundane",
+    damageDice: w.damageDice,
+    damageType: w.damageType,
+    properties: parseJsonValue(w.propertiesJson, []),
+  }));
+
+  const catalogArmor = (armor || []).map((a: any) => ({
+    name: a.name,
+    type: "Armor",
+    description: `AC: ${a.baseAc} (Max Dex Bonus: ${a.maxDexBonus !== null ? a.maxDexBonus : "No Limit"}) | Strength: ${a.strengthRequired || "None"}`,
+    cost: a.cost,
+    weight: a.weight,
+    rarity: "Mundane",
+    baseAc: a.baseAc,
+    maxDexBonus: a.maxDexBonus,
+    strengthRequired: a.strengthRequired,
+  }));
+
+  const catalogMagicItems = (magicItems || []).map((mi: any) => ({
+    name: mi.name,
+    type: "Wondrous Item",
+    description: mi.description,
+    cost: undefined,
+    weight: undefined,
+    rarity: mi.rarity || "Rare",
+  }));
+
+  const fullCatalog = [...catalogWeapons, ...catalogArmor, ...catalogMagicItems].sort((a, b) => a.name.localeCompare(b.name));
+
+  const filteredCatalog = fullCatalog.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase()) || (item.description && item.description.toLowerCase().includes(search.toLowerCase()));
+    const matchesCategory = category === "all" || item.type.toLowerCase().includes(category.toLowerCase());
+    return matchesSearch && matchesCategory;
+  });
+
+  const addGear = (item: any) => {
+    const existing = (character.customEquipment || []).find((e) => e.name === item.name);
+    if (existing) {
+      const updated = character.customEquipment!.map((e) =>
+        e.name === item.name ? { ...e, quantity: e.quantity + 1 } : e
+      );
+      updateCharacter({ customEquipment: updated });
+    } else {
+      const newItem = {
+        name: item.name,
+        type: item.type,
+        quantity: 1,
+        equipped: item.type === "Weapon" || item.type === "Armor",
+        attuned: false,
+        cost: item.cost,
+        weight: item.weight,
+        description: item.description,
+        rarity: item.rarity,
+      };
+      updateCharacter({ customEquipment: [...(character.customEquipment || []), newItem] });
+    }
+  };
+
+  const removeGear = (itemName: string) => {
+    const updated = (character.customEquipment || []).filter((e) => e.name !== itemName);
+    updateCharacter({ customEquipment: updated });
+  };
+
+  const updateGearQty = (itemName: string, qty: number) => {
+    const updated = (character.customEquipment || []).map((e) =>
+      e.name === itemName ? { ...e, quantity: Math.max(1, qty) } : e
+    );
+    updateCharacter({ customEquipment: updated });
+  };
+
+  const toggleEquip = (itemName: string) => {
+    const updated = (character.customEquipment || []).map((e) =>
+      e.name === itemName ? { ...e, equipped: !e.equipped } : e
+    );
+    updateCharacter({ customEquipment: updated });
+  };
+
+  const toggleAttune = (itemName: string) => {
+    const updated = (character.customEquipment || []).map((e) =>
+      e.name === itemName ? { ...e, attuned: !e.attuned } : e
+    );
+    updateCharacter({ customEquipment: updated });
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
+      
+      {/* Biography Column (Left - 5 cols) */}
+      <div className="lg:col-span-5 space-y-6 bg-card/40 border border-border/40 p-6 rounded-2xl backdrop-blur-md">
+        <div>
+          <h3 className={`text-xl font-bold mb-1 ${activeTheme.text}`}>Character Biography</h3>
+          <p className="text-xs text-muted-foreground">Describe your character's persona and background story.</p>
+        </div>
+
+        {/* Live Portrait Preview */}
+        {character.avatarUrl && (
+          <div className="flex justify-center">
+            <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 shadow-lg group"
+                 style={{ borderColor: `${getThemeHex(activeTheme.text)}66` }}>
+              <img
+                src={character.avatarUrl}
+                alt="Portrait Preview"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Player Name</label>
+            <input
+              type="text"
+              value={character.playerName || ""}
+              onChange={(e) => updateCharacter({ playerName: e.target.value, name: e.target.value })}
+              placeholder="Your name"
+              className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-3 py-2 text-sm font-semibold transition-all shadow-inner placeholder:text-muted-foreground/50"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Portrait/Avatar URL</label>
+            <input
+              type="text"
+              value={character.avatarUrl || ""}
+              onChange={(e) => updateCharacter({ avatarUrl: e.target.value })}
+              placeholder="https://example.com/portrait.jpg"
+              className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-3 py-2 text-xs font-mono transition-all shadow-inner placeholder:text-muted-foreground/50"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Alignment</label>
+              <input
+                type="text"
+                value={character.alignment || ""}
+                onChange={(e) => updateCharacter({ alignment: e.target.value })}
+                placeholder="e.g. Neutral Good"
+                className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-3 py-2 text-sm font-semibold transition-all shadow-inner placeholder:text-muted-foreground/50"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Age</label>
+              <input
+                type="text"
+                value={character.age || ""}
+                onChange={(e) => updateCharacter({ age: e.target.value })}
+                placeholder="e.g. 25"
+                className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-3 py-2 text-sm font-semibold transition-all shadow-inner placeholder:text-muted-foreground/50"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Height</label>
+              <input
+                type="text"
+                value={character.height || ""}
+                onChange={(e) => updateCharacter({ height: e.target.value })}
+                placeholder="e.g. 6ft"
+                className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-3 py-2 text-sm font-semibold transition-all shadow-inner placeholder:text-muted-foreground/50"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Weight</label>
+              <input
+                type="text"
+                value={character.weight || ""}
+                onChange={(e) => updateCharacter({ weight: e.target.value })}
+                placeholder="e.g. 180 lbs"
+                className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-3 py-2 text-sm font-semibold transition-all shadow-inner placeholder:text-muted-foreground/50"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Eyes</label>
+              <input
+                type="text"
+                value={character.eyes || ""}
+                onChange={(e) => updateCharacter({ eyes: e.target.value })}
+                placeholder="Blue"
+                className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-2.5 py-2 text-xs font-semibold transition-all shadow-inner placeholder:text-muted-foreground/50"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Skin</label>
+              <input
+                type="text"
+                value={character.skin || ""}
+                onChange={(e) => updateCharacter({ skin: e.target.value })}
+                placeholder="Fair"
+                className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-2.5 py-2 text-xs font-semibold transition-all shadow-inner placeholder:text-muted-foreground/50"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Hair</label>
+              <input
+                type="text"
+                value={character.hair || ""}
+                onChange={(e) => updateCharacter({ hair: e.target.value })}
+                placeholder="Blonde"
+                className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-2.5 py-2 text-xs font-semibold transition-all shadow-inner placeholder:text-muted-foreground/50"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Backstory</label>
+            <textarea
+              value={character.backstory || ""}
+              onChange={(e) => updateCharacter({ backstory: e.target.value })}
+              placeholder="Describe your character's origins, motivations, and achievements..."
+              rows={5}
+              className="w-full bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-3 py-2 text-sm leading-relaxed resize-none transition-all shadow-inner placeholder:text-muted-foreground/50"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Equipment Column (Right - 7 cols) */}
+      <div className="lg:col-span-7 space-y-6">
+        
+        {/* Custom Gear Catalog Card */}
+        <div className="bg-card/40 border border-border/40 p-6 rounded-2xl backdrop-blur-md space-y-4">
+          <div>
+            <h3 className={`text-xl font-bold mb-1 ${activeTheme.text}`}>Gear Catalog</h3>
+            <p className="text-xs text-muted-foreground">Search and add starting gear or magic items to your inventory.</p>
+          </div>
+
+          <div className="flex gap-3">
+            <input
+              type="text"
+              placeholder="Search items..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary rounded-lg px-3 py-2 text-sm font-semibold transition-all shadow-inner placeholder:text-muted-foreground/50"
+            />
+            <Select value={category} onValueChange={(val) => setCategory(val)}>
+              <SelectTrigger className="w-36 bg-background/50 backdrop-blur-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg text-sm font-semibold transition-all">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem 
+                  value="all" 
+                  className="focus:bg-[var(--theme-focus-bg)] cursor-pointer"
+                  style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                >All</SelectItem>
+                <SelectItem 
+                  value="weapon" 
+                  className="focus:bg-[var(--theme-focus-bg)] cursor-pointer"
+                  style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                >Weapons</SelectItem>
+                <SelectItem 
+                  value="armor" 
+                  className="focus:bg-[var(--theme-focus-bg)] cursor-pointer"
+                  style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                >Armor</SelectItem>
+                <SelectItem 
+                  value="wondrous" 
+                  className="focus:bg-[var(--theme-focus-bg)] cursor-pointer"
+                  style={{ '--theme-focus-bg': `${getThemeHex(activeTheme.text)}1a` } as React.CSSProperties}
+                >Magic Items</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="max-h-[250px] overflow-y-auto border border-border/20 rounded-lg divide-y divide-border/20 bg-background/20">
+            {filteredCatalog.slice(0, 50).map((item) => {
+              const isExpanded = expandedItem === item.name;
+              return (
+                <div
+                  key={item.name}
+                  onClick={() => setExpandedItem(isExpanded ? null : item.name)}
+                  className={`p-3 hover:bg-secondary/10 transition-all duration-300 cursor-pointer ${
+                    isExpanded ? "bg-secondary/15 border-l-2" : ""
+                  }`}
+                  style={isExpanded ? { borderLeftColor: getThemeHex(activeTheme.text) } : {}}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="space-y-0.5 max-w-[80%]">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-sm text-foreground">{item.name}</span>
+                        <span className="text-[9px] uppercase tracking-wider bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
+                          {item.type}
+                        </span>
+                        {item.rarity !== "Mundane" && (
+                          <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-semibold"
+                                style={{
+                                  backgroundColor: `${getThemeHex(activeTheme.text)}1a`,
+                                  color: getThemeHex(activeTheme.text),
+                                  border: `1px solid ${getThemeHex(activeTheme.text)}33`,
+                                }}>
+                            {item.rarity}
+                          </span>
+                        )}
+                      </div>
+                      {!isExpanded && (
+                        <div className="text-[11px] text-muted-foreground leading-snug line-clamp-1">
+                          {item.description}
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="font-bold"
+                      style={{
+                        borderColor: `${getThemeHex(activeTheme.text)}4d`,
+                        color: getThemeHex(activeTheme.text),
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addGear(item);
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="mt-3 pt-3 border-t border-border/10 text-xs text-muted-foreground space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                      {/* Properties Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {item.cost && (
+                          <div className="bg-background/40 p-2 rounded border border-border/10">
+                            <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">Cost</span>
+                            <span className="font-semibold text-foreground">{item.cost}</span>
+                          </div>
+                        )}
+                        {item.weight !== undefined && (
+                          <div className="bg-background/40 p-2 rounded border border-border/10">
+                            <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">Weight</span>
+                            <span className="font-semibold text-foreground">{item.weight} lbs</span>
+                          </div>
+                        )}
+                        <div className="bg-background/40 p-2 rounded border border-border/10">
+                          <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">Rarity</span>
+                          <span className="font-semibold text-foreground">{item.rarity}</span>
+                        </div>
+                        {item.damageDice && (
+                          <div className="bg-background/40 p-2 rounded border border-border/10">
+                            <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">Damage</span>
+                            <span className="font-semibold text-foreground">{item.damageDice} {item.damageType}</span>
+                          </div>
+                        )}
+                        {item.baseAc !== undefined && (
+                          <div className="bg-background/40 p-2 rounded border border-border/10">
+                            <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">AC</span>
+                            <span className="font-semibold text-foreground">{item.baseAc}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Description */}
+                      <div className="space-y-1">
+                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground block">Description</span>
+                        <p className="text-foreground leading-relaxed whitespace-pre-wrap bg-background/25 p-3 rounded-lg border border-border/10">
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {filteredCatalog.length === 0 && (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No matching items found.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Added Custom Equipment Card */}
+        <div className="bg-card/40 border border-border/40 p-6 rounded-2xl backdrop-blur-md space-y-4">
+          <div>
+            <h3 className={`text-xl font-bold mb-1 ${activeTheme.text}`}>Character Inventory</h3>
+            <p className="text-xs text-muted-foreground">Manage quantities, equip/attune status for custom additions.</p>
+          </div>
+
+          <div className="max-h-[300px] overflow-y-auto border border-border/20 rounded-lg divide-y divide-border/20 bg-background/20">
+            {(character.customEquipment || []).map((item) => (
+              <div key={item.name} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 gap-3 hover:bg-secondary/20 transition-colors">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-foreground">{item.name}</span>
+                    <span className="text-[9px] uppercase tracking-wider bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
+                      {item.type}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    Qty: {item.quantity} | {item.rarity}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => updateGearQty(item.name, item.quantity - 1)}
+                      className="w-6 h-6 flex items-center justify-center bg-secondary rounded hover:bg-primary/20 text-sm font-bold"
+                    >
+                      -
+                    </button>
+                    <span className="w-6 text-center text-xs font-mono font-bold">{item.quantity}</span>
+                    <button
+                      onClick={() => updateGearQty(item.name, item.quantity + 1)}
+                      className="w-6 h-6 flex items-center justify-center bg-secondary rounded hover:bg-primary/20 text-sm font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {(item.type === "Weapon" || item.type === "Armor" || item.type === "Shield") && (
+                      <Button
+                        size="sm"
+                        variant={item.equipped ? "default" : "outline"}
+                        className={`text-[10px] h-7 px-2.5 ${item.equipped ? activeTheme.primaryBtn : "border-border/60 hover:bg-secondary/40"}`}
+                        onClick={() => toggleEquip(item.name)}
+                      >
+                        {item.equipped ? "Equipped" : "Equip"}
+                      </Button>
+                    )}
+                    {item.rarity !== "Mundane" && (
+                      <Button
+                        size="sm"
+                        variant={item.attuned ? "default" : "outline"}
+                        className={`text-[10px] h-7 px-2.5 ${item.attuned ? activeTheme.primaryBtn : "border-border/60 hover:bg-secondary/40"}`}
+                        onClick={() => toggleAttune(item.name)}
+                      >
+                        {item.attuned ? "Attuned" : "Attune"}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:bg-destructive/10 h-7 px-2"
+                      onClick={() => removeGear(item.name)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {(character.customEquipment || []).length === 0 && (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No custom items added yet.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1473,13 +2923,26 @@ export function StepSpells({ character, updateCharacter }: StepProps) {
 export function StepReview({
   character,
   validationIssues,
+  theme,
 }: {
   character: BuilderState;
   validationIssues: string[];
+  theme?: ClassTheme;
 }) {
-  const { backgrounds, classes, feats, spells, species, speciesVariants, subclasses, classFeatures } = useLoaderData(
-    { from: "/builder" },
-  ) as any;
+  const activeTheme = theme || DEFAULT_THEME;
+  const {
+    backgrounds,
+    classes,
+    feats,
+    spells,
+    species,
+    speciesVariants,
+    subclasses,
+    classFeatures,
+    magicItems,
+    itemActiveEffects,
+    activeEffects,
+  } = useLoaderData({ from: "/builder" }) as any;
   const race = species.find((r: any) => r.id === character.raceId);
   const subrace = speciesVariants?.find((sv: any) => sv.id === character.speciesVariantId);
   const background = backgrounds.find((b: any) => b.id === character.backgroundId);
@@ -1535,23 +2998,51 @@ export function StepReview({
       character.featChoices.spells.includes(spell.id),
   );
 
+  // Find linked active effects for each custom item
+  const getItemEffects = (itemName: string) => {
+    const dbItem = (magicItems || []).find((mi: any) => mi.name.toLowerCase() === itemName.toLowerCase());
+    if (!dbItem) return [];
+    
+    const linkedEffectIds = (itemActiveEffects || [])
+      .filter((iae: any) => iae.itemId === dbItem.id)
+      .map((iae: any) => iae.effectId);
+      
+    return (activeEffects || []).filter((ae: any) => linkedEffectIds.includes(ae.id));
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-3xl mx-auto">
-      <div className="text-center p-8 bg-gradient-to-b from-primary/10 to-transparent rounded-3xl border border-primary/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-12 bg-primary/20 blur-[100px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 p-12 bg-accent/20 blur-[100px] rounded-full pointer-events-none" />
+      <div className="text-center p-8 rounded-3xl border relative overflow-hidden flex flex-col items-center justify-center gap-4"
+           style={{
+             backgroundImage: `linear-gradient(to bottom, ${getThemeHex(activeTheme.text)}1a, transparent)`,
+             borderColor: `${getThemeHex(activeTheme.text)}33`,
+           }}>
+        <div className="absolute top-0 right-0 p-12 blur-[100px] rounded-full pointer-events-none w-48 h-48 -z-10"
+             style={{ backgroundColor: `${getThemeHex(activeTheme.text)}1a` }} />
+        <div className="absolute bottom-0 left-0 p-12 blur-[100px] rounded-full pointer-events-none w-48 h-48 -z-10"
+             style={{ backgroundColor: `${getThemeHex(activeTheme.text)}10` }} />
 
-        <h2 className="text-5xl font-black tracking-tight bg-gradient-to-br from-white to-primary/50 bg-clip-text text-transparent mb-3 drop-shadow-sm">
-          {character.name}
-        </h2>
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/50 backdrop-blur-md border border-border text-lg font-semibold text-muted-foreground shadow-sm">
-          <span className="text-foreground">Level {character.level}</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-          <span className="text-accent">{subrace ? `${subrace.name} ${race?.name}` : race?.name}</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-          <span className="text-primary">{background?.name}</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-          <span className="text-amber-500">{subclass ? subclass.name : cls?.name}</span>
+        {character.avatarUrl && (
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 shadow-lg shrink-0"
+               style={{ borderColor: `${getThemeHex(activeTheme.text)}66` }}>
+            <img src={character.avatarUrl} alt="Character Avatar" className="w-full h-full object-cover" />
+          </div>
+        )}
+
+        <div>
+          <h2 className="text-5xl font-black tracking-tight bg-clip-text text-transparent mb-3 drop-shadow-sm"
+              style={{ backgroundImage: `linear-gradient(to bottom right, #ffffff, ${getThemeHex(activeTheme.text)})` }}>
+            {character.name}
+          </h2>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/50 backdrop-blur-md border border-border text-lg font-semibold text-muted-foreground shadow-sm">
+            <span className="text-foreground">Level {character.level}</span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: `${getThemeHex(activeTheme.text)}80` }} />
+            <span className="text-accent">{subrace ? `${subrace.name} ${race?.name}` : race?.name}</span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: `${getThemeHex(activeTheme.text)}80` }} />
+            <span className={`${activeTheme.text}`}>{background?.name}</span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: `${getThemeHex(activeTheme.text)}80` }} />
+            <span className="text-amber-500 font-bold">{subclass ? subclass.name : cls?.name}</span>
+          </div>
         </div>
       </div>
 
@@ -1585,7 +3076,8 @@ export function StepReview({
                 <div className="text-[10px] text-accent font-bold">+{backgroundBonus}</div>
               )}
               <div
-                className={`absolute bottom-0 left-0 w-full h-1 ${mod > 0 ? "bg-emerald-500/50" : mod < 0 ? "bg-destructive/50" : "bg-transparent"}`}
+                style={mod > 0 ? { backgroundColor: getThemeHex(activeTheme.text) } : {}}
+                className={`absolute bottom-0 left-0 w-full h-1 ${mod > 0 ? "" : mod < 0 ? "bg-destructive/50" : "bg-transparent"}`}
               />
             </div>
           );
@@ -1609,6 +3101,14 @@ export function StepReview({
                 <span className="font-bold text-foreground">Origin Feat:</span> {originFeat.name}
               </p>
             )}
+            {Object.entries(character.highLevelFeatChoices || {}).map(([lvl, featId]) => {
+              const feat = feats.find((f: any) => f.id === featId);
+              return (
+                <p key={lvl}>
+                  <span className="font-bold text-foreground">Level {lvl} Feat:</span> {feat?.name || featId}
+                </p>
+              );
+            })}
           </CardContent>
         </Card>
 
@@ -1618,15 +3118,27 @@ export function StepReview({
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>
-              <span className="font-bold text-foreground">Class:</span> {cls?.name}
+              <span className="font-bold text-foreground">Class:</span> {cls?.name} {character.level}
+              {(character.multiClasses || []).map((mc) => {
+                const mcCls = classes.find((c: any) => c.id === mc.classId);
+                const mcSub = subclasses.find((s: any) => s.id === mc.subclassId);
+                return ` / ${mcCls?.name || mc.classId} ${mc.level}${mcSub ? ` (${mcSub.name})` : ""}`;
+              })}
             </p>
             <p>
               <span className="font-bold text-foreground">Subclass:</span>{" "}
               {subclass?.name || "Not chosen yet"}
             </p>
             <p>
-              <span className="font-bold text-foreground">Hit Die:</span> d{cls?.hitDice}
+              <span className="font-bold text-foreground">HP Mode:</span>{" "}
+              {character.hpType === "fixed" ? "Fixed (Average)" : "Manual (Rolled)"}
             </p>
+            {character.hpType === "manual" && (
+              <div className="text-xs text-muted-foreground bg-background/30 p-2 rounded border border-border/20 mt-1">
+                <span className="font-bold text-foreground block mb-1">Manual Rolls:</span>
+                {Object.entries(character.manualHpRolls || {}).map(([lvl, roll]) => `Lvl ${lvl}: ${roll}`).join(", ")}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -1674,6 +3186,107 @@ export function StepReview({
               .map((option) => `${option.id}: ${option.summary}`)
               .join(" | ")}
           </p>
+        </CardContent>
+      </Card>
+
+      {(character.customEquipment || []).length > 0 && (
+        <Card className="bg-card/50 border-border/40">
+          <CardHeader>
+            <CardTitle>Custom Starting Inventory</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {character.customEquipment!.map((item) => {
+                const itemEffects = getItemEffects(item.name);
+                return (
+                  <div key={item.name} className="flex flex-col justify-between p-3 rounded bg-background/25 border border-border/20 text-xs gap-2">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <span className="font-bold text-foreground block text-sm">{item.name}</span>
+                        <span className="text-[10px] text-muted-foreground block">
+                          {item.type} | Qty: {item.quantity}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {item.equipped && (
+                          <span className="px-1.5 py-0.5 rounded font-semibold text-[9px] uppercase"
+                                style={{
+                                  backgroundColor: `${getThemeHex(activeTheme.text)}1a`,
+                                  color: getThemeHex(activeTheme.text),
+                                  border: `1px solid ${getThemeHex(activeTheme.text)}33`
+                                }}>
+                            Equipped
+                          </span>
+                        )}
+                        {item.attuned && (
+                          <span className="px-1.5 py-0.5 rounded font-semibold text-[9px] uppercase"
+                                style={{
+                                  backgroundColor: `${getThemeHex(activeTheme.text)}26`,
+                                  color: getThemeHex(activeTheme.text),
+                                  border: `1px solid ${getThemeHex(activeTheme.text)}4d`
+                                }}>
+                            Attuned
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {item.description && (
+                      <span className="text-[10px] text-muted-foreground leading-relaxed italic bg-black/10 p-1.5 rounded border border-border/5">
+                        {item.description}
+                      </span>
+                    )}
+                    {itemEffects.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1 pt-1 border-t border-border/10">
+                        {itemEffects.map((effect: any) => (
+                          <span
+                            key={effect.id}
+                            className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded font-semibold text-[9px] uppercase flex items-center gap-1"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-blue-400" />
+                            Effect: {effect.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="bg-card/50 border-border/40">
+        <CardHeader>
+          <CardTitle>Biography & Details</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div>
+              <span className="font-bold text-foreground block">Player Name</span>
+              {character.playerName || "Native Builder"}
+            </div>
+            <div>
+              <span className="font-bold text-foreground block">Alignment</span>
+              {character.alignment || "None"}
+            </div>
+            <div>
+              <span className="font-bold text-foreground block">Age / Height / Weight</span>
+              {`${character.age || "-"} / ${character.height || "-"} / ${character.weight || "-"}`}
+            </div>
+            <div>
+              <span className="font-bold text-foreground block">Eyes / Skin / Hair</span>
+              {`${character.eyes || "-"} / ${character.skin || "-"} / ${character.hair || "-"}`}
+            </div>
+          </div>
+          {character.backstory && (
+            <div className="pt-2 border-t border-border/20 text-xs">
+              <span className="font-bold text-foreground block mb-1">Backstory:</span>
+              <p className="leading-relaxed whitespace-pre-wrap italic bg-background/20 p-3 rounded-lg border border-border/10">
+                {character.backstory}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

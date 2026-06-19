@@ -230,4 +230,181 @@ describe("createNativePartyMember with active effects", () => {
     // Active effect (speed walk + 5) should be applied
     expect(result.speed).toBe(30 + 5); // 30 base speed + 5 subrace walk bonus = 35
   });
+
+  it("applies high-level feats choice active effects and lists them in feats list", () => {
+    const mockFeatData = {
+      id: "tough",
+      name: "Tough",
+      category: "General",
+      description: "Your HP max increases by 2 for each level.",
+      foundryJson: JSON.stringify({
+        effects: [
+          {
+            disabled: false,
+            changes: [
+              { key: "system.attributes.ac.bonus", mode: "ADD", value: 1 },
+            ],
+          },
+        ],
+      }),
+    };
+
+    const stateWithFeats = {
+      ...mockState,
+      highLevelFeatChoices: {
+        4: "tough",
+      },
+    };
+
+    const result = createNativePartyMember(
+      stateWithFeats,
+      mockRaceData,
+      mockClassData,
+      undefined,
+      undefined,
+      undefined,
+      [],
+      [],
+      {
+        feats: [mockFeatData],
+      },
+    );
+
+    // Feat should be listed in the returned member's feats list
+    const featInfo = result.feats.find((f) => f.name === "Tough");
+    expect(featInfo).toBeDefined();
+    expect(featInfo?.description).toBe(mockFeatData.description);
+
+    // Active effect (AC +1) should be applied
+    expect(result.armorClass).toBe(10 + 1 + 1); // 10 base + 1 dex + 1 feat AC bonus
+  });
+
+  it("calculates multiclassing levels, hit dice pools, and combined spell slots", () => {
+    const wizardClass = {
+      id: "wizard",
+      name: "Wizard",
+      hitDice: 6,
+      spellcastingJson: JSON.stringify({
+        ability: "INT",
+        progression: "full",
+      }),
+    };
+
+    const stateWithMulticlass = {
+      ...mockState,
+      level: 4, // Fighter 4
+      multiClasses: [
+        { classId: "wizard", subclassId: null, level: 2 }, // Wizard 2
+      ],
+    };
+
+    const result = createNativePartyMember(
+      stateWithMulticlass,
+      mockRaceData,
+      mockClassData,
+      undefined,
+      undefined,
+      undefined,
+      [],
+      [],
+      {
+        classes: [mockClassData, wizardClass],
+      },
+    );
+
+    expect(result.level).toBe(6);
+    expect(result.classes).toBe("Fighter 4 / Wizard 2");
+    expect(result.hitDice).toBe("4d10, 2d6");
+    
+    // Caster level 2 slots should be [3] (3 first-level slots)
+    expect(result.spellSlots.length).toBe(1);
+    expect(result.spellSlots[0]).toEqual({ level: 1, max: 3, used: 0 });
+  });
+
+  it("calculates manual HP rolls level-by-level", () => {
+    const stateWithManualHp = {
+      ...mockState,
+      level: 4,
+      abilities: { STR: 10, DEX: 12, CON: 12, INT: 10, WIS: 10, CHA: 10 }, // CON mod +1
+      hpType: "manual" as const,
+      manualHpRolls: {
+        2: 8,
+        3: 6,
+        4: 7,
+      },
+    };
+
+    const result = createNativePartyMember(
+      stateWithManualHp,
+      mockRaceData,
+      { ...mockClassData, hitDice: 10 },
+      undefined,
+      undefined,
+      undefined,
+      [],
+      [],
+      {},
+    );
+
+    // Level 1: 10 + 1 = 11
+    // Level 2: 8 + 1 = 9
+    // Level 3: 6 + 1 = 7
+    // Level 4: 7 + 1 = 8
+    // Total: 11 + 9 + 7 + 8 = 35 HP
+    expect(result.hpMax).toBe(35);
+  });
+
+  it("includes custom equipment and parses its active effects if equipped & attuned", () => {
+    const mockRingOfProtection = {
+      name: "Ring of Protection",
+      foundryJson: JSON.stringify({
+        effects: [
+          {
+            disabled: false,
+            changes: [
+              { key: "system.attributes.ac.bonus", mode: "ADD", value: 1 },
+            ],
+          },
+        ],
+      }),
+    };
+
+    const stateWithCustomGear = {
+      ...mockState,
+      customEquipment: [
+        {
+          name: "Ring of Protection",
+          type: "Wondrous Item",
+          quantity: 1,
+          equipped: true,
+          attuned: true,
+          rarity: "Rare",
+          description: "Adds +1 to AC.",
+        },
+      ],
+    };
+
+    const result = createNativePartyMember(
+      stateWithCustomGear,
+      mockRaceData,
+      mockClassData,
+      undefined,
+      undefined,
+      undefined,
+      [],
+      [],
+      {
+        magicItems: [mockRingOfProtection],
+      },
+    );
+
+    const item = result.inventory.find((i) => i.name === "Ring of Protection");
+    expect(item).toBeDefined();
+    expect(item?.magic).toBe(true);
+    expect(item?.equipped).toBe(true);
+    expect(item?.attuned).toBe(true);
+
+    // AC should be increased by 1 from Ring of Protection
+    expect(result.armorClass).toBe(10 + 1 + 1); // 10 base + 1 dex + 1 ring AC bonus
+  });
 });

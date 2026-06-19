@@ -598,23 +598,49 @@ function unlockedClassFeatureEntries(
       const classId = getField(feature, "classId", "class_id");
       const subclassId = getField(feature, "subclassId", "subclass_id");
       const levelRequired = Number(getField(feature, "levelRequired", "level_required") || 0);
-      return (
-        classId === classData?.id &&
-        (!subclassId || subclassId === subclassData?.id) &&
-        levelRequired <= Number(state.level || 1)
-      );
+      
+      // Check primary class
+      if (classId === classData?.id && (!subclassId || subclassId === subclassData?.id)) {
+        return levelRequired <= Number(state.level || 1);
+      }
+      
+      // Check multiclasses
+      if (state.multiClasses) {
+        const mc = state.multiClasses.find((m: any) => m.classId === classId);
+        if (mc) {
+          if (!subclassId || subclassId === mc.subclassId) {
+            return levelRequired <= Number(mc.level || 0);
+          }
+        }
+      }
+      
+      return false;
     })
-    .map((feature) => ({
-      name: stripTags(feature.name),
-      description: stripTags(feature.description),
-      source: "class" as const,
-      sourceName:
-        subclassData && getField(feature, "subclassId", "subclass_id")
+    .map((feature) => {
+      const classId = getField(feature, "classId", "class_id");
+      const isPrimary = classId === classData?.id;
+      const mc = !isPrimary && state.multiClasses ? state.multiClasses.find((m: any) => m.classId === classId) : null;
+      
+      let sourceName = "Class";
+      if (isPrimary) {
+        sourceName = subclassData && getField(feature, "subclassId", "subclass_id")
           ? subclassData.name
-          : classData?.name || "Class",
-      level: Number(getField(feature, "levelRequired", "level_required") || 0) || undefined,
-      isUnlocked: true,
-    }));
+          : classData?.name || "Class";
+      } else if (mc) {
+        sourceName = mc.subclassId && getField(feature, "subclassId", "subclass_id")
+          ? mc.subclassId
+          : mc.classId;
+      }
+      
+      return {
+        name: stripTags(feature.name),
+        description: stripTags(feature.description),
+        source: "class" as const,
+        sourceName,
+        level: Number(getField(feature, "levelRequired", "level_required") || 0) || undefined,
+        isUnlocked: true,
+      };
+    });
 }
 
 function selectedFeatureOptionDetails(
@@ -914,18 +940,33 @@ function unlockedClassFeatureActions(
       const classId = getField(feature, "classId", "class_id");
       const subclassId = getField(feature, "subclassId", "subclass_id");
       const levelRequired = Number(getField(feature, "levelRequired", "level_required") || 0);
-      return (
-        classId === classData?.id &&
-        (!subclassId || subclassId === subclassData?.id) &&
-        levelRequired <= Number(state.level || 1)
-      );
+      
+      // Check primary class
+      if (classId === classData?.id && (!subclassId || subclassId === subclassData?.id)) {
+        return levelRequired <= Number(state.level || 1);
+      }
+      
+      // Check multiclasses
+      if (state.multiClasses) {
+        const mc = state.multiClasses.find((m: any) => m.classId === classId);
+        if (mc) {
+          if (!subclassId || subclassId === mc.subclassId) {
+            return levelRequired <= Number(mc.level || 0);
+          }
+        }
+      }
+      
+      return false;
     })
     .flatMap((feature) => {
       const description = stripTags(feature.description);
       const activation = activationFromDescription(description);
+      const classId = getField(feature, "classId", "class_id");
+      const featLvl = classId === classData?.id ? (state.level || 1) : (state.multiClasses?.find((m: any) => m.classId === classId)?.level || 1);
+      
       const uses = featureUsesFromDescription(feature.name, description, {
         ...finalScores,
-        level: state.level || 1,
+        level: featLvl,
       });
       if (!activation && !uses) return [];
       return [
@@ -955,12 +996,14 @@ export function createNativePartyMember(
     itemActiveEffects?: any[];
     spellActiveEffects?: any[];
     magicItems?: any[];
+    feats?: any[];
   },
   speciesVariantData?: any,
 ): PartyMember {
   const id = Math.floor(Math.random() * 1000000) + 900000000; // Native IDs are 900M+
   const level = state.level || 1;
-  const proficiencyBonus = Math.ceil(level / 4) + 1;
+  const totalLevel = level + (state.multiClasses || []).reduce((sum: number, mc: any) => sum + (mc.level || 0), 0);
+  const proficiencyBonus = Math.ceil(totalLevel / 4) + 1;
 
   // Gather equipment & inventory first
   const selectedEquipment = [
@@ -971,6 +1014,40 @@ export function createNativePartyMember(
     ...getSelectedEquipment(classData?.startingEquipmentJson, state.classEquipmentOption),
   ];
   const inventory = equipmentToInventory(selectedEquipment);
+
+  if (state.customEquipment) {
+    for (const item of state.customEquipment) {
+      // Find matches in database
+      const dbWeapon = effectData?.weapons?.find((w: any) => w.name.toLowerCase() === item.name.toLowerCase());
+      const dbArmor = effectData?.armor?.find((a: any) => a.name.toLowerCase() === item.name.toLowerCase());
+      const dbMagicItem = effectData?.magicItems?.find((mi: any) => mi.name.toLowerCase() === item.name.toLowerCase());
+      
+      const isShield = item.name.toLowerCase() === "shield";
+      const inferredArmor = ARMOR_AC[item.name];
+      const inferredWeapon = WEAPON_DAMAGE[item.name];
+      
+      // Determine weapon stats
+      const damage = dbWeapon ? `${dbWeapon.damageDice} ${dbWeapon.damageType}` : inferredWeapon?.damage;
+      const properties = dbWeapon ? parseJsonValue(dbWeapon.propertiesJson, []) : inferredWeapon?.properties;
+      
+      // Determine armor stats
+      const armorClass = dbArmor ? dbArmor.baseAc : (isShield ? 2 : inferredArmor?.base);
+      
+      inventory.push({
+        name: item.name,
+        type: item.type || (dbWeapon ? "Weapon" : dbArmor ? "Armor" : isShield ? "Shield" : "Adventuring Gear"),
+        rarity: item.rarity || dbMagicItem?.rarity || "Mundane",
+        magic: Boolean(dbMagicItem || (item.rarity && item.rarity !== "Mundane")),
+        equipped: Boolean(item.equipped),
+        attuned: Boolean(item.attuned),
+        quantity: Number(item.quantity || 1),
+        damage,
+        properties,
+        armorClass,
+        description: item.description || dbMagicItem?.description || dbWeapon?.description || dbArmor?.description,
+      });
+    }
+  }
   const currencies = equipmentToCurrencies(selectedEquipment);
 
   // Ability scores base
@@ -980,6 +1057,34 @@ export function createNativePartyMember(
       Number(state.abilities?.[ability] || 10) + Number(state.abilityBonuses?.[ability] || 0),
     ]),
   ) as Record<string, number>;
+
+  // Apply high-level feat ASI choice (e.g. Resilient, Skill Expert, Ability Score Improvement)
+  if (state.highLevelFeatExtraChoices && effectData?.feats) {
+    for (const [key, extra] of Object.entries(state.highLevelFeatExtraChoices)) {
+      const featId = key.split(":")[1];
+      const featRecord = effectData.feats.find((f: any) => f.id === featId);
+      if (!featRecord) continue;
+      const name = featRecord.name.toLowerCase();
+      if ((name === "skill expert" || featId === "skill-expert" || name === "resilient" || featId.startsWith("resilient")) && extra?.ability) {
+        const ab = extra.ability.toUpperCase();
+        if (baseScores[ab] !== undefined) {
+          baseScores[ab] += 1;
+        }
+      } else if (name === "ability score improvement" || featId === "ability-score-improvement" || featId.startsWith("ability-score-improvement")) {
+        if (extra?.mode === "single" && extra?.ability) {
+          const ab = extra.ability.toUpperCase();
+          if (baseScores[ab] !== undefined) {
+            baseScores[ab] += 2;
+          }
+        } else if (extra?.mode === "split" && extra?.ability1 && extra?.ability2) {
+          const ab1 = extra.ability1.toUpperCase();
+          const ab2 = extra.ability2.toUpperCase();
+          if (baseScores[ab1] !== undefined) baseScores[ab1] += 1;
+          if (baseScores[ab2] !== undefined) baseScores[ab2] += 1;
+        }
+      }
+    }
+  }
 
   // Accumulate all active effects and foundryJson modifications
   const parsedAccumulator: ParsedEffects = {
@@ -1045,6 +1150,23 @@ export function createNativePartyMember(
     );
   }
 
+  // Parse high-level feats foundryJson
+  if (state.highLevelFeatChoices && effectData?.feats) {
+    const selectedHighLevelFeatIds = Object.values(state.highLevelFeatChoices) as string[];
+    for (const featId of selectedHighLevelFeatIds) {
+      const featRecord = effectData.feats.find((f: any) => f.id === featId);
+      if (featRecord?.foundryJson) {
+        parseFoundryJsonEffects(
+          featRecord.foundryJson,
+          parsedAccumulator,
+          baseScores,
+          proficiencyBonus,
+          featRecord.name,
+        );
+      }
+    }
+  }
+
   // 4. Species foundryJson
   if (raceData?.foundryJson) {
     parseFoundryJsonEffects(
@@ -1072,11 +1194,23 @@ export function createNativePartyMember(
     const classId = getField(feature, "classId", "class_id");
     const subclassId = getField(feature, "subclassId", "subclass_id");
     const levelRequired = Number(getField(feature, "levelRequired", "level_required") || 0);
-    return (
-      classId === classData?.id &&
-      (!subclassId || subclassId === subclassData?.id) &&
-      levelRequired <= Number(state.level || 1)
-    );
+    
+    // Check primary class
+    if (classId === classData?.id && (!subclassId || subclassId === subclassData?.id)) {
+      return levelRequired <= Number(state.level || 1);
+    }
+    
+    // Check multiclasses
+    if (state.multiClasses) {
+      const mc = state.multiClasses.find((m: any) => m.classId === classId);
+      if (mc) {
+        if (!subclassId || subclassId === mc.subclassId) {
+          return levelRequired <= Number(mc.level || 0);
+        }
+      }
+    }
+    
+    return false;
   });
   for (const feature of unlockedFeatures) {
     if (feature?.foundryJson) {
@@ -1156,16 +1290,67 @@ export function createNativePartyMember(
 
   // Features, expertises, and skills/saves
   const featureOptionDetails = selectedFeatureOptionDetails(state.featureChoices, classFeatures);
+  
+  const highLevelFeatExpertise: string[] = [];
+  if (state.highLevelFeatExtraChoices) {
+    for (const [key, extra] of Object.entries(state.highLevelFeatExtraChoices)) {
+      const featId = key.split(":")[1];
+      const featRecord = effectData?.feats?.find((f: any) => f.id === featId);
+      if (!featRecord) continue;
+      const name = featRecord.name.toLowerCase();
+      if ((name === "skill expert" || featId === "skill-expert") && extra?.tools) {
+        highLevelFeatExpertise.push(...extra.tools);
+      }
+    }
+  }
+
   const expertiseSkills = new Set(
-    featureOptionDetails
-      .filter((detail) => /expertise/i.test(detail.featureName))
-      .map((detail) => detail.choice.toLowerCase()),
+    [
+      ...featureOptionDetails
+        .filter((detail) => /expertise/i.test(detail.featureName))
+        .map((detail) => detail.choice.toLowerCase()),
+      ...highLevelFeatExpertise.map(e => e.toLowerCase()),
+    ]
   );
 
-  const hitDice = classData?.hitDice ?? 8;
-  const hpMax = classData
-    ? hitDice + conMod + (level - 1) * (Math.floor(hitDice / 2) + 1 + conMod)
-    : 10;
+  const levelHitDice: number[] = [];
+  const primaryHitDie = classData?.hitDice ?? 8;
+  for (let i = 0; i < level; i++) {
+    levelHitDice.push(primaryHitDie);
+  }
+  if (state.multiClasses && effectData?.classes) {
+    for (const mc of state.multiClasses) {
+      const mcCls = effectData.classes.find((c: any) => c.id === mc.classId);
+      const mcHitDie = mcCls?.hitDice ?? 8;
+      for (let i = 0; i < mc.level; i++) {
+        levelHitDice.push(mcHitDie);
+      }
+    }
+  }
+
+  let hpMax = 0;
+  if (levelHitDice.length > 0) {
+    hpMax += levelHitDice[0] + conMod;
+    for (let L = 2; L <= levelHitDice.length; L++) {
+      const die = levelHitDice[L - 1];
+      if (state.hpType === "manual" && state.manualHpRolls?.[L] !== undefined) {
+        hpMax += Number(state.manualHpRolls[L]) + conMod;
+      } else {
+        hpMax += Math.floor(die / 2) + 1 + conMod;
+      }
+    }
+  } else {
+    hpMax = 10;
+  }
+
+  const highLevelFeatSkills: string[] = [];
+  if (state.highLevelFeatExtraChoices) {
+    for (const extra of Object.values(state.highLevelFeatExtraChoices) as any[]) {
+      if (extra?.skills) {
+        highLevelFeatSkills.push(...extra.skills);
+      }
+    }
+  }
 
   const backgroundSkills = parseProficiencyNames(
     getField(backgroundData, "skillProficienciesJson", "skill_proficiencies_json"),
@@ -1181,12 +1366,25 @@ export function createNativePartyMember(
       ...(state.speciesSkillChoices || []),
       ...(state.classSkillChoices || []),
       ...(state.featChoices?.skills || []),
+      ...highLevelFeatSkills,
     ].map((skill) => skill.toLowerCase()),
   );
+  
   const classProficiencies = parseJsonValue(classData?.proficienciesJson, {});
   const savingThrowProficiencies = new Set(
     (classProficiencies?.savingThrows || []).map((save: string) => toAbility(save)),
   );
+  if (state.highLevelFeatExtraChoices) {
+    for (const [key, extra] of Object.entries(state.highLevelFeatExtraChoices)) {
+      const featId = key.split(":")[1];
+      const featRecord = effectData?.feats?.find((f: any) => f.id === featId);
+      if (!featRecord) continue;
+      const name = featRecord.name.toLowerCase();
+      if ((name === "resilient" || featId.startsWith("resilient")) && extra?.ability) {
+        savingThrowProficiencies.add(extra.ability.toUpperCase());
+      }
+    }
+  }
 
   const abilities = Object.entries(finalScores).map(([name, score]) => ({
     name,
@@ -1227,12 +1425,26 @@ export function createNativePartyMember(
     };
   });
 
+  const highLevelFeatTools: string[] = [];
+  if (state.highLevelFeatExtraChoices) {
+    for (const [key, extra] of Object.entries(state.highLevelFeatExtraChoices)) {
+      const featId = key.split(":")[1];
+      const featRecord = effectData?.feats?.find((f: any) => f.id === featId);
+      if (!featRecord) continue;
+      const name = featRecord.name.toLowerCase();
+      if ((name === "skilled" || featId === "skilled") && extra?.tools) {
+        highLevelFeatTools.push(...extra.tools);
+      }
+    }
+  }
+
   const armorProficiencies = asStringArray(classProficiencies?.starting?.armor);
   const weaponProficiencies = asStringArray(classProficiencies?.starting?.weapons);
   const tools = unique([
     ...asStringArray(getField(backgroundData, "toolProficienciesJson", "tool_proficiencies_json")),
     ...(state.backgroundToolChoices || []),
     ...(state.featChoices?.tools || []),
+    ...highLevelFeatTools,
     ...asStringArray(classProficiencies?.starting?.tools),
     ...(state.classToolChoices || []),
     ...parseProficiencyNames(
@@ -1378,7 +1590,7 @@ export function createNativePartyMember(
         state.featChoices?.spells?.includes(spell.id),
     )
     .map((spell) => spell.name);
-  const feats = originFeat
+  const characterFeats = originFeat
     ? [
         {
           name: originFeat.name,
@@ -1389,10 +1601,24 @@ export function createNativePartyMember(
             ...(state.featChoices?.skills || []),
             ...(state.featChoices?.tools || []),
             ...featSpellChoices,
-          ].filter(Boolean),
+          ].filter(Boolean) as string[],
         },
       ]
     : [];
+
+  if (state.highLevelFeatChoices && effectData?.feats) {
+    const selectedHighLevelFeatIds = Object.values(state.highLevelFeatChoices) as string[];
+    for (const featId of selectedHighLevelFeatIds) {
+      const featRecord = effectData.feats.find((f: any) => f.id === featId);
+      if (featRecord) {
+        characterFeats.push({
+          name: featRecord.name,
+          description: stripTags(featRecord.description),
+          choices: [],
+        });
+      }
+    }
+  }
 
   const actions = unlockedClassFeatureActions(
     classFeatures,
@@ -1414,39 +1640,163 @@ export function createNativePartyMember(
   const spellcastingAbility = String(spellcastingData?.ability || "")
     .slice(0, 3)
     .toUpperCase();
-  const spellcasting =
-    spellcastingAbility && finalScores[spellcastingAbility]
-      ? [
-          {
-            className: classData?.name || "Unknown",
-            ability: spellcastingAbility,
-            saveDc: 8 + proficiencyBonus + modifier(finalScores[spellcastingAbility]),
-            attackBonus: proficiencyBonus + modifier(finalScores[spellcastingAbility]),
-          },
-        ]
-      : [];
+
+  // Combine caster level
+  let casterLevelFloat = 0;
+  let pactLevel = 0;
+  
+  // Check primary class
+  const primProg = classData?.spellcastingJson ? parseJsonValue(classData.spellcastingJson, {})?.progression : "";
+  const isMulticlassCaster = (state.multiClasses && state.multiClasses.length > 0 && 
+    (primProg || state.multiClasses.some((mc: any) => {
+      const mcCls = effectData?.classes?.find((c: any) => c.id === mc.classId);
+      return mcCls?.spellcastingJson;
+    }))
+  );
+
+  if (primProg === "full") {
+    casterLevelFloat += level;
+  } else if (primProg === "half") {
+    if (isMulticlassCaster) {
+      casterLevelFloat += Math.floor(level / 2);
+    } else {
+      casterLevelFloat += Math.ceil(level / 2);
+    }
+  } else if (primProg === "artificer") {
+    casterLevelFloat += Math.ceil(level / 2);
+  } else if (primProg === "third" || subclassData?.id === "eldritch-knight" || subclassData?.id === "arcane-trickster") {
+    if (isMulticlassCaster) {
+      casterLevelFloat += Math.floor(level / 3);
+    } else {
+      casterLevelFloat += Math.ceil(level / 3);
+    }
+  } else if (primProg === "pact") {
+    pactLevel += level;
+  }
+
+  // Check multiclasses
+  if (state.multiClasses && effectData?.classes) {
+    for (const mc of state.multiClasses) {
+      const mcCls = effectData.classes.find((c: any) => c.id === mc.classId);
+      if (!mcCls) continue;
+      const mcProgData = parseJsonValue(mcCls.spellcastingJson, {});
+      const mcProg = mcProgData?.progression || "";
+      
+      if (mcProg === "full") {
+        casterLevelFloat += mc.level;
+      } else if (mcProg === "half") {
+        casterLevelFloat += Math.floor(mc.level / 2);
+      } else if (mcProg === "artificer") {
+        casterLevelFloat += Math.ceil(mc.level / 2);
+      } else if (mcProg === "third" || mc.subclassId === "eldritch-knight" || mc.subclassId === "arcane-trickster") {
+        casterLevelFloat += Math.floor(mc.level / 3);
+      } else if (mcProg === "pact") {
+        pactLevel += mc.level;
+      }
+    }
+  }
+
+  const effectiveCasterLevel = Math.max(0, Math.floor(casterLevelFloat));
+  let spellSlots = [];
+  if (effectiveCasterLevel > 0) {
+    spellSlots = (FULL_CASTER_SLOTS[Math.min(20, effectiveCasterLevel) - 1] || []).map((max, index) => ({
+      level: index + 1,
+      max,
+      used: 0,
+    }));
+  }
+  
+  let pactSlots = [];
+  if (pactLevel > 0) {
+    const pact = PACT_SLOTS[Math.min(20, Math.max(1, pactLevel)) - 1];
+    if (pact) {
+      pactSlots = [{ level: pact.level, max: pact.slots, used: 0 }];
+    }
+  }
+
+  // Gather all spellcasting classes
+  const spellcasting = [];
+  if (spellcastingAbility && finalScores[spellcastingAbility]) {
+    spellcasting.push({
+      className: classData?.name || "Unknown",
+      ability: spellcastingAbility,
+      saveDc: 8 + proficiencyBonus + modifier(finalScores[spellcastingAbility]),
+      attackBonus: proficiencyBonus + modifier(finalScores[spellcastingAbility]),
+    });
+  }
+
+  if (state.multiClasses && effectData?.classes) {
+    for (const mc of state.multiClasses) {
+      const mcCls = effectData.classes.find((c: any) => c.id === mc.classId);
+      if (!mcCls) continue;
+      const mcSpellcastingData = parseJsonValue(mcCls.spellcastingJson, {});
+      const mcAbility = String(mcSpellcastingData?.ability || "")
+        .slice(0, 3)
+        .toUpperCase();
+      if (mcAbility && finalScores[mcAbility]) {
+        if (!spellcasting.some((s) => s.className === mcCls.name)) {
+          spellcasting.push({
+            className: mcCls.name,
+            ability: mcAbility,
+            saveDc: 8 + proficiencyBonus + modifier(finalScores[mcAbility]),
+            attackBonus: proficiencyBonus + modifier(finalScores[mcAbility]),
+          });
+        }
+      }
+    }
+  }
+
   const cantrips = selectedSpells
     .filter((spell) => Number(spell.level || 0) === 0)
     .map(spellToPreparedSpell);
   const preparedSpells = selectedSpells
     .filter((spell) => Number(spell.level || 0) > 0)
     .map(spellToPreparedSpell);
-  const spellSlots = getSpellSlots(level, spellcastingData?.progression || "");
-  const pactSlots = getPactSlots(level, spellcastingData?.progression || "");
+
+  let classesString = `${classData?.name || "Unknown"} ${level}`;
+  const subclassesList = subclassData ? [subclassData.name] : [];
+
+  if (state.multiClasses && effectData?.classes) {
+    for (const mc of state.multiClasses) {
+      const mcCls = effectData.classes.find((c: any) => c.id === mc.classId);
+      if (!mcCls) continue;
+      classesString += ` / ${mcCls.name} ${mc.level}`;
+      if (mc.subclassId) {
+        const mcSub = effectData.subclasses?.find((s: any) => s.id === mc.subclassId);
+        if (mcSub) {
+          subclassesList.push(mcSub.name);
+        } else {
+          subclassesList.push(mc.subclassId);
+        }
+      }
+    }
+  }
+
+  // Build hit dice pools
+  const hitDicePools: string[] = [];
+  hitDicePools.push(`${level}d${primaryHitDie}`);
+  if (state.multiClasses && effectData?.classes) {
+    for (const mc of state.multiClasses) {
+      const mcCls = effectData.classes.find((c: any) => c.id === mc.classId);
+      const mcHitDie = mcCls?.hitDice ?? 8;
+      hitDicePools.push(`${mc.level}d${mcHitDie}`);
+    }
+  }
+  const hitDiceString = hitDicePools.join(", ");
 
   const member: PartyMember = {
     id,
     name: state.name || "Unnamed",
-    avatarUrl: null,
+    avatarUrl: state.avatarUrl || null,
     race: speciesVariantData
       ? `${speciesVariantData.name} ${raceData?.name || "Species"}`
       : (raceData?.name || "Unknown"),
     background: backgroundData?.name || "Custom",
-    classes: classData?.name || "Unknown",
-    subclasses: subclassData ? [subclassData.name] : [],
-    level,
-    hpMax: Math.max(level, hpMax) + (originFeat?.id === "tough" ? level * 2 : 0),
-    hpCurrent: Math.max(level, hpMax) + (originFeat?.id === "tough" ? level * 2 : 0),
+    classes: classesString,
+    subclasses: subclassesList,
+    level: totalLevel,
+    hpMax: Math.max(totalLevel, hpMax) + (originFeat?.id === "tough" ? totalLevel * 2 : 0),
+    hpCurrent: Math.max(totalLevel, hpMax) + (originFeat?.id === "tough" ? totalLevel * 2 : 0),
     tempHp: 0,
     inspiration: false,
     exhaustion: 0,
@@ -1477,9 +1827,9 @@ export function createNativePartyMember(
     weaponProficiencies,
     specialSpeeds,
     spellcasting,
-    hitDice: `${level}/${level}d${hitDice}`,
-    feats,
-    alignment: null,
+    hitDice: hitDiceString,
+    feats: characterFeats,
+    alignment: state.alignment || null,
     currencies,
     weightCarried: 0,
     carryingCapacity: finalScores.STR * 15,
@@ -1499,6 +1849,13 @@ export function createNativePartyMember(
       bonds: "",
       flaws: "",
       appearance: "",
+      age: state.age || "",
+      height: state.height || "",
+      weight: state.weight || "",
+      eyes: state.eyes || "",
+      skin: state.skin || "",
+      hair: state.hair || "",
+      backstory: state.backstory || "",
     },
     activeArmorModel: null,
     activeInfusions: [],
@@ -1507,7 +1864,20 @@ export function createNativePartyMember(
     totemAspects: [],
     weaponMasteries,
     creatures: [],
-  };
+    classDetails: [
+      {
+        classId: state.classId,
+        subclassId: state.subclassId || null,
+        level: level,
+      },
+      ...(state.multiClasses || []).map((mc: any) => ({
+        classId: mc.classId,
+        subclassId: mc.subclassId || null,
+        level: mc.level,
+      })),
+    ],
+    playerName: state.playerName || "Native Builder",
+  } as any;
 
   return member;
 }
@@ -1524,6 +1894,61 @@ export const saveNativeCharacter = createServerFn({ method: "POST" })
       JSON.stringify({ success: true, data: character }, null, 2),
       "utf-8",
     );
+
+    // Save to SQLite characters table
+    try {
+      const { db } = await import("./drizzle.server");
+      const schema = await import("../db/schema");
+
+      const classes = (character as any).classDetails || [{
+        classId: character.classes || "",
+        subclassId: character.subclasses?.[0] || null,
+        level: character.level || 1,
+      }];
+
+      await db.insert(schema.characters).values({
+        id: character.id.toString(),
+        name: character.name,
+        playerName: (character as any).playerName || "Native Builder",
+        speciesId: character.race || "unknown",
+        backgroundId: character.background || "unknown",
+        classesJson: JSON.stringify(classes),
+        baseStatsJson: JSON.stringify(character.abilities || {}),
+        currencyJson: JSON.stringify(character.currencies || { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 }),
+        inventoryJson: JSON.stringify(character.inventory || []),
+        equippedWeaponIdsJson: JSON.stringify([]),
+        equippedArmorId: null,
+        attunedItemIdsJson: JSON.stringify([]),
+        currentHp: character.hpCurrent || 10,
+        temporaryHp: character.tempHp || 0,
+        exhaustionLevel: character.exhaustion || 0,
+        heroicInspiration: character.inspiration || false,
+        deathSavesJson: JSON.stringify(character.deathSaves || { successes: 0, failures: 0, stabilized: false }),
+        hitDiceExpendedJson: JSON.stringify([]),
+        spellSlotsExpendedJson: JSON.stringify([]),
+        featureUsesExpendedJson: JSON.stringify([]),
+        activeEffectIdsJson: JSON.stringify([]),
+        rawJson: JSON.stringify(character),
+      }).onConflictDoUpdate({
+        target: schema.characters.id,
+        set: {
+          name: character.name,
+          classesJson: JSON.stringify(classes),
+          baseStatsJson: JSON.stringify(character.abilities || {}),
+          currencyJson: JSON.stringify(character.currencies || { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 }),
+          inventoryJson: JSON.stringify(character.inventory || []),
+          currentHp: character.hpCurrent || 10,
+          temporaryHp: character.tempHp || 0,
+          exhaustionLevel: character.exhaustion || 0,
+          heroicInspiration: character.inspiration || false,
+          deathSavesJson: JSON.stringify(character.deathSaves || { successes: 0, failures: 0, stabilized: false }),
+          rawJson: JSON.stringify(character),
+        }
+      });
+    } catch (dbErr) {
+      console.error("Failed to save character to SQLite table:", dbErr);
+    }
+
     return character.id;
   });
 
@@ -1531,12 +1956,36 @@ export const getNativeCharacter = createServerFn({ method: "GET" })
   .inputValidator(z.object({ id: z.number().int().positive() }))
   .handler(async ({ data }) => {
     if (!data?.id) return null;
+
+    // Try loading from SQLite first
+    try {
+      const { db } = await import("./drizzle.server");
+      const schema = await import("../db/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const rows = await db
+        .select()
+        .from(schema.characters)
+        .where(eq(schema.characters.id, data.id.toString()));
+
+      if (rows.length > 0 && rows[0].rawJson) {
+        const payload = JSON.parse(rows[0].rawJson);
+        payload.isNative = true;
+        return payload as PartyMember;
+      }
+    } catch (dbErr) {
+      console.warn("Failed to load native character from SQLite:", dbErr);
+    }
+
+    // Fallback to cache JSON file
     try {
       const cacheDir = path.join(process.cwd(), "data", "cache");
       const filePath = path.join(cacheDir, `native-char-${data.id}.json`);
       const content = await fs.readFile(filePath, "utf-8");
       const payload = JSON.parse(content);
-      return payload.data as PartyMember;
+      const member = payload.data as PartyMember;
+      member.isNative = true;
+      return member;
     } catch {
       return null;
     }

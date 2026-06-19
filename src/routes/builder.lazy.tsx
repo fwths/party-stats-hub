@@ -1,5 +1,5 @@
 import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Swords,
@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   BookOpen,
   Wand2,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,14 +32,16 @@ import {
   getUnlockedFeatureOptionGroups,
   areFeatureChoicesComplete,
   isSpellStepValid,
+  getPointsUsed,
 } from "@/components/builder/BuilderUtils";
-import { SKILL_OPTIONS, TOOL_OPTIONS } from "@/components/builder/BuilderConstants";
+import { SKILL_OPTIONS, TOOL_OPTIONS, CLASS_THEMES, DEFAULT_THEME } from "@/components/builder/BuilderConstants";
 import {
   StepRace,
   StepBackground,
   StepClass,
   StepAbilities,
   StepSpells,
+  StepBiography,
   StepReview,
 } from "@/components/builder/WizardSteps";
 
@@ -63,39 +66,95 @@ function BuilderWizard() {
     itemActiveEffects,
     spellActiveEffects,
     magicItems,
+    weapons,
+    armor,
   } = Route.useLoaderData() as any;
   const [step, setStep] = useState(1);
-  const [character, setCharacter] = useState<BuilderState>({
-    name: "Unnamed Hero",
-    raceId: null,
-    speciesVariantId: null,
-    backgroundId: null,
-    classId: null,
-    subclassId: null,
-    level: 1,
-    abilities: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
-    abilityBonuses: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
-    speciesTraitChoices: {},
-    speciesSkillChoices: [],
-    speciesToolChoices: [],
-    speciesLanguageChoices: [],
-    backgroundToolChoices: [],
-    backgroundLanguageChoices: [],
-    backgroundEquipmentOption: null,
-    featChoices: { cantrips: [], spells: [], skills: [], tools: [] },
-    classSkillChoices: [],
-    classToolChoices: [],
-    classEquipmentOption: null,
-    featureChoices: {},
-    cantripChoices: [],
-    preparedSpellChoices: [],
+  const [character, setCharacter] = useState<BuilderState>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("party_stats_forge_draft");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // basic validation of parsed data to make sure it's valid
+          if (parsed && typeof parsed === "object" && typeof parsed.name === "string") {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load draft", e);
+      }
+    }
+    return {
+      name: "Unnamed Hero",
+      raceId: null,
+      speciesVariantId: null,
+      backgroundId: null,
+      classId: null,
+      subclassId: null,
+      level: 1,
+      abilities: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+      abilityBonuses: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
+      speciesTraitChoices: {},
+      speciesSkillChoices: [],
+      speciesToolChoices: [],
+      speciesLanguageChoices: [],
+      backgroundToolChoices: [],
+      backgroundLanguageChoices: [],
+      backgroundEquipmentOption: null,
+      featChoices: { cantrips: [], spells: [], skills: [], tools: [] },
+      classSkillChoices: [],
+      classToolChoices: [],
+      classEquipmentOption: null,
+      featureChoices: {},
+      cantripChoices: [],
+      preparedSpellChoices: [],
+      highLevelFeatChoices: {},
+      hpType: "fixed",
+      manualHpRolls: {},
+      customEquipment: [],
+      multiClasses: [],
+      highLevelFeatExtraChoices: {},
+      abilitiesMethod: "standard",
+      cantripChoicesByClass: {},
+      preparedSpellChoicesByClass: {},
+    };
   });
+
+  const theme = character.classId ? (CLASS_THEMES[character.classId] || DEFAULT_THEME) : DEFAULT_THEME;
+  const getThemeHex = (themeText: string) => {
+    const name = themeText.replace("text-", "").replace("-500", "").replace("-400", "");
+    const map: Record<string, string> = {
+      red: "#ef4444",
+      pink: "#ec4899",
+      amber: "#f59e0b",
+      emerald: "#10b981",
+      rose: "#f43f5e",
+      sky: "#0ea5e9",
+      yellow: "#eab308",
+      green: "#22c55e",
+      slate: "#94a3b8",
+      orange: "#f97316",
+      teal: "#14b8a6",
+      violet: "#8b5cf6",
+      cyan: "#06b6d4",
+    };
+    return map[name] || "#10b981";
+  };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("party_stats_forge_draft", JSON.stringify(character));
+    } catch (e) {
+      console.error("Failed to save draft to localStorage", e);
+    }
+  }, [character]);
 
   const updateCharacter = (updates: Partial<BuilderState>) => {
     setCharacter((prev) => ({ ...prev, ...updates }));
   };
 
-  const nextStep = () => setStep((s) => Math.min(6, s + 1));
+  const nextStep = () => setStep((s) => Math.min(7, s + 1));
   const prevStep = () => setStep((s) => Math.max(1, s - 1));
   const validationIssues = getBuilderValidationIssues(character, {
     backgrounds,
@@ -106,6 +165,8 @@ function BuilderWizard() {
     subclasses,
     classFeatures,
     languages,
+    weapons,
+    armor,
   });
 
   const saveCharacter = async () => {
@@ -126,12 +187,34 @@ function BuilderWizard() {
       const originFeat = backgroundData?.originFeatId
         ? feats.find((feat: any) => feat.id === backgroundData.originFeatId)
         : null;
+      const highLevelFeatSpellsList: string[] = [];
+      if (character.highLevelFeatExtraChoices) {
+        for (const extra of Object.values(character.highLevelFeatExtraChoices)) {
+          if (extra.cantrips) highLevelFeatSpellsList.push(...extra.cantrips);
+          if (extra.spells) highLevelFeatSpellsList.push(...extra.spells);
+        }
+      }
+
+      const allClassSpells: string[] = [];
+      if (character.cantripChoicesByClass) {
+        for (const list of Object.values(character.cantripChoicesByClass)) {
+          allClassSpells.push(...list);
+        }
+      }
+      if (character.preparedSpellChoicesByClass) {
+        for (const list of Object.values(character.preparedSpellChoicesByClass)) {
+          allClassSpells.push(...list);
+        }
+      }
+
       const selectedSpells = spells.filter(
         (spell: any) =>
           character.cantripChoices.includes(spell.id) ||
           character.preparedSpellChoices.includes(spell.id) ||
+          allClassSpells.includes(spell.id) ||
           character.featChoices.cantrips.includes(spell.id) ||
-          character.featChoices.spells.includes(spell.id),
+          character.featChoices.spells.includes(spell.id) ||
+          highLevelFeatSpellsList.includes(spell.id),
       );
 
       const newMember = createNativePartyMember(
@@ -143,7 +226,7 @@ function BuilderWizard() {
         originFeat,
         selectedSpells,
         classFeatures,
-        { activeEffects, featureActiveEffects, itemActiveEffects, spellActiveEffects, magicItems },
+        { activeEffects, featureActiveEffects, itemActiveEffects, spellActiveEffects, magicItems, feats, weapons, armor, classes, subclasses },
         speciesVariantData,
       );
       const newId = await saveNativeCharacter({ data: { character: newMember } });
@@ -151,6 +234,9 @@ function BuilderWizard() {
       const ids = addPartyId(readStoredIds(), newId);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
       document.cookie = `${COOKIE_KEY}=${ids.join(",")}; path=/; max-age=31536000; SameSite=Lax`;
+
+      // Clear the draft
+      localStorage.removeItem("party_stats_forge_draft");
 
       alert("Character built natively and added to party!");
       navigate({ to: "/" });
@@ -160,8 +246,8 @@ function BuilderWizard() {
     }
   };
 
-  const isStepValid = () => {
-    if (step === 1) {
+  const isStepValidAt = (stepNum: number) => {
+    if (stepNum === 1) {
       const race = species.find((r: any) => r.id === character.raceId);
       const subraces = speciesVariants?.filter((sv: any) => sv.speciesId === character.raceId) || [];
       return (
@@ -194,7 +280,7 @@ function BuilderWizard() {
         )
       );
     }
-    if (step === 2) {
+    if (stepNum === 2) {
       const background = backgrounds.find((b: any) => b.id === character.backgroundId);
       const originFeat = background?.originFeatId
         ? feats.find((feat: any) => feat.id === background.originFeatId)
@@ -221,7 +307,7 @@ function BuilderWizard() {
         areOriginFeatChoicesComplete(originFeat, character)
       );
     }
-    if (step === 3) {
+    if (stepNum === 3) {
       if (!character.classId) return false;
       const selectedClass = classes.find((c: any) => c.id === character.classId);
       const classProficiencies = parseJsonValue(selectedClass?.proficienciesJson, {});
@@ -246,17 +332,42 @@ function BuilderWizard() {
           character.subclassId !== null)
       );
     }
-    if (step === 4) return Object.values(character.abilities).every((val: number) => val > 0);
-    if (step === 5) return isSpellStepValid(character, classes);
+    if (stepNum === 4) {
+      const method = character.abilitiesMethod || "standard";
+      if (method === "standard") {
+        const sortedVals = Object.values(character.abilities).sort((a, b) => a - b);
+        const expected = [8, 10, 12, 13, 14, 15];
+        return sortedVals.length === 6 && sortedVals.every((v, i) => v === expected[i]);
+      } else if (method === "pointbuy") {
+        const spent = getPointsUsed(character.abilities);
+        const outOfRange = Object.values(character.abilities).some((v) => v < 8 || v > 15);
+        return !outOfRange && spent === 27;
+      } else if (method === "roll") {
+        const outOfRange = Object.values(character.abilities).some((v) => v < 3 || v > 18);
+        const incomplete = Object.values(character.abilities).some((v) => !v || v <= 0);
+        return !incomplete && !outOfRange;
+      }
+      return false;
+    }
+    if (stepNum === 5) {
+      return isSpellStepValid(character, classes);
+    }
     return true;
   };
 
-  return (
-    <div className="container mx-auto p-4 md:p-8 min-h-screen animate-in fade-in duration-700">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-background to-background -z-10" />
+  const isStepValid = () => isStepValidAt(step);
 
-      <div className="flex items-center gap-4 mb-10 relative">
-        <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-32 h-32 bg-primary/20 blur-[50px] rounded-full -z-10" />
+  return (
+    <div 
+      className="container mx-auto p-4 md:p-8 min-h-screen animate-in fade-in duration-700"
+      style={{ '--primary': getThemeHex(theme.text) } as React.CSSProperties}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] via-background to-background -z-10"
+           style={{ backgroundImage: `radial-gradient(ellipse at top, ${getThemeHex(theme.text)}1a, transparent 70%)` }} />
+
+      <div className="flex items-center gap-4 mb-10 relative w-full">
+        <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-32 h-32 blur-[50px] rounded-full -z-10"
+             style={{ backgroundColor: `${getThemeHex(theme.text)}33` }} />
         <Link to="/">
           <Button
             variant="outline"
@@ -269,63 +380,109 @@ function BuilderWizard() {
         <h1 className="text-4xl font-extrabold tracking-tight flex items-center gap-3 bg-gradient-to-r from-primary via-purple-400 to-blue-500 bg-clip-text text-transparent">
           Character Forge
         </h1>
+        <div className="ml-auto">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (
+                confirm(
+                  "Are you sure you want to reset your character draft? All unsaved progress will be lost."
+                )
+              ) {
+                localStorage.removeItem("party_stats_forge_draft");
+                window.location.reload();
+              }
+            }}
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all text-xs font-bold border border-transparent hover:border-destructive/20 rounded-md px-3 py-1.5"
+          >
+            Reset Draft
+          </Button>
+        </div>
       </div>
 
-      <div className="flex gap-4 mb-10 max-w-3xl mx-auto">
+      <div className="flex gap-4 mb-10 max-w-4xl mx-auto">
         {[
           { id: 1, label: "Heritage", icon: User },
           { id: 2, label: "Background", icon: BookOpen },
           { id: 3, label: "Path", icon: Swords },
           { id: 4, label: "Attributes", icon: Dices },
           { id: 5, label: "Spells", icon: Wand2 },
-          { id: 6, label: "Review", icon: Save },
-        ].map((s) => (
-          <div
-            key={s.id}
-            className={`flex-1 flex flex-col items-center p-3 rounded-xl transition-all duration-500 relative overflow-hidden ${
-              step === s.id
-                ? "bg-primary/15 shadow-[0_0_20px_rgba(var(--primary),0.2)] text-primary scale-105"
-                : step > s.id
-                  ? "bg-secondary/30 text-foreground/80 cursor-pointer hover:bg-secondary/50"
-                  : "opacity-40 grayscale"
-            }`}
-            onClick={() => step > s.id && setStep(s.id)}
-          >
-            {step === s.id && (
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent pointer-events-none" />
-            )}
-            <s.icon
-              className={`h-7 w-7 mb-2 transition-transform duration-300 ${step === s.id ? "scale-110 drop-shadow-[0_0_8px_rgba(var(--primary),0.8)]" : ""}`}
-            />
-            <span className="text-xs font-black uppercase tracking-[0.2em]">{s.label}</span>
-            {step > s.id && <div className="absolute bottom-0 left-0 w-full h-1 bg-primary/50" />}
-            {step === s.id && (
-              <div className="absolute bottom-0 left-0 w-full h-1 bg-primary shadow-[0_0_10px_var(--primary)]" />
-            )}
-          </div>
-        ))}
+          { id: 6, label: "Biography", icon: FileText },
+          { id: 7, label: "Review", icon: Save },
+        ].map((s) => {
+          const valid = isStepValidAt(s.id);
+          return (
+            <div
+              key={s.id}
+              className={`flex-1 flex flex-col items-center p-3 rounded-xl transition-all duration-500 relative overflow-hidden cursor-pointer ${
+                step === s.id
+                  ? `${theme.bgActive} ${theme.text} scale-105`
+                  : "bg-secondary/30 text-foreground/80 hover:bg-secondary/50"
+              }`}
+              style={step === s.id ? { boxShadow: `0 0 20px ${getThemeHex(theme.text)}26` } : {}}
+              onClick={() => setStep(s.id)}
+            >
+              {step === s.id && (
+                <div className="absolute inset-0 bg-gradient-to-t from-current/5 to-transparent pointer-events-none" />
+              )}
+              {valid && s.id < 7 && (
+                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-black shadow-sm animate-in zoom-in duration-300"
+                     style={{ backgroundColor: getThemeHex(theme.text) }}>
+                  ✓
+                </div>
+              )}
+              <s.icon
+                className={`h-7 w-7 mb-2 transition-transform duration-300 ${step === s.id ? "scale-110" : ""}`}
+                style={step === s.id ? { filter: `drop-shadow(0 0 8px ${getThemeHex(theme.text)})` } : {}}
+              />
+              <span className="text-xs font-black uppercase tracking-[0.2em]">{s.label}</span>
+              {step > s.id && (
+                <div
+                  className="absolute bottom-0 left-0 w-full h-1"
+                  style={{ backgroundColor: `${getThemeHex(theme.text)}50` }}
+                />
+              )}
+              {step === s.id && (
+                <div
+                  className="absolute bottom-0 left-0 w-full h-1"
+                  style={{
+                    backgroundColor: getThemeHex(theme.text),
+                    boxShadow: `0 0 10px ${getThemeHex(theme.text)}`,
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="bg-card/40 backdrop-blur-md border border-border/40 rounded-2xl p-8 shadow-2xl min-h-[50vh] relative overflow-hidden ring-1 ring-white/5">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-        {step === 1 && <StepRace character={character} updateCharacter={updateCharacter} />}
-        {step === 2 && <StepBackground character={character} updateCharacter={updateCharacter} />}
-        {step === 3 && <StepClass character={character} updateCharacter={updateCharacter} />}
-        {step === 4 && <StepAbilities character={character} updateCharacter={updateCharacter} />}
-        {step === 5 && <StepSpells character={character} updateCharacter={updateCharacter} />}
-        {step === 6 && <StepReview character={character} validationIssues={validationIssues} />}
+        <div
+          className="absolute top-0 left-0 w-full h-1"
+          style={{
+            backgroundImage: `linear-gradient(to right, transparent, ${getThemeHex(theme.text)}50, transparent)`,
+          }}
+        />
+        {step === 1 && <StepRace character={character} updateCharacter={updateCharacter} theme={theme} />}
+        {step === 2 && <StepBackground character={character} updateCharacter={updateCharacter} theme={theme} />}
+        {step === 3 && <StepClass character={character} updateCharacter={updateCharacter} theme={theme} />}
+        {step === 4 && <StepAbilities character={character} updateCharacter={updateCharacter} theme={theme} />}
+        {step === 5 && <StepSpells character={character} updateCharacter={updateCharacter} theme={theme} />}
+        {step === 6 && <StepBiography character={character} updateCharacter={updateCharacter} theme={theme} />}
+        {step === 7 && <StepReview character={character} validationIssues={validationIssues} theme={theme} />}
       </div>
 
-      <div className="flex justify-between mt-8 max-w-3xl mx-auto">
+      <div className="flex justify-between mt-8 max-w-4xl mx-auto">
         <Button variant="outline" onClick={prevStep} disabled={step === 1}>
           <ChevronLeft className="mr-2 h-4 w-4" /> Previous
         </Button>
-        {step < 6 ? (
-          <Button onClick={nextStep} disabled={!isStepValid()}>
+        {step < 7 ? (
+          <Button onClick={nextStep} disabled={!isStepValid()} className={theme.primaryBtn}>
             Next <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         ) : (
-          <Button onClick={saveCharacter} disabled={validationIssues.length > 0}>
+          <Button onClick={saveCharacter} disabled={validationIssues.length > 0} className={theme.primaryBtn}>
             Save Character <Save className="ml-2 h-4 w-4" />
           </Button>
         )}

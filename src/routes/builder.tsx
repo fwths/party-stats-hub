@@ -15,6 +15,8 @@ import {
   getSpellActiveEffectsFromDb,
   getMagicItemsFromDb,
   getSpeciesVariantsFromDb,
+  getWeaponsFromDb,
+  getArmorFromDb,
 } from "@/lib/db-functions";
 
 export const Route = createFileRoute("/builder")({
@@ -34,6 +36,8 @@ export const Route = createFileRoute("/builder")({
     const itemActiveEffects = await getItemActiveEffectsFromDb();
     const spellActiveEffects = await getSpellActiveEffectsFromDb();
     const magicItems = await getMagicItemsFromDb();
+    const weapons = await getWeaponsFromDb();
+    const armor = await getArmorFromDb();
     return {
       classes,
       species,
@@ -50,6 +54,8 @@ export const Route = createFileRoute("/builder")({
       itemActiveEffects,
       spellActiveEffects,
       magicItems,
+      weapons,
+      armor,
     };
   },
 });

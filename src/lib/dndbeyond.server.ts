@@ -30,6 +30,27 @@ async function writeJsonFile(filePath: string, payload: unknown): Promise<void> 
 
 async function fetchCharacter(id: number): Promise<PartyMember> {
   if (id >= 900000000) {
+    // Try to load from SQLite characters table first
+    try {
+      const { db } = await import("./drizzle.server");
+      const schema = await import("../db/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const rows = await db
+        .select()
+        .from(schema.characters)
+        .where(eq(schema.characters.id, id.toString()));
+
+      if (rows.length > 0 && rows[0].rawJson) {
+        const member = JSON.parse(rows[0].rawJson) as PartyMember;
+        (member as any).isNative = true;
+        return member;
+      }
+    } catch (dbErr) {
+      console.warn("Failed to load native character from database:", dbErr);
+    }
+
+    // Fallback to cache JSON file
     const payload = await readJsonFile(await cachePath(`native-char-${id}.json`));
     if (payload?.success && payload?.data) {
       const member = payload.data as PartyMember;

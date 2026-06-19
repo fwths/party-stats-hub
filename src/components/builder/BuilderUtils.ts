@@ -42,6 +42,53 @@ export type BuilderState = {
   featureChoices: Record<string, string[]>;
   cantripChoices: string[];
   preparedSpellChoices: string[];
+  highLevelFeatChoices?: Record<number, string>;
+  
+  // Biography
+  avatarUrl?: string;
+  playerName?: string;
+  alignment?: string;
+  age?: string;
+  height?: string;
+  weight?: string;
+  eyes?: string;
+  skin?: string;
+  hair?: string;
+  backstory?: string;
+  
+  // HP custom rolling
+  hpType: "fixed" | "manual";
+  manualHpRolls?: Record<number, number>;
+  
+  // Custom equipment catalog
+  customEquipment?: Array<{
+    name: string;
+    type: string;
+    quantity: number;
+    equipped: boolean;
+    attuned: boolean;
+    cost?: number;
+    weight?: number;
+    description?: string;
+    rarity?: string;
+  }>;
+  
+  // Multiclassing
+  multiClasses?: Array<{ classId: string; subclassId: string | null; level: number }>;
+  
+  // Nested feat choices
+  highLevelFeatExtraChoices?: Record<string, {
+    skills?: string[];
+    tools?: string[];
+    spells?: string[];
+    cantrips?: string[];
+    ability?: string;
+  }>;
+
+  // New validation and multiclass spellcasting fields
+  abilitiesMethod?: "standard" | "pointbuy" | "roll";
+  cantripChoicesByClass?: Record<string, string[]>;
+  preparedSpellChoicesByClass?: Record<string, string[]>;
 };
 
 export type ChoiceGroup = {
@@ -475,46 +522,135 @@ export function isSpellcaster(cls: any): boolean {
   return Boolean(spellcasting?.progression || spellcasting?.cantrips?.length);
 }
 
-export function getCantripLimit(character: BuilderState, cls: any): number {
+export function getCantripLimit(characterOrLevel: BuilderState | number, cls: any): number {
+  const level = typeof characterOrLevel === "number" ? characterOrLevel : characterOrLevel.level;
   const cantrips = getSpellcastingInfo(cls)?.cantrips;
   if (!Array.isArray(cantrips)) return 0;
-  return Number(cantrips[Math.max(0, character.level - 1)] || 0);
+  return Number(cantrips[Math.max(0, level - 1)] || 0);
 }
 
-export function getMaxSpellLevel(character: BuilderState, cls: any): number {
+export function getMaxSpellLevel(characterOrLevel: BuilderState | number, cls: any): number {
+  const level = typeof characterOrLevel === "number" ? characterOrLevel : characterOrLevel.level;
   const progression = getSpellcastingInfo(cls)?.progression;
   if (!progression) return 0;
-  if (progression === "full") return Math.min(9, Math.ceil(character.level / 2));
+  if (progression === "full") return Math.min(9, Math.ceil(level / 2));
   if (progression === "artificer" || progression === "half") {
-    return Math.min(5, Math.max(1, Math.ceil(character.level / 4)));
+    return Math.min(5, Math.max(1, Math.ceil(level / 4)));
   }
-  if (progression === "third") return Math.min(4, Math.max(1, Math.ceil(character.level / 6)));
+  if (progression === "third") return Math.min(4, Math.max(1, Math.ceil(level / 6)));
   return 1;
 }
 
-export function getPreparedSpellLimit(character: BuilderState, cls: any): number {
+export function getPreparedSpellLimit(
+  characterOrAbilities: BuilderState | Record<string, number>,
+  cls: any,
+  levelInput?: number,
+): number {
   if (!isSpellcaster(cls)) return 0;
+  let abilities: Record<string, number>;
+  let bonuses: Record<string, number> = {};
+  let level: number;
+
+  if (characterOrAbilities && "abilities" in characterOrAbilities) {
+    abilities = characterOrAbilities.abilities;
+    bonuses = characterOrAbilities.abilityBonuses || {};
+    level = characterOrAbilities.level;
+  } else {
+    abilities = characterOrAbilities || {};
+    level = levelInput || 1;
+  }
+
   const byClass = PREPARED_SPELLS_BY_CLASS[cls.id];
-  if (byClass) return Number(byClass[Math.max(0, character.level - 1)] || 0);
+  if (byClass) return Number(byClass[Math.max(0, level - 1)] || 0);
 
   const ability = String(getSpellcastingInfo(cls)?.ability || "int")
     .slice(0, 3)
     .toUpperCase();
   const abilityScore =
-    (character.abilities[ability] || 10) + (character.abilityBonuses[ability] || 0);
-  return Math.max(1, character.level + Math.floor((abilityScore - 10) / 2));
+    (abilities[ability] || 10) + (bonuses[ability] || 0);
+  return Math.max(1, level + Math.floor((abilityScore - 10) / 2));
+}
+
+export function getSpellcasters(character: BuilderState, classes: any[]): Array<{ cls: any; level: number }> {
+  const result: Array<{ cls: any; level: number }> = [];
+  if (character.classId) {
+    const cls = classes.find((c) => c.id === character.classId);
+    if (cls && isSpellcaster(cls)) {
+      result.push({ cls, level: character.level });
+    }
+  }
+  if (character.multiClasses) {
+    for (const mc of character.multiClasses) {
+      if (mc.classId) {
+        const cls = classes.find((c) => c.id === mc.classId);
+        if (cls && isSpellcaster(cls)) {
+          result.push({ cls, level: mc.level });
+        }
+      }
+    }
+  }
+  return result;
+}
+
+export function getClassCantripChoices(character: BuilderState, classId: string): string[] {
+  if (character.cantripChoicesByClass?.[classId]) {
+    return character.cantripChoicesByClass[classId];
+  }
+  if (classId === character.classId) {
+    return character.cantripChoices || [];
+  }
+  return [];
+}
+
+export function getClassPreparedSpellChoices(character: BuilderState, classId: string): string[] {
+  if (character.preparedSpellChoicesByClass?.[classId]) {
+    return character.preparedSpellChoicesByClass[classId];
+  }
+  if (classId === character.classId) {
+    return character.preparedSpellChoices || [];
+  }
+  return [];
+}
+
+export function getPointsUsed(abilities: Record<string, number>): number {
+  const pointCosts: Record<number, number> = {
+    8: 0,
+    9: 1,
+    10: 2,
+    11: 3,
+    12: 4,
+    13: 5,
+    14: 7,
+    15: 9,
+  };
+  let total = 0;
+  for (const ab of ABILITIES) {
+    const val = abilities[ab] || 8;
+    if (val >= 8 && val <= 15) {
+      total += pointCosts[val] || 0;
+    } else {
+      total += val < 8 ? 0 : 9 + (val - 15) * 2;
+    }
+  }
+  return total;
 }
 
 export function isSpellStepValid(character: BuilderState, classes: any[]): boolean {
-  const cls = classes.find((candidate) => candidate.id === character.classId);
-  if (!isSpellcaster(cls)) return true;
-  const cantripLimit = getCantripLimit(character, cls);
-  const preparedLimit = getPreparedSpellLimit(character, cls);
-  return (
-    character.cantripChoices.length === cantripLimit &&
-    character.preparedSpellChoices.length >= Math.min(1, preparedLimit) &&
-    character.preparedSpellChoices.length <= preparedLimit
-  );
+  const spellcasters = getSpellcasters(character, classes);
+  if (spellcasters.length === 0) return true;
+
+  for (const { cls, level } of spellcasters) {
+    const cantripLimit = getCantripLimit(level, cls);
+    const preparedLimit = getPreparedSpellLimit(character.abilities, cls, level);
+    const selectedCantrips = getClassCantripChoices(character, cls.id);
+    const selectedPrepared = getClassPreparedSpellChoices(character, cls.id);
+
+    if (selectedCantrips.length !== cantripLimit) return false;
+    if (selectedPrepared.length < Math.min(1, preparedLimit) || selectedPrepared.length > preparedLimit) {
+      return false;
+    }
+  }
+  return true;
 }
 
 export function getBuilderValidationIssues(
@@ -672,15 +808,122 @@ export function getBuilderValidationIssues(
     }
   }
 
-  if (!Object.values(character.abilities).every((value) => Number(value) > 0)) {
-    issues.push("Assign every ability score.");
+  // Abilities Validation
+  const abilitiesMethod = character.abilitiesMethod || "standard";
+  if (abilitiesMethod === "standard") {
+    const sortedVals = Object.values(character.abilities).sort((a, b) => a - b);
+    const expected = [8, 10, 12, 13, 14, 15];
+    const ok = sortedVals.length === 6 && sortedVals.every((v, i) => v === expected[i]);
+    if (!ok) {
+      issues.push("Assign every ability score using Standard Array values (15, 14, 13, 12, 10, 8) exactly once.");
+    }
+  } else if (abilitiesMethod === "pointbuy") {
+    const spent = getPointsUsed(character.abilities);
+    const outOfRange = Object.values(character.abilities).some((v) => v < 8 || v > 15);
+    if (outOfRange) {
+      issues.push("Point Buy base scores must be between 8 and 15.");
+    }
+    if (spent !== 27) {
+      issues.push(`Spend exactly 27 points in Point Buy (spent: ${spent}/27).`);
+    }
+  } else if (abilitiesMethod === "roll") {
+    const outOfRange = Object.values(character.abilities).some((v) => v < 3 || v > 18);
+    const incomplete = Object.values(character.abilities).some((v) => !v || v <= 0);
+    if (incomplete) {
+      issues.push("Assign every ability score.");
+    } else if (outOfRange) {
+      issues.push("Rolled/manual ability scores must be between 3 and 18.");
+    }
   }
-  if (cls && !isSpellStepValid(character, data.classes)) {
-    const cantripLimit = getCantripLimit(character, cls);
-    const preparedLimit = getPreparedSpellLimit(character, cls);
-    issues.push(
-      `Choose ${cantripLimit} cantrip${cantripLimit === 1 ? "" : "s"} and up to ${preparedLimit} prepared/known spell${preparedLimit === 1 ? "" : "s"}.`,
-    );
+
+  // Spells Validation
+  const spellcasters = getSpellcasters(character, data.classes);
+  for (const { cls: spellcasterClass, level: spellcasterLevel } of spellcasters) {
+    const cantripLimit = getCantripLimit(spellcasterLevel, spellcasterClass);
+    const preparedLimit = getPreparedSpellLimit(character.abilities, spellcasterClass, spellcasterLevel);
+    const selectedCantrips = getClassCantripChoices(character, spellcasterClass.id);
+    const selectedPrepared = getClassPreparedSpellChoices(character, spellcasterClass.id);
+
+    if (selectedCantrips.length !== cantripLimit) {
+      issues.push(`Choose exactly ${cantripLimit} cantrips for ${spellcasterClass.name}.`);
+    }
+    if (selectedPrepared.length < Math.min(1, preparedLimit) || selectedPrepared.length > preparedLimit) {
+      issues.push(`Choose between 1 and ${preparedLimit} prepared spells for ${spellcasterClass.name}.`);
+    }
+  }
+
+  const featLevels = getFeatChoiceLevels(character.classId, character.level);
+  for (const lvl of featLevels) {
+    if (!character.highLevelFeatChoices?.[lvl]) {
+      issues.push(`Choose a feat for level ${lvl}.`);
+    }
+  }
+
+  // Validate nested feat choices
+  if (character.highLevelFeatChoices) {
+    for (const [lvlStr, featId] of Object.entries(character.highLevelFeatChoices)) {
+      const lvl = Number(lvlStr);
+      const featRecord = data.feats.find((f) => f.id === featId);
+      if (!featRecord) continue;
+      const name = featRecord.name.toLowerCase();
+      const extra = character.highLevelFeatExtraChoices?.[`${lvl}:${featId}`];
+
+      if (name === "skilled" || featId === "skilled") {
+        const skillsCount = (extra?.skills || []).length;
+        const toolsCount = (extra?.tools || []).length;
+        if (skillsCount + toolsCount !== 3) {
+          issues.push(`Level ${lvl} Feat (Skilled): Choose exactly 3 skill/tool proficiencies.`);
+        }
+      } else if (name === "magic initiate" || featId.startsWith("magic-initiate")) {
+        if ((extra?.cantrips || []).length !== 2) {
+          issues.push(`Level ${lvl} Feat (Magic Initiate): Choose exactly 2 cantrips.`);
+        }
+        if ((extra?.spells || []).length !== 1) {
+          issues.push(`Level ${lvl} Feat (Magic Initiate): Choose exactly 1 first-level spell.`);
+        }
+        if (!extra?.ability) {
+          issues.push(`Level ${lvl} Feat (Magic Initiate): Choose a spellcasting ability.`);
+        }
+      } else if (name === "skill expert" || featId === "skill-expert") {
+        if (!extra?.ability) {
+          issues.push(`Level ${lvl} Feat (Skill Expert): Choose an ability score to increase.`);
+        }
+        if ((extra?.skills || []).length !== 1) {
+          issues.push(`Level ${lvl} Feat (Skill Expert): Choose 1 skill proficiency.`);
+        }
+      } else if (name === "resilient" || featId.startsWith("resilient")) {
+        if (!extra?.ability) {
+          issues.push(`Level ${lvl} Feat (Resilient): Choose an ability score.`);
+        }
+      }
+    }
+  }
+
+  // Validate multi-classing subclasses and class validity
+  if (character.multiClasses) {
+    for (let i = 0; i < character.multiClasses.length; i++) {
+      const mc = character.multiClasses[i];
+      if (!mc.classId) {
+        issues.push(`Multi-class slot ${i + 1}: Select a class or remove the slot.`);
+        continue;
+      }
+      const availableMcSubclasses = data.subclasses.filter((sub) => sub.classId === mc.classId);
+      const mcSubclassLevel = availableMcSubclasses.length > 0 ? getSubclassChoiceLevel(availableMcSubclasses) : 3;
+      if (availableMcSubclasses.length > 0 && mc.level >= mcSubclassLevel && !mc.subclassId) {
+        const mcClass = data.classes.find((c) => c.id === mc.classId);
+        issues.push(`Multi-class ${mcClass?.name || mc.classId}: Choose a subclass for level ${mcSubclassLevel}+.`);
+      }
+    }
+  }
+
+  // Validate Manual HP rolls
+  if (character.hpType === "manual") {
+    const totalLevel = character.level + (character.multiClasses || []).reduce((sum, mc) => sum + mc.level, 0);
+    for (let lvl = 2; lvl <= totalLevel; lvl++) {
+      if (!character.manualHpRolls?.[lvl] || Number(character.manualHpRolls[lvl]) <= 0) {
+        issues.push(`Level ${lvl} HP Roll: Enter a valid roll value.`);
+      }
+    }
   }
 
   return issues;
@@ -910,4 +1153,18 @@ export function formatPrimaryAbility(raw: string | null | undefined): string {
         : [],
     )
     .join(" or ");
+}
+
+export function getFeatChoiceLevels(classId: string | null, level: number): number[] {
+  if (level < 4) return [];
+  const levels: number[] = [];
+  if (level >= 4) levels.push(4);
+  if (classId === "fighter" && level >= 6) levels.push(6);
+  if (level >= 8) levels.push(8);
+  if (classId === "rogue" && level >= 10) levels.push(10);
+  if (level >= 12) levels.push(12);
+  if (classId === "fighter" && level >= 14) levels.push(14);
+  if (level >= 16) levels.push(16);
+  if (level >= 19) levels.push(19);
+  return levels;
 }

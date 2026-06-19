@@ -314,7 +314,7 @@ export function MarkdownRenderer({
                     <img
                       src={matchMember.avatarUrl}
                       alt={matchMember.name}
-                      className="h-5 w-5 rounded-full object-cover border border-border/50 shadow-sm flex-shrink-0"
+                      className="h-[26px] w-[26px] rounded-full object-cover border border-border/50 shadow-sm flex-shrink-0"
                     />
                   )}
                   <button
@@ -377,7 +377,7 @@ export function MarkdownRenderer({
                   <img
                     src={matchMemberText.avatarUrl}
                     alt={matchMemberText.name}
-                    className="h-5 w-5 rounded-full object-cover border border-border/50 shadow-sm flex-shrink-0"
+                    className="h-[26px] w-[26px] rounded-full object-cover border border-border/50 shadow-sm flex-shrink-0"
                   />
                   <span>{parseInlineStyles(part, onSelectPage)}</span>
                 </span>

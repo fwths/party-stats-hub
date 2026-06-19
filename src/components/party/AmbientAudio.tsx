@@ -146,7 +146,7 @@ export function AmbientAudio() {
     return () => {
       if (fireIntervalRef.current) clearTimeout(fireIntervalRef.current);
     };
-  }, [fireActive, audioCtx]);
+  }, [fireActive, audioCtx, fireVol]);
 
   // Adjust fire volume
   useEffect(() => {
@@ -212,7 +212,7 @@ export function AmbientAudio() {
       }
       windGainRef.current = null;
     }
-  }, [windActive, audioCtx]);
+  }, [windActive, audioCtx, windVol]);
 
   // Adjust wind volume
   useEffect(() => {
@@ -287,7 +287,7 @@ export function AmbientAudio() {
       }
       arcaneGainRef.current = null;
     }
-  }, [arcaneActive, audioCtx]);
+  }, [arcaneActive, audioCtx, arcaneVol]);
 
   // Adjust arcane volume
   useEffect(() => {

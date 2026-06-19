@@ -12,28 +12,35 @@ const sqlite = new Database("sqlite.db");
 const db = drizzle(sqlite, { schema });
 
 function slugify(text: string) {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 const eberronSpecies = ["changeling", "kalashtar", "khoravar", "shifter", "warforged"];
 const ravenloftSpecies = ["dhampir", "hexblood", "lupin", "reborn"];
 
 const sourceMap: Record<string, string> = {
-  "PHB": "Player's Handbook",
-  "XPHB": "Player's Handbook",
-  "MPMM": "Mordenkainen Presents: Monsters of the Multiverse",
-  "SCC": "Strixhaven: A Curriculum of Chaos"
+  PHB: "Player's Handbook",
+  XPHB: "Player's Handbook",
+  MPMM: "Mordenkainen Presents: Monsters of the Multiverse",
+  SCC: "Strixhaven: A Curriculum of Chaos",
 };
 
 async function run() {
   console.log("Fetching 5etools races...");
-  const rawData = await fetch("https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data/races.json").then(res => res.json());
-  
+  const rawData = await fetch(
+    "https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data/races.json",
+  ).then((res) => res.json());
+
   console.log("Fetching 5etools XPHB races...");
-  const xphbData = await fetch("https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data/book/book-xphb.json").then(res => res.json());
-  
+  const xphbData = await fetch(
+    "https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data/book/book-xphb.json",
+  ).then((res) => res.json());
+
   const allRaces = [...(rawData.race || [])];
-  
+
   // Extract XPHB races from book data
   const xphbRaceData = xphbData.data.find((d: any) => d.type === "raceData");
   if (xphbRaceData && xphbRaceData.data) {
@@ -41,39 +48,52 @@ async function run() {
   }
 
   const output: any[] = [];
-  
+
   for (const r of allRaces) {
     const src = r.source;
-    if (src === "PHB") continue; 
-    
+    if (src === "PHB") continue;
+
     let mappedSource = sourceMap[src];
-    if (eberronSpecies.includes(r.name.toLowerCase())) mappedSource = "Eberron: Forge of the Artificer";
-    if (ravenloftSpecies.includes(r.name.toLowerCase())) mappedSource = "Ravenloft: The Horrors Within";
-    
+    if (eberronSpecies.includes(r.name.toLowerCase()))
+      mappedSource = "Eberron: Forge of the Artificer";
+    if (ravenloftSpecies.includes(r.name.toLowerCase()))
+      mappedSource = "Ravenloft: The Horrors Within";
+
     // Specifically skip Shifter and Changeling from MPMM since user's screenshot shows them in Eberron
-    if (mappedSource === "Mordenkainen Presents: Monsters of the Multiverse" && (r.name.toLowerCase() === "shifter" || r.name.toLowerCase() === "changeling" || r.name.toLowerCase() === "centaur")) {
-       // Only skip if the exact version is an old one? Actually, we'll just let the Eberron ones override, 
-       // but we need to drop the MPMM versions if the user wants them strictly under Eberron.
-       // Actually we'll just assign them to Eberron.
+    if (
+      mappedSource === "Mordenkainen Presents: Monsters of the Multiverse" &&
+      (r.name.toLowerCase() === "shifter" ||
+        r.name.toLowerCase() === "changeling" ||
+        r.name.toLowerCase() === "centaur")
+    ) {
+      // Only skip if the exact version is an old one? Actually, we'll just let the Eberron ones override,
+      // but we need to drop the MPMM versions if the user wants them strictly under Eberron.
+      // Actually we'll just assign them to Eberron.
     }
-    
+
     if (mappedSource) {
       const name = r.name;
       const id = slugify(name) + "-" + slugify(mappedSource);
-      const speed = r.speed ? (typeof r.speed === 'object' ? r.speed.walk : r.speed) : 30;
-      const size = r.size ? (r.size.includes('M') ? 'Medium' : r.size.includes('S') ? 'Small' : 'Medium') : 'Medium';
-      
+      const speed = r.speed ? (typeof r.speed === "object" ? r.speed.walk : r.speed) : 30;
+      const size = r.size
+        ? r.size.includes("M")
+          ? "Medium"
+          : r.size.includes("S")
+            ? "Small"
+            : "Medium"
+        : "Medium";
+
       let darkvision = null;
       if (r.darkvision) {
         darkvision = JSON.stringify({ Darkvision: r.darkvision });
       }
-      
+
       // Extract description (first string entry) and features (named sub-entries)
       let description = "";
       const features: { name: string; description: string }[] = [];
       // Traits to skip as features (cosmetic, not gameplay)
       const skipTraits = new Set(["age", "size", "alignment", "languages"]);
-      
+
       if (r.entries) {
         for (const entry of r.entries) {
           if (typeof entry === "string") {
@@ -82,9 +102,7 @@ async function run() {
             // Named trait entry — extract its text content
             let traitDesc = "";
             if (entry.entries) {
-              traitDesc = entry.entries
-                .filter((e: any) => typeof e === "string")
-                .join(" ");
+              traitDesc = entry.entries.filter((e: any) => typeof e === "string").join(" ");
             }
             if (!skipTraits.has(entry.name.toLowerCase())) {
               features.push({ name: entry.name, description: traitDesc });
@@ -95,11 +113,13 @@ async function run() {
       // Clean 5etools formatting tags like {@damage 1d6}, {@spell}, etc.
       const clean = (s: string) => s.replace(/\{@\w+\s+([^|}]+)(?:\|[^}]*)?\}/g, "$1");
       description = clean(description);
-      features.forEach(f => f.description = clean(f.description));
-      
+      features.forEach((f) => (f.description = clean(f.description)));
+
       // If no introductory text, build description from first trait
       if (!description && features.length > 0) {
-        description = features[0].description || `${name} is a playable species with traits like ${features.map(f => f.name).join(", ")}.`;
+        description =
+          features[0].description ||
+          `${name} is a playable species with traits like ${features.map((f) => f.name).join(", ")}.`;
       }
 
       output.push({
@@ -112,7 +132,7 @@ async function run() {
         speed,
         abilityScoreIncreasesJson: "{}",
         sensesJson: darkvision,
-        languagesJson: "[]"
+        languagesJson: "[]",
       });
     }
   }
@@ -128,7 +148,7 @@ async function run() {
     speed: 30,
     abilityScoreIncreasesJson: "{}",
     sensesJson: null,
-    languagesJson: '["Common", "Elvish"]'
+    languagesJson: '["Common", "Elvish"]',
   });
 
   output.push({
@@ -141,7 +161,7 @@ async function run() {
     speed: 30,
     abilityScoreIncreasesJson: "{}",
     sensesJson: '{"Darkvision":60}',
-    languagesJson: '["Common", "Lupin"]'
+    languagesJson: '["Common", "Lupin"]',
   });
 
   const unique = [];
@@ -155,12 +175,12 @@ async function run() {
   }
 
   fs.writeFileSync(path.join(__dirname, "../data/species.json"), JSON.stringify(unique, null, 2));
-  
+
   db.delete(schema.species).run();
   for (const s of unique) {
     db.insert(schema.species).values(s).run();
   }
-  
+
   console.log(`Saved ${unique.length} species instantly without scraping D&D Beyond!`);
 }
 

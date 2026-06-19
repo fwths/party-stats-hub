@@ -6,7 +6,6 @@ import * as schema from "../db/schema";
 const sqlite = new Database("sqlite.db");
 const db = drizzle(sqlite, { schema });
 
-
 async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -32,14 +31,14 @@ async function scrapeSpecies() {
   $(".listing-card").each((_, el) => {
     const searchData = $(el).attr("data-collapsible-search") || "";
     const source = searchData.split("|")[1] || "Unknown Source";
-    
+
     const $link = $(el).find("a.listing-card__link");
     const href = $link.attr("href");
     if (!href || !href.startsWith("/species/")) return;
 
     let name = $link.text().trim();
     name = name.split("\n")[0].trim();
-    
+
     const description = $(el).find("p").first().text().trim();
 
     speciesList.push({ name, url: `https://www.dndbeyond.com${href}`, description, source });
@@ -83,7 +82,7 @@ async function scrapeSpecies() {
           features.push({ name: traitName, description: traitDesc, html: traitHtml });
 
           const lowerDesc = traitDesc.toLowerCase();
-          
+
           if (traitName.toLowerCase().includes("speed")) {
             const match = lowerDesc.match(/(\d+)\s+feet/);
             if (match) currentSpeed = parseInt(match[1]);
@@ -91,30 +90,37 @@ async function scrapeSpecies() {
           if (traitName.toLowerCase().includes("size")) {
             if (lowerDesc.includes("small")) currentSize = "Small";
           }
-          
+
           if (traitName.toLowerCase().includes("ability score increase")) {
-             const abilities = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"];
-             for (const ab of abilities) {
-               const regex = new RegExp(`your ${ab} score increases by (\\d+)`, "i");
-               const match = lowerDesc.match(regex);
-               if (match) abilityScoreIncreases[ab] = parseInt(match[1]);
-             }
-             if (lowerDesc.includes("increases by 2") && lowerDesc.includes("increases by 1")) {
-                 abilityScoreIncreases["any"] = 2;
-                 abilityScoreIncreases["other"] = 1;
-             }
+            const abilities = [
+              "strength",
+              "dexterity",
+              "constitution",
+              "intelligence",
+              "wisdom",
+              "charisma",
+            ];
+            for (const ab of abilities) {
+              const regex = new RegExp(`your ${ab} score increases by (\\d+)`, "i");
+              const match = lowerDesc.match(regex);
+              if (match) abilityScoreIncreases[ab] = parseInt(match[1]);
+            }
+            if (lowerDesc.includes("increases by 2") && lowerDesc.includes("increases by 1")) {
+              abilityScoreIncreases["any"] = 2;
+              abilityScoreIncreases["other"] = 1;
+            }
           }
 
           if (traitName.toLowerCase().includes("darkvision")) {
-             const match = lowerDesc.match(/(\d+)\s+feet/);
-             if (match) senses["Darkvision"] = parseInt(match[1]);
+            const match = lowerDesc.match(/(\d+)\s+feet/);
+            if (match) senses["Darkvision"] = parseInt(match[1]);
           }
 
           if (traitName.toLowerCase().includes("languages")) {
-             const match = lowerDesc.match(/speak, read, and write (.*?)(?:$|\.)/i);
-             if (match) {
-                languages.push(match[1].trim());
-             }
+            const match = lowerDesc.match(/speak, read, and write (.*?)(?:$|\.)/i);
+            if (match) {
+              languages.push(match[1].trim());
+            }
           }
         }
       });
@@ -131,7 +137,10 @@ async function scrapeSpecies() {
           size: currentSize,
           speed: currentSpeed,
           source: s.source,
-          abilityScoreIncreasesJson: Object.keys(abilityScoreIncreases).length > 0 ? JSON.stringify(abilityScoreIncreases) : null,
+          abilityScoreIncreasesJson:
+            Object.keys(abilityScoreIncreases).length > 0
+              ? JSON.stringify(abilityScoreIncreases)
+              : null,
           sensesJson: Object.keys(senses).length > 0 ? JSON.stringify(senses) : null,
           languagesJson: languages.length > 0 ? JSON.stringify(languages) : null,
         })
@@ -144,7 +153,10 @@ async function scrapeSpecies() {
             size: currentSize,
             speed: currentSpeed,
             source: s.source,
-            abilityScoreIncreasesJson: Object.keys(abilityScoreIncreases).length > 0 ? JSON.stringify(abilityScoreIncreases) : null,
+            abilityScoreIncreasesJson:
+              Object.keys(abilityScoreIncreases).length > 0
+                ? JSON.stringify(abilityScoreIncreases)
+                : null,
             sensesJson: Object.keys(senses).length > 0 ? JSON.stringify(senses) : null,
             languagesJson: languages.length > 0 ? JSON.stringify(languages) : null,
           },

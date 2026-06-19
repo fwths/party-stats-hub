@@ -218,9 +218,7 @@ async function initDb() {
     }
   }
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForDb.dbInstance = dbInstance;
-  }
+  globalForDb.dbInstance = dbInstance;
 
   dbInstance.exec(`
     CREATE TABLE IF NOT EXISTS kv_store (

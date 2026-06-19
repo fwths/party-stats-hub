@@ -1,6 +1,40 @@
 import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
 
 // ENGINES & EFFECTS
+export const contentSources = sqliteTable("content_sources", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  group: text("group"),
+  kind: text("kind").notNull(), // book / adventure
+  published: text("published"),
+  rawJson: text("raw_json").notNull(),
+});
+
+export const compendiumEntries = sqliteTable("compendium_entries", {
+  id: text("id").primaryKey(),
+  entityType: text("entity_type").notNull(),
+  name: text("name").notNull(),
+  source: text("source").notNull(),
+  sourceGroup: text("source_group"),
+  sourceFile: text("source_file").notNull(),
+  page: integer("page"),
+  official: integer("official", { mode: "boolean" }).notNull().default(true),
+  rawJson: text("raw_json").notNull(),
+  fluffJson: text("fluff_json"),
+  foundryJson: text("foundry_json"),
+  searchText: text("search_text").notNull(),
+});
+
+export const compendiumFiles = sqliteTable("compendium_files", {
+  id: text("id").primaryKey(),
+  sourceFile: text("source_file").notNull(),
+  source: text("source"),
+  sourceGroup: text("source_group"),
+  official: integer("official", { mode: "boolean" }).notNull().default(true),
+  rawJson: text("raw_json").notNull(),
+});
+
 export const activeEffects = sqliteTable("active_effects", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),

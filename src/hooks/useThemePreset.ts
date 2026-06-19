@@ -21,7 +21,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: "abyssal",
     name: "Abyssal Void",
-    dotColor: "#6809300",
+    dotColor: "#b07dc6",
     variables: {
       "--background": "oklch(0.12 0.02 265)",
       "--foreground": "oklch(0.96 0.015 260)",
@@ -50,7 +50,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: "emerald",
     name: "Emerald Grove",
-    dotColor: "#72012145",
+    dotColor: "#4eb270",
     variables: {
       "--background": "oklch(0.12 0.015 140)",
       "--foreground": "oklch(0.96 0.015 140)",
@@ -79,7 +79,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: "crimson",
     name: "Crimson Bastion",
-    dotColor: "#6201520",
+    dotColor: "#cb4646",
     variables: {
       "--background": "oklch(0.12 0.015 15)",
       "--foreground": "oklch(0.96 0.015 15)",
@@ -108,7 +108,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: "slate",
     name: "Midnight Slate",
-    dotColor: "#68011215",
+    dotColor: "#5c9cd8",
     variables: {
       "--background": "oklch(0.13 0.01 220)",
       "--foreground": "oklch(0.96 0.01 220)",
@@ -137,7 +137,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: "amber",
     name: "Amber Hearth",
-    dotColor: "#7501370",
+    dotColor: "#e5a93b",
     variables: {
       "--background": "oklch(0.13 0.02 45)",
       "--foreground": "oklch(0.96 0.015 45)",

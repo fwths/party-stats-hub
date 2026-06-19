@@ -24,21 +24,22 @@ async function run() {
     "Ravenloft: The Horrors Within",
     "Eberron: Forge of the Artificer",
     "Mordenkainen Presents: Monsters of the Multiverse",
-    "Strixhaven: A Curriculum of Chaos"
+    "Strixhaven: A Curriculum of Chaos",
   ];
 
   console.log("Purging all other species...");
-  const deleted = db.delete(schema.species)
+  const deleted = db
+    .delete(schema.species)
     .where(notInArray(schema.species.source, allowedSources))
     .run();
-  
+
   console.log(`Purged ${deleted.changes} species from the database!`);
 
   console.log("Exporting curated list to cache...");
   const finalSpeciesList = db.select().from(schema.species).all();
   fs.writeFileSync(
-    path.join(__dirname, "../data/species.json"), 
-    JSON.stringify(finalSpeciesList, null, 2)
+    path.join(__dirname, "../data/species.json"),
+    JSON.stringify(finalSpeciesList, null, 2),
   );
 
   console.log(`Successfully curated database down to ${finalSpeciesList.length} species.`);

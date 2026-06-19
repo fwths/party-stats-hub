@@ -1,106 +1,205 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as schema from "../../db/schema";
-import { SpellSchema } from "../zodSchemas";
+import {
+  DAMAGE_TYPE_MAP,
+  SCHOOL_MAP,
+  formatCastingTime,
+  formatDuration,
+  formatRange,
+  renderEntries,
+  slugify,
+  titleCase,
+} from "../5etools-utils";
+import { getSourcePriority, isSourceAllowed } from "../source-config";
 
-export async function seedSpells(db: any) {
-  console.log("Seeding spells from raw data...");
+type Spell = {
+  name: string;
+  source: string;
+  edition?: string;
+  page?: number;
+  level?: number;
+  school?: string;
+  time?: unknown[];
+  range?: unknown;
+  duration?: Array<{ concentration?: boolean }>;
+  components?: {
+    v?: boolean;
+    s?: boolean;
+    m?: string | boolean | { text?: string; cost?: number; consume?: boolean | string };
+  };
+  meta?: { ritual?: boolean };
+  entries?: unknown;
+  entriesHigherLevel?: unknown;
+  damageInflict?: string[];
+  savingThrow?: string[];
+  areaTags?: string[];
+  spellAttack?: string[];
+};
 
-  const spellsFile = path.join(process.cwd(), "src/data/raw/spells/spells.json");
-  if (fs.existsSync(spellsFile)) {
-    try {
-      const rawSpells = fs.readFileSync(spellsFile, "utf-8");
-      const spellsData = JSON.parse(rawSpells);
-      const spellsList = Array.isArray(spellsData) ? spellsData : spellsData.spells || [];
+function readSpellFiles(): Spell[] {
+  const spellsDir = path.join(process.cwd(), "new data/spells");
+  return fs
+    .readdirSync(spellsDir)
+    .filter((file) => /^spells-.*\.json$/i.test(file))
+    .flatMap((file) => {
+      const data = JSON.parse(fs.readFileSync(path.join(spellsDir, file), "utf-8"));
+      return Array.isArray(data.spell) ? data.spell : [];
+    });
+}
 
-      let count = 0;
-      for (const spell of spellsList) {
-        
-        // Map raw Open5e format to Zod strict format
-        const mappedSpell = {
-          id: spell.slug || spell.name.toLowerCase().replace(/\s+/g, "-"),
-          name: spell.name,
-          level: spell.level_int !== undefined ? spell.level_int : (parseInt(spell.level) || 0),
-          school: spell.school || "Unknown",
-          castingTime: spell.casting_time || "1 action",
-          range: spell.range || "Unknown",
-          duration: spell.duration || "Instantaneous",
-          concentration: spell.requires_concentration === true || spell.concentration === "yes",
-          ritual: spell.can_be_cast_as_ritual === true || spell.ritual === "yes",
-          description: spell.desc || spell.description || "",
-          components: {
-            v: !!spell.requires_verbal_components,
-            s: !!spell.requires_somatic_components,
-            m: !!spell.requires_material_components,
-            materialDescription: spell.material || undefined,
-          },
-          // Flat JSON doesn't provide structured damage/saves, we leave them undefined
-          damage: undefined,
-          savingThrow: undefined,
-          areaOfEffect: undefined,
-          attackRoll: undefined,
-          summonsStatBlockIds: undefined,
-          source: spell.document__title || spell.source || "",
-        };
+function getMaterialComponent(component: Spell["components"] extends infer C ? C : never) {
+  const material = component?.m;
+  if (!material) return {};
+  if (typeof material === "string") return { m: true, materialDescription: material };
+  if (typeof material === "boolean") return { m: material };
+  return {
+    m: true,
+    materialDescription: material.text,
+    materialCost: material.cost,
+    consumed: !!material.consume,
+  };
+}
 
-        // Robust Schema Validation
-        const parsedSpell = SpellSchema.safeParse(mappedSpell);
-        if (!parsedSpell.success) {
-          console.error(`Validation failed for spell ${spell.name || "Unknown"}:`, parsedSpell.error.message);
-          continue; // Skip invalid entries to maintain absolute robustness
-        }
-        
-        const validSpell = parsedSpell.data;
+function selectAllowedSpells(spells: Spell[]): Spell[] {
+  const selected = new Map<string, Spell>();
 
-        await db
-          .insert(schema.spells)
-          .values({
-            id: validSpell.id,
-            name: validSpell.name,
-            level: validSpell.level,
-            school: validSpell.school,
-            castingTime: validSpell.castingTime,
-            range: validSpell.range,
-            duration: validSpell.duration,
-            concentration: validSpell.concentration,
-            ritual: validSpell.ritual,
-            description: validSpell.description,
-            componentsJson: JSON.stringify(validSpell.components || {}),
-            damageJson: JSON.stringify([]),
-            healingJson: JSON.stringify({}), 
-            savingThrowJson: JSON.stringify({}),
-            areaOfEffectJson: JSON.stringify({}),
-            attackRoll: false,
-            summonsStatBlockIds: JSON.stringify([]),
-            source: validSpell.source,
-          })
-          .onConflictDoUpdate({
-            target: schema.spells.id,
-            set: {
-              name: validSpell.name,
-              level: validSpell.level,
-              school: validSpell.school,
-              castingTime: validSpell.castingTime,
-              range: validSpell.range,
-              duration: validSpell.duration,
-              concentration: validSpell.concentration,
-              ritual: validSpell.ritual,
-              description: validSpell.description,
-              componentsJson: JSON.stringify(validSpell.components || {}),
-              damageJson: JSON.stringify([]),
-              healingJson: JSON.stringify({}),
-              savingThrowJson: JSON.stringify({}),
-              areaOfEffectJson: JSON.stringify({}),
-              attackRoll: false,
-              summonsStatBlockIds: JSON.stringify([]),
-              source: validSpell.source,
-            },
-          });
+  for (const spell of spells) {
+    if (!isSourceAllowed(spell.source)) continue;
+    const key = spell.name.toLowerCase();
+    const existing = selected.get(key);
+    const existingPriority = existing ? getSourcePriority(existing.source, existing.edition) : -1;
+    const priority = getSourcePriority(spell.source, spell.edition);
+    if (!existing || priority > existingPriority) selected.set(key, spell);
+  }
+
+  return [...selected.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function mapSpell(spell: Spell) {
+  const material = getMaterialComponent(spell.components);
+  const description = [renderEntries(spell.entries), renderEntries(spell.entriesHigherLevel)]
+    .filter(Boolean)
+    .join("\n\n");
+
+  return {
+    id: slugify(spell.name),
+    name: spell.name,
+    level: spell.level || 0,
+    school: SCHOOL_MAP[spell.school || ""] || spell.school || "Unknown",
+    castingTime: formatCastingTime(spell.time as any),
+    range: formatRange(spell.range as any),
+    duration: formatDuration(spell.duration as any),
+    concentration: !!spell.duration?.some((duration) => duration.concentration),
+    ritual: !!spell.meta?.ritual,
+    description,
+    components: {
+      v: !!spell.components?.v,
+      s: !!spell.components?.s,
+      m: !!material.m,
+      materialDescription: material.materialDescription,
+      materialCost: material.materialCost,
+      consumed: material.consumed,
+    },
+    damage: (spell.damageInflict || []).map((damageType) => ({
+      type: DAMAGE_TYPE_MAP[damageType.toUpperCase()] || titleCase(damageType),
+    })),
+    savingThrow: (spell.savingThrow || []).map(titleCase),
+    areaOfEffect: spell.areaTags || [],
+    attackRoll: !!spell.spellAttack?.length,
+    source: spell.source,
+    page: spell.page,
+  };
+}
+
+async function seedClassSpellLinks(db: any, spellIdsByName: Map<string, string>) {
+  const sourcesFile = path.join(process.cwd(), "new data/spells/sources.json");
+  if (!fs.existsSync(sourcesFile)) return;
+
+  const sources = JSON.parse(fs.readFileSync(sourcesFile, "utf-8"));
+  const seen = new Set<string>();
+  let count = 0;
+
+  for (const spellSource of Object.values(sources) as any[]) {
+    for (const [spellName, metadata] of Object.entries(spellSource) as any[]) {
+      const spellId = spellIdsByName.get(spellName.toLowerCase());
+      if (!spellId || !metadata.class) continue;
+
+      for (const classRef of metadata.class) {
+        if (!isSourceAllowed(classRef.source)) continue;
+        const classId = slugify(classRef.name);
+        const linkId = `${classId}:${spellId}`;
+        if (seen.has(linkId)) continue;
+        seen.add(linkId);
+
+        await db.insert(schema.classSpells).values({ classId, spellId }).onConflictDoNothing();
         count++;
       }
-      console.log(`Seeded ${count} spells perfectly.`);
-    } catch (e) {
-      console.error("Error seeding spells:", e);
     }
+  }
+
+  console.log(`Seeded ${count} class spell links.`);
+}
+
+export async function seedSpells(db: any) {
+  console.log("Seeding spells from 5etools data...");
+
+  try {
+    const spells = selectAllowedSpells(readSpellFiles()).map(mapSpell);
+    const spellIdsByName = new Map<string, string>();
+
+    for (const spell of spells) {
+      spellIdsByName.set(spell.name.toLowerCase(), spell.id);
+      await db
+        .insert(schema.spells)
+        .values({
+          id: spell.id,
+          name: spell.name,
+          level: spell.level,
+          school: spell.school,
+          castingTime: spell.castingTime,
+          range: spell.range,
+          duration: spell.duration,
+          concentration: spell.concentration,
+          ritual: spell.ritual,
+          description: spell.description,
+          componentsJson: JSON.stringify(spell.components),
+          damageJson: JSON.stringify(spell.damage),
+          healingJson: JSON.stringify({}),
+          savingThrowJson: JSON.stringify(spell.savingThrow),
+          areaOfEffectJson: JSON.stringify(spell.areaOfEffect),
+          attackRoll: spell.attackRoll,
+          summonsStatBlockIds: JSON.stringify([]),
+          source: spell.source,
+        })
+        .onConflictDoUpdate({
+          target: schema.spells.id,
+          set: {
+            name: spell.name,
+            level: spell.level,
+            school: spell.school,
+            castingTime: spell.castingTime,
+            range: spell.range,
+            duration: spell.duration,
+            concentration: spell.concentration,
+            ritual: spell.ritual,
+            description: spell.description,
+            componentsJson: JSON.stringify(spell.components),
+            damageJson: JSON.stringify(spell.damage),
+            healingJson: JSON.stringify({}),
+            savingThrowJson: JSON.stringify(spell.savingThrow),
+            areaOfEffectJson: JSON.stringify(spell.areaOfEffect),
+            attackRoll: spell.attackRoll,
+            summonsStatBlockIds: JSON.stringify([]),
+            source: spell.source,
+          },
+        });
+    }
+
+    await seedClassSpellLinks(db, spellIdsByName);
+    console.log(`Seeded ${spells.length} spells from 5etools.`);
+  } catch (e) {
+    console.error("Error seeding spells:", e);
+    throw e;
   }
 }

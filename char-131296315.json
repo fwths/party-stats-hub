@@ -9,7 +9,7 @@
     "isAssignedToPlayer": true,
     "readonlyUrl": "https://dndbeyond.com/characters/131296315",
     "decorations": {
-      "avatarUrl": "https://www.dndbeyond.com/avatars/48073/866/1581111423-131296315.jpeg?width=150&height=150&fit=crop&quality=95&auto=webp",
+      "avatarUrl": "https://www.dndbeyond.com/avatars/57273/62/1581111423-131296315.jpeg?width=150&height=150&fit=crop&quality=95&auto=webp",
       "frameAvatarUrl": "https://www.dndbeyond.com/avatars/42748/566/638555576378633300.png",
       "backdropAvatarUrl": "https://www.dndbeyond.com/avatars/42305/5/638535797966901764.png",
       "smallBackdropAvatarUrl": "https://www.dndbeyond.com/avatars/42443/118/638541912175732835.jpeg",
@@ -21,7 +21,7 @@
         "largeBackdropAvatarUrl": "https://www.dndbeyond.com/avatars/43993/222/638609651801454959.jpeg",
         "thumbnailBackdropAvatarUrl": "https://www.dndbeyond.com/avatars/43993/223/638609651803534970.jpeg"
       },
-      "avatarId": 48073866,
+      "avatarId": 57273062,
       "portraitDecorationKey": null,
       "frameAvatarDecorationKey": "subs-ornate-gilded-circle|circle",
       "frameAvatarId": 42748566,
@@ -11146,47 +11146,6 @@
           "ammunition": null
         },
         {
-          "componentId": 10292933,
-          "componentTypeId": 12168134,
-          "id": "9414619",
-          "entityTypeId": "222216831",
-          "limitedUse": null,
-          "name": "Psionic Sorcery",
-          "description": "<p>When you cast any level 1+ spell from your Psionic Spells feature, you can cast it by expending a spell slot as normal or by spending a number of Sorcery Points equal to the spell&rsquo;s level. If you cast the spell using Sorcery Points, it requires no Verbal or Somatic components, and it requires no Material components unless they are consumed by the spell or have a cost specified in it.</p>",
-          "snippet": "When you cast any level 1+ spell from your Psionic Spells feature, you can cast it by expending a spell slot as normal, or by spending a number of Sorcery Points equal to the spell’s level. If you cast the spell using Sorcery Points, it requires no Verbal or Somatic components, and doesn’t require Material components unless they’re consumed by the spell or have a cost specified in it.",
-          "abilityModifierStatId": null,
-          "onMissDescription": "",
-          "saveFailDescription": "",
-          "saveSuccessDescription": "",
-          "saveStatId": null,
-          "fixedSaveDc": null,
-          "attackTypeRange": null,
-          "actionType": 3,
-          "attackSubtype": null,
-          "dice": null,
-          "value": null,
-          "damageTypeId": null,
-          "isMartialArts": false,
-          "isProficient": false,
-          "spellRangeType": null,
-          "displayAsAttack": null,
-          "range": {
-            "range": null,
-            "longRange": null,
-            "aoeType": null,
-            "aoeSize": null,
-            "hasAoeSpecialDescription": false,
-            "minimumRange": null
-          },
-          "activation": {
-            "activationTime": null,
-            "activationType": 8
-          },
-          "numberOfTargets": null,
-          "fixedToHit": null,
-          "ammunition": null
-        },
-        {
           "componentId": 12373811,
           "componentTypeId": 12168134,
           "id": "11522184",
@@ -11523,6 +11482,47 @@
           "name": "Metamagic: Transmuted Spell",
           "description": "<p><em>Cost: 1 Sorcery Point</em></p>\r\n<p>When you cast a spell that deals a type of damage from the following list, you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.</p>",
           "snippet": "When you cast a spell that deals a type of damage from the following list, you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.",
+          "abilityModifierStatId": null,
+          "onMissDescription": "",
+          "saveFailDescription": "",
+          "saveSuccessDescription": "",
+          "saveStatId": null,
+          "fixedSaveDc": null,
+          "attackTypeRange": null,
+          "actionType": 3,
+          "attackSubtype": null,
+          "dice": null,
+          "value": null,
+          "damageTypeId": null,
+          "isMartialArts": false,
+          "isProficient": false,
+          "spellRangeType": null,
+          "displayAsAttack": null,
+          "range": {
+            "range": null,
+            "longRange": null,
+            "aoeType": null,
+            "aoeSize": null,
+            "hasAoeSpecialDescription": false,
+            "minimumRange": null
+          },
+          "activation": {
+            "activationTime": null,
+            "activationType": 8
+          },
+          "numberOfTargets": null,
+          "fixedToHit": null,
+          "ammunition": null
+        },
+        {
+          "componentId": 10292933,
+          "componentTypeId": 12168134,
+          "id": "9414619",
+          "entityTypeId": "222216831",
+          "limitedUse": null,
+          "name": "Psionic Sorcery",
+          "description": "<p>When you cast any level 1+ spell from your Psionic Spells feature, you can cast it by expending a spell slot as normal or by spending a number of Sorcery Points equal to the spell&rsquo;s level. If you cast the spell using Sorcery Points, it requires no Verbal or Somatic components, and it requires no Material components unless they are consumed by the spell or have a cost specified in it.</p>",
+          "snippet": "When you cast any level 1+ spell from your Psionic Spells feature, you can cast it by expending a spell slot as normal, or by spending a number of Sorcery Points equal to the spell’s level. If you cast the spell using Sorcery Points, it requires no Verbal or Somatic components, and doesn’t require Material components unless they’re consumed by the spell or have a cost specified in it.",
           "abilityModifierStatId": null,
           "onMissDescription": "",
           "saveFailDescription": "",
@@ -14912,7 +14912,7 @@
           "characterName": "Echo",
           "characterUrl": "/profile/alexiamantou/characters/132900149",
           "avatarUrl": "https://www.dndbeyond.com/avatars/44427/421/1581111423-132900149.jpeg?width=150&height=150&fit=crop&quality=95&auto=webp",
-          "privacyType": 2,
+          "privacyType": 3,
           "campaignId": null,
           "isAssigned": true
         },
@@ -14944,7 +14944,7 @@
           "characterId": 131296315,
           "characterName": "Willow Alatáriel",
           "characterUrl": "/profile/nickkyr88/characters/131296315",
-          "avatarUrl": "https://www.dndbeyond.com/avatars/48073/866/1581111423-131296315.jpeg?width=150&height=150&fit=crop&quality=95&auto=webp",
+          "avatarUrl": "https://www.dndbeyond.com/avatars/57273/62/1581111423-131296315.jpeg?width=150&height=150&fit=crop&quality=95&auto=webp",
           "privacyType": 3,
           "campaignId": null,
           "isAssigned": true
@@ -14953,7 +14953,7 @@
           "userId": 111390369,
           "username": "fwthsgar",
           "characterId": 97349530,
-          "characterName": "2024 Qemuel",
+          "characterName": "Qemuel",
           "characterUrl": "/profile/fwthsgar/characters/97349530",
           "avatarUrl": "https://www.dndbeyond.com/avatars/57110/67/1581111423-97349530.jpeg?width=150&height=150&fit=crop&quality=95&auto=webp",
           "privacyType": 3,
@@ -14962,7 +14962,340 @@
         }
       ]
     },
-    "creatures": [],
+    "creatures": [
+      {
+        "id": 25093370,
+        "entityTypeId": 779871897,
+        "name": null,
+        "description": null,
+        "isActive": false,
+        "removedHitPoints": 0,
+        "temporaryHitPoints": null,
+        "groupId": 6,
+        "definition": {
+          "id": 6319734,
+          "entityTypeId": 779871897,
+          "name": "Summoned Dryad [4]",
+          "alignmentId": 0,
+          "sizeId": 4,
+          "typeId": 1,
+          "armorClass": 15,
+          "armorClassDescription": "Natural Armor",
+          "averageHitPoints": 50,
+          "hitPointDice": {
+            "diceCount": 4,
+            "diceValue": 10,
+            "diceMultiplier": null,
+            "fixedValue": 10,
+            "diceString": "4d10 + 10"
+          },
+          "movements": [
+            {
+              "movementId": 1,
+              "speed": 30,
+              "notes": ""
+            }
+          ],
+          "passivePerception": 10,
+          "isHomebrew": true,
+          "challengeRatingId": 1,
+          "sourceId": null,
+          "sourcePageNumber": null,
+          "isLegendary": false,
+          "isMythic": false,
+          "hasLair": false,
+          "avatarUrl": "https://www.dndbeyond.com/avatars/55659/284/639100237898725468.png?width=350&height=350&fit=bounds&quality=95&auto=webp",
+          "largeAvatarUrl": "https://www.dndbeyond.com/avatars/55659/285/639100237900685477.png?width=1000&height=1000&fit=bounds&quality=95&auto=webp",
+          "basicAvatarUrl": null,
+          "version": "",
+          "swarm": null,
+          "subTypes": [],
+          "environments": [],
+          "tags": [],
+          "sources": [],
+          "stats": [
+            {
+              "statId": 1,
+              "name": null,
+              "value": 16
+            },
+            {
+              "statId": 2,
+              "name": null,
+              "value": 10
+            },
+            {
+              "statId": 3,
+              "name": null,
+              "value": 15
+            },
+            {
+              "statId": 4,
+              "name": null,
+              "value": 16
+            },
+            {
+              "statId": 5,
+              "name": null,
+              "value": 10
+            },
+            {
+              "statId": 6,
+              "name": null,
+              "value": 6
+            }
+          ],
+          "senses": [],
+          "damageAdjustments": [
+            28
+          ],
+          "conditionImmunities": [],
+          "savingThrows": [],
+          "skills": [],
+          "languages": [],
+          "specialTraitsDescription": "<p><strong><em>Whispering Aura.</em></strong>&nbsp;At the start of each of the dryad's turns, the dryad emits psionic energy if it doesn’t have the Incapacitated condition.&nbsp;<em>Wisdom Saving Throw:</em>&nbsp;DC 15 (16 with Innate Sorcery), each creature (other than you) within 5 feet of the spirit.&nbsp;<em>Failure:</em>&nbsp;2d6 Psychic damage.</p>",
+          "actionsDescription": "<p><strong><em>Multiattack.&nbsp;</em></strong>The dryad makes 2 attacks.</p>\r\n<p><strong><em>Psychic Slam.</em></strong>&nbsp;<em>Melee Attack Roll:</em>&nbsp;+7, reach 5 ft.&nbsp;<em>Hit:&nbsp;</em>1d8 +&nbsp;7 Psychic damage</p>",
+          "reactionsDescription": "",
+          "legendaryActionsDescription": "",
+          "mythicActionsDescription": "",
+          "bonusActionsDescription": "",
+          "characteristicsDescription": "",
+          "lairDescription": "",
+          "languageDescription": null,
+          "languageNote": "Common, Elvish, Halfling, Deep Speech",
+          "hideCr": false,
+          "isLegacy": false,
+          "statBlockType": 1,
+          "initiative": null,
+          "lairChallengeRatingId": null,
+          "gear": "",
+          "slug": ""
+        }
+      },
+      {
+        "id": 25093371,
+        "entityTypeId": 779871897,
+        "name": null,
+        "description": null,
+        "isActive": false,
+        "removedHitPoints": 0,
+        "temporaryHitPoints": null,
+        "groupId": 6,
+        "definition": {
+          "id": 6471642,
+          "entityTypeId": 779871897,
+          "name": "Summoned Pixie [4]",
+          "alignmentId": 0,
+          "sizeId": 4,
+          "typeId": 1,
+          "armorClass": 15,
+          "armorClassDescription": "Natural Armor",
+          "averageHitPoints": 50,
+          "hitPointDice": {
+            "diceCount": 4,
+            "diceValue": 10,
+            "diceMultiplier": null,
+            "fixedValue": 10,
+            "diceString": "4d10 + 10"
+          },
+          "movements": [
+            {
+              "movementId": 1,
+              "speed": 30,
+              "notes": null
+            },
+            {
+              "movementId": 4,
+              "speed": 30,
+              "notes": " (hover)"
+            }
+          ],
+          "passivePerception": 10,
+          "isHomebrew": true,
+          "challengeRatingId": 1,
+          "sourceId": null,
+          "sourcePageNumber": null,
+          "isLegendary": false,
+          "isMythic": false,
+          "hasLair": false,
+          "avatarUrl": "https://www.dndbeyond.com/avatars/56751/925/639150309229261798.png?width=350&height=350&fit=bounds&quality=95&auto=webp",
+          "largeAvatarUrl": "https://www.dndbeyond.com/avatars/56751/926/639150309232721874.png?width=1000&height=1000&fit=bounds&quality=95&auto=webp",
+          "basicAvatarUrl": null,
+          "version": "",
+          "swarm": null,
+          "subTypes": [],
+          "environments": [],
+          "tags": [],
+          "sources": [],
+          "stats": [
+            {
+              "statId": 1,
+              "name": null,
+              "value": 16
+            },
+            {
+              "statId": 2,
+              "name": null,
+              "value": 10
+            },
+            {
+              "statId": 3,
+              "name": null,
+              "value": 15
+            },
+            {
+              "statId": 4,
+              "name": null,
+              "value": 16
+            },
+            {
+              "statId": 5,
+              "name": null,
+              "value": 10
+            },
+            {
+              "statId": 6,
+              "name": null,
+              "value": 6
+            }
+          ],
+          "senses": [],
+          "damageAdjustments": [
+            28
+          ],
+          "conditionImmunities": [],
+          "savingThrows": [],
+          "skills": [],
+          "languages": [],
+          "specialTraitsDescription": "",
+          "actionsDescription": "<p><strong><em>Multiattack.&nbsp;</em></strong>The dryad makes 2 attacks.</p>\r\n<p><strong><em>Pyschic Ray.</em></strong> <em>Ranged Attack Roll</em><em>:</em>&nbsp;+7,&nbsp;range 150 ft. <em>Hit:&nbsp;</em>1d8 +&nbsp;7 Psychic damage</p>",
+          "reactionsDescription": "",
+          "legendaryActionsDescription": "",
+          "mythicActionsDescription": "",
+          "bonusActionsDescription": "",
+          "characteristicsDescription": "",
+          "lairDescription": "",
+          "languageDescription": null,
+          "languageNote": "Common, Elvish, Halfling, Deep Speech",
+          "hideCr": false,
+          "isLegacy": false,
+          "statBlockType": 1,
+          "initiative": null,
+          "lairChallengeRatingId": null,
+          "gear": "",
+          "slug": ""
+        }
+      },
+      {
+        "id": 25093372,
+        "entityTypeId": 779871897,
+        "name": "Summoned Treant [4]",
+        "description": null,
+        "isActive": false,
+        "removedHitPoints": 0,
+        "temporaryHitPoints": null,
+        "groupId": 6,
+        "definition": {
+          "id": 6471630,
+          "entityTypeId": 779871897,
+          "name": "Summoned Treant [4]",
+          "alignmentId": 0,
+          "sizeId": 4,
+          "typeId": 1,
+          "armorClass": 15,
+          "armorClassDescription": "Natural Armor",
+          "averageHitPoints": 50,
+          "hitPointDice": {
+            "diceCount": 4,
+            "diceValue": 10,
+            "diceMultiplier": null,
+            "fixedValue": 10,
+            "diceString": "4d10 + 10"
+          },
+          "movements": [
+            {
+              "movementId": 1,
+              "speed": 30,
+              "notes": null
+            }
+          ],
+          "passivePerception": 10,
+          "isHomebrew": true,
+          "challengeRatingId": 1,
+          "sourceId": null,
+          "sourcePageNumber": null,
+          "isLegendary": false,
+          "isMythic": false,
+          "hasLair": false,
+          "avatarUrl": "https://www.dndbeyond.com/avatars/56751/898/639150307384741149.png?width=350&height=350&fit=bounds&quality=95&auto=webp",
+          "largeAvatarUrl": "https://www.dndbeyond.com/avatars/56751/899/639150307387161206.png?width=1000&height=1000&fit=bounds&quality=95&auto=webp",
+          "basicAvatarUrl": null,
+          "version": "",
+          "swarm": null,
+          "subTypes": [],
+          "environments": [],
+          "tags": [],
+          "sources": [],
+          "stats": [
+            {
+              "statId": 1,
+              "name": null,
+              "value": 16
+            },
+            {
+              "statId": 2,
+              "name": null,
+              "value": 10
+            },
+            {
+              "statId": 3,
+              "name": null,
+              "value": 15
+            },
+            {
+              "statId": 4,
+              "name": null,
+              "value": 16
+            },
+            {
+              "statId": 5,
+              "name": null,
+              "value": 10
+            },
+            {
+              "statId": 6,
+              "name": null,
+              "value": 6
+            }
+          ],
+          "senses": [],
+          "damageAdjustments": [
+            28
+          ],
+          "conditionImmunities": [],
+          "savingThrows": [],
+          "skills": [],
+          "languages": [],
+          "specialTraitsDescription": "<p><strong><em>Regeneration.&nbsp;</em></strong> The treant regains 5 Hit Points at the start of its turn if it has at least 1 Hit Point.</p>",
+          "actionsDescription": "<p><strong><em>Multiattack.&nbsp;</em></strong>The treant&nbsp;makes 2 attacks.</p>\r\n<p><strong><em>Claw.</em></strong> <em>Melee Attack Roll:</em>&nbsp;+7, reach 5 ft.&nbsp;<em>Hit: </em>1d10&nbsp;+&nbsp;7 Slashing damage,&nbsp;and the target can’t regain Hit Points until the start of the treant's next turn.</p>",
+          "reactionsDescription": "",
+          "legendaryActionsDescription": "",
+          "mythicActionsDescription": "",
+          "bonusActionsDescription": "",
+          "characteristicsDescription": "",
+          "lairDescription": "",
+          "languageDescription": null,
+          "languageNote": "Common, Elvish, Halfling, Deep Speech",
+          "hideCr": false,
+          "isLegacy": false,
+          "statBlockType": 1,
+          "initiative": null,
+          "lairChallengeRatingId": null,
+          "gear": "",
+          "slug": ""
+        }
+      }
+    ],
     "optionalOrigins": [],
     "optionalClassFeatures": [
       {
@@ -14972,8 +15305,8 @@
         "affectedClassFeatureDefinitionKey": null
       }
     ],
-    "dateModified": "2026-06-11T22:41:12.747Z",
-    "providedFrom": "cache",
+    "dateModified": "2026-06-18T07:30:48.81Z",
+    "providedFrom": "storage",
     "canEdit": false,
     "status": 0,
     "statusSlug": null,

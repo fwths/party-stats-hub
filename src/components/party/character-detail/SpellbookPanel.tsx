@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   LayoutGrid,
@@ -621,10 +621,13 @@ export default function SpellbookPanel({
     }));
   };
 
-  const getIsPrepared = (s: PreparedSpell) => {
-    if (s.alwaysPrepared || s.level === 0) return true;
-    return localPrepOverride[s.name] !== undefined ? localPrepOverride[s.name] : !!s.prepared;
-  };
+  const getIsPrepared = useCallback(
+    (s: PreparedSpell) => {
+      if (s.alwaysPrepared || s.level === 0) return true;
+      return localPrepOverride[s.name] !== undefined ? localPrepOverride[s.name] : !!s.prepared;
+    },
+    [localPrepOverride],
+  );
 
   const filteredCantrips = useMemo(() => {
     return member.cantrips.filter((c) => {
@@ -695,7 +698,7 @@ export default function SpellbookPanel({
     spellConcentrationFilter,
     spellRitualFilter,
     onlyPreparedFilter,
-    localPrepOverride,
+    getIsPrepared,
   ]);
 
   const filteredLevels = useMemo(() => {

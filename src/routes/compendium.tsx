@@ -1,27 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import {
-  BookOpen,
-  User,
-  Swords,
-  Shield,
-  ScrollText,
-  Sparkles,
-  Ghost,
-  Wand2,
-  Search,
-} from "lucide-react";
-import { getAllRules, getAllRaces, getAllClasses } from "@/lib/srd-engine";
+import { useState } from "react";
+import { BookOpen, User, Swords, ScrollText, Sparkles, Ghost, Wand2, Search } from "lucide-react";
+import { getAllRules } from "@/lib/srd-engine";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 import { useQuery } from "@tanstack/react-query";
 import {
   getClassesFromDb,
+  getContentSourcesFromDb,
   getSpeciesFromDb,
   getSpellsFromDb,
   getMonstersFromDb,
   getMagicItemsFromDb,
+  getCompendiumSearchMetaFromDb,
+  searchCompendiumEntriesFromDb,
 } from "@/lib/db-functions";
 
 export const Route = createFileRoute("/compendium")({
@@ -33,15 +26,41 @@ export const Route = createFileRoute("/compendium")({
   },
 });
 
-type TabType = "rules" | "races" | "classes" | "spells" | "monsters" | "items";
+type TabType = "rules" | "races" | "classes" | "spells" | "monsters" | "items" | "all";
+
+function parseRawJson(value: string | null | undefined) {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function rawEntrySummary(entry: any) {
+  const raw = parseRawJson(entry.rawJson);
+  if (!raw) return entry.searchText || "";
+  const chunks = [raw.description, raw.desc, raw.text, raw.entries, raw.entry]
+    .flat()
+    .filter(Boolean);
+  if (!chunks.length) return entry.searchText || "";
+  return chunks
+    .map((chunk) => (typeof chunk === "string" ? chunk : JSON.stringify(chunk)))
+    .join("\n\n")
+    .slice(0, 4000);
+}
 
 function CompendiumComponent() {
   const { dbClasses, dbSpecies } = Route.useLoaderData();
   const rules = getAllRules();
 
   const [activeTab, setActiveTab] = useState<TabType>("rules");
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(rules[0]?.id || null);
+  const [selectedItemId, setSelectedItemId] = useState<string | number | null>(
+    rules[0]?.id || null,
+  );
   const [search, setSearch] = useState("");
+  const [rawEntityType, setRawEntityType] = useState("");
+  const [rawSource, setRawSource] = useState("");
 
   const { data: spells = [], isLoading: loadingSpells } = useQuery({
     queryKey: ["db-spells"],
@@ -61,7 +80,35 @@ function CompendiumComponent() {
     enabled: activeTab === "items",
   });
 
-  const isLoading = loadingSpells || loadingMonsters || loadingItems;
+  const { data: contentSources = [] } = useQuery({
+    queryKey: ["content-sources"],
+    queryFn: () => getContentSourcesFromDb(),
+    enabled: activeTab === "all",
+  });
+
+  const { data: rawSearchMeta = { entityTypes: [], sources: [] } } = useQuery({
+    queryKey: ["raw-compendium-meta"],
+    queryFn: () => getCompendiumSearchMetaFromDb(),
+    enabled: activeTab === "all",
+  });
+
+  const { data: rawEntries = [], isLoading: loadingRawEntries } = useQuery({
+    queryKey: ["raw-compendium", search, rawEntityType, rawSource],
+    queryFn: () =>
+      searchCompendiumEntriesFromDb({
+        data: {
+          query: search,
+          entityType: rawEntityType || undefined,
+          source: rawSource || undefined,
+          limit: 300,
+        },
+      } as any),
+    enabled: activeTab === "all",
+  });
+
+  const sourceNames = new Map(contentSources.map((source: any) => [source.code, source.name]));
+
+  const isLoading = loadingSpells || loadingMonsters || loadingItems || loadingRawEntries;
 
   const getActiveData = () => {
     switch (activeTab) {
@@ -77,6 +124,8 @@ function CompendiumComponent() {
         return monsters;
       case "items":
         return items;
+      case "all":
+        return rawEntries;
     }
   };
 
@@ -85,6 +134,7 @@ function CompendiumComponent() {
   const filteredData = activeData.filter((item: any) => {
     if (!search) return true;
     const name = item.title || item.name || "";
+    if (activeTab === "all") return true;
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -128,7 +178,7 @@ function CompendiumComponent() {
                 onClick={() => {
                   setActiveTab("classes");
                   setSearch("");
-                  setSelectedItemId(classes[0]?.id);
+                  setSelectedItemId(dbClasses[0]?.id ?? null);
                 }}
               >
                 <Swords className="h-4 w-4 mr-2" /> Classes
@@ -177,6 +227,17 @@ function CompendiumComponent() {
               >
                 <Wand2 className="h-4 w-4 mr-2" /> Items
               </Button>
+              <Button
+                variant={activeTab === "all" ? "default" : "secondary"}
+                size="sm"
+                onClick={() => {
+                  setActiveTab("all");
+                  setSearch("");
+                  setSelectedItemId(null);
+                }}
+              >
+                <BookOpen className="h-4 w-4 mr-2" /> All Data
+              </Button>
             </div>
 
             <div className="relative mt-2">
@@ -189,6 +250,41 @@ function CompendiumComponent() {
                 className="w-full pl-9 pr-3 py-2 bg-background/50 border border-border/50 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
               />
             </div>
+
+            {activeTab === "all" && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <select
+                  value={rawEntityType}
+                  onChange={(event) => {
+                    setRawEntityType(event.target.value);
+                    setSelectedItemId(null);
+                  }}
+                  className="w-full px-2 py-2 bg-background/50 border border-border/50 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">All types</option>
+                  {rawSearchMeta.entityTypes.map((type: any) => (
+                    <option key={type.entityType} value={type.entityType}>
+                      {type.entityType} ({type.count})
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={rawSource}
+                  onChange={(event) => {
+                    setRawSource(event.target.value);
+                    setSelectedItemId(null);
+                  }}
+                  className="w-full px-2 py-2 bg-background/50 border border-border/50 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">All books</option>
+                  {rawSearchMeta.sources.map((source: any) => (
+                    <option key={source.source} value={source.source}>
+                      {sourceNames.get(source.source) || source.source} ({source.count})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </CardHeader>
 
           <CardContent className="flex-1 overflow-y-auto p-2">
@@ -217,6 +313,11 @@ function CompendiumComponent() {
                       }`}
                     >
                       {item.title || item.name}
+                      {activeTab === "all" && (
+                        <span className="block text-[11px] font-normal text-muted-foreground truncate">
+                          {item.entityType} - {item.source}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -254,6 +355,12 @@ function CompendiumComponent() {
                     {selectedItem.description}
                   </CardDescription>
                 )}
+                {activeTab === "all" && (
+                  <CardDescription className="text-sm font-medium text-muted-foreground mt-2">
+                    {selectedItem.entityType} - {selectedItem.source}
+                    {selectedItem.page ? ` - p. ${selectedItem.page}` : ""}
+                  </CardDescription>
+                )}
               </CardHeader>
 
               <CardContent className="prose prose-invert max-w-none prose-p:leading-relaxed prose-headings:text-foreground mt-6">
@@ -263,34 +370,59 @@ function CompendiumComponent() {
                     {selectedItem.content}
                   </div>
                 )}
-                
+
+                {activeTab === "all" && (
+                  <div className="space-y-4">
+                    <div className="whitespace-pre-wrap text-foreground/90">
+                      {rawEntrySummary(selectedItem)}
+                    </div>
+                    <details className="rounded-lg border border-border/40 bg-secondary/10 p-4">
+                      <summary className="cursor-pointer text-sm font-semibold text-primary">
+                        Raw 5etools JSON
+                      </summary>
+                      <pre className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap text-xs text-foreground/80">
+                        {JSON.stringify(parseRawJson(selectedItem.rawJson), null, 2)}
+                      </pre>
+                    </details>
+                  </div>
+                )}
+
                 {/* Species Badges */}
-                {activeTab === "species" && (
-                   <div className="flex flex-wrap gap-3 mb-6 mt-4">
-                     {selectedItem.abilityScoreIncreasesJson && (
-                        <span className="text-sm font-bold bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-md shadow-sm">
-                          ASI: {Object.entries(JSON.parse(selectedItem.abilityScoreIncreasesJson)).map(([k,v]) => `+${v} ${k.toUpperCase()}`).join(", ")}
-                        </span>
-                     )}
-                     {selectedItem.sensesJson && (
-                        <span className="text-sm font-bold bg-green-500/10 border border-green-500/20 text-green-500 px-3 py-1.5 rounded-md shadow-sm">
-                          Senses: {Object.entries(JSON.parse(selectedItem.sensesJson)).map(([k,v]) => `${k} ${v}ft`).join(", ")}
-                        </span>
-                     )}
-                     {selectedItem.languagesJson && (
-                        <span className="text-sm font-bold bg-purple-500/10 border border-purple-500/20 text-purple-500 px-3 py-1.5 rounded-md shadow-sm">
-                          Languages: {JSON.parse(selectedItem.languagesJson).join(", ")}
-                        </span>
-                     )}
-                   </div>
+                {activeTab === "races" && (
+                  <div className="flex flex-wrap gap-3 mb-6 mt-4">
+                    {selectedItem.abilityScoreIncreasesJson && (
+                      <span className="text-sm font-bold bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-md shadow-sm">
+                        ASI:{" "}
+                        {Object.entries(JSON.parse(selectedItem.abilityScoreIncreasesJson))
+                          .map(([k, v]) => `+${v} ${k.toUpperCase()}`)
+                          .join(", ")}
+                      </span>
+                    )}
+                    {selectedItem.sensesJson && (
+                      <span className="text-sm font-bold bg-green-500/10 border border-green-500/20 text-green-500 px-3 py-1.5 rounded-md shadow-sm">
+                        Senses:{" "}
+                        {Object.entries(JSON.parse(selectedItem.sensesJson))
+                          .map(([k, v]) => `${k} ${v}ft`)
+                          .join(", ")}
+                      </span>
+                    )}
+                    {selectedItem.languagesJson && (
+                      <span className="text-sm font-bold bg-purple-500/10 border border-purple-500/20 text-purple-500 px-3 py-1.5 rounded-md shadow-sm">
+                        Languages: {JSON.parse(selectedItem.languagesJson).join(", ")}
+                      </span>
+                    )}
+                  </div>
                 )}
 
                 {/* Open5e Text fields (desc) & DB Spells */}
-                {(selectedItem.desc || selectedItem.description) && activeTab !== "rules" && activeTab !== "classes" && activeTab !== "races" && (
-                  <div className="whitespace-pre-wrap text-foreground/90">
-                    {selectedItem.desc || selectedItem.description}
-                  </div>
-                )}
+                {(selectedItem.desc || selectedItem.description) &&
+                  activeTab !== "rules" &&
+                  activeTab !== "classes" &&
+                  activeTab !== "races" && (
+                    <div className="whitespace-pre-wrap text-foreground/90">
+                      {selectedItem.desc || selectedItem.description}
+                    </div>
+                  )}
                 {(selectedItem.higher_level || selectedItem.higherLevel) && (
                   <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
                     <strong className="text-primary block mb-1">At Higher Levels:</strong>
@@ -317,7 +449,10 @@ function CompendiumComponent() {
                               {feature.name}
                             </strong>
                             {feature.html ? (
-                              <div className="text-foreground/80 prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: feature.html }} />
+                              <div
+                                className="text-foreground/80 prose prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{ __html: feature.html }}
+                              />
                             ) : (
                               <span className="text-foreground/80">{feature.description}</span>
                             )}
@@ -378,33 +513,35 @@ function CompendiumComponent() {
                     <h3 className="text-2xl font-bold mt-8 mb-4 border-b border-border/40 pb-2">
                       Class Features
                     </h3>
-                    {selectedItem.featuresByLevel && Object.entries(selectedItem.featuresByLevel).map(
-                      ([level, features]: [string, any]) => (
-                        <div key={level} className="mt-6">
-                          <h4 className="font-bold text-xl text-primary inline-flex items-center gap-2 mb-3 bg-primary/10 px-3 py-1 rounded-md">
-                            Level {level}
-                          </h4>
-                          <div className="space-y-3">
-                            {features.map((feature: any, idx: number) => (
-                              <div
-                                key={idx}
-                                className="bg-secondary/10 p-4 rounded-lg border-l-4 border-l-primary/50"
-                              >
-                                <strong className="block text-lg mb-1">{feature.name}</strong>
-                                <span className="text-foreground/80 leading-relaxed">
-                                  {feature.description}
-                                </span>
-                              </div>
-                            ))}
+                    {selectedItem.featuresByLevel &&
+                      Object.entries(selectedItem.featuresByLevel).map(
+                        ([level, features]: [string, any]) => (
+                          <div key={level} className="mt-6">
+                            <h4 className="font-bold text-xl text-primary inline-flex items-center gap-2 mb-3 bg-primary/10 px-3 py-1 rounded-md">
+                              Level {level}
+                            </h4>
+                            <div className="space-y-3">
+                              {features.map((feature: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="bg-secondary/10 p-4 rounded-lg border-l-4 border-l-primary/50"
+                                >
+                                  <strong className="block text-lg mb-1">{feature.name}</strong>
+                                  <span className="text-foreground/80 leading-relaxed">
+                                    {feature.description}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ),
-                    )}
+                        ),
+                      )}
                   </div>
                 )}
 
                 {/* Monster Stats Grid */}
-                {(selectedItem.challengeRating !== undefined || selectedItem.challenge_rating !== undefined) && (
+                {(selectedItem.challengeRating !== undefined ||
+                  selectedItem.challenge_rating !== undefined) && (
                   <div className="mt-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
                       <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-lg text-center">
@@ -412,7 +549,9 @@ function CompendiumComponent() {
                           Armor Class
                         </span>
                         <span className="text-2xl font-black">
-                          {selectedItem.acJson ? JSON.parse(selectedItem.acJson)[0]?.value : selectedItem.armor_class}
+                          {selectedItem.acJson
+                            ? JSON.parse(selectedItem.acJson)[0]?.value
+                            : selectedItem.armor_class}
                         </span>
                       </div>
                       <div className="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-lg text-center">
@@ -420,7 +559,9 @@ function CompendiumComponent() {
                           Hit Points
                         </span>
                         <span className="text-2xl font-black">
-                          {selectedItem.hpJson ? JSON.parse(selectedItem.hpJson).average : selectedItem.hit_points}
+                          {selectedItem.hpJson
+                            ? JSON.parse(selectedItem.hpJson).average
+                            : selectedItem.hit_points}
                         </span>
                       </div>
                       <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg text-center">
@@ -428,10 +569,15 @@ function CompendiumComponent() {
                           Speed
                         </span>
                         <span className="text-lg font-bold">
-                          {selectedItem.speedJson ? 
-                            Object.entries(JSON.parse(selectedItem.speedJson)).map(([k, v]) => `${k} ${v}ft`).join(", ") :
-                            (selectedItem.speed ? Object.entries(selectedItem.speed).map(([k, v]) => `${k} ${v}ft`).join(", ") : "30ft")
-                          }
+                          {selectedItem.speedJson
+                            ? Object.entries(JSON.parse(selectedItem.speedJson))
+                                .map(([k, v]) => `${k} ${v}ft`)
+                                .join(", ")
+                            : selectedItem.speed
+                              ? Object.entries(selectedItem.speed)
+                                  .map(([k, v]) => `${k} ${v}ft`)
+                                  .join(", ")
+                              : "30ft"}
                         </span>
                       </div>
                       <div className="bg-purple-500/10 border border-purple-500/20 p-3 rounded-lg text-center">
@@ -451,12 +597,17 @@ function CompendiumComponent() {
                           Actions
                         </h3>
                         <div className="space-y-4">
-                          {(selectedItem.actionsJson ? JSON.parse(selectedItem.actionsJson) : selectedItem.actions).map((act: any, i: number) => (
+                          {(selectedItem.actionsJson
+                            ? JSON.parse(selectedItem.actionsJson)
+                            : selectedItem.actions
+                          ).map((act: any, i: number) => (
                             <div key={i} className="p-4 bg-secondary/10 rounded-lg">
                               <strong className="text-lg block text-foreground mb-1">
                                 {act.name}
                               </strong>
-                              <span className="text-foreground/80">{act.desc || act.description}</span>
+                              <span className="text-foreground/80">
+                                {act.desc || act.description}
+                              </span>
                             </div>
                           ))}
                         </div>

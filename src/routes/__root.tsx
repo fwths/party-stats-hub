@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useNavigate,
   HeadContent,
   Scripts,
   redirect,
@@ -168,6 +169,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -188,14 +190,14 @@ function RootComponent() {
         try {
           const { authenticated } = await m.checkAuthFn();
           if (!authenticated && window.location.pathname !== "/login") {
-            window.location.href = "/login";
+            navigate({ to: "/login" });
           }
         } catch (err) {
           console.warn("Client-side auth check failed:", err);
         }
       });
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {

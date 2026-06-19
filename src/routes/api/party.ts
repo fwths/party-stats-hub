@@ -18,7 +18,6 @@ export const Route = createFileRoute("/api/party")({
           headers: {
             "Content-Type": "application/json",
             "Cache-Control": "public, max-age=10",
-            "Access-Control-Allow-Origin": "*",
           },
         });
       },

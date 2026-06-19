@@ -1,687 +1,49 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useEffect, useRef } from "react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Eye,
-  EyeOff,
-  EarOff,
-  Ghost,
-  Hand,
-  Ban,
-  Snowflake,
-  Mountain,
-  FlaskConical,
-  ArrowDown,
-  Lock,
-  Zap,
-  Moon,
-  Brain,
   Heart,
-  Flame,
-  HeartCrack,
-  Skull,
-  Sparkles,
-  AlertCircle,
-  Swords,
+  Star,
+  Lock,
   Shield,
-  Search,
+  Zap,
+  Flame,
   Coins,
   Dumbbell,
-  Package,
+  Sparkles,
+  Eye,
+  Search,
+  Brain,
+  Moon,
   Award,
-  BookOpen,
-  Compass,
-  Crown,
-  Star,
-  Plus,
+  Swords,
 } from "lucide-react";
-import { PartyMember, InventoryItem } from "@/lib/dndbeyond.functions";
-import { CONDITION_BY_NAME, SKILL_ABILITY } from "@/lib/constants";
-import { X } from "lucide-react";
+import { PartyMember } from "@/lib/dndbeyond.functions";
+import { SKILL_ABILITY } from "@/lib/constants";
 import { Link } from "@tanstack/react-router";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 
-export const ABILITY_DETAILS: Record<
-  string,
-  {
-    Icon: React.ComponentType<{ size?: number; className?: string }>;
-    colorClass: string;
-    borderClass: string;
-    bgClass: string;
-    glowClass: string;
-    hoverGlowClass: string;
-  }
-> = {
-  STR: {
-    Icon: Dumbbell,
-    colorClass: "text-stat-str",
-    borderClass: "border-stat-str/20",
-    bgClass: "bg-stat-str/5",
-    glowClass: "shadow-stat-str/5",
-    hoverGlowClass: "hover:shadow-stat-str/15 hover:border-stat-str/40 hover:bg-stat-str/10",
-  },
-  DEX: {
-    Icon: Zap,
-    colorClass: "text-stat-dex",
-    borderClass: "border-stat-dex/20",
-    bgClass: "bg-stat-dex/5",
-    glowClass: "shadow-stat-dex/5",
-    hoverGlowClass: "hover:shadow-stat-dex/15 hover:border-stat-dex/40 hover:bg-stat-dex/10",
-  },
-  CON: {
-    Icon: Heart,
-    colorClass: "text-stat-con",
-    borderClass: "border-stat-con/20",
-    bgClass: "bg-stat-con/5",
-    glowClass: "shadow-stat-con/5",
-    hoverGlowClass: "hover:shadow-stat-con/15 hover:border-stat-con/40 hover:bg-stat-con/10",
-  },
-  INT: {
-    Icon: BookOpen,
-    colorClass: "text-stat-int",
-    borderClass: "border-stat-int/20",
-    bgClass: "bg-stat-int/5",
-    glowClass: "shadow-stat-int/5",
-    hoverGlowClass: "hover:shadow-stat-int/15 hover:border-stat-int/40 hover:bg-stat-int/10",
-  },
-  WIS: {
-    Icon: Compass,
-    colorClass: "text-stat-wis",
-    borderClass: "border-stat-wis/20",
-    bgClass: "bg-stat-wis/5",
-    glowClass: "shadow-stat-wis/5",
-    hoverGlowClass: "hover:shadow-stat-wis/15 hover:border-stat-wis/40 hover:bg-stat-wis/10",
-  },
-  CHA: {
-    Icon: Crown,
-    colorClass: "text-stat-cha",
-    borderClass: "border-stat-cha/20",
-    bgClass: "bg-stat-cha/5",
-    glowClass: "shadow-stat-cha/5",
-    hoverGlowClass: "hover:shadow-stat-cha/15 hover:border-stat-cha/40 hover:bg-stat-cha/10",
-  },
+// Modular sub-file imports and compatibility re-exports
+import { ABILITY_DETAILS } from "./character-card/ability-details";
+import { Section, Stat } from "./character-card/shared";
+import {
+  LocalCondition,
+  useCharacterConditions,
+  ConditionsPanel,
+} from "./character-card/conditions";
+import { getModifiedStats } from "./character-card/get-modified-stats";
+import { InventoryList } from "./character-card/inventory-list";
+
+export {
+  ABILITY_DETAILS,
+  Section,
+  Stat,
+  type LocalCondition,
+  useCharacterConditions,
+  ConditionsPanel,
+  getModifiedStats,
+  InventoryList,
 };
-
-export function Section({
-  title,
-  defaultOpen = true,
-  children,
-}: {
-  title: React.ReactNode;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="mt-3.5 border-t border-border/45 pt-3">
-      <details open={defaultOpen} className="group">
-        <summary className="mb-1 flex cursor-pointer list-none items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-accent">
-          <span>{title}</span>
-          <span className="ml-2 transition-transform group-open:rotate-90">›</span>
-        </summary>
-        {children}
-      </details>
-    </div>
-  );
-}
-
-export function Stat({
-  label,
-  value,
-  icon: Icon,
-  iconClassName,
-}: {
-  label: string;
-  value: React.ReactNode;
-  icon?: React.ComponentType<{ size?: number; className?: string }>;
-  iconClassName?: string;
-}) {
-  return (
-    <div className="group rounded-lg border border-border/40 bg-secondary/35 px-1.5 py-2 transition-all duration-300 hover:border-accent/40 hover:bg-secondary/60 relative overflow-hidden flex flex-col justify-between min-h-[58px] hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5">
-      <div className="flex items-center justify-center gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-        {Icon && (
-          <Icon
-            size={8}
-            className={`shrink-0 transition-all duration-300 group-hover:scale-125 group-hover:rotate-12 ${iconClassName || "text-accent/85"}`}
-          />
-        )}
-        <span>{label}</span>
-      </div>
-      <div className="font-heading text-lg font-extrabold text-foreground leading-tight drop-shadow-sm mt-1">
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function conditionIcon(name: string) {
-  return CONDITION_BY_NAME.get(name.toLowerCase())?.Icon ?? AlertCircle;
-}
-
-export type LocalCondition = { name: string; rounds: number | null };
-
-const CONDITIONS_KEY = "mob.conditions.v1";
-
-function readAllConditions(): Record<string, LocalCondition[]> {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = localStorage.getItem(CONDITIONS_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-export function useCharacterConditions(characterId: number) {
-  const [all, setAll] = useState<Record<string, LocalCondition[]>>(() => readAllConditions());
-  const key = String(characterId);
-  const list = all[key] ?? [];
-
-  const persist = (next: Record<string, LocalCondition[]>) => {
-    setAll(next);
-    try {
-      localStorage.setItem(CONDITIONS_KEY, JSON.stringify(next));
-    } catch (e) {
-      console.warn("Failed to save conditions to localStorage:", e);
-    }
-  };
-
-  const add = (name: string, rounds: number | null) => {
-    const exists = list.some((c) => c.name.toLowerCase() === name.toLowerCase());
-    if (exists) return;
-    persist({ ...all, [key]: [...list, { name, rounds }] });
-  };
-  const remove = (name: string) => {
-    persist({ ...all, [key]: list.filter((c) => c.name !== name) });
-  };
-  const tick = (name: string, delta: number) => {
-    persist({
-      ...all,
-      [key]: list
-        .map((c) => (c.name === name && c.rounds != null ? { ...c, rounds: c.rounds + delta } : c))
-        .filter((c) => c.rounds == null || c.rounds > 0),
-    });
-  };
-  const clear = () => {
-    persist({ ...all, [key]: [] });
-  };
-
-  return { list, add, remove, tick, clear };
-}
-
-function ConditionChip({
-  name,
-  Icon,
-  rounds,
-  intense,
-  readOnly,
-  onTick,
-  onRemove,
-}: {
-  name: string;
-  Icon: React.ComponentType<{ size?: number; className?: string }>;
-  rounds?: number | null;
-  intense?: boolean;
-  readOnly?: boolean;
-  onTick?: () => void;
-  onRemove?: () => void;
-}) {
-  const base = intense
-    ? "border-destructive bg-destructive/25 text-destructive shadow-[0_0_8px_color-mix(in_oklab,var(--destructive)_70%,transparent)]"
-    : readOnly
-      ? "border-border bg-secondary/60 text-muted-foreground"
-      : "border-destructive/60 bg-destructive/15 text-destructive shadow-[0_0_6px_color-mix(in_oklab,var(--destructive)_55%,transparent)]";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${base}`}
-      title={
-        rounds != null ? `${name} — ${rounds} round${rounds === 1 ? "" : "s"} remaining` : name
-      }
-    >
-      <Icon size={10} />
-      <span>{name}</span>
-      {rounds != null && (
-        <button
-          onClick={onTick}
-          disabled={!onTick}
-          className="ml-0.5 rounded bg-destructive/30 px-1 font-mono text-[10px] text-destructive hover:bg-destructive/50 disabled:cursor-default disabled:opacity-60"
-          title="Click to advance one round"
-        >
-          {rounds}r
-        </button>
-      )}
-      {onRemove && (
-        <button onClick={onRemove} className="ml-0.5 rounded hover:text-foreground" title="Remove">
-          <X size={10} />
-        </button>
-      )}
-    </span>
-  );
-}
-
-export function getModifiedStats(member: PartyMember, localConditions: LocalCondition[]) {
-  let ac = member.armorClass;
-  let speed = member.speed;
-  const acNotes: string[] = [];
-  const speedNotes: string[] = [];
-
-  // Combine remote and local conditions for checks
-  const allConditions = [
-    ...member.conditions.map((c) => c.toLowerCase()),
-    ...localConditions.map((c) => c.name.toLowerCase()),
-  ];
-
-  // 1. Check Exhaustion (2024 Rules: Speed reduced by 5 ft per level of exhaustion)
-  if (member.exhaustion > 0) {
-    const penalty = member.exhaustion * 5;
-    speed = Math.max(0, speed - penalty);
-    speedNotes.push(`-${penalty} ft. from Exhaustion (Level ${member.exhaustion})`);
-  }
-
-  // 2. Check Restraining Conditions (Speed becomes 0)
-  const zeroSpeedConditions = [
-    "grappled",
-    "restrained",
-    "paralyzed",
-    "petrified",
-    "stunned",
-    "unconscious",
-  ];
-  const activeZeroSpeed = zeroSpeedConditions.filter((c) => allConditions.includes(c));
-  if (activeZeroSpeed.length > 0) {
-    speed = 0;
-    speedNotes.push(
-      `Speed 0 from ${activeZeroSpeed.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(", ")}`,
-    );
-  }
-
-  // 3. Check Shield Spell (+5 AC)
-  if (allConditions.includes("shield")) {
-    ac += 5;
-    acNotes.push("+5 from Shield spell");
-  }
-
-  // 4. Check Haste Spell (+2 AC, double Speed)
-  if (allConditions.includes("haste")) {
-    ac += 2;
-    acNotes.push("+2 from Haste spell");
-    speed = speed * 2;
-    speedNotes.push("Speed doubled from Haste spell");
-  }
-
-  // 5. Check Slow Spell (-2 AC, half Speed)
-  if (allConditions.includes("slow")) {
-    ac = Math.max(0, ac - 2);
-    acNotes.push("-2 from Slow spell");
-    speed = Math.floor(speed / 2);
-    speedNotes.push("Speed halved from Slow spell");
-  }
-
-  return { ac, speed, acNotes, speedNotes };
-}
-
-export function ConditionsPanel({
-  characterId,
-  remoteConditions,
-  exhaustion,
-  localConditions,
-  onAddLocal,
-  onRemoveLocal,
-  onTickLocal,
-}: {
-  characterId: number;
-  remoteConditions: string[];
-  exhaustion: number;
-  localConditions: LocalCondition[];
-  onAddLocal: (name: string, rounds: number | null) => void;
-  onRemoveLocal: (name: string) => void;
-  onTickLocal: (name: string, delta: number) => void;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [customName, setCustomName] = useState("");
-  const [rounds, setRounds] = useState<number | null>(10);
-  const [effectTab, setEffectTab] = useState<"spells" | "conditions" | "cover">("spells");
-
-  const handleAdd = (name: string, r: number | null) => {
-    if (!name.trim()) return;
-    onAddLocal(name.trim(), r);
-    setCustomName("");
-    setIsOpen(false);
-  };
-
-  return (
-    <div className="mt-1.5 flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center gap-1">
-        {exhaustion > 0 && (
-          <ConditionChip name={`Exhaustion ${exhaustion}`} Icon={HeartCrack} intense />
-        )}
-        {remoteConditions.map((c) => {
-          const Icon = conditionIcon(c);
-          return <ConditionChip key={`r-${c}`} name={c} Icon={Icon} readOnly />;
-        })}
-        {localConditions.map((c) => {
-          const Icon = conditionIcon(c.name);
-          return (
-            <ConditionChip
-              key={`l-${c.name}`}
-              name={c.name}
-              Icon={Icon}
-              rounds={c.rounds}
-              onTick={() => onTickLocal(c.name, -1)}
-              onRemove={() => onRemoveLocal(c.name)}
-            />
-          );
-        })}
-
-        {/* Add Buff Button */}
-        <div className="relative inline-block">
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="inline-flex h-5 items-center gap-1 rounded-full border border-dashed border-border/60 bg-transparent px-2 text-[9px] font-medium uppercase tracking-wider text-muted-foreground transition-all duration-200 hover:border-accent/60 hover:text-accent hover:bg-accent/5 cursor-pointer"
-          >
-            <Plus size={8} className="shrink-0" />
-            <span>Add Effect</span>
-          </button>
-
-          {isOpen && (
-            <div className="absolute left-0 top-6 z-50 w-64 rounded-lg border border-border/80 bg-popover/95 p-3 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
-              {/* Category tabs */}
-              <div className="flex gap-1 border-b border-border/30 pb-1.5 mb-2">
-                {(["spells", "conditions", "cover"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setEffectTab(tab)}
-                    className={`flex-1 text-[9px] font-bold uppercase py-0.5 rounded transition-all cursor-pointer ${
-                      effectTab === tab
-                        ? "bg-accent/15 text-accent border border-accent/30 font-extrabold"
-                        : "text-muted-foreground hover:bg-secondary/40"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-
-              {/* Categorized presets list */}
-              <div className="max-h-28 overflow-y-auto mb-2.5 flex flex-wrap gap-1 pr-1 scrollbar-thin">
-                {effectTab === "spells" &&
-                  [
-                    { name: "Bless", d: 10 },
-                    { name: "Shield", d: 1 },
-                    { name: "Haste", d: 10 },
-                    { name: "Bane", d: 10 },
-                    { name: "Slow", d: 10 },
-                    { name: "Bladesong", d: 10 },
-                    { name: "Longstrider", d: null },
-                    { name: "Warding Bond", d: null },
-                  ].map((p) => (
-                    <button
-                      key={p.name}
-                      type="button"
-                      onClick={() => handleAdd(p.name, p.d)}
-                      className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-
-                {effectTab === "conditions" &&
-                  [
-                    "Blinded",
-                    "Charmed",
-                    "Deafened",
-                    "Frightened",
-                    "Grappled",
-                    "Invisible",
-                    "Paralyzed",
-                    "Poisoned",
-                    "Prone",
-                    "Restrained",
-                    "Stunned",
-                    "Unconscious",
-                  ].map((cond) => (
-                    <button
-                      key={cond}
-                      type="button"
-                      onClick={() => handleAdd(cond, null)}
-                      className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
-                    >
-                      {cond}
-                    </button>
-                  ))}
-
-                {effectTab === "cover" &&
-                  ["Half Cover", "3/4 Cover"].map((cov) => (
-                    <button
-                      key={cov}
-                      type="button"
-                      onClick={() => handleAdd(cov, null)}
-                      className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
-                    >
-                      {cov}
-                    </button>
-                  ))}
-              </div>
-
-              {/* Custom Input controls */}
-              <div className="border-t border-border/40 pt-2 flex flex-col gap-1.5">
-                <input
-                  type="text"
-                  placeholder="Custom effect name..."
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
-                  className="w-full rounded border border-border bg-secondary/40 px-2 py-1 text-[10px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-accent"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAdd(customName, rounds);
-                  }}
-                />
-
-                {/* Duration select grid */}
-                <div className="flex items-center justify-between text-[9px] text-muted-foreground uppercase select-none mt-0.5">
-                  <span>Duration (Rounds)</span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setRounds(null)}
-                      className={`px-1.5 py-0.5 rounded text-[8px] font-bold border transition-colors cursor-pointer ${
-                        rounds === null
-                          ? "border-accent/40 bg-accent/10 text-accent"
-                          : "border-border/30 bg-secondary/25 hover:border-accent/30"
-                      }`}
-                    >
-                      No Limit
-                    </button>
-                    <input
-                      type="number"
-                      placeholder="∞"
-                      value={rounds ?? ""}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        setRounds(isNaN(val) ? null : val);
-                      }}
-                      className="w-10 rounded border border-border/50 bg-secondary/40 py-0.5 font-mono text-[9px] text-center text-foreground focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleAdd(customName, rounds)}
-                  className="mt-1 w-full rounded bg-primary py-1 text-[9px] font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer focus:outline-none transition-colors"
-                >
-                  Add Effect
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function getItemRarityClass(rarity?: string) {
-  const norm = rarity?.toLowerCase().replace(/\s+/g, "") || "";
-  switch (norm) {
-    case "artifact":
-      return "border-ui-rose/50 bg-ui-rose/10 text-ui-rose shadow-[0_0_8px_color-mix(in_oklab,var(--color-ui-rose)_30%,transparent)] font-bold";
-    case "legendary":
-      return "border-gold/50 bg-gold/10 text-gold shadow-[0_0_8px_color-mix(in_oklab,var(--color-gold)_30%,transparent)] font-bold animate-pulse";
-    case "veryrare":
-      return "border-ui-fuchsia/50 bg-ui-fuchsia/10 text-ui-fuchsia shadow-[0_0_6px_color-mix(in_oklab,var(--color-ui-fuchsia)_25%,transparent)] font-semibold";
-    case "rare":
-      return "border-ui-violet/50 bg-ui-violet/10 text-ui-violet font-semibold";
-    case "uncommon":
-      return "border-ui-sky/40 bg-ui-sky/5 text-ui-sky";
-    case "common":
-      return "border-ui-emerald/30 bg-ui-emerald/5 text-ui-emerald";
-    default:
-      return "border-border/30 bg-secondary/20 text-foreground/90 hover:border-accent/30";
-  }
-}
-
-function InventoryGroup({ label, items }: { label: string; items: InventoryItem[] }) {
-  return (
-    <div>
-      <div className="mb-1.5 text-[9px] font-bold uppercase tracking-wider text-muted-foreground/75">
-        {label}
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {items.map((it, idx) => {
-          const rarityClass = getItemRarityClass(it.rarity || undefined);
-          const styles = it.attuned
-            ? `${rarityClass} ring-1 ring-gold/45 shadow-[0_0_10px_color-mix(in_oklab,var(--gold)_40%,transparent)]`
-            : rarityClass;
-          const title =
-            `${it.name} — ${it.type}` +
-            (it.rarity ? ` (${it.rarity})` : "") +
-            (it.attuned ? " • attuned" : "") +
-            (it.quantity > 1 ? ` ×${it.quantity}` : "");
-          return (
-            <span
-              key={`${it.name}-${idx}`}
-              className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[9px] uppercase tracking-wider transition-all duration-200 hover:scale-105 select-none ${styles}`}
-              title={title}
-            >
-              {it.attuned ? (
-                <Sparkles size={8} className="text-gold/90 animate-pulse shrink-0" />
-              ) : it.magic ? (
-                <Sparkles size={8} className="text-accent/90 shrink-0" />
-              ) : (
-                <Package size={8} className="text-muted-foreground/90 shrink-0" />
-              )}
-              <span>{it.name}</span>
-              {it.quantity > 1 && (
-                <span className="ml-1 font-mono text-[8px] opacity-75">×{it.quantity}</span>
-              )}
-            </span>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-export function InventoryList({
-  items,
-  currencies,
-  weightCarried,
-  carryingCapacity,
-}: {
-  items: InventoryItem[];
-  currencies: PartyMember["currencies"];
-  weightCarried: number;
-  carryingCapacity: number;
-}) {
-  const equipped = items.filter((i) => i.equipped);
-  const magicCarried = items.filter((i) => !i.equipped && i.magic);
-  const other = items.filter((i) => !i.equipped && !i.magic);
-  const attunedCount = items.filter((i) => i.attuned).length;
-
-  const coinTypes = [
-    { key: "pp", label: "PP", color: "text-ui-teal bg-ui-teal/10 border-ui-teal/30" },
-    { key: "gp", label: "GP", color: "text-gold bg-gold/10 border-gold/30" },
-    { key: "ep", label: "EP", color: "text-ui-cyan bg-ui-cyan/10 border-ui-cyan/30" },
-    { key: "sp", label: "SP", color: "text-muted-foreground bg-muted/30 border-border/50" },
-    { key: "cp", label: "CP", color: "text-ui-orange bg-ui-orange/10 border-ui-orange/30" },
-  ] as const;
-
-  const activeCoins = coinTypes.filter((c) => (currencies?.[c.key] ?? 0) > 0);
-  const displayedCoins = activeCoins.length > 0 ? activeCoins : [coinTypes[1]];
-
-  const weightPct =
-    carryingCapacity > 0 ? Math.min(100, (weightCarried / carryingCapacity) * 100) : 0;
-  const weightColor =
-    weightPct > 90 ? "bg-hp-critical" : weightPct > 75 ? "bg-hp-wounded" : "bg-primary";
-  const weightGlow =
-    weightPct > 90
-      ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-critical)_70%,transparent)] animate-pulse"
-      : weightPct > 75
-        ? "shadow-[0_0_8px_color-mix(in_oklab,var(--hp-wounded)_70%,transparent)]"
-        : "shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_70%,transparent)]";
-
-  return (
-    <div className="flex flex-col gap-3">
-      {/* Wealth & Carrying Bar */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="group/wealth flex flex-wrap items-center gap-1.5 rounded-lg border border-border/40 bg-secondary/20 p-2 relative overflow-hidden">
-          <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-gold/5 blur-lg pointer-events-none" />
-          <div className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-            <Coins
-              size={10}
-              className="text-gold/90 transition-transform duration-300 group-hover/wealth:animate-jingle"
-            />
-            <span>Wealth:</span>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {displayedCoins.map((c) => (
-              <span
-                key={c.key}
-                className={`inline-flex items-center gap-0.5 rounded border px-1 py-0.5 text-[9px] font-mono font-bold ${c.color}`}
-              >
-                <span>{currencies?.[c.key] ?? 0}</span>
-                <span className="text-[8px] uppercase font-semibold">{c.label}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col justify-center gap-1 rounded-lg border border-border/40 bg-secondary/20 p-2 relative overflow-hidden">
-          <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-primary/5 blur-lg pointer-events-none" />
-          <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-muted-foreground select-none">
-            <div className="flex items-center gap-1">
-              <Dumbbell size={10} className="text-primary/95" />
-              <span>Weight:</span>
-            </div>
-            <span className="font-mono text-foreground font-bold">
-              {weightCarried.toFixed(1)} / {carryingCapacity} lbs
-            </span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-secondary mt-1">
-            <div
-              className={`h-full ${weightColor} ${weightGlow} transition-all duration-500`}
-              style={{ width: `${weightPct}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Attunement Tracker */}
-      <div className="flex items-center justify-between rounded-lg border border-gold/30 bg-[color-mix(in_oklab,var(--gold)_8%,var(--secondary))] px-2.5 py-1.5 shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_20%,transparent)] select-none">
-        <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-gold">
-          <Sparkles size={10} className="text-gold/90 animate-pulse" />
-          <span>Attunement Slots</span>
-        </span>
-        <span className="font-mono text-xs font-bold text-gold">{attunedCount} / 3</span>
-      </div>
-
-      {equipped.length > 0 && <InventoryGroup label="Equipped" items={equipped} />}
-      {magicCarried.length > 0 && <InventoryGroup label="Magic Items" items={magicCarried} />}
-      {other.length > 0 && <InventoryGroup label="Carried" items={other} />}
-    </div>
-  );
-}
 
 export function CharacterCard({ member }: { member: PartyMember }) {
   const {
@@ -1023,7 +385,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     {Icon && (
                       <Icon
                         size={7.5}
-                        className={`shrink-0 transition-transform duration-300 group-hover:scale-120 ${
+                        className={`shrink-0 transition-transform duration-300 group-hover:scale-125 ${
                           elite ? "text-gold" : details?.colorClass || "text-accent/80"
                         }`}
                       />
@@ -1366,7 +728,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                           key={s.name}
                           className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-0.5 text-[9px] font-bold text-primary uppercase tracking-wider select-none"
                         >
-                          <SenseIcon size={10} className="text-primary/90" />
+                          <ThemeIcon size={10} className="text-primary/90" as={SenseIcon} />
                           <span>
                             {s.name}
                             {s.value != null ? ` ${s.value}ft` : ""}
@@ -1610,4 +972,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
       )}
     </article>
   );
+}
+
+// Local helper component to type-safely render dynamic icons
+function ThemeIcon({ as: Icon, ...props }: any) {
+  return <Icon {...props} />;
 }

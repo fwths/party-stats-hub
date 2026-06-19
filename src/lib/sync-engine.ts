@@ -1,6 +1,7 @@
 let isSyncingFromServer = false;
 const syncQueue: Record<string, string | null> = {};
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
+let isInitialized = false;
 
 // Debounced synchronization to save local edits to server
 function queueSync(key: string, value: string | null) {
@@ -36,6 +37,8 @@ function queueSync(key: string, value: string | null) {
 
 export async function initSyncEngine() {
   if (typeof window === "undefined") return;
+  if (isInitialized) return;
+  isInitialized = true;
 
   // 1. Monkey-patch localStorage.setItem and localStorage.removeItem
   const originalSetItem = localStorage.setItem;

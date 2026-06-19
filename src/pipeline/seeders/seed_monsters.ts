@@ -1,8 +1,53 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as schema from "../../db/schema";
+import { SIZE_MAP, parseCr, renderEntries, slugify, titleCase } from "../5etools-utils";
+import { getSourcePriority, isSourceAllowed } from "../source-config";
 
-// Simple PB calculator based on CR
+type Monster = {
+  name: string;
+  source: string;
+  edition?: string;
+  size?: string[];
+  type?: string | { type?: string; tags?: unknown[] };
+  alignment?: string[];
+  ac?: unknown[];
+  hp?: unknown;
+  speed?: unknown;
+  str?: number;
+  dex?: number;
+  con?: number;
+  int?: number;
+  wis?: number;
+  cha?: number;
+  save?: Record<string, string>;
+  skill?: Record<string, string>;
+  resist?: unknown[];
+  immune?: unknown[];
+  vulnerable?: unknown[];
+  conditionImmune?: unknown[];
+  senses?: string[];
+  passive?: number;
+  languages?: string[];
+  cr?: unknown;
+  trait?: unknown[];
+  action?: unknown[];
+  bonus?: unknown[];
+  reaction?: unknown[];
+  legendary?: unknown[];
+  mythic?: unknown[];
+};
+
+const ALIGNMENT_MAP: Record<string, string> = {
+  A: "Any",
+  C: "Chaotic",
+  E: "Evil",
+  G: "Good",
+  L: "Lawful",
+  N: "Neutral",
+  U: "Unaligned",
+};
+
 function getProficiencyBonus(cr: number): number {
   if (cr <= 4) return 2;
   if (cr <= 8) return 3;
@@ -14,106 +59,149 @@ function getProficiencyBonus(cr: number): number {
   return 9;
 }
 
+function readMonsterFiles(): Monster[] {
+  const bestiaryDir = path.join(process.cwd(), "new data/bestiary");
+  return fs
+    .readdirSync(bestiaryDir)
+    .filter((file) => /^bestiary-.*\.json$/i.test(file))
+    .flatMap((file) => {
+      const data = JSON.parse(fs.readFileSync(path.join(bestiaryDir, file), "utf-8"));
+      return Array.isArray(data.monster) ? data.monster : [];
+    });
+}
+
+function selectAllowedMonsters(monsters: Monster[]): Monster[] {
+  const selected = new Map<string, Monster>();
+
+  for (const monster of monsters) {
+    if (!isSourceAllowed(monster.source)) continue;
+    const key = monster.name.toLowerCase();
+    const existing = selected.get(key);
+    const existingPriority = existing ? getSourcePriority(existing.source, existing.edition) : -1;
+    const priority = getSourcePriority(monster.source, monster.edition);
+    if (!existing || priority > existingPriority) selected.set(key, monster);
+  }
+
+  return [...selected.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function formatSize(size: string[] | undefined): string {
+  if (!size?.length) return "Medium";
+  return size.map((part) => SIZE_MAP[part] || part).join(", ");
+}
+
+function formatType(type: Monster["type"]): string {
+  if (!type) return "Humanoid";
+  if (typeof type === "string") return titleCase(type);
+  return titleCase(type.type || "Humanoid");
+}
+
+function formatAlignment(alignment: string[] | undefined): string {
+  if (!alignment?.length) return "Unaligned";
+  return alignment.map((part) => ALIGNMENT_MAP[part] || part).join(" ");
+}
+
+function renderActionList(actions: unknown[] | undefined) {
+  return (actions || []).map((action: any) => ({
+    name: action.name || "",
+    entries: renderEntries(action.entries || action.entry || action),
+  }));
+}
+
+function stringifyUnknownList(value: unknown[] | undefined): string {
+  return JSON.stringify(value || []);
+}
+
 export async function seedMonsters(db: any) {
-  console.log("Seeding monsters from raw data...");
+  console.log("Seeding monsters from 5etools data...");
 
-  const monstersFile = path.join(process.cwd(), "src/data/raw/monsters/monsters.json");
-  if (fs.existsSync(monstersFile)) {
-    try {
-      const rawMonsters = fs.readFileSync(monstersFile, "utf-8");
-      const monstersData = JSON.parse(rawMonsters);
+  try {
+    const monsters = selectAllowedMonsters(readMonsterFiles());
 
-      let count = 0;
-      for (const m of monstersData) {
-        // Robust Mapping
-        const crValue = parseFloat(m.challenge_rating || m.cr || "0");
-        const pbValue = getProficiencyBonus(crValue);
+    for (const monster of monsters) {
+      const challengeRating = parseCr(monster.cr);
+      const senses = [...(monster.senses || [])];
+      if (monster.passive) senses.push(`passive Perception ${monster.passive}`);
 
-        const stats = {
-          str: m.strength || 10,
-          dex: m.dexterity || 10,
-          con: m.constitution || 10,
-          int: m.intelligence || 10,
-          wis: m.wisdom || 10,
-          cha: m.charisma || 10,
-        };
-
-        const saves = {
-          str: m.strength_save,
-          dex: m.dexterity_save,
-          con: m.constitution_save,
-          int: m.intelligence_save,
-          wis: m.wisdom_save,
-          cha: m.charisma_save,
-        };
-
-        const acArr = [{ value: m.armor_class, type: m.armor_desc || "natural armor" }];
-        
-        await db
-          .insert(schema.monsters)
-          .values({
-            id: m.slug || m.name.toLowerCase().replace(/\s+/g, "-"),
-            name: m.name,
-            size: m.size || "Medium",
-            type: m.type || "Humanoid",
-            alignment: m.alignment || "Unaligned",
-            acJson: JSON.stringify(acArr),
-            hpJson: JSON.stringify({ average: m.hit_points, formula: m.hit_dice }),
-            speedJson: JSON.stringify(m.speed || { walk: 30 }),
-            statsJson: JSON.stringify(stats),
-            savesJson: JSON.stringify(saves),
-            skillsJson: JSON.stringify(m.skills || {}),
-            resistancesJson: JSON.stringify(m.damage_resistances ? [m.damage_resistances] : []),
-            immunitiesJson: JSON.stringify(m.damage_immunities ? [m.damage_immunities] : []),
-            vulnerabilitiesJson: JSON.stringify(m.damage_vulnerabilities ? [m.damage_vulnerabilities] : []),
-            conditionImmunitiesJson: JSON.stringify(m.condition_immunities ? [m.condition_immunities] : []),
-            sensesJson: JSON.stringify([m.senses || "passive Perception 10"]),
-            languagesJson: JSON.stringify([m.languages || "none"]),
-            challengeRating: crValue,
-            proficiencyBonus: pbValue,
-            traitsJson: JSON.stringify(m.special_abilities || []),
-            actionsJson: JSON.stringify(m.actions || []),
-            bonusActionsJson: JSON.stringify(m.bonus_actions || []),
-            reactionsJson: JSON.stringify(m.reactions || []),
-            legendaryActionsJson: JSON.stringify(m.legendary_actions || []),
-            mythicActionsJson: JSON.stringify(m.mythic_actions || []),
+      await db
+        .insert(schema.monsters)
+        .values({
+          id: slugify(monster.name),
+          name: monster.name,
+          size: formatSize(monster.size),
+          type: formatType(monster.type),
+          alignment: formatAlignment(monster.alignment),
+          acJson: JSON.stringify(monster.ac || []),
+          hpJson: JSON.stringify(monster.hp || {}),
+          speedJson: JSON.stringify(monster.speed || { walk: 30 }),
+          statsJson: JSON.stringify({
+            str: monster.str || 10,
+            dex: monster.dex || 10,
+            con: monster.con || 10,
+            int: monster.int || 10,
+            wis: monster.wis || 10,
+            cha: monster.cha || 10,
+          }),
+          savesJson: JSON.stringify(monster.save || {}),
+          skillsJson: JSON.stringify(monster.skill || {}),
+          resistancesJson: stringifyUnknownList(monster.resist),
+          immunitiesJson: stringifyUnknownList(monster.immune),
+          vulnerabilitiesJson: stringifyUnknownList(monster.vulnerable),
+          conditionImmunitiesJson: stringifyUnknownList(monster.conditionImmune),
+          sensesJson: JSON.stringify(senses),
+          languagesJson: JSON.stringify(monster.languages || []),
+          challengeRating,
+          proficiencyBonus: getProficiencyBonus(challengeRating),
+          traitsJson: JSON.stringify(renderActionList(monster.trait)),
+          actionsJson: JSON.stringify(renderActionList(monster.action)),
+          bonusActionsJson: JSON.stringify(renderActionList(monster.bonus)),
+          reactionsJson: JSON.stringify(renderActionList(monster.reaction)),
+          legendaryActionsJson: JSON.stringify(renderActionList(monster.legendary)),
+          mythicActionsJson: JSON.stringify(renderActionList(monster.mythic)),
+          lairActionsJson: JSON.stringify([]),
+        })
+        .onConflictDoUpdate({
+          target: schema.monsters.id,
+          set: {
+            name: monster.name,
+            size: formatSize(monster.size),
+            type: formatType(monster.type),
+            alignment: formatAlignment(monster.alignment),
+            acJson: JSON.stringify(monster.ac || []),
+            hpJson: JSON.stringify(monster.hp || {}),
+            speedJson: JSON.stringify(monster.speed || { walk: 30 }),
+            statsJson: JSON.stringify({
+              str: monster.str || 10,
+              dex: monster.dex || 10,
+              con: monster.con || 10,
+              int: monster.int || 10,
+              wis: monster.wis || 10,
+              cha: monster.cha || 10,
+            }),
+            savesJson: JSON.stringify(monster.save || {}),
+            skillsJson: JSON.stringify(monster.skill || {}),
+            resistancesJson: stringifyUnknownList(monster.resist),
+            immunitiesJson: stringifyUnknownList(monster.immune),
+            vulnerabilitiesJson: stringifyUnknownList(monster.vulnerable),
+            conditionImmunitiesJson: stringifyUnknownList(monster.conditionImmune),
+            sensesJson: JSON.stringify(senses),
+            languagesJson: JSON.stringify(monster.languages || []),
+            challengeRating,
+            proficiencyBonus: getProficiencyBonus(challengeRating),
+            traitsJson: JSON.stringify(renderActionList(monster.trait)),
+            actionsJson: JSON.stringify(renderActionList(monster.action)),
+            bonusActionsJson: JSON.stringify(renderActionList(monster.bonus)),
+            reactionsJson: JSON.stringify(renderActionList(monster.reaction)),
+            legendaryActionsJson: JSON.stringify(renderActionList(monster.legendary)),
+            mythicActionsJson: JSON.stringify(renderActionList(monster.mythic)),
             lairActionsJson: JSON.stringify([]),
-          })
-          .onConflictDoUpdate({
-            target: schema.monsters.id,
-            set: {
-              name: m.name,
-              size: m.size || "Medium",
-              type: m.type || "Humanoid",
-              alignment: m.alignment || "Unaligned",
-              acJson: JSON.stringify(acArr),
-              hpJson: JSON.stringify({ average: m.hit_points, formula: m.hit_dice }),
-              speedJson: JSON.stringify(m.speed || { walk: 30 }),
-              statsJson: JSON.stringify(stats),
-              savesJson: JSON.stringify(saves),
-              skillsJson: JSON.stringify(m.skills || {}),
-              resistancesJson: JSON.stringify(m.damage_resistances ? [m.damage_resistances] : []),
-              immunitiesJson: JSON.stringify(m.damage_immunities ? [m.damage_immunities] : []),
-              vulnerabilitiesJson: JSON.stringify(m.damage_vulnerabilities ? [m.damage_vulnerabilities] : []),
-              conditionImmunitiesJson: JSON.stringify(m.condition_immunities ? [m.condition_immunities] : []),
-              sensesJson: JSON.stringify([m.senses || "passive Perception 10"]),
-              languagesJson: JSON.stringify([m.languages || "none"]),
-              challengeRating: crValue,
-              proficiencyBonus: pbValue,
-              traitsJson: JSON.stringify(m.special_abilities || []),
-              actionsJson: JSON.stringify(m.actions || []),
-              bonusActionsJson: JSON.stringify(m.bonus_actions || []),
-              reactionsJson: JSON.stringify(m.reactions || []),
-              legendaryActionsJson: JSON.stringify(m.legendary_actions || []),
-              mythicActionsJson: JSON.stringify(m.mythic_actions || []),
-              lairActionsJson: JSON.stringify([]),
-            },
-          });
-        count++;
-      }
-      console.log(`Seeded ${count} monsters perfectly.`);
-    } catch (e) {
-      console.error("Error seeding monsters:", e);
+          },
+        });
     }
+
+    console.log(`Seeded ${monsters.length} monsters from 5etools.`);
+  } catch (e) {
+    console.error("Error seeding monsters:", e);
+    throw e;
   }
 }

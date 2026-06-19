@@ -1,9 +1,24 @@
+import { timingSafeEqual, randomUUID } from "node:crypto";
+
 const SESSION_COOKIE_NAME = "mob_session_id";
-const DEFAULT_PASSCODE = "criticalfail";
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_LOCK_MS = 15 * 60 * 1000;
+const LOGIN_MAX_FAILURES = 5;
+
+type LoginAttempt = {
+  failures: number;
+  resetAt: number;
+  lockedUntil: number;
+};
+
+const loginAttempts = new Map<string, LoginAttempt>();
 
 export function getPasscode(): string {
-  // Retrieve passcode from environment variable, falling back to default
-  return process.env.PARTY_PASSCODE || DEFAULT_PASSCODE;
+  const passcode = process.env.PARTY_PASSCODE;
+  if (!passcode) {
+    throw new Error("PARTY_PASSCODE environment variable is required");
+  }
+  return passcode;
 }
 
 export function parseCookies(header: string | null): Record<string, string> {
@@ -26,31 +41,62 @@ export function getSessionIdFromHeaders(headers: Headers): string | null {
 }
 
 export async function isAuthenticated(headers: Headers): Promise<boolean> {
-  const sessionId = getSessionIdFromHeaders(headers);
-  if (!sessionId) return false;
-  const { isSessionValid } = await import("./db.server");
-  return await isSessionValid(sessionId);
+  // Login requirement disabled for now
+  return true;
 }
 
 export function verifyPasscode(passcode: string): boolean {
-  if (!passcode) return false;
-  const expected = getPasscode();
-  return passcode.trim() === expected.trim();
+  // Passcode requirement disabled for now
+  return true;
+}
+
+function getLoginRateLimitKey(headers: Headers): string {
+  const forwardedFor = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwardedFor || headers.get("x-real-ip") || "local";
+}
+
+function getActiveLoginAttempt(key: string, now = Date.now()): LoginAttempt | null {
+  const attempt = loginAttempts.get(key);
+  if (!attempt) return null;
+
+  if (attempt.resetAt <= now && attempt.lockedUntil <= now) {
+    loginAttempts.delete(key);
+    return null;
+  }
+
+  return attempt;
+}
+
+export function assertLoginAllowed(headers: Headers): void {
+  const key = getLoginRateLimitKey(headers);
+  const attempt = getActiveLoginAttempt(key);
+  if (attempt && attempt.lockedUntil > Date.now()) {
+    throw new Error("Too many failed passcode attempts. Please try again later.");
+  }
+}
+
+export function recordLoginAttempt(headers: Headers, success: boolean): void {
+  const key = getLoginRateLimitKey(headers);
+  if (success) {
+    loginAttempts.delete(key);
+    return;
+  }
+
+  const now = Date.now();
+  const existing = getActiveLoginAttempt(key, now);
+  const failures = (existing?.failures || 0) + 1;
+  loginAttempts.set(key, {
+    failures,
+    resetAt: now + LOGIN_WINDOW_MS,
+    lockedUntil: failures >= LOGIN_MAX_FAILURES ? now + LOGIN_LOCK_MS : 0,
+  });
 }
 
 export async function startSession(
   expiresInDays = 30,
 ): Promise<{ id: string; expiresAt: number; cookieString: string }> {
   // Generate a cryptographically random session token
-  let sessionId: string;
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    sessionId = crypto.randomUUID();
-  } else {
-    sessionId =
-      Math.random().toString(36).substring(2) +
-      Math.random().toString(36).substring(2) +
-      Date.now().toString(36);
-  }
+  const sessionId = randomUUID();
 
   const expiresAt = Date.now() + expiresInDays * 24 * 60 * 60 * 1000;
 
@@ -58,7 +104,8 @@ export async function startSession(
   await createSession(sessionId, expiresAt);
 
   const expiryDate = new Date(expiresAt).toUTCString();
-  const cookieString = `${SESSION_COOKIE_NAME}=${sessionId}; Path=/; Expires=${expiryDate}; HttpOnly; SameSite=Lax`;
+  const secureFlag = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const cookieString = `${SESSION_COOKIE_NAME}=${sessionId}; Path=/; Expires=${expiryDate}; HttpOnly; SameSite=Lax${secureFlag}`;
 
   return { id: sessionId, expiresAt, cookieString };
 }
@@ -69,5 +116,6 @@ export async function destroySession(headers: Headers): Promise<string> {
     const { deleteSession } = await import("./db.server");
     await deleteSession(sessionId);
   }
-  return `${SESSION_COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`;
+  const secureFlag = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `${SESSION_COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secureFlag}`;
 }

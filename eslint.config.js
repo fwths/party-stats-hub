@@ -12,6 +12,8 @@ export default tseslint.config(
       ".output",
       ".vinxi",
       ".agents",
+      "scratch/**",
+      "scripts/legacy_data_pipeline/**",
       "*.*",
       "!vite.config.ts",
       "!eslint.config.js",

@@ -12,11 +12,17 @@ export const checkAuthFn = createServerFn({ method: "GET" }).handler(async () =>
 
 // Server function to authenticate via passcode
 export const loginFn = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: { passcode: string } }) => {
-    const payload = data as { passcode: string };
+  .inputValidator(z.object({ passcode: z.string().min(1).max(200) }))
+  .handler(async ({ data }) => {
     try {
-      const { verifyPasscode, startSession } = await import("@/lib/auth.server");
-      const isValid = verifyPasscode(payload.passcode);
+      const { getRequestHeaders } = await import("@tanstack/react-start/server");
+      const headers = getRequestHeaders();
+      const { assertLoginAllowed, recordLoginAttempt, verifyPasscode, startSession } =
+        await import("@/lib/auth.server");
+      assertLoginAllowed(headers);
+
+      const isValid = verifyPasscode(data.passcode);
+      recordLoginAttempt(headers, isValid);
       if (!isValid) {
         throw new Error("Invalid campaign passcode");
       }

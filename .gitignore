@@ -41,6 +41,7 @@ read_review.ps1
 .env.development.local
 .env.production.local
 .env.*
+!.env.example
 
 books/
 *.txt

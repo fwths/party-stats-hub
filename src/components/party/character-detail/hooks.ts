@@ -860,3 +860,89 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
     setCustomItems,
   ] as const;
 }
+
+export function useLocalArmorModel(memberId: number, initialArmorModel: string | null) {
+  const storageKey = `party-stats:armor-model:${memberId}`;
+  const [armorModel, setArmorModel] = useState<string | null>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored !== null) {
+        return stored === "null" ? null : stored;
+      }
+    } catch (e) {
+      console.warn("Failed to load armor model from localStorage:", e);
+    }
+    return initialArmorModel;
+  });
+
+  const updateArmorModel = (model: string | null) => {
+    setArmorModel(model);
+    try {
+      if (model === null) {
+        localStorage.setItem(storageKey, "null");
+      } else {
+        localStorage.setItem(storageKey, model);
+      }
+    } catch (e) {
+      console.warn("Failed to save armor model to localStorage:", e);
+    }
+  };
+
+  return [armorModel, updateArmorModel] as const;
+}
+
+export function useLocalActiveInfusions(memberId: number, initialActiveInfusions: string[]) {
+  const storageKey = `party-stats:active-infusions:${memberId}`;
+  const [activeInfusions, setActiveInfusions] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : initialActiveInfusions;
+    } catch (e) {
+      console.warn("Failed to load active infusions from localStorage:", e);
+      return initialActiveInfusions;
+    }
+  });
+
+  const toggleInfusion = (name: string) => {
+    setActiveInfusions((prev) => {
+      const next = prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name];
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch (e) {
+        console.warn("Failed to save active infusions to localStorage:", e);
+      }
+      return next;
+    });
+  };
+
+  return [activeInfusions, toggleInfusion, setActiveInfusions] as const;
+}
+
+export function useLocalTotemAspects(
+  memberId: number,
+  initialAspects: Array<{ name: string; description: string }>,
+) {
+  const storageKey = `party-stats:totem-aspects:${memberId}`;
+  const [aspects, setAspects] = useState<Array<{ name: string; description: string }>>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored !== null) {
+        return stored === "null" ? [] : JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn("Failed to load totem aspects from localStorage:", e);
+    }
+    return initialAspects;
+  });
+
+  const updateAspects = (nextAspects: Array<{ name: string; description: string }>) => {
+    setAspects(nextAspects);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(nextAspects));
+    } catch (e) {
+      console.warn("Failed to save totem aspects to localStorage:", e);
+    }
+  };
+
+  return [aspects, updateAspects] as const;
+}

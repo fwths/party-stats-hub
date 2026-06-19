@@ -6,16 +6,16 @@ Comprehensive review of the codebase across security, correctness, architecture,
 
 ## 🔴 Critical Issues
 
-### 1. Hardcoded Secret Exposed in `.env` (Committed to Git)
-**File:** [.env](file:///c:/Users/garas/Desktop/party-stats-hub/.env#L2)
+### 1. Hardcoded Secret Exposed in Local Environment / Review Notes
+**File:** `.env` and this tracked review note
 
 ```
-NOTION_TOKEN=ntn_H95757101687isncEDbBEQfsUR9ddZxFMhpBNsjkarcajU
+NOTION_TOKEN=<redacted>
 ```
 
-Your Notion API token is committed to the repository in plain text. Anyone with access to the repo can use this token to read/write your Notion workspace.
+Your Notion API token was present in local configuration and copied into this tracked review note. Anyone with access to a version of the repo containing the original token could use it to read/write your Notion workspace.
 
-**Fix:** Rotate the Notion token immediately, add `.env` to `.gitignore`, and use `.env.example` with placeholder values instead.
+**Fix:** Rotate the Notion token immediately, keep `.env` ignored, and use `.env.example` with placeholder values instead.
 
 ---
 

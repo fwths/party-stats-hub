@@ -1,120 +1,179 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as schema from "../../db/schema";
-import { BackgroundSchema, OriginFeatSchema } from "../zodSchemas";
-import { z } from "zod";
+import { renderEntries, slugify, titleCase } from "../5etools-utils";
+import { getSourcePriority, isSourceAllowed } from "../source-config";
 
-export async function seedBackgroundsFeats(db: any) {
-  console.log("Seeding backgrounds and feats from raw data...");
+type Feat = {
+  name: string;
+  source: string;
+  edition?: string;
+  page?: number;
+  category?: string;
+  entries?: unknown;
+  prerequisite?: unknown[];
+  repeatable?: boolean;
+  ability?: unknown;
+};
 
-  const dataDir = path.join(process.cwd(), "src/data/raw/character_options");
+type Background = {
+  name: string;
+  source: string;
+  edition?: string;
+  page?: number;
+  ability?: unknown;
+  feats?: Array<Record<string, boolean>>;
+  skillProficiencies?: Array<Record<string, boolean>>;
+  toolProficiencies?: Array<Record<string, boolean>>;
+  startingEquipment?: unknown[];
+  entries?: unknown;
+};
 
-  // 1. Feats
-  const featsFile = path.join(dataDir, "feats.json");
-  if (fs.existsSync(featsFile)) {
-    try {
-      const rawFeats = fs.readFileSync(featsFile, "utf-8");
-      const feats = JSON.parse(rawFeats);
+const FEAT_CATEGORY_MAP: Record<string, string> = {
+  G: "General",
+  O: "Origin",
+  FS: "Fighting Style",
+  EB: "Epic Boon",
+};
 
-      for (const feat of feats) {
-        const mappedFeat = {
-          ...feat,
-          id: feat.id || feat.name.toLowerCase().replace(/\s+/g, "-"),
-          prerequisite: feat.prerequisite || undefined,
-        };
+function readFeats(): Feat[] {
+  const data = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), "new data/feats.json"), "utf-8"),
+  );
+  return data.feat || [];
+}
 
-        // Robust Schema Validation for Origin Feats
-        if (feat.category === "Origin") {
-          const parsedFeat = OriginFeatSchema.safeParse(mappedFeat);
-          if (!parsedFeat.success) {
-            console.error(`Validation failed for Origin Feat ${feat.name}:`, parsedFeat.error.message);
-            continue;
-          }
-        }
+function readBackgrounds(): Background[] {
+  const data = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), "new data/backgrounds.json"), "utf-8"),
+  );
+  return data.background || [];
+}
 
-        await db
-          .insert(schema.feats)
-          .values({
-            id: feat.id || feat.name.toLowerCase().replace(/\s+/g, "-"),
-            name: feat.name,
-            category: feat.category || "General",
-            description: feat.description || "",
-            prerequisite: feat.prerequisite || null,
-            levelRequirement: feat.levelRequirement || null,
-            repeatable: !!feat.repeatable,
-            abilityScoreImprovementJson: JSON.stringify(feat.abilityScoreImprovement || {}),
-            source: feat.source || "",
-            page: feat.page || null,
-          })
-          .onConflictDoUpdate({
-            target: schema.feats.id,
-            set: {
-              name: feat.name,
-              category: feat.category || "General",
-              description: feat.description || "",
-              prerequisite: feat.prerequisite || null,
-              levelRequirement: feat.levelRequirement || null,
-              repeatable: !!feat.repeatable,
-              abilityScoreImprovementJson: JSON.stringify(feat.abilityScoreImprovement || {}),
-              source: feat.source || "",
-              page: feat.page || null,
-            },
-          });
-      }
-      console.log(`Seeded ${feats.length} feats.`);
-    } catch (e) {
-      console.error("Error seeding feats:", e);
-    }
+function selectAllowed<T extends { name: string; source: string }>(items: T[]): T[] {
+  const selected = new Map<string, T>();
+
+  for (const item of items) {
+    if (!isSourceAllowed(item.source)) continue;
+    const key = item.name.toLowerCase();
+    const existing = selected.get(key);
+    const existingPriority = existing
+      ? getSourcePriority(existing.source, (existing as { edition?: string }).edition)
+      : -1;
+    const priority = getSourcePriority(item.source, (item as { edition?: string }).edition);
+    if (!existing || priority > existingPriority) selected.set(key, item);
   }
 
-  // 2. Backgrounds
-  const bgFile = path.join(dataDir, "backgrounds.json");
-  if (fs.existsSync(bgFile)) {
-    try {
-      const rawBgs = fs.readFileSync(bgFile, "utf-8");
-      const backgrounds = JSON.parse(rawBgs);
+  return [...selected.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
 
-      for (const bg of backgrounds) {
-        const parsedBg = BackgroundSchema.safeParse(bg);
-        if (!parsedBg.success) {
-          console.error(`Validation failed for background ${bg.name}:`, parsedBg.error.message);
-          continue;
-        }
-        
-        const validBg = parsedBg.data;
+function mapFeatCategory(category: string | undefined): string {
+  return category ? FEAT_CATEGORY_MAP[category] || titleCase(category) : "General";
+}
 
-        await db
-          .insert(schema.backgrounds)
-          .values({
-            id: validBg.id,
-            name: validBg.name,
-            description: validBg.description,
-            abilityScoreIncreasesJson: JSON.stringify(validBg.abilityScoreIncreases),
-            skillProficienciesJson: JSON.stringify(validBg.skillProficiencies),
-            toolProficienciesJson: JSON.stringify(validBg.toolProficiencies),
-            startingEquipmentJson: JSON.stringify(validBg.startingEquipment),
-            originFeatId: validBg.originFeatId || null,
-            source: (bg as any).source || "",
-            page: (bg as any).page || null,
-          })
-          .onConflictDoUpdate({
-            target: schema.backgrounds.id,
-            set: {
-              name: validBg.name,
-              description: validBg.description,
-              abilityScoreIncreasesJson: JSON.stringify(validBg.abilityScoreIncreases),
-              skillProficienciesJson: JSON.stringify(validBg.skillProficiencies),
-              toolProficienciesJson: JSON.stringify(validBg.toolProficiencies),
-              startingEquipmentJson: JSON.stringify(validBg.startingEquipment),
-              originFeatId: validBg.originFeatId || null,
-              source: (bg as any).source || "",
-              page: (bg as any).page || null,
-            },
-          });
-      }
-      console.log(`Seeded ${backgrounds.length} backgrounds perfectly.`);
-    } catch (e) {
-      console.error(`Failed to inject backgrounds`, e);
+function extractLevelRequirement(prerequisite: unknown[] | undefined): number | null {
+  for (const item of prerequisite || []) {
+    if (item && typeof item === "object" && "level" in item) {
+      const level = (item as { level?: number }).level;
+      return typeof level === "number" ? level : null;
     }
+  }
+  return null;
+}
+
+function extractProficiencies(values: Array<Record<string, boolean>> | undefined): string[] {
+  return (values || []).flatMap((value) =>
+    Object.entries(value)
+      .filter(([, enabled]) => enabled)
+      .map(([name]) => titleCase(name)),
+  );
+}
+
+function extractOriginFeat(feats: Array<Record<string, boolean>> | undefined): string | null {
+  const featKey = feats?.flatMap((feat) => Object.keys(feat)).find(Boolean);
+  if (!featKey) return null;
+  return slugify(featKey.split("|")[0].split(";")[0]);
+}
+
+export async function seedBackgroundsFeats(db: any) {
+  console.log("Seeding backgrounds and feats from 5etools data...");
+
+  try {
+    const feats = selectAllowed(readFeats());
+    const backgrounds = selectAllowed(readBackgrounds());
+
+    for (const feat of feats) {
+      await db
+        .insert(schema.feats)
+        .values({
+          id: slugify(feat.name),
+          name: feat.name,
+          category: mapFeatCategory(feat.category),
+          description: renderEntries(feat.entries),
+          prerequisite: feat.prerequisite ? renderEntries(feat.prerequisite) : null,
+          levelRequirement: extractLevelRequirement(feat.prerequisite),
+          repeatable: !!feat.repeatable,
+          abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
+          source: feat.source,
+          page: feat.page || null,
+        })
+        .onConflictDoUpdate({
+          target: schema.feats.id,
+          set: {
+            name: feat.name,
+            category: mapFeatCategory(feat.category),
+            description: renderEntries(feat.entries),
+            prerequisite: feat.prerequisite ? renderEntries(feat.prerequisite) : null,
+            levelRequirement: extractLevelRequirement(feat.prerequisite),
+            repeatable: !!feat.repeatable,
+            abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
+            source: feat.source,
+            page: feat.page || null,
+          },
+        });
+    }
+
+    for (const background of backgrounds) {
+      await db
+        .insert(schema.backgrounds)
+        .values({
+          id: slugify(background.name),
+          name: background.name,
+          description: renderEntries(background.entries),
+          abilityScoreIncreasesJson: JSON.stringify(background.ability || []),
+          skillProficienciesJson: JSON.stringify(
+            extractProficiencies(background.skillProficiencies),
+          ),
+          toolProficienciesJson: JSON.stringify(extractProficiencies(background.toolProficiencies)),
+          startingEquipmentJson: JSON.stringify(background.startingEquipment || []),
+          originFeatId: extractOriginFeat(background.feats),
+          source: background.source,
+          page: background.page || null,
+        })
+        .onConflictDoUpdate({
+          target: schema.backgrounds.id,
+          set: {
+            name: background.name,
+            description: renderEntries(background.entries),
+            abilityScoreIncreasesJson: JSON.stringify(background.ability || []),
+            skillProficienciesJson: JSON.stringify(
+              extractProficiencies(background.skillProficiencies),
+            ),
+            toolProficienciesJson: JSON.stringify(
+              extractProficiencies(background.toolProficiencies),
+            ),
+            startingEquipmentJson: JSON.stringify(background.startingEquipment || []),
+            originFeatId: extractOriginFeat(background.feats),
+            source: background.source,
+            page: background.page || null,
+          },
+        });
+    }
+
+    console.log(`Seeded ${feats.length} feats.`);
+    console.log(`Seeded ${backgrounds.length} backgrounds from 5etools.`);
+  } catch (e) {
+    console.error("Error seeding backgrounds/feats:", e);
+    throw e;
   }
 }

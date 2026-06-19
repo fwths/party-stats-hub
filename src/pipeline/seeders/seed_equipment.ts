@@ -1,157 +1,238 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as schema from "../../db/schema";
-import { WeaponSchema } from "../zodSchemas";
-import { z } from "zod";
+import {
+  ARMOR_TYPE_MAP,
+  DAMAGE_TYPE_MAP,
+  ITEM_TYPE_MAP,
+  PROPERTY_MAP,
+  codePart,
+  renderEntries,
+  slugify,
+  titleCase,
+} from "../5etools-utils";
+import { getSourcePriority, isSourceAllowed } from "../source-config";
+
+type BaseItem = {
+  name: string;
+  source: string;
+  edition?: string;
+  type?: string;
+  value?: number;
+  weight?: number;
+  weapon?: boolean;
+  armor?: boolean;
+  weaponCategory?: string;
+  property?: string[];
+  mastery?: string[];
+  dmg1?: string;
+  dmg2?: string;
+  dmgType?: string;
+  range?: { normal?: number; long?: number };
+  ac?: number;
+  strength?: string | number;
+  stealth?: boolean;
+};
+
+type MagicItem = {
+  name: string;
+  source: string;
+  edition?: string;
+  type?: string;
+  rarity?: string;
+  reqAttune?: boolean | string;
+  entries?: unknown;
+  weight?: number;
+  charges?: unknown;
+  wondrous?: boolean;
+};
+
+function readBaseItems(): BaseItem[] {
+  const data = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), "new data/items-base.json"), "utf-8"),
+  );
+  return data.baseitem || [];
+}
+
+function readMagicItems(): MagicItem[] {
+  const data = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), "new data/items.json"), "utf-8"),
+  );
+  return data.item || [];
+}
+
+function selectAllowed<T extends { name: string; source: string }>(items: T[]): T[] {
+  const selected = new Map<string, T>();
+
+  for (const item of items) {
+    if (!isSourceAllowed(item.source)) continue;
+    const key = item.name.toLowerCase();
+    const existing = selected.get(key);
+    const existingPriority = existing
+      ? getSourcePriority(existing.source, (existing as { edition?: string }).edition)
+      : -1;
+    const priority = getSourcePriority(item.source, (item as { edition?: string }).edition);
+    if (!existing || priority > existingPriority) selected.set(key, item);
+  }
+
+  return [...selected.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function copperToGp(value: number | undefined): number {
+  return Math.round((value || 0) / 100);
+}
+
+function mapWeaponType(type: string | undefined): string {
+  const code = codePart(type);
+  return code === "R" ? "Ranged" : "Melee";
+}
+
+function mapProperties(properties: string[] | undefined): string[] {
+  return (properties || []).map((property) => {
+    const code = codePart(property);
+    return PROPERTY_MAP[code] || titleCase(code);
+  });
+}
+
+function mapMastery(mastery: string[] | undefined): string | null {
+  const first = mastery?.[0];
+  return first ? codePart(first) : null;
+}
+
+function mapArmorCategory(type: string | undefined): string {
+  const code = codePart(type);
+  return ARMOR_TYPE_MAP[code] || titleCase(code || "Armor");
+}
+
+function mapMagicItemType(item: MagicItem): string {
+  if (item.wondrous) return "Wondrous Item";
+  const code = codePart(item.type);
+  return ITEM_TYPE_MAP[code] || titleCase(code || "Magic Item");
+}
+
+function mapAttunement(reqAttune: MagicItem["reqAttune"]) {
+  if (!reqAttune) return { requiresAttunement: false, attunementConditions: null };
+  if (typeof reqAttune === "string") {
+    return { requiresAttunement: true, attunementConditions: renderEntries(reqAttune) };
+  }
+  return { requiresAttunement: true, attunementConditions: null };
+}
 
 export async function seedEquipment(db: any) {
-  console.log("Seeding equipment and magic items from raw data...");
-  const itemsDir = path.join(process.cwd(), "src/data/raw/items");
+  console.log("Seeding equipment and magic items from 5etools data...");
 
-  // 1. Weapons
-  const weaponsFile = path.join(itemsDir, "weapons.json");
-  if (fs.existsSync(weaponsFile)) {
-    try {
-      const raw = fs.readFileSync(weaponsFile, "utf-8");
-      const weapons = JSON.parse(raw);
-      for (const w of weapons) {
-        const mappedWeapon = {
-          ...w,
-          id: w.id || w.name.toLowerCase().replace(/\s+/g, "-"),
-          damage: w.damage || { dice: "1d4", type: "bludgeoning" },
-          properties: w.properties || [],
-        };
-        // Validation
-        const parsed = WeaponSchema.safeParse(mappedWeapon);
-        if (!parsed.success) {
-          console.error(`Validation failed for Weapon ${w.name}:`, parsed.error.message);
-          continue;
-        }
+  try {
+    const baseItems = readBaseItems();
+    const weapons = selectAllowed(baseItems.filter((item) => item.weapon));
+    const armors = selectAllowed(baseItems.filter((item) => item.armor));
+    const magicItems = selectAllowed(readMagicItems());
 
-        const validWeapon = parsed.data;
-
-        await db
-          .insert(schema.weapons)
-          .values({
-            id: validWeapon.id,
-            name: validWeapon.name,
-            category: validWeapon.category,
-            type: validWeapon.type,
-            costGp: validWeapon.costGp,
-            damageDice: validWeapon.damage.dice,
-            damageType: validWeapon.damage.type,
-            versatileDice: validWeapon.damage.versatileDice || null,
-            rangeNormal: validWeapon.range?.normal || null,
-            rangeLong: validWeapon.range?.long || null,
-            mastery: validWeapon.mastery || null,
-            propertiesJson: JSON.stringify(validWeapon.properties || []),
-            weight: validWeapon.weight,
-          })
-          .onConflictDoUpdate({
-            target: schema.weapons.id,
-            set: {
-              name: validWeapon.name,
-              category: validWeapon.category,
-              type: validWeapon.type,
-              costGp: validWeapon.costGp,
-              damageDice: validWeapon.damage.dice,
-              damageType: validWeapon.damage.type,
-              versatileDice: validWeapon.damage.versatileDice || null,
-              rangeNormal: validWeapon.range?.normal || null,
-              rangeLong: validWeapon.range?.long || null,
-              mastery: validWeapon.mastery || null,
-              propertiesJson: JSON.stringify(validWeapon.properties || []),
-              weight: validWeapon.weight,
-            },
-          });
-      }
-      console.log(`Seeded ${weapons.length} weapons.`);
-    } catch (e) {
-      console.error("Error seeding weapons:", e);
+    for (const weapon of weapons) {
+      const damageTypeCode = weapon.dmgType || "";
+      await db
+        .insert(schema.weapons)
+        .values({
+          id: slugify(weapon.name),
+          name: weapon.name,
+          category: titleCase(weapon.weaponCategory || "Simple"),
+          type: mapWeaponType(weapon.type),
+          costGp: copperToGp(weapon.value),
+          damageDice: weapon.dmg1 || "1d4",
+          damageType: DAMAGE_TYPE_MAP[damageTypeCode] || titleCase(damageTypeCode || "Bludgeoning"),
+          versatileDice: weapon.dmg2 || null,
+          rangeNormal: weapon.range?.normal || null,
+          rangeLong: weapon.range?.long || null,
+          mastery: mapMastery(weapon.mastery),
+          propertiesJson: JSON.stringify(mapProperties(weapon.property)),
+          weight: weapon.weight || 0,
+        })
+        .onConflictDoUpdate({
+          target: schema.weapons.id,
+          set: {
+            name: weapon.name,
+            category: titleCase(weapon.weaponCategory || "Simple"),
+            type: mapWeaponType(weapon.type),
+            costGp: copperToGp(weapon.value),
+            damageDice: weapon.dmg1 || "1d4",
+            damageType:
+              DAMAGE_TYPE_MAP[damageTypeCode] || titleCase(damageTypeCode || "Bludgeoning"),
+            versatileDice: weapon.dmg2 || null,
+            rangeNormal: weapon.range?.normal || null,
+            rangeLong: weapon.range?.long || null,
+            mastery: mapMastery(weapon.mastery),
+            propertiesJson: JSON.stringify(mapProperties(weapon.property)),
+            weight: weapon.weight || 0,
+          },
+        });
     }
-  }
 
-  // 2. Armor
-  const armorFile = path.join(itemsDir, "armor.json");
-  if (fs.existsSync(armorFile)) {
-    try {
-      const raw = fs.readFileSync(armorFile, "utf-8");
-      const armors = JSON.parse(raw);
-      for (const a of armors) {
-        await db
-          .insert(schema.armor)
-          .values({
-            id: a.id,
-            name: a.name,
-            category: a.category,
-            costGp: a.costGp,
-            acBase: a.acBase,
-            acModifier: a.acModifier || null,
-            acMaxModifier: a.acMaxModifier || null,
-            strengthRequirement: a.strengthRequirement || null,
-            stealthDisadvantage: !!a.stealthDisadvantage,
-            weight: a.weight,
-          })
-          .onConflictDoUpdate({
-            target: schema.armor.id,
-            set: {
-              name: a.name,
-              category: a.category,
-              costGp: a.costGp,
-              acBase: a.acBase,
-              acModifier: a.acModifier || null,
-              acMaxModifier: a.acMaxModifier || null,
-              strengthRequirement: a.strengthRequirement || null,
-              stealthDisadvantage: !!a.stealthDisadvantage,
-              weight: a.weight,
-            },
-          });
-      }
-      console.log(`Seeded ${armors.length} armors.`);
-    } catch (e) {
-      console.error("Error seeding armor:", e);
+    for (const armor of armors) {
+      const category = mapArmorCategory(armor.type);
+      await db
+        .insert(schema.armor)
+        .values({
+          id: slugify(armor.name),
+          name: armor.name,
+          category,
+          costGp: copperToGp(armor.value),
+          acBase: armor.ac || (category === "Shield" ? 2 : 10),
+          acModifier: category === "Shield" || category === "Heavy" ? null : "Dex",
+          acMaxModifier: category === "Medium" ? 2 : null,
+          strengthRequirement: armor.strength ? Number(armor.strength) : null,
+          stealthDisadvantage: !!armor.stealth,
+          weight: armor.weight || 0,
+        })
+        .onConflictDoUpdate({
+          target: schema.armor.id,
+          set: {
+            name: armor.name,
+            category,
+            costGp: copperToGp(armor.value),
+            acBase: armor.ac || (category === "Shield" ? 2 : 10),
+            acModifier: category === "Shield" || category === "Heavy" ? null : "Dex",
+            acMaxModifier: category === "Medium" ? 2 : null,
+            strengthRequirement: armor.strength ? Number(armor.strength) : null,
+            stealthDisadvantage: !!armor.stealth,
+            weight: armor.weight || 0,
+          },
+        });
     }
-  }
 
-  // 3. Magic Items
-  const magicItemsFile = path.join(itemsDir, "magicitems.json");
-  if (fs.existsSync(magicItemsFile)) {
-    try {
-      const raw = fs.readFileSync(magicItemsFile, "utf-8");
-      const items = JSON.parse(raw);
-      
-      const itemList = Array.isArray(items) ? items : items.items || [];
-      for (const mi of itemList) {
-        await db
-          .insert(schema.magicItems)
-          .values({
-            id: mi.id || mi.name.toLowerCase().replace(/\s+/g, "-"),
-            name: mi.name,
-            type: mi.type || "Wondrous Item",
-            rarity: mi.rarity || "Uncommon",
-            requiresAttunement: !!mi.requiresAttunement,
-            attunementConditions: mi.attunementConditions || null,
-            description: mi.description || "",
-            weight: mi.weight || 0,
-            chargesJson: JSON.stringify(mi.charges || null),
-          })
-          .onConflictDoUpdate({
-            target: schema.magicItems.id,
-            set: {
-              name: mi.name,
-              type: mi.type || "Wondrous Item",
-              rarity: mi.rarity || "Uncommon",
-              requiresAttunement: !!mi.requiresAttunement,
-              attunementConditions: mi.attunementConditions || null,
-              description: mi.description || "",
-              weight: mi.weight || 0,
-              chargesJson: JSON.stringify(mi.charges || null),
-            },
-          });
-      }
-      console.log(`Seeded ${itemList.length} magic items.`);
-    } catch (e) {
-      console.error("Error seeding magic items:", e);
+    for (const item of magicItems) {
+      const attunement = mapAttunement(item.reqAttune);
+      await db
+        .insert(schema.magicItems)
+        .values({
+          id: slugify(item.name),
+          name: item.name,
+          type: mapMagicItemType(item),
+          rarity: titleCase(item.rarity || "Unknown"),
+          requiresAttunement: attunement.requiresAttunement,
+          attunementConditions: attunement.attunementConditions,
+          description: renderEntries(item.entries),
+          weight: item.weight || 0,
+          chargesJson: JSON.stringify(item.charges || null),
+        })
+        .onConflictDoUpdate({
+          target: schema.magicItems.id,
+          set: {
+            name: item.name,
+            type: mapMagicItemType(item),
+            rarity: titleCase(item.rarity || "Unknown"),
+            requiresAttunement: attunement.requiresAttunement,
+            attunementConditions: attunement.attunementConditions,
+            description: renderEntries(item.entries),
+            weight: item.weight || 0,
+            chargesJson: JSON.stringify(item.charges || null),
+          },
+        });
     }
+
+    console.log(`Seeded ${weapons.length} weapons.`);
+    console.log(`Seeded ${armors.length} armors.`);
+    console.log(`Seeded ${magicItems.length} magic items.`);
+  } catch (e) {
+    console.error("Error seeding equipment:", e);
+    throw e;
   }
 }

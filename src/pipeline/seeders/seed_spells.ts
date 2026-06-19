@@ -109,6 +109,7 @@ function mapSpell(spell: Spell) {
     attackRoll: !!spell.spellAttack?.length,
     source: spell.source,
     page: spell.page,
+    rawJson: JSON.stringify(spell),
   };
 }
 
@@ -178,6 +179,8 @@ export async function seedSpells(db: any) {
           attackRoll: spell.attackRoll,
           summonsStatBlockIds: JSON.stringify([]),
           source: spell.source,
+          page: spell.page || null,
+          rawJson: spell.rawJson,
           fluffJson: fluff ? JSON.stringify(fluff) : null,
           foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
@@ -201,6 +204,8 @@ export async function seedSpells(db: any) {
             attackRoll: spell.attackRoll,
             summonsStatBlockIds: JSON.stringify([]),
             source: spell.source,
+            page: spell.page || null,
+            rawJson: spell.rawJson,
             fluffJson: fluff ? JSON.stringify(fluff) : null,
             foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
@@ -244,4 +249,3 @@ function loadSpellFoundryMap(): Map<string, any> {
   }
   return map;
 }
-

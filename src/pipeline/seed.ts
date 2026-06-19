@@ -27,6 +27,7 @@ async function resetCompendiumTables() {
   console.log("Resetting compendium tables...");
   await db.delete(schema.compendiumFiles);
   await db.delete(schema.compendiumEntries);
+  await db.delete(schema.sourceDocuments);
   await db.delete(schema.contentSources);
   await db.delete(schema.rulesActions);
   await db.delete(schema.conditions);
@@ -66,17 +67,23 @@ async function resetCompendiumTables() {
   await db.delete(schema.cultsBoons);
   await db.delete(schema.itemProperties);
   await db.delete(schema.itemTypes);
+  await db.delete(schema.itemTypeAdditionalEntries);
   await db.delete(schema.mundaneGear);
   await db.delete(schema.weaponMasteries);
   await db.delete(schema.itemGroups);
   await db.delete(schema.magicVariants);
   await db.delete(schema.lootTables);
   await db.delete(schema.treasureTables);
+  await db.delete(schema.itemCardReferences);
   await db.delete(schema.vehicleUpgrades);
   await db.delete(schema.speciesVariants);
   await db.delete(schema.monsterFeatures);
+  await db.delete(schema.creatureBuilderEntries);
   await db.delete(schema.encounters);
   await db.delete(schema.lifeNameTables);
+  await db.delete(schema.encounterShapes);
+  await db.delete(schema.challengeRatings);
+  await db.delete(schema.psionics);
 }
 
 async function seedAll() {
@@ -137,6 +144,7 @@ async function seedAll() {
       language_scripts: schema.languageScripts,
       skills: schema.skills,
       senses: schema.senses,
+      source_documents: schema.sourceDocuments,
       char_options: schema.charOptions,
       optional_features: schema.optionalFeatures,
       deities: schema.deities,
@@ -150,17 +158,23 @@ async function seedAll() {
       cults_boons: schema.cultsBoons,
       item_properties: schema.itemProperties,
       item_types: schema.itemTypes,
+      item_type_additional_entries: schema.itemTypeAdditionalEntries,
       mundane_gear: schema.mundaneGear,
       weapon_masteries: schema.weaponMasteries,
       item_groups: schema.itemGroups,
       magic_variants: schema.magicVariants,
       loot_tables: schema.lootTables,
       treasure_tables: schema.treasureTables,
+      item_card_references: schema.itemCardReferences,
       vehicle_upgrades: schema.vehicleUpgrades,
       species_variants: schema.speciesVariants,
       monster_features: schema.monsterFeatures,
+      creature_builder_entries: schema.creatureBuilderEntries,
       encounters: schema.encounters,
       life_name_tables: schema.lifeNameTables,
+      encounter_shapes: schema.encounterShapes,
+      challenge_ratings: schema.challengeRatings,
+      psionics: schema.psionics,
       active_effects: schema.activeEffects,
       spell_active_effects: schema.spellActiveEffects,
       feature_active_effects: schema.featureActiveEffects,
@@ -168,6 +182,7 @@ async function seedAll() {
       class_spells: schema.classSpells,
       class_features: schema.classFeatures,
       content_sources: schema.contentSources,
+      compendium_files: schema.compendiumFiles,
     };
     const snapshot: Record<string, any[]> = {};
     for (const [key, table] of Object.entries(tableMap)) {

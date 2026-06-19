@@ -361,7 +361,7 @@ export function getProficiencyChoiceGroups(
   });
 }
 
-export function getToolChoiceGroups(raw: unknown): ChoiceGroup[] {
+export function getToolChoiceGroups(raw: unknown, toolOptions = TOOL_OPTIONS): ChoiceGroup[] {
   const parsed = parseJsonValue(raw as any, []);
   const values = Array.isArray(parsed) ? parsed : [parsed];
   return values.flatMap((entry: any, index: number) => {
@@ -371,7 +371,7 @@ export function getToolChoiceGroups(raw: unknown): ChoiceGroup[] {
           id: `artisan-tool-${index}`,
           label: "Choose one artisan's tool",
           count: 1,
-          options: TOOL_OPTIONS.filter((tool) => /Supplies|Tools|Utensils/.test(tool)),
+          options: getArtisanToolOptions(toolOptions),
         },
       ];
     }
@@ -381,7 +381,7 @@ export function getToolChoiceGroups(raw: unknown): ChoiceGroup[] {
           id: `artisan-tool-${index}`,
           label: `Choose ${entry.anyArtisansTool} artisan's tool`,
           count: Number(entry.anyArtisansTool),
-          options: TOOL_OPTIONS.filter((tool) => /Supplies|Tools|Utensils/.test(tool)),
+          options: getArtisanToolOptions(toolOptions),
         },
       ];
     }
@@ -391,7 +391,7 @@ export function getToolChoiceGroups(raw: unknown): ChoiceGroup[] {
           id: `tool-any-${index}`,
           label: `Choose ${entry.any} tool${entry.any > 1 ? "s" : ""}`,
           count: Number(entry.any),
-          options: TOOL_OPTIONS,
+          options: toolOptions,
         },
       ];
     }
@@ -408,6 +408,39 @@ export function getLanguageOptions(referenceEntries: any[]): string[] {
         .filter(Boolean),
     ),
   ).sort();
+}
+
+export function getSkillOptionsFromDb(skills: any[] | undefined): string[] {
+  const options = (skills || [])
+    .map((skill: any) => normalizeChoiceName(skill.name))
+    .filter(Boolean);
+  return options.length > 0 ? Array.from(new Set(options)).sort() : SKILL_OPTIONS;
+}
+
+export function getToolOptionsFromDb(
+  mundaneGear: any[] | undefined,
+  itemTypes?: any[],
+): string[] {
+  const toolTypeCodes = new Set(["AT", "GS", "INS", "T"]);
+  const typeNames = (itemTypes || [])
+    .filter((type: any) => toolTypeCodes.has(String(type.abbreviation || "").split("|")[0]))
+    .map((type: any) => normalizeChoiceName(type.name))
+    .filter(Boolean);
+  const gearNames = (mundaneGear || [])
+    .filter((item: any) => {
+      const type = String(item.type || "").split("|")[0];
+      const name = String(item.name || "");
+      return toolTypeCodes.has(type) || /tools|supplies|utensils|kit|instrument|set/i.test(name);
+    })
+    .map((item: any) => normalizeChoiceName(item.name))
+    .filter(Boolean);
+  const options = Array.from(new Set([...typeNames, ...gearNames])).sort();
+  return options.length > 0 ? options : TOOL_OPTIONS;
+}
+
+export function getArtisanToolOptions(toolOptions: string[]): string[] {
+  const artisanTools = toolOptions.filter((tool) => /Supplies|Tools|Utensils/i.test(tool));
+  return artisanTools.length > 0 ? artisanTools : TOOL_OPTIONS.filter((tool) => /Supplies|Tools|Utensils/i.test(tool));
 }
 
 export function getLanguageChoiceGroups(raw: unknown, languageOptions: string[]): ChoiceGroup[] {
@@ -664,9 +697,14 @@ export function getBuilderValidationIssues(
     subclasses: any[];
     classFeatures: any[];
     languages?: any[];
+    skills?: any[];
+    mundaneGear?: any[];
+    itemTypes?: any[];
   },
 ): string[] {
   const issues: string[] = [];
+  const skillOptions = getSkillOptionsFromDb(data.skills);
+  const toolOptions = getToolOptionsFromDb(data.mundaneGear, data.itemTypes);
   const race = data.species.find((item) => item.id === character.raceId);
   const background = data.backgrounds.find((item) => item.id === character.backgroundId);
   const cls = data.classes.find((item) => item.id === character.classId);
@@ -694,7 +732,7 @@ export function getBuilderValidationIssues(
     const speciesProficiencies = getJsonField(race, "proficienciesJson", "proficiencies_json");
     if (
       !areChoiceGroupsComplete(
-        getProficiencyChoiceGroups(speciesProficiencies, "skills", SKILL_OPTIONS),
+        getProficiencyChoiceGroups(speciesProficiencies, "skills", skillOptions),
         character.speciesSkillChoices,
       )
     ) {
@@ -702,7 +740,7 @@ export function getBuilderValidationIssues(
     }
     if (
       !areChoiceGroupsComplete(
-        getProficiencyChoiceGroups(speciesProficiencies, "tools", TOOL_OPTIONS),
+        getProficiencyChoiceGroups(speciesProficiencies, "tools", toolOptions),
         character.speciesToolChoices,
       )
     ) {
@@ -731,6 +769,7 @@ export function getBuilderValidationIssues(
       !areChoiceGroupsComplete(
         getToolChoiceGroups(
           getJsonField(background, "toolProficienciesJson", "tool_proficiencies_json"),
+          toolOptions,
         ),
         character.backgroundToolChoices,
       )
@@ -777,7 +816,7 @@ export function getBuilderValidationIssues(
     const classProficiencies = parseJsonValue(cls.proficienciesJson, {});
     if (
       !areChoiceGroupsComplete(
-        getProficiencyChoiceGroups(classProficiencies, "skills", SKILL_OPTIONS),
+        getProficiencyChoiceGroups(classProficiencies, "skills", skillOptions),
         character.classSkillChoices,
       )
     ) {
@@ -785,7 +824,7 @@ export function getBuilderValidationIssues(
     }
     if (
       !areChoiceGroupsComplete(
-        getToolChoiceGroups(classProficiencies?.starting?.toolProficiencies),
+        getToolChoiceGroups(classProficiencies?.starting?.toolProficiencies, toolOptions),
         character.classToolChoices,
       )
     ) {
@@ -800,7 +839,7 @@ export function getBuilderValidationIssues(
     }
     if (
       !areFeatureChoicesComplete(
-        getUnlockedFeatureOptionGroups(character, data.classFeatures),
+        getUnlockedFeatureOptionGroups(character, data.classFeatures, skillOptions),
         character.featureChoices,
       )
     ) {
@@ -976,6 +1015,7 @@ export function areOriginFeatChoicesComplete(originFeat: any, character: Builder
 export function getUnlockedFeatureOptionGroups(
   character: BuilderState,
   classFeatures: any[],
+  skillOptions = SKILL_OPTIONS,
 ): FeatureOptionGroup[] {
   if (!character.classId) return [];
   return classFeatures
@@ -992,7 +1032,7 @@ export function getUnlockedFeatureOptionGroups(
     .flatMap((feature: any) => {
       const groups = parseJsonValue(feature.optionsJson ?? feature.options_json, []);
       const structuredGroups = Array.isArray(groups) ? groups : [];
-      const syntheticGroups = getSyntheticFeatureOptionGroups(feature, character);
+      const syntheticGroups = getSyntheticFeatureOptionGroups(feature, character, skillOptions);
       return [...structuredGroups, ...syntheticGroups].flatMap((group: any, index: number) => {
         if (!Array.isArray(group.options) || group.options.length === 0) return [];
         const options = filterFeatureOptions(
@@ -1066,7 +1106,11 @@ export function weaponMasteryCount(classId: string | null, level: number): numbe
   return 0;
 }
 
-export function getSyntheticFeatureOptionGroups(feature: any, character: BuilderState) {
+export function getSyntheticFeatureOptionGroups(
+  feature: any,
+  character: BuilderState,
+  skillOptions = SKILL_OPTIONS,
+) {
   const name = String(feature.name || "");
   const featureId = String(feature.id || "");
   const classId = feature.classId ?? feature.class_id;
@@ -1074,7 +1118,7 @@ export function getSyntheticFeatureOptionGroups(feature: any, character: Builder
 
   if (name === "Expertise") {
     const options = selectedSkillNames(character);
-    return options.length > 0 ? [{ count: 2, options }] : [{ count: 2, options: SKILL_OPTIONS }];
+    return options.length > 0 ? [{ count: 2, options }] : [{ count: 2, options: skillOptions }];
   }
 
   if (/fighting style/i.test(name)) {

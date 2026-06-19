@@ -105,6 +105,7 @@ export async function seedSpecies(db: any) {
             tools: species.toolProficiencies || [],
           }),
           isLineage: !!species.lineage || titleCase(species.name).includes("Lineage"),
+          rawJson: JSON.stringify(species),
           fluffJson: fluff ? JSON.stringify(fluff) : null,
           foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
@@ -128,6 +129,7 @@ export async function seedSpecies(db: any) {
               tools: species.toolProficiencies || [],
             }),
             isLineage: !!species.lineage || titleCase(species.name).includes("Lineage"),
+            rawJson: JSON.stringify(species),
             fluffJson: fluff ? JSON.stringify(fluff) : null,
             foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
@@ -138,9 +140,10 @@ export async function seedSpecies(db: any) {
 
     // Seed subraces / species variants
     const subraces = readSubraces();
-    const allowedSubraces = subraces.filter((s: any) => isSourceAllowed(s.source));
+    const allowedSubraces = subraces.filter((s: any) => s.raceName && isSourceAllowed(s.source));
     for (const sub of allowedSubraces) {
-      const id = slugify(`${sub.name}-${sub.raceName}-${sub.source}`);
+      const variantName = sub.name || sub.raceName;
+      const id = slugify(`${variantName}-${sub.raceName}-${sub.source}`);
       const desc = renderEntries(sub.entries || []);
       const foundry = getSubraceFoundry(sub, speciesFoundryMap);
 
@@ -149,7 +152,7 @@ export async function seedSpecies(db: any) {
         .values({
           id,
           speciesId: slugify(sub.raceName),
-          name: sub.name,
+          name: variantName,
           source: sub.source,
           page: sub.page || null,
           raceName: sub.raceName,
@@ -165,7 +168,7 @@ export async function seedSpecies(db: any) {
           target: schema.speciesVariants.id,
           set: {
             speciesId: slugify(sub.raceName),
-            name: sub.name,
+            name: variantName,
             source: sub.source,
             page: sub.page || null,
             raceName: sub.raceName,
@@ -222,19 +225,20 @@ function loadSpeciesFoundryMap(): Map<string, any> {
 }
 
 function getSubraceFoundry(
-  sub: { name: string; raceName: string; source: string },
+  sub: { name?: string; raceName: string; source: string },
   foundryMap: Map<string, any>
 ): any {
+  const variantName = sub.name || sub.raceName;
   // Try direct name + source match
-  let key = `${sub.name.toLowerCase()}|${sub.source.toLowerCase()}`;
+  let key = `${variantName.toLowerCase()}|${sub.source.toLowerCase()}`;
   if (foundryMap.has(key)) return foundryMap.get(key);
 
   // Try "Race (Subrace)" + source match
-  key = `${sub.raceName.toLowerCase()} (${sub.name.toLowerCase()})|${sub.source.toLowerCase()}`;
+  key = `${sub.raceName.toLowerCase()} (${variantName.toLowerCase()})|${sub.source.toLowerCase()}`;
   if (foundryMap.has(key)) return foundryMap.get(key);
 
   // Try "Subrace Race" + source match
-  key = `${sub.name.toLowerCase()} ${sub.raceName.toLowerCase()}|${sub.source.toLowerCase()}`;
+  key = `${variantName.toLowerCase()} ${sub.raceName.toLowerCase()}|${sub.source.toLowerCase()}`;
   if (foundryMap.has(key)) return foundryMap.get(key);
 
   return null;

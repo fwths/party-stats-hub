@@ -1,3 +1,6 @@
+import * as fs from "fs";
+import * as path from "path";
+
 export const SOURCES = {
   core: ["XPHB", "XMM", "XDMG"],
   supplements: ["TCE", "XGE", "FTD", "BGG", "BMT", "MPMM", "VGM", "MTF", "AI", "RHW"],
@@ -23,6 +26,8 @@ export type SourceTier = keyof typeof SOURCES;
 
 export const ENABLED_TIERS: SourceTier[] = ["core", "supplements", "settings"];
 export const EXCLUDED_SOURCES: string[] = [];
+const EXCLUDED_SOURCE_GROUPS = new Set(["homecraft"]);
+const GENERIC_SOURCES = new Set(["GENERIC"]);
 
 // Keep non-official, prerelease/playtest, and local brew source codes out even if they are
 // accidentally added to a tier later.
@@ -59,16 +64,10 @@ export const BLOCKED_SOURCES: string[] = [
   "PSK",
   "PSX",
   "PSZ",
-  "HAT-TG",
-  "HF",
-  "HFFOTM",
-  "MABJOV",
-  "MGELFT",
-  "OGA",
-  "PAF",
-  "TD",
-  "XSAC",
+  "UATHEMYSTICCLASS",
 ];
+
+let catalogSourcesCache: string[] | null = null;
 
 const SOURCE_PRIORITY: Record<string, number> = {
   XPHB: 1000,
@@ -105,13 +104,18 @@ export function normalizeSource(source: string): string {
 export function getEnabledSources(): string[] {
   const excluded = new Set(EXCLUDED_SOURCES.map(normalizeSource));
   const blocked = new Set(BLOCKED_SOURCES.map(normalizeSource));
-  return ENABLED_TIERS.flatMap((tier) => SOURCES[tier]).filter(
+  const configured = ENABLED_TIERS.flatMap((tier) => SOURCES[tier]).filter(
     (source) => !excluded.has(normalizeSource(source)) && !blocked.has(normalizeSource(source)),
   );
+  const catalog = getCatalogSources().filter(
+    (source) => !excluded.has(normalizeSource(source)) && !blocked.has(normalizeSource(source)),
+  );
+  return [...new Set([...configured, ...catalog])];
 }
 
 export function isSourceAllowed(source: string | null | undefined): boolean {
   if (!source) return false;
+  if (GENERIC_SOURCES.has(normalizeSource(source))) return true;
   const blocked = new Set(BLOCKED_SOURCES.map(normalizeSource));
   if (blocked.has(normalizeSource(source))) return false;
 
@@ -128,4 +132,26 @@ export function getSourcePriority(source: string | null | undefined, edition?: s
 
 export function formatSourceConfigSummary(): string {
   return `Source tiers: ${ENABLED_TIERS.join(", ")} (${getEnabledSources().length} sources enabled)`;
+}
+
+function getCatalogSources(): string[] {
+  if (catalogSourcesCache) return catalogSourcesCache;
+
+  const sources = new Set<string>();
+  for (const [fileName, key] of [
+    ["books.json", "book"],
+    ["adventures.json", "adventure"],
+  ] as const) {
+    const filePath = path.join(process.cwd(), "new data", fileName);
+    if (!fs.existsSync(filePath)) continue;
+    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    for (const item of data[key] || []) {
+      if (item.group && EXCLUDED_SOURCE_GROUPS.has(item.group)) continue;
+      const source = item.source || item.id;
+      if (source) sources.add(source);
+    }
+  }
+
+  catalogSourcesCache = [...sources];
+  return catalogSourcesCache;
 }

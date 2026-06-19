@@ -76,6 +76,29 @@ function toAbility(value: string): string {
   return value.slice(0, 3).toUpperCase();
 }
 
+function skillKeyFromName(name: string): string {
+  return normalizeName(name)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function skillDefinitionsFromData(skillsData?: any[]) {
+  const rows = Array.isArray(skillsData) && skillsData.length > 0 ? skillsData : SKILLS;
+  return rows
+    .map((skill: any) => {
+      const name = normalizeName(skill?.name);
+      const ability = toAbility(String(skill?.ability || ""));
+      if (!name || !ABILITIES.includes(ability)) return null;
+      return {
+        key: String(skill?.id || skillKeyFromName(name)),
+        name,
+        ability,
+      };
+    })
+    .filter(Boolean) as Array<{ key: string; name: string; ability: string }>;
+}
+
 function asStringArray(value: unknown): string[] {
   const parsed = parseJsonValue(value, []);
   if (!parsed) return [];
@@ -997,6 +1020,26 @@ export function createNativePartyMember(
     spellActiveEffects?: any[];
     magicItems?: any[];
     feats?: any[];
+    weapons?: any[];
+    armor?: any[];
+    classes?: any[];
+    subclasses?: any[];
+    skills?: any[];
+    senses?: any[];
+    conditions?: any[];
+    rulesActions?: any[];
+    optionalFeatures?: any[];
+    charOptions?: any[];
+    mundaneGear?: any[];
+    weaponMasteries?: any[];
+    itemProperties?: any[];
+    itemTypes?: any[];
+    itemTypeAdditionalEntries?: any[];
+    itemGroups?: any[];
+    magicVariants?: any[];
+    itemCardReferences?: any[];
+    challengeRatings?: any[];
+    creatureBuilderEntries?: any[];
   },
   speciesVariantData?: any,
 ): PartyMember {
@@ -1392,7 +1435,7 @@ export function createNativePartyMember(
     modifier: modifier(score),
   }));
 
-  const skills: SkillInfo[] = SKILLS.map((skill) => {
+  const skills: SkillInfo[] = skillDefinitionsFromData(effectData?.skills).map((skill) => {
     const isProficient = proficientSkills.has(skill.name.toLowerCase());
     const proficiency: SkillInfo["proficiency"] =
       isProficient && expertiseSkills.has(skill.name.toLowerCase())

@@ -153,6 +153,9 @@ export async function seedEquipment(db: any) {
           mastery: mapMastery(weapon.mastery),
           propertiesJson: JSON.stringify(mapProperties(weapon.property)),
           weight: weapon.weight || 0,
+          source: weapon.source,
+          page: (weapon as any).page || null,
+          rawJson: JSON.stringify(weapon),
           fluffJson: fluff ? JSON.stringify(fluff) : null,
           foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
@@ -172,6 +175,9 @@ export async function seedEquipment(db: any) {
             mastery: mapMastery(weapon.mastery),
             propertiesJson: JSON.stringify(mapProperties(weapon.property)),
             weight: weapon.weight || 0,
+            source: weapon.source,
+            page: (weapon as any).page || null,
+            rawJson: JSON.stringify(weapon),
             fluffJson: fluff ? JSON.stringify(fluff) : null,
             foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
@@ -197,6 +203,9 @@ export async function seedEquipment(db: any) {
           strengthRequirement: armor.strength ? Number(armor.strength) : null,
           stealthDisadvantage: !!armor.stealth,
           weight: armor.weight || 0,
+          source: armor.source,
+          page: (armor as any).page || null,
+          rawJson: JSON.stringify(armor),
           fluffJson: fluff ? JSON.stringify(fluff) : null,
           foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
@@ -212,6 +221,9 @@ export async function seedEquipment(db: any) {
             strengthRequirement: armor.strength ? Number(armor.strength) : null,
             stealthDisadvantage: !!armor.stealth,
             weight: armor.weight || 0,
+            source: armor.source,
+            page: (armor as any).page || null,
+            rawJson: JSON.stringify(armor),
             fluffJson: fluff ? JSON.stringify(fluff) : null,
             foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
@@ -236,6 +248,9 @@ export async function seedEquipment(db: any) {
           description: renderEntries(item.entries),
           weight: item.weight || 0,
           chargesJson: JSON.stringify(item.charges || null),
+          source: item.source,
+          page: (item as any).page || null,
+          rawJson: JSON.stringify(item),
           fluffJson: fluff ? JSON.stringify(fluff) : null,
           foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
@@ -250,6 +265,9 @@ export async function seedEquipment(db: any) {
             description: renderEntries(item.entries),
             weight: item.weight || 0,
             chargesJson: JSON.stringify(item.charges || null),
+            source: item.source,
+            page: (item as any).page || null,
+            rawJson: JSON.stringify(item),
             fluffJson: fluff ? JSON.stringify(fluff) : null,
             foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
@@ -265,10 +283,53 @@ export async function seedEquipment(db: any) {
     await seedMundaneGearAndMasteries(db, itemsFluffMap, baseItemsFoundryMap);
     await seedItemGroupsAndVariants(db);
     await seedLootAndTreasure(db);
+    await seedItemCardReferences(db);
   } catch (e) {
     console.error("Error seeding equipment:", e);
     throw e;
   }
+}
+
+async function seedItemCardReferences(db: any) {
+  console.log("Seeding item card references...");
+  const filePath = path.join(process.cwd(), "new data/makecards.json");
+  if (!fs.existsSync(filePath)) {
+    console.log("Seeded 0 item card references.");
+    return;
+  }
+
+  const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  const rows = [
+    ...(data.reducedItemProperty || []).map((item: any) => ({ ...item, kind: "property" })),
+    ...(data.reducedItemType || []).map((item: any) => ({ ...item, kind: "type" })),
+  ].filter((item: any) => isSourceAllowed(item.source));
+
+  for (const item of rows) {
+    const id = slugify(`item-card-${item.kind}-${item.abbreviation}-${item.source}`);
+    await db
+      .insert(schema.itemCardReferences)
+      .values({
+        id,
+        abbreviation: item.abbreviation,
+        source: item.source,
+        kind: item.kind,
+        name: item.name || null,
+        description: renderEntries(item.entries || []),
+        rawJson: JSON.stringify(item),
+      })
+      .onConflictDoUpdate({
+        target: schema.itemCardReferences.id,
+        set: {
+          abbreviation: item.abbreviation,
+          source: item.source,
+          kind: item.kind,
+          name: item.name || null,
+          description: renderEntries(item.entries || []),
+          rawJson: JSON.stringify(item),
+        },
+      });
+  }
+  console.log(`Seeded ${rows.length} item card references.`);
 }
 
 async function seedItemPropertiesAndTypes(db: any) {
@@ -329,6 +390,35 @@ async function seedItemPropertiesAndTypes(db: any) {
       });
   }
   console.log(`Seeded ${allowedTypes.length} item types.`);
+
+  const typeEntries = data.itemTypeAdditionalEntries || [];
+  const allowedTypeEntries = typeEntries.filter((entry: any) => isSourceAllowed(entry.source));
+  for (const entry of allowedTypeEntries) {
+    const id = slugify(`${entry.name}-${entry.appliesTo}-${entry.source}`);
+    await db
+      .insert(schema.itemTypeAdditionalEntries)
+      .values({
+        id,
+        name: entry.name,
+        source: entry.source,
+        page: entry.page || null,
+        appliesTo: entry.appliesTo,
+        description: renderEntries(entry.entries || []),
+        rawJson: JSON.stringify(entry),
+      })
+      .onConflictDoUpdate({
+        target: schema.itemTypeAdditionalEntries.id,
+        set: {
+          name: entry.name,
+          source: entry.source,
+          page: entry.page || null,
+          appliesTo: entry.appliesTo,
+          description: renderEntries(entry.entries || []),
+          rawJson: JSON.stringify(entry),
+        },
+      });
+  }
+  console.log(`Seeded ${allowedTypeEntries.length} item type additional entries.`);
 }
 
 async function seedMundaneGearAndMasteries(db: any, fluffMap: Map<string, any>, foundryMap: Map<string, any>) {

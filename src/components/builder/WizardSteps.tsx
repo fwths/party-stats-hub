@@ -13,8 +13,6 @@ import {
 import {
   ABILITIES,
   ABILITY_NAMES,
-  SKILL_OPTIONS,
-  TOOL_OPTIONS,
   DRAGON_DAMAGE_BY_ANCESTRY,
   ClassTheme,
   CLASS_THEMES,
@@ -59,6 +57,9 @@ import {
   getClassCantripChoices,
   getClassPreparedSpellChoices,
   getSpellcasters,
+  getSkillOptionsFromDb,
+  getToolOptionsFromDb,
+  getArtisanToolOptions,
 } from "./BuilderUtils";
 
 interface StepProps {
@@ -272,14 +273,16 @@ export function OriginFeatChoicePanel({
   character: BuilderState;
   updateCharacter: (updates: Partial<BuilderState>) => void;
 }) {
-  const { classSpells, spells } = useLoaderData({ from: "/builder" }) as any;
+  const { classSpells, spells, skills, mundaneGear, itemTypes } = useLoaderData({ from: "/builder" }) as any;
+  const skillOptions = getSkillOptionsFromDb(skills);
+  const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   if (!originFeat) return null;
 
   const setFeatChoices = (updates: Partial<BuilderState["featChoices"]>) =>
     updateCharacter({ featChoices: { ...character.featChoices, ...updates } });
 
   if (originFeat.id === "crafter") {
-    const artisanTools = TOOL_OPTIONS.filter((tool) => /Supplies|Tools|Utensils/.test(tool));
+    const artisanTools = getArtisanToolOptions(toolOptions);
     return (
       <ChoiceGroupPicker
         groups={[
@@ -301,7 +304,7 @@ export function OriginFeatChoicePanel({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ChoiceGroupPicker
           groups={[
-            { id: "skilled-skills", label: "Skilled: skills", count: 3, options: SKILL_OPTIONS },
+            { id: "skilled-skills", label: "Skilled: skills", count: 3, options: skillOptions },
           ]}
           selected={character.featChoices.skills}
           onChange={(choices) =>
@@ -312,7 +315,7 @@ export function OriginFeatChoicePanel({
         />
         <ChoiceGroupPicker
           groups={[
-            { id: "skilled-tools", label: "Skilled: tools", count: 3, options: TOOL_OPTIONS },
+            { id: "skilled-tools", label: "Skilled: tools", count: 3, options: toolOptions },
           ]}
           selected={character.featChoices.tools}
           onChange={(choices) =>
@@ -417,21 +420,22 @@ export function OriginFeatChoicePanel({
 
 export function StepRace({ character, updateCharacter, theme }: StepProps) {
   const activeTheme = theme || DEFAULT_THEME;
-  const { species, speciesVariants } = useLoaderData({ from: "/builder" }) as any;
+  const { species, speciesVariants, languages, skills, mundaneGear, itemTypes } = useLoaderData({ from: "/builder" }) as any;
+  const skillOptions = getSkillOptionsFromDb(skills);
+  const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Player's Handbook");
   const selectedRace = species.find((race: any) => race.id === character.raceId);
   const speciesSkillGroups = getProficiencyChoiceGroups(
     getJsonField(selectedRace, "proficienciesJson", "proficiencies_json"),
     "skills",
-    SKILL_OPTIONS,
+    skillOptions,
   );
   const speciesToolGroups = getProficiencyChoiceGroups(
     getJsonField(selectedRace, "proficienciesJson", "proficiencies_json"),
     "tools",
-    TOOL_OPTIONS,
+    toolOptions,
   );
-  const { languages } = useLoaderData({ from: "/builder" }) as any;
   const languageOptions = getLanguageOptions(languages);
   const speciesLanguageGroups = getLanguageChoiceGroups(
     getJsonField(selectedRace, "languagesJson", "languages_json"),
@@ -697,7 +701,8 @@ export function StepRace({ character, updateCharacter, theme }: StepProps) {
 }
 
 export function StepBackground({ character, updateCharacter }: StepProps) {
-  const { backgrounds, feats, languages } = useLoaderData({ from: "/builder" }) as any;
+  const { backgrounds, feats, languages, mundaneGear, itemTypes } = useLoaderData({ from: "/builder" }) as any;
+  const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Player's Handbook");
   const selectedBackground = backgrounds.find((bg: any) => bg.id === character.backgroundId);
@@ -727,6 +732,7 @@ export function StepBackground({ character, updateCharacter }: StepProps) {
     : null;
   const backgroundToolGroups = getToolChoiceGroups(
     getJsonField(selectedBackground, "toolProficienciesJson", "tool_proficiencies_json"),
+    toolOptions,
   );
   const backgroundLanguageRaw = getJsonField(
     selectedBackground,
@@ -998,16 +1004,18 @@ export function StepBackground({ character, updateCharacter }: StepProps) {
 
 export function StepClass({ character, updateCharacter, theme }: StepProps) {
   const activeTheme = theme || DEFAULT_THEME;
-  const { classes, subclasses, classFeatures } = useLoaderData({ from: "/builder" }) as any;
+  const { classes, subclasses, classFeatures, skills, mundaneGear, itemTypes } = useLoaderData({ from: "/builder" }) as any;
+  const skillOptions = getSkillOptionsFromDb(skills);
+  const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const availableSubclasses = subclasses.filter((s: any) => s.classId === character.classId);
   const subclassChoiceLevel =
     availableSubclasses.length > 0 ? getSubclassChoiceLevel(availableSubclasses) : 3;
   const selectedClass = classes.find((cls: any) => cls.id === character.classId);
   const classProficiencies = parseJsonValue(selectedClass?.proficienciesJson, {});
-  const classSkillGroups = getProficiencyChoiceGroups(classProficiencies, "skills", SKILL_OPTIONS);
-  const classToolGroups = getToolChoiceGroups(classProficiencies?.starting?.toolProficiencies);
+  const classSkillGroups = getProficiencyChoiceGroups(classProficiencies, "skills", skillOptions);
+  const classToolGroups = getToolChoiceGroups(classProficiencies?.starting?.toolProficiencies, toolOptions);
   const classEquipmentOptions = getEquipmentOptions(selectedClass?.startingEquipmentJson);
-  const featureOptionGroups = getUnlockedFeatureOptionGroups(character, classFeatures);
+  const featureOptionGroups = getUnlockedFeatureOptionGroups(character, classFeatures, skillOptions);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-4xl mx-auto">
@@ -1408,7 +1416,9 @@ export function StepAbilities({ character, updateCharacter, theme }: StepProps) 
   const method = character.abilitiesMethod || "standard";
   const [rollDetails, setRollDetails] = useState<Record<string, { rolls: number[]; dropped: number; total: number }>>({});
   const [rollingStat, setRollingStat] = useState<string | null>(null);
-  const { feats, spells, classes, subclasses } = useLoaderData({ from: "/builder" }) as any;
+  const { feats, spells, classes, subclasses, skills, mundaneGear, itemTypes } = useLoaderData({ from: "/builder" }) as any;
+  const skillOptions = getSkillOptionsFromDb(skills);
+  const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const featLevels = getFeatChoiceLevels(character.classId, character.level);
   const generalFeats = (feats || [])
     .filter(
@@ -1775,8 +1785,8 @@ export function StepAbilities({ character, updateCharacter, theme }: StepProps) 
                                   const nextChoices = [...skilledChoices];
                                   nextChoices[i] = val;
                                   const finalChoices = nextChoices.filter(Boolean);
-                                  const nextSkills = finalChoices.filter(c => SKILL_OPTIONS.includes(c));
-                                  const nextTools = finalChoices.filter(c => TOOL_OPTIONS.includes(c));
+                                  const nextSkills = finalChoices.filter(c => skillOptions.includes(c));
+                                  const nextTools = finalChoices.filter(c => toolOptions.includes(c));
                                   updateCharacter({
                                     highLevelFeatExtraChoices: {
                                       ...character.highLevelFeatExtraChoices,
@@ -1790,11 +1800,11 @@ export function StepAbilities({ character, updateCharacter, theme }: StepProps) 
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[250px]">
                                   <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase bg-secondary/50">Skills</div>
-                                  {SKILL_OPTIONS.map((skill) => (
+                                  {skillOptions.map((skill) => (
                                     <SelectItem key={skill} value={skill}>{skill}</SelectItem>
                                   ))}
                                   <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase bg-secondary/50 border-t border-border/20 mt-1">Tools</div>
-                                  {TOOL_OPTIONS.map((tool) => (
+                                  {toolOptions.map((tool) => (
                                     <SelectItem key={tool} value={tool}>{tool}</SelectItem>
                                   ))}
                                 </SelectContent>
@@ -1975,7 +1985,7 @@ export function StepAbilities({ character, updateCharacter, theme }: StepProps) 
                                   <SelectValue placeholder="Select skill" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[250px]">
-                                  {SKILL_OPTIONS.map((skill) => (
+                                  {skillOptions.map((skill) => (
                                     <SelectItem key={skill} value={skill}>{skill}</SelectItem>
                                   ))}
                                 </SelectContent>
@@ -1999,7 +2009,7 @@ export function StepAbilities({ character, updateCharacter, theme }: StepProps) 
                                   <SelectValue placeholder="Select expertise" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[250px]">
-                                  {SKILL_OPTIONS.map((skill) => (
+                                  {skillOptions.map((skill) => (
                                     <SelectItem key={skill} value={skill}>{skill}</SelectItem>
                                   ))}
                                 </SelectContent>
@@ -2942,7 +2952,9 @@ export function StepReview({
     magicItems,
     itemActiveEffects,
     activeEffects,
+    skills,
   } = useLoaderData({ from: "/builder" }) as any;
+  const skillOptions = getSkillOptionsFromDb(skills);
   const race = species.find((r: any) => r.id === character.raceId);
   const subrace = speciesVariants?.find((sv: any) => sv.id === character.speciesVariantId);
   const background = backgrounds.find((b: any) => b.id === character.backgroundId);
@@ -2980,7 +2992,7 @@ export function StepReview({
     ...character.backgroundLanguageChoices,
   ];
   const selectedTraitChoices = Object.entries(character.speciesTraitChoices);
-  const selectedFeatureChoices = getUnlockedFeatureOptionGroups(character, classFeatures)
+  const selectedFeatureChoices = getUnlockedFeatureOptionGroups(character, classFeatures, skillOptions)
     .map((group) => ({
       name: group.featureName,
       choices: character.featureChoices[group.featureId] || [],

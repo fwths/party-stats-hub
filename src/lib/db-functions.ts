@@ -145,6 +145,10 @@ export const getCompendiumFilesFromDb = createServerFn({ method: "GET" }).handle
   return await queryTable("compendium_files", "compendiumFiles");
 });
 
+export const getSourceDocumentsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("source_documents", "sourceDocuments");
+});
+
 export const getMonstersFromDb = createServerFn({ method: "GET" }).handler(async () => {
   return await queryTable("monsters", "monsters");
 });
@@ -265,6 +269,12 @@ export const getItemTypesFromDb = createServerFn({ method: "GET" }).handler(asyn
   return await queryTable("item_types", "itemTypes");
 });
 
+export const getItemTypeAdditionalEntriesFromDb = createServerFn({ method: "GET" }).handler(
+  async () => {
+    return await queryTable("item_type_additional_entries", "itemTypeAdditionalEntries");
+  },
+);
+
 export const getMundaneGearFromDb = createServerFn({ method: "GET" }).handler(async () => {
   return await queryTable("mundane_gear", "mundaneGear");
 });
@@ -289,6 +299,10 @@ export const getTreasureTablesFromDb = createServerFn({ method: "GET" }).handler
   return await queryTable("treasure_tables", "treasureTables");
 });
 
+export const getItemCardReferencesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("item_card_references", "itemCardReferences");
+});
+
 export const getVehicleUpgradesFromDb = createServerFn({ method: "GET" }).handler(async () => {
   return await queryTable("vehicle_upgrades", "vehicleUpgrades");
 });
@@ -301,12 +315,30 @@ export const getMonsterFeaturesFromDb = createServerFn({ method: "GET" }).handle
   return await queryTable("monster_features", "monsterFeatures");
 });
 
+export const getCreatureBuilderEntriesFromDb = createServerFn({ method: "GET" }).handler(
+  async () => {
+    return await queryTable("creature_builder_entries", "creatureBuilderEntries");
+  },
+);
+
 export const getEncountersFromDb = createServerFn({ method: "GET" }).handler(async () => {
   return await queryTable("encounters", "encounters");
 });
 
 export const getLifeNameTablesFromDb = createServerFn({ method: "GET" }).handler(async () => {
   return await queryTable("life_name_tables", "lifeNameTables");
+});
+
+export const getEncounterShapesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("encounter_shapes", "encounterShapes");
+});
+
+export const getChallengeRatingsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("challenge_ratings", "challengeRatings");
+});
+
+export const getPsionicsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("psionics", "psionics");
 });
 
 export const getMonsterFluffByName = createServerFn({ method: "GET" })

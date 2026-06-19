@@ -33,8 +33,10 @@ import {
   areFeatureChoicesComplete,
   isSpellStepValid,
   getPointsUsed,
+  getSkillOptionsFromDb,
+  getToolOptionsFromDb,
 } from "@/components/builder/BuilderUtils";
-import { SKILL_OPTIONS, TOOL_OPTIONS, CLASS_THEMES, DEFAULT_THEME } from "@/components/builder/BuilderConstants";
+import { CLASS_THEMES, DEFAULT_THEME } from "@/components/builder/BuilderConstants";
 import {
   StepRace,
   StepBackground,
@@ -68,7 +70,25 @@ function BuilderWizard() {
     magicItems,
     weapons,
     armor,
+    skills,
+    senses,
+    conditions,
+    rulesActions,
+    optionalFeatures,
+    charOptions,
+    mundaneGear,
+    weaponMasteries,
+    itemProperties,
+    itemTypes,
+    itemTypeAdditionalEntries,
+    itemGroups,
+    magicVariants,
+    itemCardReferences,
+    challengeRatings,
+    creatureBuilderEntries,
   } = Route.useLoaderData() as any;
+  const skillOptions = getSkillOptionsFromDb(skills);
+  const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const [step, setStep] = useState(1);
   const [character, setCharacter] = useState<BuilderState>(() => {
     if (typeof window !== "undefined") {
@@ -167,6 +187,9 @@ function BuilderWizard() {
     languages,
     weapons,
     armor,
+    skills,
+    mundaneGear,
+    itemTypes,
   });
 
   const saveCharacter = async () => {
@@ -226,7 +249,34 @@ function BuilderWizard() {
         originFeat,
         selectedSpells,
         classFeatures,
-        { activeEffects, featureActiveEffects, itemActiveEffects, spellActiveEffects, magicItems, feats, weapons, armor, classes, subclasses },
+        {
+          activeEffects,
+          featureActiveEffects,
+          itemActiveEffects,
+          spellActiveEffects,
+          magicItems,
+          feats,
+          weapons,
+          armor,
+          classes,
+          subclasses,
+          skills,
+          senses,
+          conditions,
+          rulesActions,
+          optionalFeatures,
+          charOptions,
+          mundaneGear,
+          weaponMasteries,
+          itemProperties,
+          itemTypes,
+          itemTypeAdditionalEntries,
+          itemGroups,
+          magicVariants,
+          itemCardReferences,
+          challengeRatings,
+          creatureBuilderEntries,
+        },
         speciesVariantData,
       );
       const newId = await saveNativeCharacter({ data: { character: newMember } });
@@ -259,7 +309,7 @@ function BuilderWizard() {
           getProficiencyChoiceGroups(
             getJsonField(race, "proficienciesJson", "proficiencies_json"),
             "skills",
-            SKILL_OPTIONS,
+            skillOptions,
           ),
           character.speciesSkillChoices,
         ) &&
@@ -267,7 +317,7 @@ function BuilderWizard() {
           getProficiencyChoiceGroups(
             getJsonField(race, "proficienciesJson", "proficiencies_json"),
             "tools",
-            TOOL_OPTIONS,
+            toolOptions,
           ),
           character.speciesToolChoices,
         ) &&
@@ -291,6 +341,7 @@ function BuilderWizard() {
         areChoiceGroupsComplete(
           getToolChoiceGroups(
             getJsonField(background, "toolProficienciesJson", "tool_proficiencies_json"),
+            toolOptions,
           ),
           character.backgroundToolChoices,
         ) &&
@@ -313,14 +364,14 @@ function BuilderWizard() {
       const classProficiencies = parseJsonValue(selectedClass?.proficienciesJson, {});
       const classSubclasses = subclasses.filter((s: any) => s.classId === character.classId);
       const subclassLevel = getSubclassChoiceLevel(classSubclasses);
-      const unlockedFeatureOptions = getUnlockedFeatureOptionGroups(character, classFeatures);
+      const unlockedFeatureOptions = getUnlockedFeatureOptionGroups(character, classFeatures, skillOptions);
       return (
         areChoiceGroupsComplete(
-          getProficiencyChoiceGroups(classProficiencies, "skills", SKILL_OPTIONS),
+          getProficiencyChoiceGroups(classProficiencies, "skills", skillOptions),
           character.classSkillChoices,
         ) &&
         areChoiceGroupsComplete(
-          getToolChoiceGroups(classProficiencies?.starting?.toolProficiencies),
+          getToolChoiceGroups(classProficiencies?.starting?.toolProficiencies, toolOptions),
           character.classToolChoices,
         ) &&
         getEquipmentOptions(selectedClass?.startingEquipmentJson).some(

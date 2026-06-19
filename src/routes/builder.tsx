@@ -17,6 +17,22 @@ import {
   getSpeciesVariantsFromDb,
   getWeaponsFromDb,
   getArmorFromDb,
+  getChallengeRatingsFromDb,
+  getCharOptionsFromDb,
+  getConditionsFromDb,
+  getCreatureBuilderEntriesFromDb,
+  getItemCardReferencesFromDb,
+  getItemGroupsFromDb,
+  getItemPropertiesFromDb,
+  getItemTypeAdditionalEntriesFromDb,
+  getItemTypesFromDb,
+  getMagicVariantsFromDb,
+  getMundaneGearFromDb,
+  getOptionalFeaturesFromDb,
+  getRulesActionsFromDb,
+  getSensesFromDb,
+  getSkillsFromDb,
+  getWeaponMasteriesFromDb,
 } from "@/lib/db-functions";
 
 export const Route = createFileRoute("/builder")({
@@ -38,6 +54,22 @@ export const Route = createFileRoute("/builder")({
     const magicItems = await getMagicItemsFromDb();
     const weapons = await getWeaponsFromDb();
     const armor = await getArmorFromDb();
+    const skills = await getSkillsFromDb();
+    const senses = await getSensesFromDb();
+    const conditions = await getConditionsFromDb();
+    const rulesActions = await getRulesActionsFromDb();
+    const optionalFeatures = await getOptionalFeaturesFromDb();
+    const charOptions = await getCharOptionsFromDb();
+    const mundaneGear = await getMundaneGearFromDb();
+    const weaponMasteries = await getWeaponMasteriesFromDb();
+    const itemProperties = await getItemPropertiesFromDb();
+    const itemTypes = await getItemTypesFromDb();
+    const itemTypeAdditionalEntries = await getItemTypeAdditionalEntriesFromDb();
+    const itemGroups = await getItemGroupsFromDb();
+    const magicVariants = await getMagicVariantsFromDb();
+    const itemCardReferences = await getItemCardReferencesFromDb();
+    const challengeRatings = await getChallengeRatingsFromDb();
+    const creatureBuilderEntries = await getCreatureBuilderEntriesFromDb();
     return {
       classes,
       species,
@@ -56,6 +88,22 @@ export const Route = createFileRoute("/builder")({
       magicItems,
       weapons,
       armor,
+      skills,
+      senses,
+      conditions,
+      rulesActions,
+      optionalFeatures,
+      charOptions,
+      mundaneGear,
+      weaponMasteries,
+      itemProperties,
+      itemTypes,
+      itemTypeAdditionalEntries,
+      itemGroups,
+      magicVariants,
+      itemCardReferences,
+      challengeRatings,
+      creatureBuilderEntries,
     };
   },
 });

@@ -365,6 +365,32 @@ export async function seedAdventuringContent(db: any) {
       });
   }
   console.log(`Seeded ${allowedEncounters.length} encounters.`);
+
+  const encounterShapes = readEncounterShapes().filter((shape: any) =>
+    isSourceAllowed(shape.source || "Generic"),
+  );
+  for (const shape of encounterShapes) {
+    const source = shape.source || "Generic";
+    await db
+      .insert(schema.encounterShapes)
+      .values({
+        id: slugify(`${shape.name}-${source}`),
+        name: shape.name,
+        source,
+        shapeTemplateJson: JSON.stringify(shape.shapeTemplate || []),
+        rawJson: JSON.stringify(shape),
+      })
+      .onConflictDoUpdate({
+        target: schema.encounterShapes.id,
+        set: {
+          name: shape.name,
+          source,
+          shapeTemplateJson: JSON.stringify(shape.shapeTemplate || []),
+          rawJson: JSON.stringify(shape),
+        },
+      });
+  }
+  console.log(`Seeded ${encounterShapes.length} encounter shapes.`);
 }
 
 function readVehicleUpgrades(): any[] {
@@ -379,6 +405,13 @@ function readEncounters(): any[] {
     fs.readFileSync(path.join(process.cwd(), "new data/encounters.json"), "utf-8"),
   );
   return data.encounter || [];
+}
+
+function readEncounterShapes(): any[] {
+  const data = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), "new data/encounterbuilder.json"), "utf-8"),
+  );
+  return data.encounterShape || [];
 }
 
 function loadVehicleFluffMap(): Map<string, any> {

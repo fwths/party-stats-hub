@@ -8,6 +8,7 @@ type Monster = {
   name: string;
   source: string;
   edition?: string;
+  page?: number;
   size?: string[];
   type?: string | { type?: string; tags?: unknown[] };
   alignment?: string[];
@@ -166,6 +167,9 @@ export async function seedMonsters(db: any) {
           legendaryActionsJson: JSON.stringify(renderActionList(monster.legendary)),
           mythicActionsJson: JSON.stringify(renderActionList(monster.mythic)),
           lairActionsJson: JSON.stringify([]),
+          source: monster.source,
+          page: monster.page || null,
+          rawJson: JSON.stringify(monster),
           fluffJson: fluff ? JSON.stringify(fluff) : null,
           foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
@@ -204,6 +208,9 @@ export async function seedMonsters(db: any) {
             legendaryActionsJson: JSON.stringify(renderActionList(monster.legendary)),
             mythicActionsJson: JSON.stringify(renderActionList(monster.mythic)),
             lairActionsJson: JSON.stringify([]),
+            source: monster.source,
+            page: monster.page || null,
+            rawJson: JSON.stringify(monster),
             fluffJson: fluff ? JSON.stringify(fluff) : null,
             foundryJson: foundry ? JSON.stringify(foundry) : null,
           },

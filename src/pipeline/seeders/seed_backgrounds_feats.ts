@@ -125,6 +125,7 @@ export async function seedBackgroundsFeats(db: any) {
           abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
           source: feat.source,
           page: feat.page || null,
+          rawJson: JSON.stringify(feat),
           fluffJson: fluff ? JSON.stringify(fluff) : null,
           foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
@@ -140,6 +141,7 @@ export async function seedBackgroundsFeats(db: any) {
             abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
             source: feat.source,
             page: feat.page || null,
+            rawJson: JSON.stringify(feat),
             fluffJson: fluff ? JSON.stringify(fluff) : null,
             foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
@@ -166,6 +168,7 @@ export async function seedBackgroundsFeats(db: any) {
           originFeatId: extractOriginFeat(background.feats),
           source: background.source,
           page: background.page || null,
+          rawJson: JSON.stringify(background),
           fluffJson: fluff ? JSON.stringify(fluff) : null,
           foundryJson: null,
         })
@@ -186,6 +189,7 @@ export async function seedBackgroundsFeats(db: any) {
             originFeatId: extractOriginFeat(background.feats),
             source: background.source,
             page: background.page || null,
+            rawJson: JSON.stringify(background),
             fluffJson: fluff ? JSON.stringify(fluff) : null,
             foundryJson: null,
           },

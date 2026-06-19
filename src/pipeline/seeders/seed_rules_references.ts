@@ -49,6 +49,7 @@ async function upsert(db: any, table: any, target: any, values: any) {
 export async function seedRulesReferences(db: any) {
   console.log("Seeding typed rules references from 5etools data...");
 
+  const foundryActions = loadFoundryActionMap();
   const actions = selectAllowed(readArray<SourceItem>("actions.json", "action"));
   const conditions = selectAllowed(readArray<SourceItem>("conditionsdiseases.json", "condition"));
   const diseases = selectAllowed(readArray<SourceItem>("conditionsdiseases.json", "disease"));
@@ -59,6 +60,8 @@ export async function seedRulesReferences(db: any) {
   const senses = selectAllowed(readArray<SourceItem>("senses.json", "sense"));
 
   for (const action of actions) {
+    const key = `${action.name.toLowerCase()}|${action.source.toLowerCase()}`;
+    const foundry = foundryActions.get(key);
     await upsert(db, schema.rulesActions, schema.rulesActions.id, {
       id: slugify(action.name),
       name: action.name,
@@ -68,6 +71,7 @@ export async function seedRulesReferences(db: any) {
       activation: actionActivation(action.time),
       description: renderEntries(action.entries),
       rawJson: JSON.stringify(action),
+      foundryJson: foundry ? JSON.stringify(foundry) : null,
     });
   }
 
@@ -145,4 +149,16 @@ export async function seedRulesReferences(db: any) {
   console.log(`Seeded ${languages.length} languages and ${languageScripts.length} scripts.`);
   console.log(`Seeded ${skills.length} skills.`);
   console.log(`Seeded ${senses.length} senses.`);
+}
+
+function loadFoundryActionMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filePath = path.join(process.cwd(), "new data/foundry-actions.json");
+  if (!fs.existsSync(filePath)) return map;
+  const data = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  for (const action of data.action || []) {
+    if (!action.name || !action.source) continue;
+    map.set(`${action.name.toLowerCase()}|${action.source.toLowerCase()}`, action);
+  }
+  return map;
 }

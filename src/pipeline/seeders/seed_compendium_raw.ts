@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as schema from "../../db/schema";
 import { slugify } from "../5etools-utils";
+import { isSourceAllowed } from "../source-config";
 
 type SourceMeta = {
   id: string;
@@ -19,7 +20,6 @@ type FilterResult = {
   hasOfficialContent: boolean;
 };
 
-const HOMEBREW_SOURCE_CODES = new Set(["HB", "HOMEBREW"]);
 const HOMEBREW_GROUPS = new Set(["homecraft"]);
 const METADATA_KEYS = new Set(["_meta", "_copy", "_mod", "_versions", "_preserve"]);
 const ENTRY_BATCH_SIZE = 100;
@@ -72,10 +72,8 @@ function buildSourceCatalog(): Map<string, SourceMeta> {
 function isOfficialSource(meta: SourceMeta | undefined, source: unknown): boolean {
   const normalized = normalizeSource(source);
   if (!normalized) return false;
-  if (HOMEBREW_SOURCE_CODES.has(normalized)) return false;
-  if (normalized.startsWith("UA")) return false;
   if (meta?.group && HOMEBREW_GROUPS.has(meta.group)) return false;
-  return !!meta;
+  return !!meta && isSourceAllowed(normalized);
 }
 
 function walkJsonFiles(dir: string): string[] {
@@ -302,6 +300,7 @@ export async function seedCompendiumRaw(db: any) {
     await db.insert(schema.contentSources).values(sourceRows).onConflictDoNothing();
 
   const fileRows: any[] = [];
+  const documentRows: any[] = [];
   const entryRows: any[] = [];
   for (const filePath of walkJsonFiles(path.join(process.cwd(), "new data"))) {
     const relativePath = path.relative(process.cwd(), filePath).replace(/\\/g, "/");
@@ -317,6 +316,25 @@ export async function seedCompendiumRaw(db: any) {
     if (!filtered.hasOfficialContent) continue;
 
     const source = fileMeta && isOfficialSource(fileMeta, fileMeta.source) ? fileMeta.source : null;
+    if (
+      source &&
+      fileMeta &&
+      (relativePath.startsWith("new data/book/") || relativePath.startsWith("new data/adventure/"))
+    ) {
+      documentRows.push({
+        id: slugify(`${fileMeta.kind}-${source}`),
+        source,
+        kind: fileMeta.kind,
+        name: fileMeta.name,
+        sourceFile: relativePath,
+        group: fileMeta.group || null,
+        published: fileMeta.published || null,
+        contentsJson: JSON.stringify((filtered.value as any)?.contents || []),
+        rawJson: JSON.stringify(filtered.value),
+        searchText: JSON.stringify(filtered.value).slice(0, 50000),
+      });
+    }
+
     fileRows.push({
       id: fileId(relativePath, source),
       sourceFile: relativePath,
@@ -344,6 +362,10 @@ export async function seedCompendiumRaw(db: any) {
     await db.insert(schema.compendiumFiles).values(fileRows).onConflictDoNothing();
   }
 
+  if (documentRows.length) {
+    await db.insert(schema.sourceDocuments).values(documentRows).onConflictDoNothing();
+  }
+
   for (let i = 0; i < entryRows.length; i += ENTRY_BATCH_SIZE) {
     await db
       .insert(schema.compendiumEntries)
@@ -352,6 +374,7 @@ export async function seedCompendiumRaw(db: any) {
   }
 
   console.log(`Seeded ${sourceRows.length} content sources.`);
+  console.log(`Seeded ${documentRows.length} source documents.`);
   console.log(`Seeded ${fileRows.length} filtered raw compendium files.`);
   console.log(`Seeded ${entryRows.length} searchable raw compendium entries.`);
 }

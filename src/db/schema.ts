@@ -35,6 +35,19 @@ export const compendiumFiles = sqliteTable("compendium_files", {
   rawJson: text("raw_json").notNull(),
 });
 
+export const sourceDocuments = sqliteTable("source_documents", {
+  id: text("id").primaryKey(),
+  source: text("source").notNull(),
+  kind: text("kind").notNull(), // book / adventure
+  name: text("name").notNull(),
+  sourceFile: text("source_file").notNull(),
+  group: text("group"),
+  published: text("published"),
+  contentsJson: text("contents_json").notNull().default("[]"),
+  rawJson: text("raw_json").notNull(),
+  searchText: text("search_text").notNull(),
+});
+
 export const activeEffects = sqliteTable("active_effects", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -58,6 +71,7 @@ export const rulesActions = sqliteTable("rules_actions", {
   activation: text("activation"),
   description: text("description").notNull().default(""),
   rawJson: text("raw_json").notNull(),
+  foundryJson: text("foundry_json"),
 });
 
 export const conditions = sqliteTable("conditions", {
@@ -129,6 +143,8 @@ export const spells = sqliteTable("spells", {
   attackRoll: integer("attack_roll", { mode: "boolean" }).notNull().default(false),
   summonsStatBlockIds: text("summons_stat_block_ids"),
   source: text("source"),
+  page: integer("page"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -152,6 +168,9 @@ export const classes = sqliteTable("classes", {
   infusionsJson: text("infusions_json"),
   wildShapeJson: text("wild_shape_json"),
   optionsProgressionJson: text("options_progression_json"),
+  source: text("source"),
+  page: integer("page"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -167,6 +186,10 @@ export const subclasses = sqliteTable("subclasses", {
   alwaysPreparedSpellsJson: text("always_prepared_spells_json"),
   expandedSpellListJson: text("expanded_spell_list_json"),
   spellcastingJson: text("spellcasting_json"),
+  source: text("source"),
+  page: integer("page"),
+  classSource: text("class_source"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -183,6 +206,11 @@ export const classFeatures = sqliteTable("class_features", {
   usesJson: text("uses_json"),
   numericalModifiersJson: text("numerical_modifiers_json"),
   optionsJson: text("options_json"),
+  source: text("source"),
+  page: integer("page"),
+  classSource: text("class_source"),
+  subclassSource: text("subclass_source"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -205,6 +233,7 @@ export const species = sqliteTable("species", {
   sensesJson: text("senses_json"),
   proficienciesJson: text("proficiencies_json"),
   isLineage: integer("is_lineage", { mode: "boolean" }).default(false),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -221,6 +250,7 @@ export const backgrounds = sqliteTable("backgrounds", {
   originFeatId: text("origin_feat_id"), // Will reference feats.id in app logic
   source: text("source"),
   page: integer("page"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -236,6 +266,7 @@ export const feats = sqliteTable("feats", {
   abilityScoreImprovementJson: text("ability_score_improvement_json"),
   source: text("source"),
   page: integer("page"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -255,6 +286,9 @@ export const weapons = sqliteTable("weapons", {
   mastery: text("mastery"),
   propertiesJson: text("properties_json"),
   weight: integer("weight").notNull(),
+  source: text("source"),
+  page: integer("page"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -272,6 +306,9 @@ export const armor = sqliteTable("armor", {
     .notNull()
     .default(false),
   weight: integer("weight").notNull(),
+  source: text("source"),
+  page: integer("page"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -286,6 +323,9 @@ export const magicItems = sqliteTable("magic_items", {
   description: text("description").notNull(),
   weight: integer("weight"),
   chargesJson: text("charges_json"),
+  source: text("source"),
+  page: integer("page"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -318,6 +358,9 @@ export const monsters = sqliteTable("monsters", {
   legendaryActionsJson: text("legendary_actions_json"),
   mythicActionsJson: text("mythic_actions_json"),
   lairActionsJson: text("lair_actions_json"),
+  source: text("source"),
+  page: integer("page"),
+  rawJson: text("raw_json"),
   fluffJson: text("fluff_json"),
   foundryJson: text("foundry_json"),
 });
@@ -544,6 +587,16 @@ export const itemTypes = sqliteTable("item_types", {
   rawJson: text("raw_json").notNull(),
 });
 
+export const itemTypeAdditionalEntries = sqliteTable("item_type_additional_entries", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  source: text("source").notNull(),
+  page: integer("page"),
+  appliesTo: text("applies_to").notNull(),
+  description: text("description").notNull().default(""),
+  rawJson: text("raw_json").notNull(),
+});
+
 export const mundaneGear = sqliteTable("mundane_gear", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -656,6 +709,15 @@ export const monsterFeatures = sqliteTable("monster_features", {
   rawJson: text("raw_json").notNull(),
 });
 
+export const creatureBuilderEntries = sqliteTable("creature_builder_entries", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  source: text("source").notNull(),
+  kind: text("kind").notNull(), // trait / action
+  description: text("description").notNull().default(""),
+  rawJson: text("raw_json").notNull(),
+});
+
 export const encounters = sqliteTable("encounters", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -672,6 +734,51 @@ export const lifeNameTables = sqliteTable("life_name_tables", {
   page: integer("page"),
   kind: text("kind").notNull(), // class, background, trinket, name
   tablesJson: text("tables_json").notNull().default("[]"),
+  rawJson: text("raw_json").notNull(),
+});
+
+export const encounterShapes = sqliteTable("encounter_shapes", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  source: text("source").notNull(),
+  shapeTemplateJson: text("shape_template_json").notNull().default("[]"),
+  rawJson: text("raw_json").notNull(),
+});
+
+export const challengeRatings = sqliteTable("challenge_ratings", {
+  id: text("id").primaryKey(),
+  cr: text("cr").notNull(),
+  proficiencyBonus: integer("proficiency_bonus").notNull(),
+  armorClass: integer("armor_class").notNull(),
+  hpMin: integer("hp_min").notNull(),
+  hpMax: integer("hp_max").notNull(),
+  attackBonus: integer("attack_bonus").notNull(),
+  dprMin: integer("dpr_min").notNull(),
+  dprMax: integer("dpr_max").notNull(),
+  saveDc: integer("save_dc").notNull(),
+  rawJson: text("raw_json").notNull(),
+});
+
+export const itemCardReferences = sqliteTable("item_card_references", {
+  id: text("id").primaryKey(),
+  abbreviation: text("abbreviation").notNull(),
+  source: text("source").notNull(),
+  kind: text("kind").notNull(), // property / type
+  name: text("name"),
+  description: text("description").notNull().default(""),
+  rawJson: text("raw_json").notNull(),
+});
+
+export const psionics = sqliteTable("psionics", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  source: text("source").notNull(),
+  page: integer("page"),
+  type: text("type"),
+  order: text("order"),
+  focus: text("focus"),
+  modesJson: text("modes_json").notNull().default("[]"),
+  description: text("description").notNull().default(""),
   rawJson: text("raw_json").notNull(),
 });
 

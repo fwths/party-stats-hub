@@ -397,7 +397,7 @@ export async function seedReferenceEntries(db: any) {
         source: item.source,
         page: item.page || null,
         kind: item.kind,
-        type: (item.type as string) || null,
+        type: ((item as any).type as string) || null,
         description: descriptionFor(item),
         rawJson: JSON.stringify(item),
       })
@@ -408,11 +408,120 @@ export async function seedReferenceEntries(db: any) {
           source: item.source,
           page: item.page || null,
           kind: item.kind,
-          type: (item.type as string) || null,
+          type: ((item as any).type as string) || null,
           description: descriptionFor(item),
           rawJson: JSON.stringify(item),
         },
       });
   }
   console.log(`Seeded ${rawCultsBoons.length} cults and boons.`);
+
+  // 12. Monster Statistics by Challenge Rating
+  const challengeRatings = readArray<any>("msbcr.json", "cr");
+  for (const item of challengeRatings) {
+    const cr = String(item._cr);
+    await db
+      .insert(schema.challengeRatings)
+      .values({
+        id: slugify(`cr-${cr}`),
+        cr,
+        proficiencyBonus: item.pb,
+        armorClass: item.ac,
+        hpMin: item.hpMin,
+        hpMax: item.hpMax,
+        attackBonus: item.attackBonus,
+        dprMin: item.dprMin,
+        dprMax: item.dprMax,
+        saveDc: item.saveDc,
+        rawJson: JSON.stringify(item),
+      })
+      .onConflictDoUpdate({
+        target: schema.challengeRatings.id,
+        set: {
+          cr,
+          proficiencyBonus: item.pb,
+          armorClass: item.ac,
+          hpMin: item.hpMin,
+          hpMax: item.hpMax,
+          attackBonus: item.attackBonus,
+          dprMin: item.dprMin,
+          dprMax: item.dprMax,
+          saveDc: item.saveDc,
+          rawJson: JSON.stringify(item),
+        },
+      });
+  }
+  console.log(`Seeded ${challengeRatings.length} challenge rating benchmark rows.`);
+
+  // 13. Psionics. Current raw source is Unearthed Arcana and remains blocked by source policy.
+  const psionics = readArray<BaseItem>("psionics.json", "psionic").filter((item) =>
+    isSourceAllowed(item.source),
+  );
+  for (const item of psionics) {
+    const id = slugify(`${item.name}-${item.source}`);
+    await db
+      .insert(schema.psionics)
+      .values({
+        id,
+        name: item.name,
+        source: item.source,
+        page: item.page || null,
+        type: (item.type as string) || null,
+        order: (item.order as string) || null,
+        focus: item.focus ? renderEntries(item.focus) : null,
+        modesJson: JSON.stringify(item.modes || []),
+        description: descriptionFor(item),
+        rawJson: JSON.stringify(item),
+      })
+      .onConflictDoUpdate({
+        target: schema.psionics.id,
+        set: {
+          name: item.name,
+          source: item.source,
+          page: item.page || null,
+          type: (item.type as string) || null,
+          order: (item.order as string) || null,
+          focus: item.focus ? renderEntries(item.focus) : null,
+          modesJson: JSON.stringify(item.modes || []),
+          description: descriptionFor(item),
+          rawJson: JSON.stringify(item),
+        },
+      });
+  }
+  console.log(`Seeded ${psionics.length} psionics rows.`);
+
+  // 14. Creature builder reference entries used by 5etools' monster tooling.
+  const creatureTraits = readArray<BaseItem>("makebrew-creature.json", "makebrewCreatureTrait")
+    .filter((item) => isSourceAllowed(item.source))
+    .map((item) => ({ ...item, kind: "trait" }));
+  const creatureActions = readArray<BaseItem>("makebrew-creature.json", "makebrewCreatureAction")
+    .filter((item) => isSourceAllowed(item.source))
+    .map((item) => ({ ...item, kind: "action" }));
+  const creatureBuilderEntries = [...creatureTraits, ...creatureActions].sort((a, b) =>
+    `${a.kind}:${a.name}`.localeCompare(`${b.kind}:${b.name}`),
+  );
+  for (const item of creatureBuilderEntries) {
+    const id = slugify(`creature-builder-${item.kind}-${item.name}-${item.source}`);
+    await db
+      .insert(schema.creatureBuilderEntries)
+      .values({
+        id,
+        name: item.name,
+        source: item.source,
+        kind: item.kind,
+        description: descriptionFor(item),
+        rawJson: JSON.stringify(item),
+      })
+      .onConflictDoUpdate({
+        target: schema.creatureBuilderEntries.id,
+        set: {
+          name: item.name,
+          source: item.source,
+          kind: item.kind,
+          description: descriptionFor(item),
+          rawJson: JSON.stringify(item),
+        },
+      });
+  }
+  console.log(`Seeded ${creatureBuilderEntries.length} creature builder entries.`);
 }

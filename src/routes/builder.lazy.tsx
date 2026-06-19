@@ -47,7 +47,7 @@ export const Route = createLazyFileRoute("/builder")({
 function BuilderWizard() {
   const navigate = useNavigate();
   const { backgrounds, classes, feats, species, spells, subclasses, classFeatures } =
-    Route.useLoaderData();
+    Route.useLoaderData() as any;
   const [step, setStep] = useState(1);
   const [character, setCharacter] = useState<BuilderState>({
     name: "Unnamed Hero",
@@ -97,15 +97,15 @@ function BuilderWizard() {
       const { createNativePartyMember, saveNativeCharacter } = await import("@/lib/native-engine");
       const { STORAGE_KEY, COOKIE_KEY } = await import("@/lib/party");
 
-      const raceData = species.find((r) => r.id === character.raceId);
-      const backgroundData = backgrounds.find((b) => b.id === character.backgroundId);
-      const classData = classes.find((c) => c.id === character.classId);
-      const subclassData = subclasses.find((s) => s.id === character.subclassId);
+      const raceData = species.find((r: any) => r.id === character.raceId);
+      const backgroundData = backgrounds.find((b: any) => b.id === character.backgroundId);
+      const classData = classes.find((c: any) => c.id === character.classId);
+      const subclassData = subclasses.find((s: any) => s.id === character.subclassId);
       const originFeat = backgroundData?.originFeatId
-        ? feats.find((feat) => feat.id === backgroundData.originFeatId)
+        ? feats.find((feat: any) => feat.id === backgroundData.originFeatId)
         : null;
       const selectedSpells = spells.filter(
-        (spell) =>
+        (spell: any) =>
           character.cantripChoices.includes(spell.id) ||
           character.preparedSpellChoices.includes(spell.id) ||
           character.featChoices.cantrips.includes(spell.id) ||
@@ -144,7 +144,7 @@ function BuilderWizard() {
 
   const isStepValid = () => {
     if (step === 1) {
-      const race = species.find((r) => r.id === character.raceId);
+      const race = species.find((r: any) => r.id === character.raceId);
       return (
         character.name.trim() !== "" &&
         character.raceId !== null &&
@@ -168,9 +168,9 @@ function BuilderWizard() {
       );
     }
     if (step === 2) {
-      const background = backgrounds.find((b) => b.id === character.backgroundId);
+      const background = backgrounds.find((b: any) => b.id === character.backgroundId);
       const originFeat = background?.originFeatId
-        ? feats.find((feat) => feat.id === background.originFeatId)
+        ? feats.find((feat: any) => feat.id === background.originFeatId)
         : null;
       return (
         character.backgroundId !== null &&
@@ -189,9 +189,9 @@ function BuilderWizard() {
     }
     if (step === 3) {
       if (!character.classId) return false;
-      const selectedClass = classes.find((c) => c.id === character.classId);
+      const selectedClass = classes.find((c: any) => c.id === character.classId);
       const classProficiencies = parseJsonValue(selectedClass?.proficienciesJson, {});
-      const classSubclasses = subclasses.filter((s) => s.classId === character.classId);
+      const classSubclasses = subclasses.filter((s: any) => s.classId === character.classId);
       const subclassLevel = getSubclassChoiceLevel(classSubclasses);
       const unlockedFeatureOptions = getUnlockedFeatureOptionGroups(character, classFeatures);
       return (

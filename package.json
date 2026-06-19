@@ -9,7 +9,7 @@
     "scrape:species": "tsx src/pipeline/scrape-species.ts",
     "enrich:species": "tsx src/pipeline/enrich-species.ts",
     "enrich:2024": "tsx src/pipeline/enrich-2024-core.ts",
-    "build": "npm run seed && vite build",
+    "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

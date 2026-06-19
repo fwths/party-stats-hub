@@ -44,7 +44,7 @@ function rawEntrySummary(entry: any) {
 }
 
 function CompendiumComponent() {
-  const { dbClasses, dbSpecies } = Route.useLoaderData();
+  const { dbClasses, dbSpecies } = Route.useLoaderData() as any;
   const rules = getAllRules();
 
   const [activeTab, setActiveTab] = useState<TabType>("rules");

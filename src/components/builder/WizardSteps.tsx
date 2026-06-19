@@ -33,6 +33,9 @@ import {
   getSpeciesTraitGroups,
   getProficiencyChoiceGroups,
   getToolChoiceGroups,
+  getLanguageChoiceGroups,
+  getLanguageOptions,
+  getFixedLanguages,
   toggleChoice,
   getEquipmentOptions,
   isSpellcaster,
@@ -404,7 +407,7 @@ export function OriginFeatChoicePanel({
 }
 
 export function StepRace({ character, updateCharacter }: StepProps) {
-  const { species } = useLoaderData({ from: "/builder" }) as any;
+  const { species, speciesVariants } = useLoaderData({ from: "/builder" }) as any;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Player's Handbook");
   const selectedRace = species.find((race: any) => race.id === character.raceId);
@@ -418,7 +421,18 @@ export function StepRace({ character, updateCharacter }: StepProps) {
     "tools",
     TOOL_OPTIONS,
   );
+  const { languages } = useLoaderData({ from: "/builder" }) as any;
+  const languageOptions = getLanguageOptions(languages);
+  const speciesLanguageGroups = getLanguageChoiceGroups(
+    getJsonField(selectedRace, "languagesJson", "languages_json"),
+    languageOptions,
+  );
+  const fixedSpeciesLanguages = getFixedLanguages(
+    getJsonField(selectedRace, "languagesJson", "languages_json"),
+  );
   const speciesTraitGroups = getSpeciesTraitGroups(selectedRace);
+  const subraces = (speciesVariants || []).filter((sv: any) => sv.speciesId === selectedRace?.id);
+  const selectedSubrace = subraces.find((sv: any) => sv.id === character.speciesVariantId);
 
   const uniqueCategories = Array.from(
     new Set(species.map((s: any) => getSourceLabel(s))),
@@ -509,9 +523,11 @@ export function StepRace({ character, updateCharacter }: StepProps) {
                   onClick={() =>
                     updateCharacter({
                       raceId: race.id,
+                      speciesVariantId: null,
                       speciesTraitChoices: {},
                       speciesSkillChoices: [],
                       speciesToolChoices: [],
+                      speciesLanguageChoices: [],
                     })
                   }
                 >
@@ -562,10 +578,55 @@ export function StepRace({ character, updateCharacter }: StepProps) {
             </div>
           )}
           {selectedRace &&
-            (speciesTraitGroups.length > 0 ||
+            (subraces.length > 0 ||
+              speciesTraitGroups.length > 0 ||
               speciesSkillGroups.length > 0 ||
               speciesToolGroups.length > 0) && (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {subraces.length > 0 && (
+                  <div className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4 md:col-span-2">
+                    <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      Subrace / Variant
+                    </div>
+                    <Select
+                      value={character.speciesVariantId || ""}
+                      onValueChange={(val) => updateCharacter({ speciesVariantId: val })}
+                    >
+                      <SelectTrigger className="w-full bg-background border-border/60 focus:ring-emerald-500 rounded text-xs shadow-sm h-10">
+                        <SelectValue placeholder="Choose a subrace/variant..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subraces.map((sub: any) => (
+                          <SelectItem key={sub.id} value={sub.id} className="py-2 focus:bg-emerald-500/10 cursor-pointer">
+                            <div className="font-bold text-amber-500">{sub.name}</div>
+                            {sub.description && (
+                              <div className="text-[10px] text-muted-foreground mt-0.5 whitespace-normal max-w-sm">
+                                {sub.description}
+                              </div>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {selectedSubrace && selectedSubrace.featuresJson && (
+                  <div className="space-y-2 rounded-xl border border-border/30 bg-secondary/20 p-4 md:col-span-2">
+                    <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      {selectedSubrace.name} Features
+                    </div>
+                    <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                      {JSON.parse(selectedSubrace.featuresJson).map((feat: any, idx: number) => (
+                        <div key={idx} className="text-xs">
+                          <span className="font-extrabold italic text-amber-500 mr-1">{feat.name}.</span>
+                          <span className="text-foreground/80">{feat.description}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <TraitChoicePicker
                   groups={speciesTraitGroups}
                   selected={character.speciesTraitChoices}
@@ -581,6 +642,23 @@ export function StepRace({ character, updateCharacter }: StepProps) {
                   selected={character.speciesToolChoices}
                   onChange={(choices) => updateCharacter({ speciesToolChoices: choices })}
                 />
+                {(fixedSpeciesLanguages.length > 0 || speciesLanguageGroups.length > 0) && (
+                  <div className="space-y-3">
+                    {fixedSpeciesLanguages.length > 0 && (
+                      <div className="rounded-xl border border-border/30 bg-secondary/20 p-4 text-sm">
+                        <span className="font-bold text-foreground">Languages:</span>{" "}
+                        <span className="text-muted-foreground">
+                          {fixedSpeciesLanguages.join(", ")}
+                        </span>
+                      </div>
+                    )}
+                    <ChoiceGroupPicker
+                      groups={speciesLanguageGroups}
+                      selected={character.speciesLanguageChoices}
+                      onChange={(choices) => updateCharacter({ speciesLanguageChoices: choices })}
+                    />
+                  </div>
+                )}
               </div>
             )}
         </div>
@@ -590,7 +668,7 @@ export function StepRace({ character, updateCharacter }: StepProps) {
 }
 
 export function StepBackground({ character, updateCharacter }: StepProps) {
-  const { backgrounds, feats } = useLoaderData({ from: "/builder" }) as any;
+  const { backgrounds, feats, languages } = useLoaderData({ from: "/builder" }) as any;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Player's Handbook");
   const selectedBackground = backgrounds.find((bg: any) => bg.id === character.backgroundId);
@@ -620,6 +698,16 @@ export function StepBackground({ character, updateCharacter }: StepProps) {
     : null;
   const backgroundToolGroups = getToolChoiceGroups(
     getJsonField(selectedBackground, "toolProficienciesJson", "tool_proficiencies_json"),
+  );
+  const backgroundLanguageRaw = getJsonField(
+    selectedBackground,
+    "languageProficienciesJson",
+    "language_proficiencies_json",
+  );
+  const fixedBackgroundLanguages = getFixedLanguages(backgroundLanguageRaw);
+  const backgroundLanguageGroups = getLanguageChoiceGroups(
+    backgroundLanguageRaw,
+    getLanguageOptions(languages),
   );
   const backgroundEquipmentOptions = getEquipmentOptions(
     getJsonField(selectedBackground, "startingEquipmentJson", "starting_equipment_json"),
@@ -763,6 +851,7 @@ export function StepBackground({ character, updateCharacter }: StepProps) {
                       backgroundId: background.id,
                       abilityBonuses: getDefaultBackgroundBonuses(background),
                       backgroundToolChoices: [],
+                      backgroundLanguageChoices: [],
                       featChoices: emptyFeatChoices(),
                       backgroundEquipmentOption:
                         getEquipmentOptions(
@@ -824,6 +913,23 @@ export function StepBackground({ character, updateCharacter }: StepProps) {
                 selected={character.backgroundToolChoices}
                 onChange={(choices) => updateCharacter({ backgroundToolChoices: choices })}
               />
+              {(fixedBackgroundLanguages.length > 0 || backgroundLanguageGroups.length > 0) && (
+                <div className="space-y-3">
+                  {fixedBackgroundLanguages.length > 0 && (
+                    <div className="rounded-xl border border-border/30 bg-secondary/20 p-4 text-sm">
+                      <span className="font-bold text-foreground">Languages:</span>{" "}
+                      <span className="text-muted-foreground">
+                        {fixedBackgroundLanguages.join(", ")}
+                      </span>
+                    </div>
+                  )}
+                  <ChoiceGroupPicker
+                    groups={backgroundLanguageGroups}
+                    selected={character.backgroundLanguageChoices}
+                    onChange={(choices) => updateCharacter({ backgroundLanguageChoices: choices })}
+                  />
+                </div>
+              )}
               {backgroundEquipmentOptions.length > 0 && (
                 <div className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4">
                   <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -1371,10 +1477,11 @@ export function StepReview({
   character: BuilderState;
   validationIssues: string[];
 }) {
-  const { backgrounds, classes, feats, spells, species, subclasses, classFeatures } = useLoaderData(
+  const { backgrounds, classes, feats, spells, species, speciesVariants, subclasses, classFeatures } = useLoaderData(
     { from: "/builder" },
   ) as any;
   const race = species.find((r: any) => r.id === character.raceId);
+  const subrace = speciesVariants?.find((sv: any) => sv.id === character.speciesVariantId);
   const background = backgrounds.find((b: any) => b.id === character.backgroundId);
   const cls = classes.find((c: any) => c.id === character.classId);
   const subclass = subclasses.find((s: any) => s.id === character.subclassId);
@@ -1400,6 +1507,14 @@ export function StepReview({
     ...character.backgroundToolChoices,
     ...character.featChoices.tools,
     ...character.classToolChoices,
+  ];
+  const selectedLanguages = [
+    ...getFixedLanguages(getJsonField(race, "languagesJson", "languages_json")),
+    ...character.speciesLanguageChoices,
+    ...getFixedLanguages(
+      getJsonField(background, "languageProficienciesJson", "language_proficiencies_json"),
+    ),
+    ...character.backgroundLanguageChoices,
   ];
   const selectedTraitChoices = Object.entries(character.speciesTraitChoices);
   const selectedFeatureChoices = getUnlockedFeatureOptionGroups(character, classFeatures)
@@ -1432,7 +1547,7 @@ export function StepReview({
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/50 backdrop-blur-md border border-border text-lg font-semibold text-muted-foreground shadow-sm">
           <span className="text-foreground">Level {character.level}</span>
           <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-          <span className="text-accent">{race?.name}</span>
+          <span className="text-accent">{subrace ? `${subrace.name} ${race?.name}` : race?.name}</span>
           <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
           <span className="text-primary">{background?.name}</span>
           <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
@@ -1484,7 +1599,7 @@ export function StepReview({
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>
-              <span className="font-bold text-foreground">Species:</span> {race?.name}
+              <span className="font-bold text-foreground">Species:</span> {subrace ? `${subrace.name} ${race?.name}` : race?.name}
             </p>
             <p>
               <span className="font-bold text-foreground">Background:</span> {background?.name}
@@ -1529,6 +1644,15 @@ export function StepReview({
             <span className="font-bold text-foreground">Tools:</span>{" "}
             {Array.from(new Set(selectedTools)).join(", ") || "None"}
           </p>
+          <p>
+            <span className="font-bold text-foreground">Languages:</span>{" "}
+            {Array.from(new Set(selectedLanguages)).join(", ") || "Common"}
+          </p>
+          {subrace && (
+            <p>
+              <span className="font-bold text-foreground">Subrace:</span> {subrace.name}
+            </p>
+          )}
           {selectedTraitChoices.length > 0 && (
             <p>
               <span className="font-bold text-foreground">Species Traits:</span>{" "}

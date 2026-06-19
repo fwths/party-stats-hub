@@ -1,102 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { CheckCircle2, Circle, Compass, Search } from "lucide-react";
-
-// Helper to highlight matching characters from active workspace search
-export function highlightMatch(text: string, query: string) {
-  if (!query || !query.trim() || !text) return parseInlineStyles(text);
-
-  const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-  const regex = new RegExp(`(${escapedQuery})`, "gi");
-  const parts = text.split(regex);
-
-  return parts.map((part, i) =>
-    regex.test(part) ? (
-      <mark key={i} className="bg-gold/30 text-gold font-bold rounded px-0.5 select-all">
-        {part}
-      </mark>
-    ) : (
-      <React.Fragment key={i}>{parseInlineStyles(part)}</React.Fragment>
-    ),
-  );
-}
-
-// Parse inline styles: bold (**text**), italic (*text*), and markdown pageId links ([Title](pageId:ID))
-export function parseInlineStyles(
-  text: string,
-  onSelectPage?: (id: string, title: string) => void,
-): React.ReactNode {
-  if (!text) return "";
-
-  // Split by pageId links: [Title](pageId:ID)
-  const linkRegex = /\[(.*?)\]\(pageId:(.*?)\)/g;
-  const parts = text.split(linkRegex);
-
-  if (parts.length === 1) {
-    // No links, just parse bold/italic
-    return parseBoldItalic(text);
-  }
-
-  const elements: React.ReactNode[] = [];
-  for (let i = 0; i < parts.length; i += 3) {
-    // Add non-link text
-    if (parts[i]) {
-      elements.push(<span key={`text-${i}`}>{parseBoldItalic(parts[i])}</span>);
-    }
-
-    // Add link button
-    if (i + 2 < parts.length) {
-      const linkTitle = parts[i + 1];
-      const linkId = parts[i + 2];
-      if (onSelectPage) {
-        elements.push(
-          <button
-            key={`link-${i}`}
-            onClick={() => onSelectPage(linkId, linkTitle)}
-            className="text-purple-400 hover:text-purple-300 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer text-left inline mx-0.5"
-          >
-            {linkTitle}
-          </button>,
-        );
-      } else {
-        elements.push(
-          <span key={`link-${i}`} className="text-purple-400 font-semibold mx-0.5">
-            {linkTitle}
-          </span>,
-        );
-      }
-    }
-  }
-
-  return <>{elements}</>;
-}
-
-// Inner helper to parse bold and italic
-function parseBoldItalic(text: string): React.ReactNode {
-  const boldParts = text.split(/\*\*([^*]+)\*\*/g);
-  return boldParts.map((part, index) => {
-    if (index % 2 === 1) {
-      return (
-        <strong key={index} className="text-gold font-bold">
-          {part}
-        </strong>
-      );
-    }
-    const italicParts = part.split(/\*([^*]+)\*/g);
-    return italicParts.map((subPart, subIndex) => {
-      if (subIndex % 2 === 1) {
-        return (
-          <em key={subIndex} className="italic text-foreground/90">
-            {subPart}
-          </em>
-        );
-      }
-      return subPart;
-    });
-  });
-}
+import { parseInlineStyles } from "./markdown-inline";
+import { PartyMember } from "@/lib/dndbeyond.types";
 
 // Interactive Table Component with Local Filtering & Click-to-Sort Columns
-export function InteractiveTable({
+function InteractiveTable({
   headers,
   rowsData,
   parseCellContent,
@@ -301,9 +209,11 @@ export function InteractiveTable({
 export function MarkdownRenderer({
   content,
   onSelectPage,
+  members,
 }: {
   content: string;
   onSelectPage: (id: string, title: string, isDb?: boolean) => void;
+  members?: PartyMember[];
 }) {
   if (!content || content.trim() === "") {
     return <p className="text-xs text-muted-foreground italic">No content in this page.</p>;
@@ -357,21 +267,123 @@ export function MarkdownRenderer({
             if (match) {
               const linkTitle = match[1];
               const linkId = match[2];
+
+              const normalize = (val: string) =>
+                val.toLowerCase()
+                   .replace(/[“”"']/g, "")
+                   .replace(/\s+/g, " ")
+                   .trim();
+
+              const getCleanName = (name: string) => {
+                // Strip nicknames in quotes/smart quotes
+                return name.replace(/["'“‘”’].*?["'“‘”’]/g, "");
+              };
+
+              // Check if the link title contains any party member name
+              const matchMember = members?.find((m) => {
+                const normalizedMemberName = normalize(m.name);
+                const normalizedLinkTitle = normalize(linkTitle);
+                if (
+                  normalizedLinkTitle.includes(normalizedMemberName) ||
+                  normalizedMemberName.includes(normalizedLinkTitle)
+                ) {
+                  return true;
+                }
+
+                // Try stripping nicknames
+                const mClean = normalize(getCleanName(m.name));
+                const lClean = normalize(getCleanName(linkTitle));
+                if (mClean && lClean && (mClean.includes(lClean) || lClean.includes(mClean))) {
+                  return true;
+                }
+
+                // Fallback: check significant word overlap (first and last name)
+                const mWords = normalizedMemberName.split(/\s+/).filter((w) => w.length > 2);
+                const lWords = normalizedLinkTitle.split(/\s+/).filter((w) => w.length > 2);
+                const commonWords = mWords.filter((w) => lWords.includes(w));
+                if (commonWords.length >= 2) {
+                  return true;
+                }
+
+                return false;
+              });
+
               return (
-                <button
-                  key={idx}
-                  onClick={() => onSelectPage(linkId, linkTitle)}
-                  className={`${
-                    isFirstCol
-                      ? "text-gold hover:text-yellow-300"
-                      : "text-purple-400 hover:text-purple-300"
-                  } font-bold hover:underline bg-transparent border-none p-0 cursor-pointer text-left inline`}
-                >
-                  {linkTitle}
-                </button>
+                <span key={idx} className="inline-flex items-center gap-1.5 align-middle">
+                  {matchMember?.avatarUrl && (
+                    <img
+                      src={matchMember.avatarUrl}
+                      alt={matchMember.name}
+                      className="h-5 w-5 rounded-full object-cover border border-border/50 shadow-sm flex-shrink-0"
+                    />
+                  )}
+                  <button
+                    onClick={() => onSelectPage(linkId, linkTitle)}
+                    className={`${
+                      isFirstCol
+                        ? "text-gold hover:text-yellow-300"
+                        : "text-purple-400 hover:text-purple-300"
+                    } font-bold hover:underline bg-transparent border-none p-0 cursor-pointer text-left inline`}
+                  >
+                    {linkTitle}
+                  </button>
+                </span>
               );
             }
-            return <span key={idx}>{parseInlineStyles(part)}</span>;
+
+            const normalize = (val: string) =>
+              val.toLowerCase()
+                 .replace(/[“”"']/g, "")
+                 .replace(/\s+/g, " ")
+                 .trim();
+
+            const getCleanName = (name: string) => {
+              return name.replace(/["'“‘”’].*?["'“‘”’]/g, "");
+            };
+
+            // Check if plain text matches any party member name
+            const matchMemberText = members?.find((m) => {
+              const normalizedMemberName = normalize(m.name);
+              const normalizedPart = normalize(part);
+              if (
+                normalizedPart.includes(normalizedMemberName) ||
+                normalizedMemberName.includes(normalizedPart)
+              ) {
+                return true;
+              }
+
+              // Try stripping nicknames
+              const mClean = normalize(getCleanName(m.name));
+              const pClean = normalize(getCleanName(part));
+              if (mClean && pClean && (mClean.includes(pClean) || pClean.includes(mClean))) {
+                return true;
+              }
+
+              // Fallback: check significant word overlap (first and last name)
+              const mWords = normalizedMemberName.split(/\s+/).filter((w) => w.length > 2);
+              const pWords = normalizedPart.split(/\s+/).filter((w) => w.length > 2);
+              const commonWords = mWords.filter((w) => pWords.includes(w));
+              if (commonWords.length >= 2) {
+                return true;
+              }
+
+              return false;
+            });
+
+            if (matchMemberText?.avatarUrl) {
+              return (
+                <span key={idx} className="inline-flex items-center gap-1.5 align-middle">
+                  <img
+                    src={matchMemberText.avatarUrl}
+                    alt={matchMemberText.name}
+                    className="h-5 w-5 rounded-full object-cover border border-border/50 shadow-sm flex-shrink-0"
+                  />
+                  <span>{parseInlineStyles(part, onSelectPage)}</span>
+                </span>
+              );
+            }
+
+            return <span key={idx}>{parseInlineStyles(part, onSelectPage)}</span>;
           });
 
           // Join items with commas

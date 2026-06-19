@@ -116,12 +116,19 @@ export async function seedMonsters(db: any) {
   console.log("Seeding monsters from 5etools data...");
 
   try {
+    const fluffMap = loadMonsterFluffMap();
+    const foundryMap = loadMonsterFoundryMap();
+
     const monsters = selectAllowedMonsters(readMonsterFiles());
 
     for (const monster of monsters) {
       const challengeRating = parseCr(monster.cr);
       const senses = [...(monster.senses || [])];
       if (monster.passive) senses.push(`passive Perception ${monster.passive}`);
+
+      const key = `${monster.name.toLowerCase()}|${monster.source.toLowerCase()}`;
+      const fluff = fluffMap.get(key);
+      const foundry = foundryMap.get(key);
 
       await db
         .insert(schema.monsters)
@@ -159,6 +166,8 @@ export async function seedMonsters(db: any) {
           legendaryActionsJson: JSON.stringify(renderActionList(monster.legendary)),
           mythicActionsJson: JSON.stringify(renderActionList(monster.mythic)),
           lairActionsJson: JSON.stringify([]),
+          fluffJson: fluff ? JSON.stringify(fluff) : null,
+          foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
         .onConflictDoUpdate({
           target: schema.monsters.id,
@@ -195,13 +204,81 @@ export async function seedMonsters(db: any) {
             legendaryActionsJson: JSON.stringify(renderActionList(monster.legendary)),
             mythicActionsJson: JSON.stringify(renderActionList(monster.mythic)),
             lairActionsJson: JSON.stringify([]),
+            fluffJson: fluff ? JSON.stringify(fluff) : null,
+            foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
         });
     }
 
     console.log(`Seeded ${monsters.length} monsters from 5etools.`);
+
+    // Seed monster features
+    const features = readMonsterFeatures();
+    for (const feat of features) {
+      const id = slugify(feat.name);
+      await db
+        .insert(schema.monsterFeatures)
+        .values({
+          id,
+          name: feat.name,
+          example: feat.example || null,
+          effect: feat.effect,
+          attackBonus: feat.attackBonus ? String(feat.attackBonus) : null,
+          dpr: feat.dpr ? String(feat.dpr) : null,
+          rawJson: JSON.stringify(feat),
+        })
+        .onConflictDoUpdate({
+          target: schema.monsterFeatures.id,
+          set: {
+            name: feat.name,
+            example: feat.example || null,
+            effect: feat.effect,
+            attackBonus: feat.attackBonus ? String(feat.attackBonus) : null,
+            dpr: feat.dpr ? String(feat.dpr) : null,
+            rawJson: JSON.stringify(feat),
+          },
+        });
+    }
+    console.log(`Seeded ${features.length} monster features.`);
   } catch (e) {
     console.error("Error seeding monsters:", e);
     throw e;
   }
+}
+
+function readMonsterFeatures(): any[] {
+  const data = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), "new data/monsterfeatures.json"), "utf-8"),
+  );
+  return data.monsterfeatures || [];
+}
+
+function loadMonsterFluffMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const dir = path.join(process.cwd(), "new data/bestiary");
+  if (!fs.existsSync(dir)) return map;
+  const files = fs.readdirSync(dir).filter((f) => /^fluff-bestiary-.*\.json$/i.test(f));
+  for (const f of files) {
+    const data = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
+    const list = data.monsterFluff || [];
+    for (const item of list) {
+      const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function loadMonsterFoundryMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/bestiary/foundry.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const list = data.monster || [];
+    for (const item of list) {
+      const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
 }

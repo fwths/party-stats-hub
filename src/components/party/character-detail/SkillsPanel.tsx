@@ -1,7 +1,7 @@
 import { Star, Shield, Eye, Search, Brain, Moon, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { SKILL_ABILITY } from "@/lib/constants";
 import { ABILITY_DETAILS } from "../CharacterCard";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";

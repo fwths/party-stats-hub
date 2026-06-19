@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { partyQueryOptions } from "@/lib/party";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { SKILL_ABILITY } from "@/lib/constants";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 import { getShortName } from "@/lib/utils";

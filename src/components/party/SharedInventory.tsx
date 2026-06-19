@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PartyMember, InventoryItem } from "@/lib/dndbeyond.functions";
+import { PartyMember, InventoryItem } from "@/lib/dndbeyond.types";
 import { Package, Coins, Star, Shield, Search } from "lucide-react";
 import { getShortName } from "@/lib/utils";
 

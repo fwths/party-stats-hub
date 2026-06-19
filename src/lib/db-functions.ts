@@ -1,14 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-
-// Cached snapshot for edge runtime fallback
-let snapshotCache: Record<string, any[]> | null = null;
+import { z } from "zod";
 
 async function getSnapshot(): Promise<Record<string, any[]>> {
-  if (snapshotCache) return snapshotCache;
   try {
-    const data = await import("../data/db-snapshot.json");
-    snapshotCache = data.default || data;
-    return snapshotCache!;
+    const snapshot = await import("./db-snapshot.server");
+    return await snapshot.getSnapshot();
   } catch {
     return {};
   }
@@ -164,3 +160,179 @@ export const getWeaponsFromDb = createServerFn({ method: "GET" }).handler(async 
 export const getArmorFromDb = createServerFn({ method: "GET" }).handler(async () => {
   return await queryTable("armor", "armor");
 });
+
+export const getVehiclesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("vehicles", "vehicles");
+});
+
+export const getBastionsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("bastions", "bastions");
+});
+
+export const getHazardsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("hazards", "hazards");
+});
+
+export const getCharOptionsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("char_options", "charOptions");
+});
+
+export const getOptionalFeaturesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("optional_features", "optionalFeatures");
+});
+
+export const getDeitiesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("deities", "deities");
+});
+
+export const getRewardsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("rewards", "rewards");
+});
+
+export const getObjectsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("objects", "objects");
+});
+
+export const getRecipesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("recipes", "recipes");
+});
+
+export const getDecksFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("decks", "decks");
+});
+
+export const getCardsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("cards", "cards");
+});
+
+export const getRollTablesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("roll_tables", "rollTables");
+});
+
+export const getVariantRulesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("variant_rules", "variantRules");
+});
+
+export const getCultsBoonsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("cults_boons", "cultsBoons");
+});
+
+export const getRulesActionsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("rules_actions", "rulesActions");
+});
+
+export const getConditionsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("conditions", "conditions");
+});
+
+export const getLanguagesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("languages", "languages");
+});
+
+export const getLanguageScriptsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("language_scripts", "languageScripts");
+});
+
+export const getSkillsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("skills", "skills");
+});
+
+export const getSensesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("senses", "senses");
+});
+
+export const getActiveEffectsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("active_effects", "activeEffects");
+});
+
+export const getSpellActiveEffectsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("spell_active_effects", "spellActiveEffects");
+});
+
+export const getFeatureActiveEffectsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("feature_active_effects", "featureActiveEffects");
+});
+
+export const getItemActiveEffectsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("item_active_effects", "itemActiveEffects");
+});
+
+export const getItemPropertiesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("item_properties", "itemProperties");
+});
+
+export const getItemTypesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("item_types", "itemTypes");
+});
+
+export const getMundaneGearFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("mundane_gear", "mundaneGear");
+});
+
+export const getWeaponMasteriesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("weapon_masteries", "weaponMasteries");
+});
+
+export const getItemGroupsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("item_groups", "itemGroups");
+});
+
+export const getMagicVariantsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("magic_variants", "magicVariants");
+});
+
+export const getLootTablesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("loot_tables", "lootTables");
+});
+
+export const getTreasureTablesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("treasure_tables", "treasureTables");
+});
+
+export const getVehicleUpgradesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("vehicle_upgrades", "vehicleUpgrades");
+});
+
+export const getSpeciesVariantsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("species_variants", "speciesVariants");
+});
+
+export const getMonsterFeaturesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("monster_features", "monsterFeatures");
+});
+
+export const getEncountersFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("encounters", "encounters");
+});
+
+export const getLifeNameTablesFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  return await queryTable("life_name_tables", "lifeNameTables");
+});
+
+export const getMonsterFluffByName = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ name: z.string() }))
+  .handler(async ({ data }) => {
+    try {
+      const { db } = await import("./drizzle.server");
+      const schema = await import("../db/schema");
+      const { eq, sql } = await import("drizzle-orm");
+      const row = await db
+        .select({ fluffJson: schema.monsters.fluffJson })
+        .from(schema.monsters)
+        .where(eq(sql`lower(${schema.monsters.name})`, data.name.toLowerCase()))
+        .limit(1);
+      return row[0]?.fluffJson || null;
+    } catch {
+      // snapshop fallback if better-sqlite3 not available
+      try {
+        const snapshot = await getSnapshot();
+        const m = (snapshot.monsters || []).find(
+          (mon: any) => mon.name.toLowerCase() === data.name.toLowerCase()
+        );
+        return m?.fluffJson || null;
+      } catch {
+        return null;
+      }
+    }
+  });
+

@@ -30,6 +30,147 @@ function parseRawJson(value: string | null | undefined) {
   }
 }
 
+function stripTags(text: string): string {
+  if (typeof text !== "string") return "";
+  return text
+    .replace(/\{@(\w+)\s+([^}]+)\}/g, (_match, tag: string, body: string) => {
+      const [label, , displayText] = body.split("|");
+      if (tag === "dice" || tag === "damage" || tag === "scaledamage") return label;
+      if (tag === "hit" || tag === "dc") return label.startsWith("+") ? label : `DC ${label}`;
+      if (tag === "h") return "";
+      if (tag === "atkr") return label;
+      return displayText || label;
+    })
+    .replace(/\{@actSave (\w+)\}/g, (_match, ability: string) => `${ability.toUpperCase()} Save:`)
+    .replace(/\{@actSaveFail\}/g, "Failure:")
+    .replace(/\{@actSaveSuccess\}/g, "Success:")
+    .replace(/\{@i ([^}]+)\}/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function resolveFluffImage(pathStr: string): string {
+  if (!pathStr) return "";
+  if (pathStr.startsWith("http://") || pathStr.startsWith("https://")) {
+    return pathStr;
+  }
+  return `https://5e.tools/img/${pathStr}`;
+}
+
+function EntryRenderer({ entry, depth = 0 }: { entry: any; depth?: number }): React.JSX.Element | null {
+  if (!entry) return null;
+
+  if (typeof entry === "string") {
+    return <p className="text-foreground/90 leading-relaxed mb-4">{stripTags(entry)}</p>;
+  }
+
+  if (Array.isArray(entry)) {
+    return (
+      <>
+        {entry.map((sub, i) => (
+          <EntryRenderer key={i} entry={sub} depth={depth} />
+        ))}
+      </>
+    );
+  }
+
+  const type = entry.type || "entries";
+
+  switch (type) {
+    case "section":
+    case "entries": {
+      const HeadingTag = depth === 0 ? "h2" : depth === 1 ? "h3" : "h4";
+      const headingClass =
+        depth === 0
+          ? "text-2xl font-bold mt-6 mb-3 border-b border-border/40 pb-1 text-primary"
+          : depth === 1
+            ? "text-xl font-bold mt-4 mb-2 text-foreground"
+            : "text-lg font-semibold mt-3 mb-1 text-muted-foreground";
+
+      return (
+        <div className="mb-6">
+          {entry.name && <HeadingTag className={headingClass}>{stripTags(entry.name)}</HeadingTag>}
+          {entry.entries && <EntryRenderer entry={entry.entries} depth={depth + 1} />}
+        </div>
+      );
+    }
+    case "list": {
+      return (
+        <ul className="list-disc pl-5 space-y-1 mb-4 text-foreground/95">
+          {entry.items?.map((item: any, i: number) => (
+            <li key={i}>
+              <EntryRenderer entry={item} depth={depth} />
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    case "table": {
+      return (
+        <div className="overflow-x-auto my-4 rounded-lg border border-border/40 bg-secondary/15">
+          <table className="w-full text-sm border-collapse text-left">
+            {entry.caption && (
+              <caption className="p-3 text-xs font-semibold text-muted-foreground text-center bg-secondary/20">
+                {stripTags(entry.caption)}
+              </caption>
+            )}
+            {entry.colHeaders && (
+              <thead>
+                <tr className="bg-secondary/35 border-b border-border/40">
+                  {entry.colHeaders.map((header: string, i: number) => (
+                    <th key={i} className="p-3 font-semibold text-foreground">
+                      {stripTags(header)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {entry.rows?.map((row: any[], rIdx: number) => (
+                <tr key={rIdx} className="border-b border-border/20 last:border-0 hover:bg-secondary/10">
+                  {row.map((cell: any, cIdx: number) => (
+                    <td key={cIdx} className="p-3 text-foreground/80">
+                      <EntryRenderer entry={cell} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case "image": {
+      const pathStr = entry.href?.path || entry.path;
+      if (!pathStr) return null;
+      const imageUrl = resolveFluffImage(pathStr);
+      return (
+        <div className="my-6 flex flex-col items-center gap-2">
+          <img
+            src={imageUrl}
+            alt={entry.title || "Illustration"}
+            className="rounded-xl max-w-full md:max-w-xl h-auto shadow-lg border border-border/40 object-cover"
+            onError={(e) => {
+              (e.target as HTMLElement).style.display = "none";
+            }}
+          />
+          {entry.title && (
+            <span className="text-xs text-muted-foreground italic">{stripTags(entry.title)}</span>
+          )}
+        </div>
+      );
+    }
+    default:
+      if (entry.entries) {
+        return <EntryRenderer entry={entry.entries} depth={depth} />;
+      }
+      if (entry.entry) {
+        return <EntryRenderer entry={entry.entry} depth={depth} />;
+      }
+      return null;
+  }
+}
+
 function rawEntrySummary(entry: any) {
   const raw = parseRawJson(entry.rawJson);
   if (!raw) return entry.searchText || "";
@@ -133,6 +274,9 @@ function CompendiumComponent() {
 
   const selectedItem =
     activeData.find((item: any) => (item.id || item.slug) === selectedItemId) || filteredData[0];
+
+  const fluff = selectedItem ? parseRawJson(selectedItem.fluffJson) : null;
+  const firstFluffImage = fluff?.images?.[0]?.href?.path || fluff?.images?.[0]?.path || null;
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen relative">
@@ -322,6 +466,18 @@ function CompendiumComponent() {
         <Card className="md:col-span-3 h-[calc(100vh-12rem)] overflow-y-auto bg-card/60 backdrop-blur-md border-border/40 shadow-xl ring-1 ring-white/5">
           {selectedItem ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {firstFluffImage && (
+                <div className="w-full max-h-80 overflow-hidden flex items-center justify-center border-b border-border/20 bg-black/10 p-4">
+                  <img
+                    src={resolveFluffImage(firstFluffImage)}
+                    alt={selectedItem.title || selectedItem.name}
+                    className="max-h-72 w-auto rounded-lg shadow-md object-contain border border-border/30"
+                    onError={(e) => {
+                      (e.target as HTMLElement).parentElement!.style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
               <CardHeader className="border-b border-border/20 bg-secondary/5 pb-6">
                 <CardTitle className="text-4xl font-extrabold tracking-tight text-foreground drop-shadow-sm">
                   {selectedItem.title || selectedItem.name}
@@ -606,6 +762,14 @@ function CompendiumComponent() {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+                {fluff?.entries && (
+                  <div className="mt-8 border-t border-border/30 pt-6">
+                    <h3 className="text-2xl font-bold mb-4 text-primary flex items-center gap-2">
+                      <BookOpen className="h-6 w-6" /> Lore & Details
+                    </h3>
+                    <EntryRenderer entry={fluff.entries} />
                   </div>
                 )}
               </CardContent>

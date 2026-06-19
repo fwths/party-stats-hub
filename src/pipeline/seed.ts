@@ -11,6 +11,11 @@ import { seedEquipment } from "./seeders/seed_equipment";
 import { seedBackgroundsFeats } from "./seeders/seed_backgrounds_feats";
 import { seedSpecies } from "./seeders/seed_species";
 import { seedCompendiumRaw } from "./seeders/seed_compendium_raw";
+import { seedAdventuringContent } from "./seeders/seed_adventuring_content";
+import { seedReferenceEntries } from "./seeders/seed_reference_entries";
+import { seedActiveEffects } from "./seeders/seed_active_effects";
+import { seedRulesReferences } from "./seeders/seed_rules_references";
+import { seedGenerators } from "./seeders/seed_generators";
 import { formatSourceConfigSummary } from "./source-config";
 
 // Locate the sqlite.db file at the root of the project
@@ -23,6 +28,16 @@ async function resetCompendiumTables() {
   await db.delete(schema.compendiumFiles);
   await db.delete(schema.compendiumEntries);
   await db.delete(schema.contentSources);
+  await db.delete(schema.rulesActions);
+  await db.delete(schema.conditions);
+  await db.delete(schema.languages);
+  await db.delete(schema.languageScripts);
+  await db.delete(schema.skills);
+  await db.delete(schema.senses);
+  await db.delete(schema.spellActiveEffects);
+  await db.delete(schema.featureActiveEffects);
+  await db.delete(schema.itemActiveEffects);
+  await db.delete(schema.activeEffects);
   await db.delete(schema.classSpells);
   await db.delete(schema.classFeatures);
   await db.delete(schema.subclasses);
@@ -35,6 +50,33 @@ async function resetCompendiumTables() {
   await db.delete(schema.weapons);
   await db.delete(schema.armor);
   await db.delete(schema.magicItems);
+  await db.delete(schema.vehicles);
+  await db.delete(schema.bastions);
+  await db.delete(schema.hazards);
+  await db.delete(schema.charOptions);
+  await db.delete(schema.optionalFeatures);
+  await db.delete(schema.deities);
+  await db.delete(schema.rewards);
+  await db.delete(schema.objects);
+  await db.delete(schema.recipes);
+  await db.delete(schema.decks);
+  await db.delete(schema.cards);
+  await db.delete(schema.rollTables);
+  await db.delete(schema.variantRules);
+  await db.delete(schema.cultsBoons);
+  await db.delete(schema.itemProperties);
+  await db.delete(schema.itemTypes);
+  await db.delete(schema.mundaneGear);
+  await db.delete(schema.weaponMasteries);
+  await db.delete(schema.itemGroups);
+  await db.delete(schema.magicVariants);
+  await db.delete(schema.lootTables);
+  await db.delete(schema.treasureTables);
+  await db.delete(schema.vehicleUpgrades);
+  await db.delete(schema.speciesVariants);
+  await db.delete(schema.monsterFeatures);
+  await db.delete(schema.encounters);
+  await db.delete(schema.lifeNameTables);
 }
 
 async function seedAll() {
@@ -58,6 +100,16 @@ async function seedAll() {
     console.log("----------------------------------------------");
     await seedSpecies(db);
     console.log("----------------------------------------------");
+    await seedAdventuringContent(db);
+    console.log("----------------------------------------------");
+    await seedRulesReferences(db);
+    console.log("----------------------------------------------");
+    await seedReferenceEntries(db);
+    console.log("----------------------------------------------");
+    await seedActiveEffects(db);
+    console.log("----------------------------------------------");
+    await seedGenerators(db);
+    console.log("----------------------------------------------");
     await seedCompendiumRaw(db);
 
     // Export all tables to a JSON snapshot for edge runtime fallback
@@ -76,6 +128,43 @@ async function seedAll() {
       armor: schema.armor,
       magic_items: schema.magicItems,
       backgrounds: schema.backgrounds,
+      vehicles: schema.vehicles,
+      bastions: schema.bastions,
+      hazards: schema.hazards,
+      rules_actions: schema.rulesActions,
+      conditions: schema.conditions,
+      languages: schema.languages,
+      language_scripts: schema.languageScripts,
+      skills: schema.skills,
+      senses: schema.senses,
+      char_options: schema.charOptions,
+      optional_features: schema.optionalFeatures,
+      deities: schema.deities,
+      rewards: schema.rewards,
+      objects: schema.objects,
+      recipes: schema.recipes,
+      decks: schema.decks,
+      cards: schema.cards,
+      roll_tables: schema.rollTables,
+      variant_rules: schema.variantRules,
+      cults_boons: schema.cultsBoons,
+      item_properties: schema.itemProperties,
+      item_types: schema.itemTypes,
+      mundane_gear: schema.mundaneGear,
+      weapon_masteries: schema.weaponMasteries,
+      item_groups: schema.itemGroups,
+      magic_variants: schema.magicVariants,
+      loot_tables: schema.lootTables,
+      treasure_tables: schema.treasureTables,
+      vehicle_upgrades: schema.vehicleUpgrades,
+      species_variants: schema.speciesVariants,
+      monster_features: schema.monsterFeatures,
+      encounters: schema.encounters,
+      life_name_tables: schema.lifeNameTables,
+      active_effects: schema.activeEffects,
+      spell_active_effects: schema.spellActiveEffects,
+      feature_active_effects: schema.featureActiveEffects,
+      item_active_effects: schema.itemActiveEffects,
       class_spells: schema.classSpells,
       class_features: schema.classFeatures,
       content_sources: schema.contentSources,

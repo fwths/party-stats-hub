@@ -1,17 +1,23 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import DEFAULT_JOURNAL from "./default-journal.md?raw";
 import { Loader2, ChevronRight, ExternalLink, AlertCircle } from "lucide-react";
+import { PartyMember } from "@/lib/dndbeyond.types";
 
 import { NotionPage, NOTE_KEY } from "./session-notes/types";
 import QuestTracker from "./session-notes/QuestTracker";
 import NotionConfigForm from "./session-notes/NotionConfigForm";
 import NotionPagesList from "./session-notes/NotionPagesList";
 import ScratchpadEditor from "./session-notes/ScratchpadEditor";
-import { MarkdownRenderer, parseInlineStyles } from "./session-notes/MarkdownRenderer";
+import { MarkdownRenderer } from "./session-notes/MarkdownRenderer";
+import { parseInlineStyles } from "./session-notes/markdown-inline";
 import SyncNotionModal from "./session-notes/SyncNotionModal";
 
-export default function SessionNotes() {
+interface SessionNotesProps {
+  members?: PartyMember[];
+}
+
+export default function SessionNotes({ members }: SessionNotesProps) {
   // --- Navigation & View Mode ---
   const [activeMode, setActiveMode] = useState<"scratchpad" | "page">("page");
   const [expandedPageIds, setExpandedPageIds] = useState<Set<string>>(() => new Set());
@@ -52,6 +58,47 @@ export default function SessionNotes() {
   const [pageContent, setPageContent] = useState<string>("");
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
+
+  const matchedMember = useMemo(() => {
+    if (!selectedPageTitle || !members) return null;
+    const normalize = (val: string) =>
+      val.toLowerCase()
+         .replace(/[“”"']/g, "")
+         .replace(/\s+/g, " ")
+         .trim();
+    const getCleanName = (name: string) => {
+      return name.replace(/["'“‘”’].*?["'“‘”’]/g, "");
+    };
+
+    const normalizedTitle = normalize(selectedPageTitle);
+    return members.find((m) => {
+      const normalizedName = normalize(m.name);
+      if (
+        normalizedTitle.includes(normalizedName) ||
+        normalizedName.includes(normalizedTitle) ||
+        (normalizedName.split(/\s+/)[0] && normalizedTitle === normalizedName.split(/\s+/)[0])
+      ) {
+        return true;
+      }
+
+      // Try stripping nicknames
+      const mClean = normalize(getCleanName(m.name));
+      const tClean = normalize(getCleanName(selectedPageTitle));
+      if (mClean && tClean && (mClean.includes(tClean) || tClean.includes(mClean))) {
+        return true;
+      }
+
+      // Fallback: check significant word overlap (first and last name)
+      const mWords = normalizedName.split(/\s+/).filter((w) => w.length > 2);
+      const tWords = normalizedTitle.split(/\s+/).filter((w) => w.length > 2);
+      const commonWords = mWords.filter((w) => tWords.includes(w));
+      if (commonWords.length >= 2) {
+        return true;
+      }
+
+      return false;
+    });
+  }, [selectedPageTitle, members]);
 
   // Expand all pages by default on initial fetch
   useEffect(() => {
@@ -438,9 +485,42 @@ export default function SessionNotes() {
                     </button>
                   </div>
                 ) : (
-                  <div className="py-1">
+                  <div className="py-1 space-y-4">
+                    {matchedMember && (
+                      <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-xl border border-gold/25 bg-secondary/15 shadow-md animate-fade-in select-none">
+                        {matchedMember.avatarUrl ? (
+                          <img
+                            src={matchedMember.avatarUrl}
+                            alt={matchedMember.name}
+                            className="h-20 w-20 rounded-2xl object-cover border border-gold/30 shadow-md hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="h-20 w-20 rounded-2xl border border-dashed border-border flex items-center justify-center text-muted-foreground bg-muted text-xs">
+                            No Portrait
+                          </div>
+                        )}
+                        <div className="flex-1 text-center sm:text-left">
+                          <h3 className="text-lg font-bold text-gold">{matchedMember.name}</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                            {matchedMember.race} • {matchedMember.classes} (Level {matchedMember.level})
+                          </p>
+                          <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1.5 mt-2.5 text-[10px] text-foreground/80 font-semibold uppercase tracking-wider">
+                            <span className="bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-emerald-400">
+                              HP: {matchedMember.hpCurrent} / {matchedMember.hpMax}
+                            </span>
+                            <span className="bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-amber-400">
+                              AC: {matchedMember.armorClass}
+                            </span>
+                            <span className="bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded text-sky-400">
+                              Passive Perception: {matchedMember.passivePerception}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <MarkdownRenderer
                       content={pageContent}
+                      members={members}
                       onSelectPage={(id, title, isDb) => {
                         if (selectedPageId && selectedPageTitle) {
                           setNavigationHistory((prev) => [

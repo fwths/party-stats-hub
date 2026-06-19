@@ -72,7 +72,7 @@ export function calculateModifiedAc(
   const requiresAttunement = (item: InventoryItem) => {
     const typeLower = item.type?.toLowerCase() || "";
     const descLower = item.description?.toLowerCase() || "";
-    if (typeLower.includes("ring") || typeLower.includes("wondrous")) {
+    if (typeLower === "ring" || typeLower.includes("wondrous")) {
       return true;
     }
     if (descLower.includes("attunement") || descLower.includes("attune")) {

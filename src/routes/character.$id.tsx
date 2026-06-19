@@ -10,8 +10,8 @@ import {
   readStoredIds,
   getStoredIdsServer,
   readStoredIdsFromCookie,
+  withDefaultPartyIds,
 } from "@/lib/party";
-import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { ThemeSelector } from "@/components/party/ThemeSelector";
 
 function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/character/$id")({
       ids = readStoredIdsFromCookie();
     }
     const charId = Number(params.id);
-    const resolvedIds = ids ?? PARTY_CHARACTER_IDS;
+    const resolvedIds = withDefaultPartyIds(ids);
     const effectiveIds = resolvedIds.includes(charId) ? resolvedIds : [...resolvedIds, charId];
 
     context.queryClient.prefetchQuery(partyQueryOptions(effectiveIds));
@@ -100,7 +100,7 @@ function CharacterDetailInner() {
 
   // Resolve party ids from loader on first render, fallback to localStorage/defaults.
   const { ids: initialIds } = Route.useLoaderData() as { ids?: number[] | null };
-  const [ids, setIds] = useState<number[]>(initialIds ?? PARTY_CHARACTER_IDS);
+  const [ids, setIds] = useState<number[]>(withDefaultPartyIds(initialIds ?? null));
   useEffect(() => {
     const stored = readStoredIds();
     if (stored) setIds(stored);

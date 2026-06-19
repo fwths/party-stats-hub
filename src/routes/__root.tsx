@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { applyTheme } from "../hooks/useThemePreset";
+import { initSyncEngine } from "../lib/sync-engine";
 
 function NotFoundComponent() {
   return (
@@ -181,7 +182,7 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
-    import("@/lib/sync-engine").then((m) => m.initSyncEngine());
+    initSyncEngine();
   }, []);
 
   useEffect(() => {

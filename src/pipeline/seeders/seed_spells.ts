@@ -145,11 +145,18 @@ export async function seedSpells(db: any) {
   console.log("Seeding spells from 5etools data...");
 
   try {
+    const fluffMap = loadSpellFluffMap();
+    const foundryMap = loadSpellFoundryMap();
+
     const spells = selectAllowedSpells(readSpellFiles()).map(mapSpell);
     const spellIdsByName = new Map<string, string>();
 
     for (const spell of spells) {
       spellIdsByName.set(spell.name.toLowerCase(), spell.id);
+      const key = `${spell.name.toLowerCase()}|${spell.source.toLowerCase()}`;
+      const fluff = fluffMap.get(key);
+      const foundry = foundryMap.get(key);
+
       await db
         .insert(schema.spells)
         .values({
@@ -171,6 +178,8 @@ export async function seedSpells(db: any) {
           attackRoll: spell.attackRoll,
           summonsStatBlockIds: JSON.stringify([]),
           source: spell.source,
+          fluffJson: fluff ? JSON.stringify(fluff) : null,
+          foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
         .onConflictDoUpdate({
           target: schema.spells.id,
@@ -192,6 +201,8 @@ export async function seedSpells(db: any) {
             attackRoll: spell.attackRoll,
             summonsStatBlockIds: JSON.stringify([]),
             source: spell.source,
+            fluffJson: fluff ? JSON.stringify(fluff) : null,
+            foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
         });
     }
@@ -203,3 +214,34 @@ export async function seedSpells(db: any) {
     throw e;
   }
 }
+
+function loadSpellFluffMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const dir = path.join(process.cwd(), "new data/spells");
+  if (!fs.existsSync(dir)) return map;
+  const files = fs.readdirSync(dir).filter((f) => /^fluff-spells-.*\.json$/i.test(f));
+  for (const f of files) {
+    const data = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
+    const fluffList = data.spellFluff || [];
+    for (const fluff of fluffList) {
+      const key = `${fluff.name.toLowerCase()}|${fluff.source.toLowerCase()}`;
+      map.set(key, fluff);
+    }
+  }
+  return map;
+}
+
+function loadSpellFoundryMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/spells/foundry.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const spells = data.spell || [];
+    for (const spell of spells) {
+      const key = `${spell.name.toLowerCase()}|${spell.source.toLowerCase()}`;
+      map.set(key, spell);
+    }
+  }
+  return map;
+}
+

@@ -1,4 +1,55 @@
-# Migrate Data Pipeline to New 5etools Data Source
+# Canonical 5etools Schema and Character Engine Plan
+
+The long-term goal is not just to import raw 5etools JSON. The goal is:
+
+1. Build a canonical, typed database schema that can represent all official 5etools rules and content.
+2. Keep lossless raw JSON only as provenance, audit fallback, and future migration source.
+3. Make both native characters and imported DDB characters resolve through the same canonical rule/effect model.
+4. Exclude homebrew, prerelease/playtest, and non-D&D app content unless explicitly enabled.
+
+## Architecture Target
+
+- `content_sources` is the source catalog for books/adventures.
+- Every official 5etools entity family gets one of:
+  - a typed table with relations, if the app can reason about it;
+  - a typed metadata/fluff table linked to a typed row;
+  - an explicit exclusion rule, if it is homebrew/non-game data.
+- `compendium_entries` and `compendium_files` remain lossless search/provenance layers, not the final app model.
+- `reference_entries` is temporary scaffolding. Each entity currently stored there should eventually graduate to a typed table.
+- `active_effects` becomes the common rule-effect layer for spells, class features, feats, species traits, items, conditions, and other effects.
+- Native characters store canonical IDs and selected choices.
+- DDB imported characters are normalized from DDB modifiers into the same internal rule-effect shape, with overlap checks to avoid double-counting.
+
+## Coverage Audit
+
+Run this whenever `new data/` changes:
+
+```sh
+npx tsx src/pipeline/audit-5etools-coverage.ts
+```
+
+The audit lists every top-level 5etools array and marks it as:
+
+- `typed`: imported into a dedicated schema table.
+- `generic`: imported into `reference_entries`, but still needs a typed table.
+- `raw`: only available through lossless raw compendium data or not normalized yet.
+- `metadata`: fluff/foundry/support data that should link to typed rows where useful.
+- `excluded`: intentionally ignored homebrew/non-game data.
+
+## Current High-Level Gaps
+
+- Replace `reference_entries` catch-all with typed tables for conditions, diseases, statuses, actions, languages, optional features, character options, deities, rewards, objects, recipes, decks/cards, roll tables, variant rules, cults/boons, and rules references.
+- Add typed schemas for mundane adventuring gear, item properties, item types, item groups, weapon masteries, magic variants, loot/treasure tables, vehicle upgrades, species variants/subraces, skills, senses, monster features, encounters, and life/name tables.
+- Link fluff/foundry data to typed rows instead of leaving it only in raw compendium files.
+- Expand `active_effects` from conservative text-derived effects to structured rule effects generated from typed entity fields.
+- Make the character builder save canonical character records instead of only serialized PartyMember snapshots.
+- Make imported DDB characters map into canonical character/rule/effect structures while preserving DDB as an external-source snapshot.
+
+---
+
+# Historical Migration Plan
+
+This section records the earlier data-source migration work. It is no longer the full definition of done.
 
 The `new data/` directory contains a complete 5etools data dump. The goal is to rewrite all seeders to ingest from `new data/` instead of the old Open5e source in `src/data/raw/`, with configurable source filtering.
 

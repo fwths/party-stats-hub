@@ -1,5 +1,5 @@
 import { Moon, Hourglass, Tent } from "lucide-react";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { Panel } from "../CharacterDetailView";
 import { parseHitDice } from "./hooks";
 import { cn } from "@/lib/utils";

@@ -21,7 +21,7 @@ import {
 
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PartyMember, PreparedSpell, SpellSlotLevel } from "@/lib/dndbeyond.functions";
+import { PartyMember, PreparedSpell, SpellSlotLevel } from "@/lib/dndbeyond.types";
 import { Panel, CustomSelect } from "../CharacterDetailView";
 
 const SCHOOL_THEMES: Record<

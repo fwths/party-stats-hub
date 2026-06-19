@@ -1,5 +1,5 @@
-import { PartyMember } from "@/lib/dndbeyond.functions";
-import { LocalCondition } from "./conditions";
+import { PartyMember } from "@/lib/dndbeyond.types";
+import type { LocalCondition } from "./condition-state";
 
 export function getModifiedStats(member: PartyMember, localConditions: LocalCondition[]) {
   let ac = member.armorClass;

@@ -25,7 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PartyMember, PreparedSpell } from "@/lib/dndbeyond.functions";
+import { PartyMember, PreparedSpell } from "@/lib/dndbeyond.types";
 import { ConditionsPanel, InventoryList, useCharacterConditions } from "./CharacterCard";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 import SpellbookPanel from "./character-detail/SpellbookPanel";
@@ -44,7 +44,7 @@ import {
   useLocalActiveInfusions,
   useLocalTotemAspects,
 } from "./character-detail/hooks";
-import { METAMAGIC_DICTIONARY, TOTEM_ASPECT_DICTIONARY } from "./character-detail/Watermark";
+import { METAMAGIC_DICTIONARY, TOTEM_ASPECT_DICTIONARY } from "./character-detail/watermark-data";
 import { AttacksPanel, ResourcesPanel, WeaponMasteriesPanel } from "./character-detail/CombatPanel";
 import {
   AbilityScoresPanel,

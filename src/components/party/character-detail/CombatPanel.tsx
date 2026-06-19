@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Swords, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { Panel, CustomSelect } from "../CharacterDetailView";
-import { RAGE_DICTIONARY, WEAPON_MASTERY_DICTIONARY } from "./Watermark";
+import { RAGE_DICTIONARY, WEAPON_MASTERY_DICTIONARY } from "./watermark-data";
 
 const DAMAGE_TYPE_THEMES: Record<string, { bg: string; text: string; border: string }> = {
   fire: { bg: "bg-ui-red/10", text: "text-ui-red", border: "border-ui-red/30" },

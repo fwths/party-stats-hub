@@ -1,4 +1,6 @@
-import { Dice5, Shield, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Dice5, Shield, Heart, BookOpen } from "lucide-react";
+import { getMonsterFluffByName } from "@/lib/db-functions";
 
 interface MonsterStatBlockProps {
   monster: any;
@@ -6,8 +8,168 @@ interface MonsterStatBlockProps {
   compact?: boolean;
 }
 
+function stripTags(value: unknown): string {
+  return String(value ?? "")
+    .replace(
+      /\{@(?:spell|item|condition|skill|sense|action|dc|damage|filter|book|note|b|i|scaledice|dice)\s+([^}|]+)(?:\|[^}]*)?\}/g,
+      "$1",
+    )
+    .replace(/\{@[^}]+\}/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function resolveFluffImage(pathStr: string): string {
+  if (!pathStr) return "";
+  if (pathStr.startsWith("http://") || pathStr.startsWith("https://")) {
+    return pathStr;
+  }
+  return `https://5e.tools/img/${pathStr}`;
+}
+
+function EntryRenderer({ entry, depth = 0 }: { entry: any; depth?: number }): React.JSX.Element | null {
+  if (!entry) return null;
+
+  if (typeof entry === "string") {
+    return <p className="text-foreground/80 leading-relaxed mb-3 text-xs">{stripTags(entry)}</p>;
+  }
+
+  if (Array.isArray(entry)) {
+    return (
+      <>
+        {entry.map((sub, i) => (
+          <EntryRenderer key={i} entry={sub} depth={depth} />
+        ))}
+      </>
+    );
+  }
+
+  const type = entry.type || "entries";
+
+  switch (type) {
+    case "section":
+    case "entries": {
+      const HeadingTag = depth === 0 ? "h4" : "h5";
+      const headingClass =
+        depth === 0
+          ? "text-xs font-bold mt-4 mb-2 border-b border-amber-600/20 pb-0.5 text-amber-500 uppercase tracking-wide"
+          : "text-[11px] font-bold mt-3 mb-1 text-foreground/90";
+
+      return (
+        <div className="mb-3">
+          {entry.name && <HeadingTag className={headingClass}>{stripTags(entry.name)}</HeadingTag>}
+          {entry.entries && <EntryRenderer entry={entry.entries} depth={depth + 1} />}
+        </div>
+      );
+    }
+    case "list": {
+      return (
+        <ul className="list-disc pl-4 space-y-1 mb-3 text-foreground/75 text-xs">
+          {entry.items?.map((item: any, i: number) => (
+            <li key={i}>
+              <EntryRenderer entry={item} depth={depth} />
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    case "table": {
+      return (
+        <div className="overflow-x-auto my-3 rounded border border-amber-600/10 bg-secondary/5">
+          <table className="w-full text-[11px] border-collapse text-left">
+            {entry.caption && (
+              <caption className="p-2 text-[10px] font-semibold text-muted-foreground text-center bg-secondary/15">
+                {stripTags(entry.caption)}
+              </caption>
+            )}
+            {entry.colHeaders && (
+              <thead>
+                <tr className="bg-secondary/20 border-b border-amber-600/15">
+                  {entry.colHeaders.map((header: string, i: number) => (
+                    <th key={i} className="p-2 font-semibold text-foreground">
+                      {stripTags(header)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {entry.rows?.map((row: any[], rIdx: number) => (
+                <tr key={rIdx} className="border-b border-border/10 last:border-0 hover:bg-secondary/5">
+                  {row.map((cell: any, cIdx: number) => (
+                    <td key={cIdx} className="p-2 text-foreground/70">
+                      <EntryRenderer entry={cell} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    case "image": {
+      const pathStr = entry.href?.path || entry.path;
+      if (!pathStr) return null;
+      const imageUrl = resolveFluffImage(pathStr);
+      return (
+        <div className="my-3 flex flex-col items-center gap-1">
+          <img
+            src={imageUrl}
+            alt={entry.title || "Illustration"}
+            className="rounded max-w-full max-h-48 shadow border border-border/20 object-cover"
+            onError={(e) => {
+              (e.target as HTMLElement).style.display = "none";
+            }}
+          />
+          {entry.title && (
+            <span className="text-[10px] text-muted-foreground italic">{stripTags(entry.title)}</span>
+          )}
+        </div>
+      );
+    }
+    default:
+      if (entry.entries) {
+        return <EntryRenderer entry={entry.entries} depth={depth} />;
+      }
+      if (entry.entry) {
+        return <EntryRenderer entry={entry.entry} depth={depth} />;
+      }
+      return null;
+  }
+}
+
 export function MonsterStatBlock({ monster, onRoll, compact = false }: MonsterStatBlockProps) {
   if (!monster) return null;
+
+  const [fluff, setFluff] = useState<any>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (monster.name) {
+      getMonsterFluffByName({ data: { name: monster.name } })
+        .then((fluffJson) => {
+          if (!active) return;
+          if (fluffJson) {
+            try {
+              setFluff(JSON.parse(fluffJson));
+            } catch {
+              setFluff(null);
+            }
+          } else {
+            setFluff(null);
+          }
+        })
+        .catch(() => {
+          if (active) setFluff(null);
+        });
+    } else {
+      setFluff(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [monster.name]);
 
   // Helper to format ability modifier
   const getMod = (score: number) => {
@@ -147,18 +309,59 @@ export function MonsterStatBlock({ monster, onRoll, compact = false }: MonsterSt
             {monster.subtype ? ` (${monster.subtype})` : ""}, {monster.alignment}
           </p>
         </div>
-        {monster.image && (
-          <img
-            src={`https://www.dnd5eapi.co${monster.image}`}
-            alt={monster.name}
-            className="w-12 h-12 rounded-lg border border-border bg-secondary/20 object-cover"
-            onError={(e) => {
-              // Hide image if failed to load
-              (e.target as HTMLElement).style.display = "none";
-            }}
-          />
-        )}
+        {(() => {
+          const firstFluffImage = fluff?.images?.[0]?.href?.path || fluff?.images?.[0]?.path || null;
+          const showLargeImage = !compact && firstFluffImage;
+          if (showLargeImage) {
+            return null; // Render large image below title/info for better layout
+          }
+          if (firstFluffImage) {
+            return (
+              <img
+                src={resolveFluffImage(firstFluffImage)}
+                alt={monster.name}
+                className="w-16 h-16 rounded-lg border border-amber-600/30 bg-secondary/20 object-cover shadow-md"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            );
+          }
+          if (monster.image) {
+            return (
+              <img
+                src={`https://www.dnd5eapi.co${monster.image}`}
+                alt={monster.name}
+                className="w-12 h-12 rounded-lg border border-border bg-secondary/20 object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            );
+          }
+          return null;
+        })()}
       </div>
+
+      {/* Large Showcase Image for Non-Compact layout */}
+      {(() => {
+        const firstFluffImage = fluff?.images?.[0]?.href?.path || fluff?.images?.[0]?.path || null;
+        if (!compact && firstFluffImage) {
+          return (
+            <div className="my-3 overflow-hidden rounded border border-amber-600/20 max-w-full h-48 bg-secondary/10 flex justify-center items-center">
+              <img
+                src={resolveFluffImage(firstFluffImage)}
+                alt={monster.name}
+                className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {/* Decorative red line */}
       <hr className="border-t border-amber-600/30 my-2" />
@@ -501,6 +704,20 @@ export function MonsterStatBlock({ monster, onRoll, compact = false }: MonsterSt
                 <span className="text-foreground/90">{la.desc}</span>
               </div>
             ))}
+          </div>
+        </>
+      )}
+
+      {/* Lore & Description Section */}
+      {fluff?.entries && fluff.entries.length > 0 && (
+        <>
+          <hr className="border-t-2 border-amber-600/40 my-3" />
+          <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-amber-500 border-b border-amber-600/20 pb-0.5 mb-2 flex items-center gap-1.5">
+            <BookOpen size={14} className="text-amber-500/80" />
+            Lore & Description
+          </h3>
+          <div className="space-y-2 pr-1 max-h-60 overflow-y-auto custom-scrollbar">
+            <EntryRenderer entry={fluff.entries} />
           </div>
         </>
       )}

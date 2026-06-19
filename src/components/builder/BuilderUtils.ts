@@ -14,6 +14,7 @@ import {
 export type BuilderState = {
   name: string;
   raceId: string | null;
+  speciesVariantId: string | null;
   backgroundId: string | null;
   classId: string | null;
   subclassId: string | null;
@@ -23,7 +24,9 @@ export type BuilderState = {
   speciesTraitChoices: Record<string, string>;
   speciesSkillChoices: string[];
   speciesToolChoices: string[];
+  speciesLanguageChoices: string[];
   backgroundToolChoices: string[];
+  backgroundLanguageChoices: string[];
   backgroundEquipmentOption: string | null;
   featChoices: {
     spellList?: string;
@@ -349,6 +352,82 @@ export function getToolChoiceGroups(raw: unknown): ChoiceGroup[] {
   });
 }
 
+export function getLanguageOptions(referenceEntries: any[]): string[] {
+  return Array.from(
+    new Set(
+      (referenceEntries || [])
+        .filter((entry: any) => !entry.entityType || entry.entityType === "language")
+        .map((entry: any) => normalizeChoiceName(entry.name))
+        .filter(Boolean),
+    ),
+  ).sort();
+}
+
+export function getLanguageChoiceGroups(raw: unknown, languageOptions: string[]): ChoiceGroup[] {
+  const parsed = parseJsonValue(raw as any, []);
+  const values = Array.isArray(parsed) ? parsed : [parsed];
+
+  return values.flatMap((entry: any, index: number) => {
+    if (!entry || typeof entry !== "object") return [];
+    if (entry.anyStandard || entry.any) {
+      const count = Number(entry.anyStandard || entry.any);
+      return [
+        {
+          id: `language-any-${index}`,
+          label: `Choose ${count} language${count === 1 ? "" : "s"}`,
+          count,
+          options: languageOptions,
+        },
+      ];
+    }
+    if (entry.other) {
+      return [
+        {
+          id: `language-other-${index}`,
+          label: "Choose one language",
+          count: 1,
+          options: languageOptions,
+        },
+      ];
+    }
+    if (entry.choose?.from) {
+      const options = entry.choose.from
+        .map((language: unknown) =>
+          String(language).toLowerCase() === "other"
+            ? languageOptions
+            : [normalizeChoiceName(language)],
+        )
+        .flat()
+        .filter(Boolean);
+      return [
+        {
+          id: `language-choose-${index}`,
+          label: `Choose ${entry.choose.count || 1} language${Number(entry.choose.count || 1) === 1 ? "" : "s"}`,
+          count: Number(entry.choose.count || 1),
+          options: Array.from(new Set(options)),
+        },
+      ];
+    }
+    return [];
+  });
+}
+
+export function getFixedLanguages(raw: unknown): string[] {
+  const parsed = parseJsonValue(raw as any, []);
+  const values = Array.isArray(parsed) ? parsed : [parsed];
+  const ignored = new Set(["any", "anystandard", "other", "choose"]);
+  return Array.from(
+    new Set(
+      values.flatMap((entry: any) => {
+        if (!entry || typeof entry !== "object") return [];
+        return Object.entries(entry)
+          .filter(([key, enabled]) => !ignored.has(key.toLowerCase()) && enabled === true)
+          .map(([key]) => normalizeChoiceName(key));
+      }),
+    ),
+  );
+}
+
 export function areChoiceGroupsComplete(groups: ChoiceGroup[], selected: string[]): boolean {
   return selected.length >= groups.reduce((total, group) => total + group.count, 0);
 }
@@ -445,8 +524,10 @@ export function getBuilderValidationIssues(
     classes: any[];
     feats: any[];
     species: any[];
+    speciesVariants?: any[];
     subclasses: any[];
     classFeatures: any[];
+    languages?: any[];
   },
 ): string[] {
   const issues: string[] = [];
@@ -464,6 +545,12 @@ export function getBuilderValidationIssues(
   if (!race) {
     issues.push("Choose a species.");
   } else {
+    if (data.speciesVariants) {
+      const subraces = data.speciesVariants.filter((sv: any) => sv.speciesId === race.id);
+      if (subraces.length > 0 && !character.speciesVariantId) {
+        issues.push("Choose a species subrace / variant.");
+      }
+    }
     getSpeciesTraitGroups(race)
       .filter((group) => !character.speciesTraitChoices[group.id])
       .forEach((group) => issues.push(`Choose ${group.label}.`));
@@ -485,6 +572,17 @@ export function getBuilderValidationIssues(
     ) {
       issues.push("Complete species tool choices.");
     }
+    if (
+      !areChoiceGroupsComplete(
+        getLanguageChoiceGroups(
+          getJsonField(race, "languagesJson", "languages_json"),
+          getLanguageOptions(data.languages || []),
+        ),
+        character.speciesLanguageChoices,
+      )
+    ) {
+      issues.push("Complete species language choices.");
+    }
   }
 
   if (!background) {
@@ -502,6 +600,17 @@ export function getBuilderValidationIssues(
       )
     ) {
       issues.push("Complete background tool choices.");
+    }
+    if (
+      !areChoiceGroupsComplete(
+        getLanguageChoiceGroups(
+          getJsonField(background, "languageProficienciesJson", "language_proficiencies_json"),
+          getLanguageOptions(data.languages || []),
+        ),
+        character.backgroundLanguageChoices,
+      )
+    ) {
+      issues.push("Complete background language choices.");
     }
     const backgroundEquipmentOptions = getEquipmentOptions(
       getJsonField(background, "startingEquipmentJson", "starting_equipment_json"),

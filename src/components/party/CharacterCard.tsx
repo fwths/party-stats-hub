@@ -16,7 +16,7 @@ import {
   Award,
   Swords,
 } from "lucide-react";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { SKILL_ABILITY } from "@/lib/constants";
 import { Link } from "@tanstack/react-router";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
@@ -24,11 +24,8 @@ import { getFullyModifiedStats } from "@/lib/party-modifiers";
 // Modular sub-file imports and compatibility re-exports
 import { ABILITY_DETAILS } from "./character-card/ability-details";
 import { Section, Stat } from "./character-card/shared";
-import {
-  LocalCondition,
-  useCharacterConditions,
-  ConditionsPanel,
-} from "./character-card/conditions";
+import { ConditionsPanel } from "./character-card/conditions";
+import { type LocalCondition, useCharacterConditions } from "./character-card/condition-state";
 import { getModifiedStats } from "./character-card/get-modified-stats";
 import { InventoryList } from "./character-card/inventory-list";
 

@@ -74,9 +74,16 @@ export async function seedSpecies(db: any) {
   console.log("Seeding species from 5etools data...");
 
   try {
+    const speciesFluffMap = loadSpeciesFluffMap();
+    const speciesFoundryMap = loadSpeciesFoundryMap();
+
     const speciesList = selectAllowedSpecies(readSpecies());
 
     for (const species of speciesList) {
+      const key = `${species.name.toLowerCase()}|${species.source.toLowerCase()}`;
+      const fluff = speciesFluffMap.get(key);
+      const foundry = speciesFoundryMap.get(key);
+
       await db
         .insert(schema.species)
         .values({
@@ -98,6 +105,8 @@ export async function seedSpecies(db: any) {
             tools: species.toolProficiencies || [],
           }),
           isLineage: !!species.lineage || titleCase(species.name).includes("Lineage"),
+          fluffJson: fluff ? JSON.stringify(fluff) : null,
+          foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
         .onConflictDoUpdate({
           target: schema.species.id,
@@ -119,13 +128,114 @@ export async function seedSpecies(db: any) {
               tools: species.toolProficiencies || [],
             }),
             isLineage: !!species.lineage || titleCase(species.name).includes("Lineage"),
+            fluffJson: fluff ? JSON.stringify(fluff) : null,
+            foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
         });
     }
 
     console.log(`Seeded ${speciesList.length} species from 5etools.`);
+
+    // Seed subraces / species variants
+    const subraces = readSubraces();
+    const allowedSubraces = subraces.filter((s: any) => isSourceAllowed(s.source));
+    for (const sub of allowedSubraces) {
+      const id = slugify(`${sub.name}-${sub.raceName}-${sub.source}`);
+      const desc = renderEntries(sub.entries || []);
+      const foundry = getSubraceFoundry(sub, speciesFoundryMap);
+
+      await db
+        .insert(schema.speciesVariants)
+        .values({
+          id,
+          speciesId: slugify(sub.raceName),
+          name: sub.name,
+          source: sub.source,
+          page: sub.page || null,
+          raceName: sub.raceName,
+          raceSource: sub.raceSource || "PHB",
+          abilityJson: JSON.stringify(sub.ability || []),
+          featuresJson: JSON.stringify(mapFeatures(sub.entries)),
+          description: desc,
+          rawJson: JSON.stringify(sub),
+          fluffJson: null,
+          foundryJson: foundry ? JSON.stringify(foundry) : null,
+        })
+        .onConflictDoUpdate({
+          target: schema.speciesVariants.id,
+          set: {
+            speciesId: slugify(sub.raceName),
+            name: sub.name,
+            source: sub.source,
+            page: sub.page || null,
+            raceName: sub.raceName,
+            raceSource: sub.raceSource || "PHB",
+            abilityJson: JSON.stringify(sub.ability || []),
+            featuresJson: JSON.stringify(mapFeatures(sub.entries)),
+            description: desc,
+            rawJson: JSON.stringify(sub),
+            fluffJson: null,
+            foundryJson: foundry ? JSON.stringify(foundry) : null,
+          },
+        });
+    }
+    console.log(`Seeded ${allowedSubraces.length} species subraces/variants.`);
   } catch (e) {
     console.error("Error seeding species:", e);
     throw e;
   }
+}
+
+function readSubraces(): any[] {
+  const data = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), "new data/races.json"), "utf-8"),
+  );
+  return data.subrace || [];
+}
+
+function loadSpeciesFluffMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/fluff-races.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const list = data.raceFluff || [];
+    for (const item of list) {
+      const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function loadSpeciesFoundryMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/foundry-races.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const list = data.race || [];
+    for (const item of list) {
+      const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function getSubraceFoundry(
+  sub: { name: string; raceName: string; source: string },
+  foundryMap: Map<string, any>
+): any {
+  // Try direct name + source match
+  let key = `${sub.name.toLowerCase()}|${sub.source.toLowerCase()}`;
+  if (foundryMap.has(key)) return foundryMap.get(key);
+
+  // Try "Race (Subrace)" + source match
+  key = `${sub.raceName.toLowerCase()} (${sub.name.toLowerCase()})|${sub.source.toLowerCase()}`;
+  if (foundryMap.has(key)) return foundryMap.get(key);
+
+  // Try "Subrace Race" + source match
+  key = `${sub.name.toLowerCase()} ${sub.raceName.toLowerCase()}|${sub.source.toLowerCase()}`;
+  if (foundryMap.has(key)) return foundryMap.get(key);
+
+  return null;
 }

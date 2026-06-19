@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
 import { MonsterStatBlock } from "./MonsterStatBlock";
 import { getLocalHp } from "@/lib/party-modifiers";

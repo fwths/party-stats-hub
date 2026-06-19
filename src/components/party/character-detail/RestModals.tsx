@@ -1,5 +1,5 @@
 import { Minus, Plus, Hourglass, Tent } from "lucide-react";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { parseHitDice } from "./hooks";
 
 interface RestModalsProps {

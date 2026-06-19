@@ -1,5 +1,14 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { getCookie, parseCookieIds, readStoredIds, COOKIE_KEY, STORAGE_KEY } from "./party";
+import {
+  getCookie,
+  parseCookieIds,
+  readStoredIds,
+  withDefaultPartyIds,
+  addPartyId,
+  COOKIE_KEY,
+  STORAGE_KEY,
+} from "./party";
+import { PARTY_CHARACTER_IDS } from "./party-config";
 
 describe("getCookie", () => {
   it("extracts named cookie correctly", () => {
@@ -55,5 +64,22 @@ describe("readStoredIds", () => {
 
     localStorage.setItem(STORAGE_KEY, "invalid-json");
     expect(readStoredIds()).toBeNull();
+  });
+});
+
+describe("party id helpers", () => {
+  it("uses default party IDs when no custom list exists", () => {
+    expect(withDefaultPartyIds(null)).toEqual(PARTY_CHARACTER_IDS);
+    expect(withDefaultPartyIds([])).toEqual(PARTY_CHARACTER_IDS);
+  });
+
+  it("adds first native character without dropping default party members", () => {
+    const nativeId = 900000001;
+    expect(addPartyId(null, nativeId)).toEqual([...PARTY_CHARACTER_IDS, nativeId]);
+  });
+
+  it("adds native character to existing custom list without duplicates", () => {
+    expect(addPartyId([101, 202], 202)).toEqual([101, 202]);
+    expect(addPartyId([101, 202], 303)).toEqual([101, 202, 303]);
   });
 });

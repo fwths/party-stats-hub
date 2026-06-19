@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { SpellSlotLevel, ActionInfo } from "@/lib/dndbeyond.functions";
+import { SpellSlotLevel, ActionInfo } from "@/lib/dndbeyond.types";
 import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
 
 export interface LocalHpData {

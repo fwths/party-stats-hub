@@ -1,5 +1,5 @@
 import { Brain } from "lucide-react";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { Panel } from "../CharacterDetailView";
 
 export function CompanionsPanel({ member }: { member: PartyMember }) {

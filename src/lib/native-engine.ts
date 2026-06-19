@@ -13,6 +13,7 @@ import { createServerFn } from "@tanstack/react-start";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";
+import { normalizeActiveEffects } from "./rules-effects";
 
 const ABILITIES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 const SKILLS = [
@@ -114,6 +115,18 @@ function parseProficiencyNames(value: unknown, type?: "skills" | "tools"): strin
       .filter(Boolean);
   }
   return [];
+}
+
+function parseFixedLanguages(value: unknown): string[] {
+  const parsed = parseJsonValue(value, []);
+  const values = Array.isArray(parsed) ? parsed : [parsed];
+  const ignored = new Set(["any", "anystandard", "other", "choose"]);
+  return values.flatMap((entry: any) => {
+    if (!entry || typeof entry !== "object") return [];
+    return Object.entries(entry)
+      .filter(([key, enabled]) => !ignored.has(key.toLowerCase()) && enabled === true)
+      .map(([key]) => normalizeName(key));
+  });
 }
 
 function parseSenses(value: unknown) {
@@ -255,8 +268,8 @@ function inferInventoryItem(item: any): InventoryItem {
     type: weapon ? "Weapon" : isShield ? "Shield" : armor?.type || "Adventuring Gear",
     rarity: "Mundane",
     magic: false,
-    equipped: Boolean(weapon || armor || isShield),
-    attuned: false,
+    equipped: item.equipped !== undefined ? Boolean(item.equipped) : Boolean(weapon || armor || isShield),
+    attuned: item.attuned !== undefined ? Boolean(item.attuned) : false,
     quantity: item.quantity || 1,
     damage: weapon?.damage,
     properties: weapon?.properties,
@@ -618,6 +631,241 @@ function selectedFeatureOptionDetails(
   });
 }
 
+function featureEffectDetails(
+  classFeatures: any[],
+  state: any,
+  classData: any,
+  subclassData: any,
+  effectData?: { activeEffects?: any[]; featureActiveEffects?: any[] },
+) {
+  const activeEffects = effectData?.activeEffects || [];
+  const links = effectData?.featureActiveEffects || [];
+  const effectById = new Map(activeEffects.map((effect) => [effect.id, effect]));
+  const unlockedFeatureIds = new Set(
+    classFeatures
+      .filter((feature) => {
+        const classId = getField(feature, "classId", "class_id");
+        const subclassId = getField(feature, "subclassId", "subclass_id");
+        const levelRequired = Number(getField(feature, "levelRequired", "level_required") || 0);
+        return (
+          classId === classData?.id &&
+          (!subclassId || subclassId === subclassData?.id) &&
+          levelRequired <= Number(state.level || 1)
+        );
+      })
+      .map((feature) => feature.id),
+  );
+
+  return links
+    .filter((link) => unlockedFeatureIds.has(link.featureId ?? link.feature_id))
+    .map((link) => effectById.get(link.effectId ?? link.effect_id))
+    .filter(Boolean);
+}
+
+function itemEffectDetails(
+  inventory: InventoryItem[],
+  effectData?: {
+    activeEffects?: any[];
+    itemActiveEffects?: any[];
+    magicItems?: any[];
+  },
+) {
+  const activeEffects = effectData?.activeEffects || [];
+  const links = effectData?.itemActiveEffects || [];
+  const magicItems = effectData?.magicItems || [];
+  const effectById = new Map(activeEffects.map((effect) => [effect.id, effect]));
+
+  const equippedMagicItemIds = new Set<string>();
+  for (const item of inventory) {
+    const requiresAttunement = (i: InventoryItem) => {
+      const typeLower = i.type?.toLowerCase() || "";
+      const descLower = i.description?.toLowerCase() || "";
+      return (
+        typeLower === "ring" ||
+        typeLower.includes("wondrous") ||
+        descLower.includes("attunement") ||
+        descLower.includes("attune")
+      );
+    };
+    const isActive = item.equipped && (!requiresAttunement(item) || item.attuned);
+    if (!isActive) continue;
+
+    const dbItem = magicItems.find((mi) => mi.name.toLowerCase() === item.name.toLowerCase());
+    if (dbItem?.id) {
+      equippedMagicItemIds.add(dbItem.id);
+    }
+  }
+
+  return links
+    .filter((link) => equippedMagicItemIds.has(link.itemId ?? link.item_id))
+    .map((link) => effectById.get(link.effectId ?? link.effect_id))
+    .filter(Boolean);
+}
+
+function spellEffectDetails(
+  selectedSpells: any[],
+  effectData?: { activeEffects?: any[]; spellActiveEffects?: any[] },
+) {
+  const activeEffects = effectData?.activeEffects || [];
+  const links = effectData?.spellActiveEffects || [];
+  const effectById = new Map(activeEffects.map((effect) => [effect.id, effect]));
+
+  const selectedSpellIds = new Set(selectedSpells.map((s) => s.id));
+
+  return links
+    .filter((link) => selectedSpellIds.has(link.spellId ?? link.spell_id))
+    .map((link) => effectById.get(link.effectId ?? link.effect_id))
+    .filter(Boolean);
+}
+
+type ParsedEffects = {
+  abilityBonuses: Record<string, number>;
+  abilityOverrides: Record<string, number>;
+  acBonus: number;
+  speedBonuses: Record<string, number>;
+  senses: Array<{ name: string; value: number | null }>;
+  defenses: Array<{ type: "resistance" | "immunity" | "vulnerability"; damageType: string }>;
+  actions: ActionInfo[];
+};
+
+function parseFoundryJsonEffects(
+  foundryJsonStr: string | null | undefined,
+  effectsAccumulator: ParsedEffects,
+  finalScores: Record<string, number>,
+  proficiencyBonus: number,
+  sourceName: string,
+) {
+  if (!foundryJsonStr) return;
+  const parsed = parseJsonValue(foundryJsonStr, null);
+  if (!parsed) return;
+
+  const effects = Array.isArray(parsed.effects) ? parsed.effects : [];
+  for (const effect of effects) {
+    if (effect.disabled === true) continue;
+
+    const changes = Array.isArray(effect.changes) ? effect.changes : [];
+    for (const change of changes) {
+      const key = String(change.key || "");
+      const mode = change.mode;
+      const rawValue = change.value;
+
+      const parseValNum = (val: any): number => {
+        if (typeof val === "number") return val;
+        if (typeof val === "string") {
+          const parsedNum = parseInt(val, 10);
+          return isNaN(parsedNum) ? 0 : parsedNum;
+        }
+        return 0;
+      };
+
+      // 1. Ability Scores
+      const abilityMatch = key.match(/^system\.abilities\.([a-z]{3})\.value$/i);
+      if (abilityMatch) {
+        const ability = abilityMatch[1].toUpperCase();
+        const valNum = parseValNum(rawValue);
+        if (mode === "OVERRIDE" || mode === 5 || mode === "UPGRADE" || mode === 4) {
+          effectsAccumulator.abilityOverrides[ability] = Math.max(
+            effectsAccumulator.abilityOverrides[ability] || 0,
+            valNum,
+          );
+        } else {
+          effectsAccumulator.abilityBonuses[ability] =
+            (effectsAccumulator.abilityBonuses[ability] || 0) + valNum;
+        }
+        continue;
+      }
+
+      // 2. Armor Class
+      if (key === "system.attributes.ac.bonus") {
+        const valNum = parseValNum(rawValue);
+        effectsAccumulator.acBonus += valNum;
+        continue;
+      }
+
+      // 3. Speed
+      const movementMatch = key.match(/^system\.attributes\.movement\.([a-z]+)$/i);
+      if (movementMatch) {
+        const moveType = movementMatch[1].toLowerCase();
+        const valNum = parseValNum(rawValue);
+        effectsAccumulator.speedBonuses[moveType] =
+          (effectsAccumulator.speedBonuses[moveType] || 0) + valNum;
+        continue;
+      }
+
+      // 4. Senses
+      const sensesMatch = key.match(/^system\.attributes\.senses\.([a-z]+)$/i);
+      if (sensesMatch) {
+        const senseType = sensesMatch[1].toLowerCase();
+        const valNum = parseValNum(rawValue);
+        const name =
+          senseType === "darkvision"
+            ? "Darkvision"
+            : senseType === "blindsight"
+              ? "Blindsight"
+              : senseType === "truesight"
+                ? "Truesight"
+                : senseType.charAt(0).toUpperCase() + senseType.slice(1);
+        effectsAccumulator.senses.push({ name, value: valNum });
+        continue;
+      }
+
+      // 5. Defenses (Resistances/Immunities/Vulnerabilities)
+      if (key === "system.traits.dr.value" || key === "system.traits.dr") {
+        const types =
+          typeof rawValue === "string"
+            ? [rawValue]
+            : Array.isArray(rawValue)
+              ? rawValue
+              : [];
+        for (const t of types) {
+          effectsAccumulator.defenses.push({ type: "resistance", damageType: normalizeName(t) });
+        }
+        continue;
+      }
+      if (key === "system.traits.di.value") {
+        const types =
+          typeof rawValue === "string"
+            ? [rawValue]
+            : Array.isArray(rawValue)
+              ? rawValue
+              : [];
+        for (const t of types) {
+          effectsAccumulator.defenses.push({ type: "immunity", damageType: normalizeName(t) });
+        }
+        continue;
+      }
+      if (key === "system.traits.dv.value") {
+        const types =
+          typeof rawValue === "string"
+            ? [rawValue]
+            : Array.isArray(rawValue)
+              ? rawValue
+              : [];
+        for (const t of types) {
+          effectsAccumulator.defenses.push({
+            type: "vulnerability",
+            damageType: normalizeName(t),
+          });
+        }
+        continue;
+      }
+      if (key === "system.traits.ci.value") {
+        const types =
+          typeof rawValue === "string"
+            ? [rawValue]
+            : Array.isArray(rawValue)
+              ? rawValue
+              : [];
+        for (const t of types) {
+          effectsAccumulator.defenses.push({ type: "immunity", damageType: normalizeName(t) });
+        }
+        continue;
+      }
+    }
+  }
+}
+
+
 function activationFromDescription(description: string) {
   const text = description.toLowerCase();
   if (/\bbonus action\b/.test(text)) return { activationTime: 1, activationType: 3 };
@@ -701,19 +949,212 @@ export function createNativePartyMember(
   originFeat?: any,
   selectedSpells: any[] = [],
   classFeatures: any[] = [],
+  effectData?: {
+    activeEffects?: any[];
+    featureActiveEffects?: any[];
+    itemActiveEffects?: any[];
+    spellActiveEffects?: any[];
+    magicItems?: any[];
+  },
+  speciesVariantData?: any,
 ): PartyMember {
   const id = Math.floor(Math.random() * 1000000) + 900000000; // Native IDs are 900M+
   const level = state.level || 1;
-  const finalScores = Object.fromEntries(
+  const proficiencyBonus = Math.ceil(level / 4) + 1;
+
+  // Gather equipment & inventory first
+  const selectedEquipment = [
+    ...getSelectedEquipment(
+      getField(backgroundData, "startingEquipmentJson", "starting_equipment_json"),
+      state.backgroundEquipmentOption,
+    ),
+    ...getSelectedEquipment(classData?.startingEquipmentJson, state.classEquipmentOption),
+  ];
+  const inventory = equipmentToInventory(selectedEquipment);
+  const currencies = equipmentToCurrencies(selectedEquipment);
+
+  // Ability scores base
+  const baseScores = Object.fromEntries(
     ABILITIES.map((ability) => [
       ability,
       Number(state.abilities?.[ability] || 10) + Number(state.abilityBonuses?.[ability] || 0),
     ]),
   ) as Record<string, number>;
+
+  // Accumulate all active effects and foundryJson modifications
+  const parsedAccumulator: ParsedEffects = {
+    abilityBonuses: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
+    abilityOverrides: {},
+    acBonus: 0,
+    speedBonuses: {},
+    senses: [],
+    defenses: [],
+    actions: [],
+  };
+
+  // 1. Equipped Inventory Items foundryJson
+  for (const item of inventory) {
+    const requiresAttunement = (i: InventoryItem) => {
+      const typeLower = i.type?.toLowerCase() || "";
+      const descLower = i.description?.toLowerCase() || "";
+      return (
+        typeLower === "ring" ||
+        typeLower.includes("wondrous") ||
+        descLower.includes("attunement") ||
+        descLower.includes("attune")
+      );
+    };
+    const isActive = item.equipped && (!requiresAttunement(item) || item.attuned);
+    if (!isActive) continue;
+
+    const dbItem = effectData?.magicItems?.find(
+      (mi) => mi.name.toLowerCase() === item.name.toLowerCase(),
+    );
+    if (dbItem?.foundryJson) {
+      parseFoundryJsonEffects(
+        dbItem.foundryJson,
+        parsedAccumulator,
+        baseScores,
+        proficiencyBonus,
+        item.name,
+      );
+    }
+  }
+
+  // 2. Active Spells foundryJson
+  for (const spell of selectedSpells) {
+    if (spell?.foundryJson) {
+      parseFoundryJsonEffects(
+        spell.foundryJson,
+        parsedAccumulator,
+        baseScores,
+        proficiencyBonus,
+        spell.name,
+      );
+    }
+  }
+
+  // 3. Feats foundryJson
+  if (originFeat?.foundryJson) {
+    parseFoundryJsonEffects(
+      originFeat.foundryJson,
+      parsedAccumulator,
+      baseScores,
+      proficiencyBonus,
+      originFeat.name,
+    );
+  }
+
+  // 4. Species foundryJson
+  if (raceData?.foundryJson) {
+    parseFoundryJsonEffects(
+      raceData.foundryJson,
+      parsedAccumulator,
+      baseScores,
+      proficiencyBonus,
+      raceData.name,
+    );
+  }
+
+  // 4b. Species Variant (Subrace) foundryJson
+  if (speciesVariantData?.foundryJson) {
+    parseFoundryJsonEffects(
+      speciesVariantData.foundryJson,
+      parsedAccumulator,
+      baseScores,
+      proficiencyBonus,
+      speciesVariantData.name,
+    );
+  }
+
+  // 5. Unlocked Class Features foundryJson
+  const unlockedFeatures = classFeatures.filter((feature) => {
+    const classId = getField(feature, "classId", "class_id");
+    const subclassId = getField(feature, "subclassId", "subclass_id");
+    const levelRequired = Number(getField(feature, "levelRequired", "level_required") || 0);
+    return (
+      classId === classData?.id &&
+      (!subclassId || subclassId === subclassData?.id) &&
+      levelRequired <= Number(state.level || 1)
+    );
+  });
+  for (const feature of unlockedFeatures) {
+    if (feature?.foundryJson) {
+      parseFoundryJsonEffects(
+        feature.foundryJson,
+        parsedAccumulator,
+        baseScores,
+        proficiencyBonus,
+        feature.name,
+      );
+    }
+  }
+
+  // Database Active Effects
+  // Features
+  const linkedFeatureEffects = featureEffectDetails(
+    classFeatures,
+    state,
+    classData,
+    subclassData,
+    effectData as any,
+  );
+  const normalizedFeatureEffects = normalizeActiveEffects(linkedFeatureEffects, {
+    finalScores: baseScores,
+    proficiencyBonus,
+    source: "class",
+  });
+
+  // Equipped Items
+  const linkedItemEffects = itemEffectDetails(inventory, effectData);
+  const normalizedItemEffects = normalizeActiveEffects(linkedItemEffects, {
+    finalScores: baseScores,
+    proficiencyBonus,
+    source: "item",
+  });
+
+  // Active Spells
+  const linkedSpellEffects = spellEffectDetails(selectedSpells, effectData as any);
+  const normalizedSpellEffects = normalizeActiveEffects(linkedSpellEffects, {
+    finalScores: baseScores,
+    proficiencyBonus,
+    source: "spell",
+  });
+
+  // Extract speed adjustments from database active effects changesJson
+  const allDatabaseEffects = [...linkedFeatureEffects, ...linkedItemEffects, ...linkedSpellEffects];
+  for (const eff of allDatabaseEffects) {
+    const changes = parseJsonValue(eff?.changesJson ?? eff?.changes_json, {});
+    if (Array.isArray(changes?.speeds)) {
+      for (const speedAdjust of changes.speeds) {
+        const type = (speedAdjust.type || "walk").toLowerCase();
+        const valNum = typeof speedAdjust.value === "number" ? speedAdjust.value : 0;
+        parsedAccumulator.speedBonuses[type] =
+          (parsedAccumulator.speedBonuses[type] || 0) + valNum;
+      }
+    }
+  }
+
+  // Combine Ability Scores
+  const finalScores = Object.fromEntries(
+    ABILITIES.map((ability) => {
+      let score = baseScores[ability];
+      score += parsedAccumulator.abilityBonuses[ability] || 0;
+      const override = parsedAccumulator.abilityOverrides[ability];
+      if (override !== undefined && override > score) {
+        score = override;
+      }
+      return [ability, score];
+    }),
+  ) as Record<string, number>;
+
+  // Ability modifiers
   const conMod = modifier(finalScores.CON);
   const dexMod = modifier(finalScores.DEX);
   const wisMod = modifier(finalScores.WIS);
   const intMod = modifier(finalScores.INT);
+
+  // Features, expertises, and skills/saves
   const featureOptionDetails = selectedFeatureOptionDetails(state.featureChoices, classFeatures);
   const expertiseSkills = new Set(
     featureOptionDetails
@@ -726,7 +1167,6 @@ export function createNativePartyMember(
     ? hitDice + conMod + (level - 1) * (Math.floor(hitDice / 2) + 1 + conMod)
     : 10;
 
-  const proficiencyBonus = Math.ceil(level / 4) + 1;
   const backgroundSkills = parseProficiencyNames(
     getField(backgroundData, "skillProficienciesJson", "skill_proficiencies_json"),
   );
@@ -803,16 +1243,55 @@ export function createNativePartyMember(
   ]);
   const languages = unique([
     "Common",
-    ...asStringArray(getField(raceData, "languagesJson", "languages_json")),
+    ...parseFixedLanguages(getField(raceData, "languagesJson", "languages_json")),
+    ...(state.speciesLanguageChoices || []),
+    ...parseFixedLanguages(
+      getField(backgroundData, "languageProficienciesJson", "language_proficiencies_json"),
+    ),
+    ...(state.backgroundLanguageChoices || []),
   ]);
+
   const traitEffects = getSpeciesTraitEffects(raceData?.id, state.speciesTraitChoices || {}, level);
-  const senses = [
+
+  // Merge speed, senses, defenses, actions
+  const armorClass = calculateArmorClass(inventory, dexMod) + parsedAccumulator.acBonus;
+  const attacks = inventoryToAttacks(inventory, finalScores, proficiencyBonus);
+
+  // Speed
+  const speed =
+    (traitEffects.speed || raceData?.speed || 30) + (parsedAccumulator.speedBonuses.walk || 0);
+  const specialSpeeds = [...(traitEffects.speed ? [] : [])];
+  for (const [type, value] of Object.entries(parsedAccumulator.speedBonuses)) {
+    if (type !== "walk" && type !== "speed") {
+      specialSpeeds.push({ type, value });
+    }
+  }
+
+  // Senses: deduplicate by name
+  const sensesList = [
     ...parseSenses(getField(raceData, "sensesJson", "senses_json")).filter(
       (sense) => !traitEffects.senses.some((traitSense) => traitSense.name === sense.name),
     ),
     ...traitEffects.senses,
+    ...normalizedFeatureEffects.senses,
+    ...normalizedItemEffects.senses,
+    ...normalizedSpellEffects.senses,
+    ...parsedAccumulator.senses,
   ];
-  const defenses = [
+  const uniqueSensesMap = new Map<string, number | null>();
+  for (const s of sensesList) {
+    const existing = uniqueSensesMap.get(s.name);
+    if (
+      existing === undefined ||
+      (s.value !== null && (existing === null || s.value > existing))
+    ) {
+      uniqueSensesMap.set(s.name, s.value);
+    }
+  }
+  const senses = Array.from(uniqueSensesMap.entries()).map(([name, value]) => ({ name, value }));
+
+  // Defenses: deduplicate by type and damageType
+  const defensesList = [
     ...parseDefenses(getField(raceData, "resistancesJson", "resistances_json"), "resistance"),
     ...parseDefenses(getField(raceData, "immunitiesJson", "immunities_json"), "immunity"),
     ...parseDefenses(
@@ -820,13 +1299,32 @@ export function createNativePartyMember(
       "vulnerability",
     ),
     ...traitEffects.defenses,
+    ...normalizedFeatureEffects.defenses,
+    ...normalizedItemEffects.defenses,
+    ...normalizedSpellEffects.defenses,
+    ...parsedAccumulator.defenses,
   ];
+  const uniqueDefensesMap = new Map<string, DefenseInfo>();
+  for (const d of defensesList) {
+    const key = `${d.type}:${d.damageType.toLowerCase()}`;
+    uniqueDefensesMap.set(key, d);
+  }
+  const defenses = Array.from(uniqueDefensesMap.values());
+
+  // Features list
   const features = [
     ...parseFeatureEntries(
       getField(raceData, "featuresJson", "features_json"),
       "race",
       raceData?.name || "Species",
     ),
+    ...(speciesVariantData
+      ? parseFeatureEntries(
+          getField(speciesVariantData, "featuresJson", "features_json"),
+          "race",
+          speciesVariantData.name,
+        )
+      : []),
     ...(backgroundData
       ? [
           {
@@ -854,6 +1352,7 @@ export function createNativePartyMember(
     ...traitEffects.features,
     ...featureChoiceFeatures(state.featureChoices, classFeatures),
   ];
+
   const metamagic = featureOptionDetails
     .filter((detail) => /metamagic/i.test(detail.featureName))
     .map((detail) => ({
@@ -894,24 +1393,23 @@ export function createNativePartyMember(
         },
       ]
     : [];
-  const selectedEquipment = [
-    ...getSelectedEquipment(
-      getField(backgroundData, "startingEquipmentJson", "starting_equipment_json"),
-      state.backgroundEquipmentOption,
-    ),
-    ...getSelectedEquipment(classData?.startingEquipmentJson, state.classEquipmentOption),
-  ];
-  const inventory = equipmentToInventory(selectedEquipment);
-  const currencies = equipmentToCurrencies(selectedEquipment);
-  const armorClass = calculateArmorClass(inventory, dexMod);
-  const attacks = inventoryToAttacks(inventory, finalScores, proficiencyBonus);
+
   const actions = unlockedClassFeatureActions(
     classFeatures,
     state,
     classData,
     subclassData,
     finalScores,
-  );
+  )
+    .concat(normalizedFeatureEffects.actions)
+    .concat(normalizedItemEffects.actions)
+    .concat(normalizedSpellEffects.actions);
+  const uniqueActionsMap = new Map<string, ActionInfo>();
+  for (const a of actions) {
+    uniqueActionsMap.set(a.name, a);
+  }
+  const finalActions = Array.from(uniqueActionsMap.values());
+
   const spellcastingData = parseJsonValue(classData?.spellcastingJson, {});
   const spellcastingAbility = String(spellcastingData?.ability || "")
     .slice(0, 3)
@@ -940,7 +1438,9 @@ export function createNativePartyMember(
     id,
     name: state.name || "Unnamed",
     avatarUrl: null,
-    race: raceData?.name || "Unknown",
+    race: speciesVariantData
+      ? `${speciesVariantData.name} ${raceData?.name || "Species"}`
+      : (raceData?.name || "Unknown"),
     background: backgroundData?.name || "Custom",
     classes: classData?.name || "Unknown",
     subclasses: subclassData ? [subclassData.name] : [],
@@ -958,7 +1458,7 @@ export function createNativePartyMember(
     passiveInsight: 10 + (skills.find((skill) => skill.key === "insight")?.modifier ?? wisMod),
     armorClass,
     initiative: dexMod,
-    speed: traitEffects.speed || raceData?.speed || 30,
+    speed,
     proficiencyBonus,
     senses,
     skills,
@@ -968,14 +1468,14 @@ export function createNativePartyMember(
     abilities,
     conditions: [],
     defenses,
-    actions,
+    actions: finalActions,
     inventory,
     readonlyUrl: `/character/${id}`,
     languages,
     tools,
     armorProficiencies,
     weaponProficiencies,
-    specialSpeeds: [],
+    specialSpeeds,
     spellcasting,
     hitDice: `${level}/${level}d${hitDice}`,
     feats,

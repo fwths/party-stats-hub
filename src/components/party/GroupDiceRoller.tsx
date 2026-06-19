@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { Swords, Play, Sparkles, ChevronDown, Check } from "lucide-react";
 
 interface CustomSelectProps {

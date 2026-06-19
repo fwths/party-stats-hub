@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import { Panel } from "../CharacterDetailView";
 
 export interface ItemPreset {

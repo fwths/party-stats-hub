@@ -1,5 +1,5 @@
 import { Coins, Dumbbell, Sparkles, Package } from "lucide-react";
-import { PartyMember, InventoryItem } from "@/lib/dndbeyond.functions";
+import { PartyMember, InventoryItem } from "@/lib/dndbeyond.types";
 
 function getItemRarityClass(rarity?: string) {
   const norm = rarity?.toLowerCase().replace(/\s+/g, "") || "";

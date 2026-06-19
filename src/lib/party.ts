@@ -55,8 +55,16 @@ export function readStoredIds(): number[] | null {
   }
 }
 
+export function withDefaultPartyIds(ids: number[] | null): number[] {
+  return ids && ids.length > 0 ? ids : PARTY_CHARACTER_IDS;
+}
+
+export function addPartyId(ids: number[] | null, id: number): number[] {
+  return Array.from(new Set([...withDefaultPartyIds(ids), id]));
+}
+
 export function partyQueryOptions(ids: number[] | null) {
-  const effective = ids && ids.length > 0 ? ids : PARTY_CHARACTER_IDS;
+  const effective = withDefaultPartyIds(ids);
   return queryOptions({
     queryKey: ["party", effective],
     queryFn: () => getParty({ data: { ids: effective } }),

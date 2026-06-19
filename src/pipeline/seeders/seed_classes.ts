@@ -282,8 +282,19 @@ export async function seedClasses(db: any) {
       classes.map((classEntry) => [classEntry.name, classEntry.source]),
     );
 
+    const classFluffMap = loadClassFluffMap();
+    const subclassFluffMap = loadSubclassFluffMap();
+    const classFoundryMap = loadClassFoundryMap();
+    const subclassFoundryMap = loadSubclassFoundryMap();
+    const classFeatureFoundryMap = loadClassFeatureFoundryMap();
+    const subclassFeatureFoundryMap = loadSubclassFeatureFoundryMap();
+
     for (const classEntry of classes) {
       const hitDie = classEntry.hd?.faces || 8;
+      const key = `${classEntry.name.toLowerCase()}|${classEntry.source.toLowerCase()}`;
+      const fluff = classFluffMap.get(key);
+      const foundry = classFoundryMap.get(key);
+
       await db
         .insert(schema.classes)
         .values({
@@ -312,6 +323,8 @@ export async function seedClasses(db: any) {
             feats: classEntry.featProgression || [],
             optionalFeatures: classEntry.optionalfeatureProgression || [],
           }),
+          fluffJson: fluff ? JSON.stringify(fluff) : null,
+          foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
         .onConflictDoUpdate({
           target: schema.classes.id,
@@ -340,6 +353,8 @@ export async function seedClasses(db: any) {
               feats: classEntry.featProgression || [],
               optionalFeatures: classEntry.optionalfeatureProgression || [],
             }),
+            fluffJson: fluff ? JSON.stringify(fluff) : null,
+            foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
         });
     }
@@ -360,6 +375,10 @@ export async function seedClasses(db: any) {
 
     for (const subclass of subclasses) {
       const description = getSubclassDescription(subclass, subclassDescriptions, subclassFeatures);
+      const key = `${subclass.className.toLowerCase()}|${(subclass.shortName || subclass.name).toLowerCase()}|${subclass.source.toLowerCase()}`;
+      const fluff = subclassFluffMap.get(key);
+      const foundry = subclassFoundryMap.get(key);
+
       await db
         .insert(schema.subclasses)
         .values({
@@ -371,6 +390,8 @@ export async function seedClasses(db: any) {
           alwaysPreparedSpellsJson: JSON.stringify([]),
           expandedSpellListJson: JSON.stringify([]),
           spellcastingJson: JSON.stringify({ ability: subclass.spellcastingAbility }),
+          fluffJson: fluff ? JSON.stringify(fluff) : null,
+          foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
         .onConflictDoUpdate({
           target: schema.subclasses.id,
@@ -382,11 +403,16 @@ export async function seedClasses(db: any) {
             alwaysPreparedSpellsJson: JSON.stringify([]),
             expandedSpellListJson: JSON.stringify([]),
             spellcastingJson: JSON.stringify({ ability: subclass.spellcastingAbility }),
+            fluffJson: fluff ? JSON.stringify(fluff) : null,
+            foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
         });
     }
 
     for (const feature of classFeatures) {
+      const key = `${feature.className.toLowerCase()}|${feature.name.toLowerCase()}|${feature.level || 0}|${feature.source.toLowerCase()}`;
+      const foundry = classFeatureFoundryMap.get(key);
+
       await db
         .insert(schema.classFeatures)
         .values({
@@ -401,6 +427,8 @@ export async function seedClasses(db: any) {
           usesJson: JSON.stringify({}),
           numericalModifiersJson: JSON.stringify({}),
           optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
+          fluffJson: null,
+          foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
         .onConflictDoUpdate({
           target: schema.classFeatures.id,
@@ -415,11 +443,16 @@ export async function seedClasses(db: any) {
             usesJson: JSON.stringify({}),
             numericalModifiersJson: JSON.stringify({}),
             optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
+            fluffJson: null,
+            foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
         });
     }
 
     for (const feature of subclassFeatures) {
+      const key = `${feature.className.toLowerCase()}|${(feature.subclassShortName || "").toLowerCase()}|${feature.name.toLowerCase()}|${feature.level || 0}|${feature.source.toLowerCase()}`;
+      const foundry = subclassFeatureFoundryMap.get(key);
+
       await db
         .insert(schema.classFeatures)
         .values({
@@ -434,6 +467,8 @@ export async function seedClasses(db: any) {
           usesJson: JSON.stringify({}),
           numericalModifiersJson: JSON.stringify({}),
           optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
+          fluffJson: null,
+          foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
         .onConflictDoUpdate({
           target: schema.classFeatures.id,
@@ -448,6 +483,8 @@ export async function seedClasses(db: any) {
             usesJson: JSON.stringify({}),
             numericalModifiersJson: JSON.stringify({}),
             optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
+            fluffJson: null,
+            foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
         });
     }
@@ -459,4 +496,92 @@ export async function seedClasses(db: any) {
     console.error("Error seeding classes:", e);
     throw e;
   }
+}
+
+function loadClassFluffMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const dir = path.join(process.cwd(), "new data/class");
+  if (!fs.existsSync(dir)) return map;
+  const files = fs.readdirSync(dir).filter((f) => /^fluff-class-.*\.json$/i.test(f));
+  for (const f of files) {
+    const data = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
+    const list = data.classFluff || [];
+    for (const item of list) {
+      const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function loadSubclassFluffMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const dir = path.join(process.cwd(), "new data/class");
+  if (!fs.existsSync(dir)) return map;
+  const files = fs.readdirSync(dir).filter((f) => /^fluff-class-.*\.json$/i.test(f));
+  for (const f of files) {
+    const data = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
+    const list = data.subclassFluff || [];
+    for (const item of list) {
+      const key = `${item.className.toLowerCase()}|${(item.shortName || item.name).toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function loadClassFoundryMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/class/foundry.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const list = data.class || [];
+    for (const item of list) {
+      const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function loadSubclassFoundryMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/class/foundry.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const list = data.subclass || [];
+    for (const item of list) {
+      const key = `${item.className.toLowerCase()}|${(item.shortName || item.name).toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function loadClassFeatureFoundryMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/class/foundry.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const list = data.classFeature || [];
+    for (const item of list) {
+      const key = `${item.className.toLowerCase()}|${item.name.toLowerCase()}|${item.level || 0}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function loadSubclassFeatureFoundryMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/class/foundry.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const list = data.subclassFeature || [];
+    for (const item of list) {
+      const key = `${item.className.toLowerCase()}|${(item.subclassShortName || "").toLowerCase()}|${item.name.toLowerCase()}|${item.level || 0}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
 }

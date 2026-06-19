@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { loadParty } from "@/lib/dndbeyond.functions";
+import { loadParty } from "@/lib/dndbeyond.server";
 
 export const Route = createFileRoute("/api/party")({
   server: {

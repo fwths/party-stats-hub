@@ -25,6 +25,7 @@ type Background = {
   feats?: Array<Record<string, boolean>>;
   skillProficiencies?: Array<Record<string, boolean>>;
   toolProficiencies?: Array<Record<string, boolean>>;
+  languageProficiencies?: unknown[];
   startingEquipment?: unknown[];
   entries?: unknown;
 };
@@ -99,10 +100,18 @@ export async function seedBackgroundsFeats(db: any) {
   console.log("Seeding backgrounds and feats from 5etools data...");
 
   try {
+    const featFluffMap = loadFeatsFluffMap();
+    const backgroundFluffMap = loadBackgroundsFluffMap();
+    const featFoundryMap = loadFeatsFoundryMap();
+
     const feats = selectAllowed(readFeats());
     const backgrounds = selectAllowed(readBackgrounds());
 
     for (const feat of feats) {
+      const key = `${feat.name.toLowerCase()}|${feat.source.toLowerCase()}`;
+      const fluff = featFluffMap.get(key);
+      const foundry = featFoundryMap.get(key);
+
       await db
         .insert(schema.feats)
         .values({
@@ -116,6 +125,8 @@ export async function seedBackgroundsFeats(db: any) {
           abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
           source: feat.source,
           page: feat.page || null,
+          fluffJson: fluff ? JSON.stringify(fluff) : null,
+          foundryJson: foundry ? JSON.stringify(foundry) : null,
         })
         .onConflictDoUpdate({
           target: schema.feats.id,
@@ -129,11 +140,16 @@ export async function seedBackgroundsFeats(db: any) {
             abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
             source: feat.source,
             page: feat.page || null,
+            fluffJson: fluff ? JSON.stringify(fluff) : null,
+            foundryJson: foundry ? JSON.stringify(foundry) : null,
           },
         });
     }
 
     for (const background of backgrounds) {
+      const key = `${background.name.toLowerCase()}|${background.source.toLowerCase()}`;
+      const fluff = backgroundFluffMap.get(key);
+
       await db
         .insert(schema.backgrounds)
         .values({
@@ -145,10 +161,13 @@ export async function seedBackgroundsFeats(db: any) {
             extractProficiencies(background.skillProficiencies),
           ),
           toolProficienciesJson: JSON.stringify(extractProficiencies(background.toolProficiencies)),
+          languageProficienciesJson: JSON.stringify(background.languageProficiencies || []),
           startingEquipmentJson: JSON.stringify(background.startingEquipment || []),
           originFeatId: extractOriginFeat(background.feats),
           source: background.source,
           page: background.page || null,
+          fluffJson: fluff ? JSON.stringify(fluff) : null,
+          foundryJson: null,
         })
         .onConflictDoUpdate({
           target: schema.backgrounds.id,
@@ -162,10 +181,13 @@ export async function seedBackgroundsFeats(db: any) {
             toolProficienciesJson: JSON.stringify(
               extractProficiencies(background.toolProficiencies),
             ),
+            languageProficienciesJson: JSON.stringify(background.languageProficiencies || []),
             startingEquipmentJson: JSON.stringify(background.startingEquipment || []),
             originFeatId: extractOriginFeat(background.feats),
             source: background.source,
             page: background.page || null,
+            fluffJson: fluff ? JSON.stringify(fluff) : null,
+            foundryJson: null,
           },
         });
     }
@@ -176,4 +198,58 @@ export async function seedBackgroundsFeats(db: any) {
     console.error("Error seeding backgrounds/feats:", e);
     throw e;
   }
+}
+
+function loadFeatsFluffMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/fluff-feats.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const list = data.featFluff || [];
+    for (const item of list) {
+      const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function loadBackgroundsFluffMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/fluff-backgrounds.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    const list = data.backgroundFluff || [];
+    for (const item of list) {
+      const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+      map.set(key, item);
+    }
+  }
+  return map;
+}
+
+function loadFeatsFoundryMap(): Map<string, any> {
+  const map = new Map<string, any>();
+  const filepath = path.join(process.cwd(), "new data/foundry-feats.json");
+  if (fs.existsSync(filepath)) {
+    const data = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+    if (Array.isArray(data.feat)) {
+      for (const item of data.feat) {
+        const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+        map.set(key, item);
+      }
+    } else if (typeof data === "object") {
+      for (const [featName, value] of Object.entries(data)) {
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            if (item && item.source) {
+              const key = `${featName.toLowerCase()}|${item.source.toLowerCase()}`;
+              map.set(key, item);
+            }
+          }
+        }
+      }
+    }
+  }
+  return map;
 }

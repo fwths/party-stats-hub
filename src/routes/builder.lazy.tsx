@@ -22,6 +22,8 @@ import {
   getProficiencyChoiceGroups,
   isValidAbilityBonusSet,
   getToolChoiceGroups,
+  getLanguageChoiceGroups,
+  getLanguageOptions,
   getEquipmentOptions,
   areOriginFeatChoicesComplete,
   parseJsonValue,
@@ -46,12 +48,27 @@ export const Route = createLazyFileRoute("/builder")({
 
 function BuilderWizard() {
   const navigate = useNavigate();
-  const { backgrounds, classes, feats, species, spells, subclasses, classFeatures } =
-    Route.useLoaderData() as any;
+  const {
+    backgrounds,
+    classes,
+    feats,
+    species,
+    speciesVariants,
+    spells,
+    subclasses,
+    classFeatures,
+    languages,
+    activeEffects,
+    featureActiveEffects,
+    itemActiveEffects,
+    spellActiveEffects,
+    magicItems,
+  } = Route.useLoaderData() as any;
   const [step, setStep] = useState(1);
   const [character, setCharacter] = useState<BuilderState>({
     name: "Unnamed Hero",
     raceId: null,
+    speciesVariantId: null,
     backgroundId: null,
     classId: null,
     subclassId: null,
@@ -61,7 +78,9 @@ function BuilderWizard() {
     speciesTraitChoices: {},
     speciesSkillChoices: [],
     speciesToolChoices: [],
+    speciesLanguageChoices: [],
     backgroundToolChoices: [],
+    backgroundLanguageChoices: [],
     backgroundEquipmentOption: null,
     featChoices: { cantrips: [], spells: [], skills: [], tools: [] },
     classSkillChoices: [],
@@ -83,8 +102,10 @@ function BuilderWizard() {
     classes,
     feats,
     species,
+    speciesVariants,
     subclasses,
     classFeatures,
+    languages,
   });
 
   const saveCharacter = async () => {
@@ -95,9 +116,10 @@ function BuilderWizard() {
       }
 
       const { createNativePartyMember, saveNativeCharacter } = await import("@/lib/native-engine");
-      const { STORAGE_KEY, COOKIE_KEY } = await import("@/lib/party");
+      const { STORAGE_KEY, COOKIE_KEY, readStoredIds, addPartyId } = await import("@/lib/party");
 
       const raceData = species.find((r: any) => r.id === character.raceId);
+      const speciesVariantData = speciesVariants?.find((sv: any) => sv.id === character.speciesVariantId);
       const backgroundData = backgrounds.find((b: any) => b.id === character.backgroundId);
       const classData = classes.find((c: any) => c.id === character.classId);
       const subclassData = subclasses.find((s: any) => s.id === character.subclassId);
@@ -121,18 +143,14 @@ function BuilderWizard() {
         originFeat,
         selectedSpells,
         classFeatures,
+        { activeEffects, featureActiveEffects, itemActiveEffects, spellActiveEffects, magicItems },
+        speciesVariantData,
       );
       const newId = await saveNativeCharacter({ data: { character: newMember } });
 
-      // Add to local storage
-      const raw = localStorage.getItem(STORAGE_KEY);
-      let ids: number[] = [];
-      if (raw) {
-        ids = JSON.parse(raw);
-      }
-      ids.push(newId);
+      const ids = addPartyId(readStoredIds(), newId);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-      document.cookie = `${COOKIE_KEY}=${ids.join(",")}; max-age=31536000; path=/`;
+      document.cookie = `${COOKIE_KEY}=${ids.join(",")}; path=/; max-age=31536000; SameSite=Lax`;
 
       alert("Character built natively and added to party!");
       navigate({ to: "/" });
@@ -145,9 +163,11 @@ function BuilderWizard() {
   const isStepValid = () => {
     if (step === 1) {
       const race = species.find((r: any) => r.id === character.raceId);
+      const subraces = speciesVariants?.filter((sv: any) => sv.speciesId === character.raceId) || [];
       return (
         character.name.trim() !== "" &&
         character.raceId !== null &&
+        (subraces.length === 0 || character.speciesVariantId !== null) &&
         areTraitGroupsComplete(getSpeciesTraitGroups(race), character.speciesTraitChoices) &&
         areChoiceGroupsComplete(
           getProficiencyChoiceGroups(
@@ -164,6 +184,13 @@ function BuilderWizard() {
             TOOL_OPTIONS,
           ),
           character.speciesToolChoices,
+        ) &&
+        areChoiceGroupsComplete(
+          getLanguageChoiceGroups(
+            getJsonField(race, "languagesJson", "languages_json"),
+            getLanguageOptions(languages),
+          ),
+          character.speciesLanguageChoices,
         )
       );
     }
@@ -180,6 +207,13 @@ function BuilderWizard() {
             getJsonField(background, "toolProficienciesJson", "tool_proficiencies_json"),
           ),
           character.backgroundToolChoices,
+        ) &&
+        areChoiceGroupsComplete(
+          getLanguageChoiceGroups(
+            getJsonField(background, "languageProficienciesJson", "language_proficiencies_json"),
+            getLanguageOptions(languages),
+          ),
+          character.backgroundLanguageChoices,
         ) &&
         getEquipmentOptions(
           getJsonField(background, "startingEquipmentJson", "starting_equipment_json"),

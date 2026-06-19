@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Award, BookOpen, User, Lock } from "lucide-react";
-import { PartyMember } from "@/lib/dndbeyond.functions";
+import { PartyMember } from "@/lib/dndbeyond.types";
 import {
-  TOTEM_ASPECT_DICTIONARY,
   METAMAGIC_DICTIONARY,
+  TOTEM_ASPECT_DICTIONARY,
   WEAPON_MASTERY_DICTIONARY,
-} from "./Watermark";
+} from "./watermark-data";
 
 export function FeaturesPanel({
   member,

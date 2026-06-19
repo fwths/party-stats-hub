@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { NotionPage } from "./types";
-import { highlightMatch } from "./MarkdownRenderer";
+import { highlightMatch } from "./markdown-inline";
 
 interface NotionPagesListProps {
   notionToken: string;

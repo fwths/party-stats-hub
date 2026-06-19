@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,7 +10,7 @@ import {
   COOKIE_KEY,
 } from "@/lib/party";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Users, Activity, Package, Swords, BookOpen, Info, LogOut } from "lucide-react";
+import { Users, Activity, Package, Swords, BookOpen, Info, LogOut, Plus } from "lucide-react";
 import { RefreshButton } from "@/components/party/RefreshButton";
 import { PartyHighlights } from "@/components/party/PartyHighlights";
 import { PartyGrid, PartyGridSkeleton } from "@/components/party/PartyGrid";
@@ -150,6 +150,12 @@ export default function Index() {
                   📥 Install App
                 </button>
               )}
+              <Link
+                to="/builder"
+                className="rounded border border-accent bg-accent/15 hover:bg-accent/25 px-2 py-1 text-accent font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-accent/10 active:scale-95 flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" /> Create Character
+              </Link>
               <button
                 onClick={() => setManaging(true)}
                 className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60 cursor-pointer"

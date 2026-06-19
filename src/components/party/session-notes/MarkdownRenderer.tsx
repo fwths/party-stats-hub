@@ -370,7 +370,8 @@ export function MarkdownRenderer({
               return false;
             });
 
-            if (matchMemberText?.avatarUrl) {
+            const isImage = part.includes("![");
+            if (!isImage && matchMemberText?.avatarUrl) {
               return (
                 <span key={idx} className="inline-flex items-center gap-1.5 align-middle">
                   <img

@@ -1,4 +1,3 @@
-import React from "react";
 import {
   BookOpen,
   RefreshCw,
@@ -53,7 +52,7 @@ export default function NotionPagesList({
   handleExpandAll,
   handleCollapseAll,
   showNotionSettings,
-  setShowNotionSettings,
+  setShowNotionSettings: _setShowNotionSettings,
 }: NotionPagesListProps) {
   return (
     <div className="w-full lg:w-[28%] flex flex-col card-arcane rounded-xl border border-border p-5 shadow-xl select-none min-h-[500px] flex-shrink-0">

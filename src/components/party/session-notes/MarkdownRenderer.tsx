@@ -334,13 +334,13 @@ export function MarkdownRenderer({
         const headers = tableLines[0]
           .split("|")
           .map((h) => h.trim())
-          .filter((h, idx, arr) => idx > 0 && idx < arr.length - 1);
+          .filter((_h, idx, arr) => idx > 0 && idx < arr.length - 1);
 
         const rowsData = tableLines.slice(2).map((line) => {
           return line
             .split("|")
             .map((cell) => cell.trim())
-            .filter((cell, idx, arr) => idx > 0 && idx < arr.length - 1);
+            .filter((_cell, idx, arr) => idx > 0 && idx < arr.length - 1);
         });
 
         const parseCellContent = (cellText: string, isFirstCol?: boolean) => {

@@ -8,8 +8,6 @@ import {
   Shield,
   Zap,
   Flame,
-  Coins,
-  Dumbbell,
   Sparkles,
   Eye,
   Search,

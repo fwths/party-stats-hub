@@ -1,4 +1,3 @@
-import React from "react";
 import { Coins, Dumbbell, Sparkles, Package } from "lucide-react";
 import { PartyMember, InventoryItem } from "@/lib/dndbeyond.functions";
 

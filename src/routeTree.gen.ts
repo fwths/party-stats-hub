@@ -27,12 +27,12 @@ const CompendiumRoute = CompendiumRouteImport.update({
   id: '/compendium',
   path: '/compendium',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/compendium.lazy').then((d) => d.Route))
 const BuilderRoute = BuilderRouteImport.update({
   id: '/builder',
   path: '/builder',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/builder.lazy').then((d) => d.Route))
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',

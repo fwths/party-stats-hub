@@ -1,5 +1,3 @@
-import { AbilityScore } from "../dndbeyond.types";
-
 export function mod(score: number): number {
   return Math.floor((score - 10) / 2);
 }

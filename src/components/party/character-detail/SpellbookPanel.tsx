@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   LayoutGrid,
@@ -18,7 +18,7 @@ import {
   Scroll,
   Sparkles,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PartyMember, PreparedSpell, SpellSlotLevel } from "@/lib/dndbeyond.functions";
@@ -571,7 +571,7 @@ export default function SpellbookPanel({
   localStarryForm,
   localMantleOfMajesty,
   castingSpellState,
-  setCastingSpellState,
+  setCastingSpellState: _setCastingSpellState,
   selectedMetamagicName,
   setSelectedMetamagicName,
   handleCastSpell,

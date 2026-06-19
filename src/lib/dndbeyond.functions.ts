@@ -14,7 +14,8 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       try {
         const fs = await import("node:fs/promises");
         const path = await import("node:path");
-        const filePath = path.join(process.cwd(), `native-char-${id}.json`);
+        const cacheDir = path.join(process.cwd(), "data", "cache");
+        const filePath = path.join(cacheDir, `native-char-${id}.json`);
         const content = await fs.readFile(filePath, "utf-8");
         const payload = JSON.parse(content);
         if (payload?.success && payload?.data) {
@@ -48,7 +49,9 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
           try {
             const fs = await import("node:fs/promises");
             const path = await import("node:path");
-            const filePath = path.join(process.cwd(), `char-${id}.json`);
+            const cacheDir = path.join(process.cwd(), "data", "cache");
+            await fs.mkdir(cacheDir, { recursive: true });
+            const filePath = path.join(cacheDir, `char-${id}.json`);
             await fs.writeFile(filePath, JSON.stringify(payload, null, 2), "utf-8");
           } catch (e) {
             console.warn(`Failed to write local cache for character ${id}:`, e);
@@ -69,7 +72,8 @@ async function fetchCharacter(id: number): Promise<PartyMember> {
       try {
         const fs = await import("node:fs/promises");
         const path = await import("node:path");
-        const filePath = path.join(process.cwd(), `char-${id}.json`);
+        const cacheDir = path.join(process.cwd(), "data", "cache");
+        const filePath = path.join(cacheDir, `char-${id}.json`);
         const content = await fs.readFile(filePath, "utf-8");
         const cachedPayload = JSON.parse(content);
         if (cachedPayload?.success && cachedPayload?.data) {

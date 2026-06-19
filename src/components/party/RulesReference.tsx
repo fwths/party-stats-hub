@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, ShieldAlert, Swords, Moon, Shield, Info, HelpCircle } from "lucide-react";
+import { Search, ShieldAlert, Swords, Shield, Info, HelpCircle } from "lucide-react";
 
 interface RuleItem {
   id: string;

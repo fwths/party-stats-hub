@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { partyQueryOptions } from "@/lib/party";

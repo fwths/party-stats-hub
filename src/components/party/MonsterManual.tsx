@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
-import {
-  Search,
-  Plus,
-  Minus,
-  ChevronDown,
-  ChevronUp,
-  SlidersHorizontal,
-  Loader2,
-  BookOpen,
-} from "lucide-react";
+import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
+import { Search, Plus, Minus, ChevronDown, ChevronUp, Loader2, BookOpen } from "lucide-react";
 import { MonsterStatBlock } from "./MonsterStatBlock";
 
 interface MonsterManualProps {

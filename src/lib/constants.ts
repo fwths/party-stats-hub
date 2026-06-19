@@ -13,13 +13,8 @@ import {
   Lock,
   Zap,
   Moon,
-  Brain,
   Heart,
-  Flame,
   HeartCrack,
-  Skull,
-  Sparkles,
-  AlertCircle,
 } from "lucide-react";
 
 export const CONDITION_BY_NAME = new Map<

@@ -1,6 +1,4 @@
 // import { invoke_subagent } from '../api/agent'; // Pseudocode for what the app will eventually do
-import * as fs from "fs";
-import * as path from "path";
 
 // For now, I (the parent agent) will invoke the subagents via my tools.
 // This file serves as documentation for the exact prompts the pipeline uses.

@@ -14,7 +14,7 @@ export function useModalHistorySync(
     if (typeof window === "undefined") return;
     if (!condition) return;
 
-    const handlePopState = (event: PopStateEvent) => {
+    const handlePopState = (_event: PopStateEvent) => {
       if (pushedStateRef.current) {
         pushedStateRef.current = false;
         setIsOpenRef.current(false);

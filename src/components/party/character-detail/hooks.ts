@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { SpellSlotLevel, ActionInfo } from "@/lib/dndbeyond.functions";
+import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
 
 export interface LocalHpData {
   hpCurrent: number;
@@ -317,7 +318,7 @@ export function useLocalHpState(
       newSpent[pool.die] = pool.remaining - pool.total;
     });
 
-    setLocalData((prev) => {
+    setLocalData((_prev) => {
       return {
         hpCurrent: hpMax,
         tempHp: 0,

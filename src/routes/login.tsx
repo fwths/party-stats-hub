@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { ShieldAlert, Lock, ArrowRight, Dices, Eye, EyeOff } from "lucide-react";
+import { ShieldAlert, ArrowRight, Dices, Eye, EyeOff } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({

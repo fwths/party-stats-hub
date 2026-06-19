@@ -10,7 +10,7 @@ class MockDatabase {
   kv = new Map<string, { value: string; updated_at: number }>();
   sessions = new Map<string, { expires_at: number }>();
 
-  exec(sql: string) {
+  exec(_sql: string) {
     // No-op for mock DB setup
   }
 

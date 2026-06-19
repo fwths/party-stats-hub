@@ -3,7 +3,6 @@ import { Suspense, useEffect, useState } from "react";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
-  readStoredIds,
   partyQueryOptions,
   STORAGE_KEY,
   getStoredIdsServer,

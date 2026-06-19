@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { BookOpen, Flame, Moon, Skull, RefreshCw, Shield, Layers, Eye, Heart } from "lucide-react";
 
 const SCHOOL_THEMES: Record<

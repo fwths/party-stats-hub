@@ -1,18 +1,11 @@
 import { useState, useEffect } from "react";
 import { PartyMember } from "@/lib/dndbeyond.functions";
+import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
 import { MonsterManual } from "./MonsterManual";
 import { EncounterBuilder } from "./EncounterBuilder";
 import { CombatTracker } from "./CombatTracker";
 import { getLocalHp } from "@/lib/party-modifiers";
-import {
-  BookOpen,
-  Swords,
-  SwordsIcon,
-  Dice5,
-  Trash2,
-  ChevronRight,
-  ListFilter,
-} from "lucide-react";
+import { BookOpen, Swords, Dice5, Trash2, ListFilter } from "lucide-react";
 
 interface DMToolsProps {
   members: PartyMember[];

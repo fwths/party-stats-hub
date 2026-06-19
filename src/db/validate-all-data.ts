@@ -83,8 +83,8 @@ async function main() {
 // Simple sprintf padding helper to avoid external dependencies
 function sprintf(format: string, ...args: any[]): string {
   let index = 0;
-  return format.replace(/%-?(\d+)?([s|d])/g, (match, width, type) => {
-    let val = args[index++];
+  return format.replace(/%-?(\d+)?([s|d])/g, (match, width, _type) => {
+    const val = args[index++];
     if (val === undefined) return match;
     let strVal = String(val);
     if (width) {

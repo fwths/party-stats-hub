@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
 import { Plus, HeartCrack, AlertCircle, X } from "lucide-react";
 import { CONDITION_BY_NAME } from "@/lib/constants";
 
@@ -110,7 +111,7 @@ export function ConditionChip({
 }
 
 export function ConditionsPanel({
-  characterId,
+  characterId: _characterId,
   remoteConditions,
   exhaustion,
   localConditions,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { PartyMember } from "@/lib/dndbeyond.functions";
-import { Plus, Minus, Trash2, Swords, Play, Sparkles, AlertTriangle } from "lucide-react";
+import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
+import { Plus, Minus, Trash2, Swords, AlertTriangle } from "lucide-react";
 
 interface EncounterBuilderProps {
   members: PartyMember[];

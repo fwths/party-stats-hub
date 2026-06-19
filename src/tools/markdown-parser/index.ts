@@ -1,6 +1,5 @@
 import * as fs from "fs";
-import * as path from "path";
-import { MarkdownBlock, MarkdownDocument, BlockType } from "./types";
+import { MarkdownBlock, MarkdownDocument } from "./types";
 
 export class MarkdownEngine {
   private documents: MarkdownDocument[] = [];

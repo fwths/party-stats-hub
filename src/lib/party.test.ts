@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { getCookie, parseCookieIds, readStoredIds, COOKIE_KEY, STORAGE_KEY } from "./party";
 
 describe("getCookie", () => {

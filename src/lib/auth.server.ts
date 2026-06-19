@@ -1,4 +1,4 @@
-import { timingSafeEqual, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 
 const SESSION_COOKIE_NAME = "mob_session_id";
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -40,12 +40,12 @@ export function getSessionIdFromHeaders(headers: Headers): string | null {
   return cookies[SESSION_COOKIE_NAME] || null;
 }
 
-export async function isAuthenticated(headers: Headers): Promise<boolean> {
+export async function isAuthenticated(_headers: Headers): Promise<boolean> {
   // Login requirement disabled for now
   return true;
 }
 
-export function verifyPasscode(passcode: string): boolean {
+export function verifyPasscode(_passcode: string): boolean {
   // Passcode requirement disabled for now
   return true;
 }

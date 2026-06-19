@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Award, BookOpen, User, Lock } from "lucide-react";
 import { PartyMember } from "@/lib/dndbeyond.functions";
-import { Panel } from "../CharacterDetailView";
 import {
   TOTEM_ASPECT_DICTIONARY,
   METAMAGIC_DICTIONARY,

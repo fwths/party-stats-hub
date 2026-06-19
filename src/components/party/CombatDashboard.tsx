@@ -1,6 +1,7 @@
 import { PartyMember } from "@/lib/dndbeyond.functions";
+import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
 import { Heart, ShieldAlert, Activity, Wand2, Hourglass, Tent } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getShortName } from "@/lib/utils";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 import { useRouter } from "@tanstack/react-router";

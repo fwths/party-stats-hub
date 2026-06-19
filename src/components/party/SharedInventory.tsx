@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { PartyMember, InventoryItem } from "@/lib/dndbeyond.functions";
 import { Package, Coins, Star, Shield, Search } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { getShortName } from "@/lib/utils";
 
 interface SharedInventoryProps {

@@ -287,14 +287,12 @@ export default function InventoryPanel({
 
   // D&D Beyond SRD API cache states
   const [dndApiItems, setDndApiItems] = useState<any[]>([]);
-  const [isLoadingApiItems, setIsLoadingApiItems] = useState(false);
   const [isFetchingDetail, setIsFetchingDetail] = useState(false);
 
   useEffect(() => {
     if (dndApiItems.length > 0) return;
 
     async function fetchAllItems() {
-      setIsLoadingApiItems(true);
       try {
         const [eqRes, miRes] = await Promise.all([
           fetch("https://www.dnd5eapi.co/api/2014/equipment").then((r) => r.json()),
@@ -316,8 +314,6 @@ export default function InventoryPanel({
         setDndApiItems([...eqList, ...miList].sort((a, b) => a.name.localeCompare(b.name)));
       } catch (e) {
         console.error("Failed to load D&D SRD items list:", e);
-      } finally {
-        setIsLoadingApiItems(false);
       }
     }
 

@@ -1016,7 +1016,9 @@ export const saveNativeCharacter = createServerFn({ method: "POST" })
   .inputValidator(z.object({ character: z.custom<PartyMember>() }))
   .handler(async ({ data }) => {
     const character = data.character;
-    const filePath = path.join(process.cwd(), `native-char-${character.id}.json`);
+    const cacheDir = path.join(process.cwd(), "data", "cache");
+    await fs.mkdir(cacheDir, { recursive: true });
+    const filePath = path.join(cacheDir, `native-char-${character.id}.json`);
     await fs.writeFile(
       filePath,
       JSON.stringify({ success: true, data: character }, null, 2),
@@ -1030,7 +1032,8 @@ export const getNativeCharacter = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     if (!data?.id) return null;
     try {
-      const filePath = path.join(process.cwd(), `native-char-${data.id}.json`);
+      const cacheDir = path.join(process.cwd(), "data", "cache");
+      const filePath = path.join(cacheDir, `native-char-${data.id}.json`);
       const content = await fs.readFile(filePath, "utf-8");
       const payload = JSON.parse(content);
       return payload.data as PartyMember;

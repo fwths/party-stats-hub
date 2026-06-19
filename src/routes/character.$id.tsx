@@ -67,7 +67,6 @@ export const Route = createFileRoute("/character/$id")({
 });
 
 function CharacterDetail() {
-  const { id } = Route.useParams();
   return (
     <main className="min-h-screen text-foreground animate-fade-in">
       <div className="bg-particles" />

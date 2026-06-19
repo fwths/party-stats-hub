@@ -19,7 +19,7 @@ export function MonsterStatBlock({ monster, onRoll, compact = false }: MonsterSt
   const triggerRoll = (
     name: string,
     formula: string,
-    type: "check" | "damage" | "save" | "attack",
+    _type: "check" | "damage" | "save" | "attack",
   ) => {
     if (!onRoll) return;
 

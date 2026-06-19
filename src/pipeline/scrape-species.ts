@@ -61,9 +61,9 @@ async function scrapeSpecies() {
       const features: { name: string; description: string; html: string }[] = [];
       let currentSpeed = 30;
       let currentSize = "Medium";
-      let abilityScoreIncreases: Record<string, number> = {};
-      let senses: Record<string, number> = {};
-      let languages: string[] = [];
+      const abilityScoreIncreases: Record<string, number> = {};
+      const senses: Record<string, number> = {};
+      const languages: string[] = [];
 
       $page("h4").each((_, h4) => {
         const traitName = $(h4).text().trim();

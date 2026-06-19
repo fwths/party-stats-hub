@@ -1,15 +1,10 @@
 import {
   AbilityScore,
-  ActionInfo,
-  AttackInfo,
   CharacterCharacteristics,
   CreatureInfo,
   DeathSaves,
-  DefenseInfo,
   FeatureInfo,
-  InventoryItem,
   PartyMember,
-  PreparedSpell,
   SpellcastingInfo,
 } from "../dndbeyond.types";
 import { ALIGNMENT_MAP, ABILITY_NAMES, WIS_INDEX, DEX_INDEX } from "./constants";

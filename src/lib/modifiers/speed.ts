@@ -3,7 +3,7 @@ import { PartyMember, InventoryItem } from "../dndbeyond.types";
 export function calculateModifiedSpeed(
   member: PartyMember,
   inventory: InventoryItem[],
-  dexMod: number,
+  _dexMod: number,
   allConditions: string[],
   localArmorModel: string | null,
   localRage: string,

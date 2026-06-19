@@ -14,7 +14,7 @@ async function getSnapshot(): Promise<Record<string, any[]>> {
   }
 }
 
-async function queryTable(tableName: string, schemaKey: string) {
+async function queryTable(tableName: string, schemaKey: string): Promise<any[]> {
   try {
     const { db } = await import("./drizzle.server");
     const schema = await import("../db/schema");

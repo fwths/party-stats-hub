@@ -1,9 +1,10 @@
 import { createNativePartyMember } from "../../lib/native-engine";
 import { useState, useMemo } from "react";
 import { useLoaderData } from "@tanstack/react-router";
-import { User, BookOpen, Swords, Dices, Wand2 } from "lucide-react";
+import { User, BookOpen, Swords, Dices, Wand2, ShieldAlert, Heart, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -2089,7 +2090,7 @@ export function StepReview({
           <CardContent>
             <div className="grid grid-cols-3 gap-3">
               {["str", "dex", "con", "int", "wis", "cha"].map((ab) => {
-                const stat = nativeChar.stats.find(
+                const stat = nativeChar.stats?.find(
                   (s: any) =>
                     s.id ===
                     (ab === "str"
@@ -2368,7 +2369,7 @@ export function StepEquipment({ character, updateCharacter, theme }: StepProps) 
                   updateCharacter({
                     customEquipment: [
                       ...currentEq,
-                      { name: item.name, quantity: 1, type: item.type },
+                      { name: item.name, quantity: 1, type: item.type, equipped: false, attuned: false },
                     ],
                   });
                 }}

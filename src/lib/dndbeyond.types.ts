@@ -262,7 +262,10 @@ export interface PartyMember {
   cantrips: PreparedSpell[];
   preparedSpells: PreparedSpell[];
   allSpells: PreparedSpell[];
-  features: FeatureInfo[];
+  stats?: any[];
+  proficiencies?: any;
+  spells?: any;
+  isNative?: boolean;
   characteristics: CharacterCharacteristics;
   activeArmorModel: string | null;
   activeInfusions: string[];

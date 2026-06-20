@@ -64,6 +64,17 @@ export type BuilderState = {
   abilitiesMethod?: "standard" | "pointbuy" | "roll";
   cantripChoicesByClass?: Record<string, string[]>;
   preparedSpellChoicesByClass?: Record<string, string[]>;
+  cantripChoices?: string[];
+  preparedSpellChoices?: string[];
+  speciesSkillChoices?: string[];
+  speciesToolChoices?: string[];
+  speciesLanguageChoices?: string[];
+  backgroundToolChoices?: string[];
+  backgroundLanguageChoices?: string[];
+  backgroundEquipmentOption?: string;
+  featureChoices?: Record<string, string[]>;
+  classSkillChoices?: string[];
+  highLevelFeatExtraChoices?: Record<string, any>;
 };
 
 export type ChoiceGroup = {

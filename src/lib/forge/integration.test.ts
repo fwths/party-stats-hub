@@ -24,8 +24,8 @@ describe("Forge Integration Matrix", () => {
       classId: "fighter",
       abilities: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 10, CHA: 10 },
       customEquipment: [
-        { name: "Chain Mail", quantity: 1, type: "Heavy Armor" },
-        { name: "Longsword", quantity: 1, type: "Martial Weapon" },
+        { name: "Chain Mail", quantity: 1, type: "Heavy Armor", equipped: true, attuned: false },
+        { name: "Longsword", quantity: 1, type: "Martial Weapon", equipped: true, attuned: false },
       ],
       ruleChoices: {
         "fighter-fighting-style": ["defense"],

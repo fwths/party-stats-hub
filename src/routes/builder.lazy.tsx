@@ -176,11 +176,9 @@ function BuilderWizard() {
     classFeatures,
     languages,
     weapons,
-    armor,
-    skills,
     mundaneGear,
     itemTypes,
-  });
+  } as any);
 
   const saveCharacter = async () => {
     try {
@@ -217,8 +215,8 @@ function BuilderWizard() {
 
       const selectedSpells = spells.filter(
         (spell: any) =>
-          character.cantripChoices.includes(spell.id) ||
-          character.preparedSpellChoices.includes(spell.id) ||
+          (character.cantripChoices || []).includes(spell.id) ||
+          (character.preparedSpellChoices || []).includes(spell.id) ||
           allClassSpells.includes(spell.id) ||
           allRuleChoiceValues.has(spell.id),
       );
@@ -296,7 +294,7 @@ function BuilderWizard() {
             "skills",
             skillOptions,
           ),
-          character.speciesSkillChoices,
+          character.speciesSkillChoices || [],
         ) &&
         areChoiceGroupsComplete(
           getProficiencyChoiceGroups(
@@ -304,14 +302,14 @@ function BuilderWizard() {
             "tools",
             toolOptions,
           ),
-          character.speciesToolChoices,
+          character.speciesToolChoices || [],
         ) &&
         areChoiceGroupsComplete(
           getLanguageChoiceGroups(
             getJsonField(race, "languagesJson", "languages_json"),
             getLanguageOptions(languages),
           ),
-          character.speciesLanguageChoices,
+          character.speciesLanguageChoices || [],
         )
       );
     }
@@ -328,14 +326,14 @@ function BuilderWizard() {
             getJsonField(background, "toolProficienciesJson", "tool_proficiencies_json"),
             toolOptions,
           ),
-          character.backgroundToolChoices,
+          character.backgroundToolChoices || [],
         ) &&
         areChoiceGroupsComplete(
           getLanguageChoiceGroups(
             getJsonField(background, "languageProficienciesJson", "language_proficiencies_json"),
             getLanguageOptions(languages),
           ),
-          character.backgroundLanguageChoices,
+          character.backgroundLanguageChoices || [],
         ) &&
         getEquipmentOptions(
           getJsonField(background, "startingEquipmentJson", "starting_equipment_json"),
@@ -355,7 +353,7 @@ function BuilderWizard() {
         classFeatures,
         skillOptions,
       );
-      if (!areFeatureChoicesComplete(unlockedFeatureOptions, character.featureChoices))
+      if (!areFeatureChoicesComplete(unlockedFeatureOptions, character.featureChoices || {}))
         return false;
 
       const skillGroups = getProficiencyChoiceGroups(
@@ -363,7 +361,7 @@ function BuilderWizard() {
         "skills",
         skillOptions,
       );
-      if (!areChoiceGroupsComplete(skillGroups, character.classSkillChoices)) return false;
+      if (!areChoiceGroupsComplete(skillGroups, character.classSkillChoices || [])) return false;
 
       return (
         subclasses.filter((s: any) => s.classId === character.classId).length === 0 ||

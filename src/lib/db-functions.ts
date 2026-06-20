@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { db } from "./drizzle.server";
+import * as schema from "../db/schema";
+import { and, eq, like, or, sql, asc, count } from "drizzle-orm";
 
 async function getSnapshot(): Promise<Record<string, any[]>> {
   try {
@@ -12,11 +15,10 @@ async function getSnapshot(): Promise<Record<string, any[]>> {
 
 async function queryTable(tableName: string, schemaKey: string): Promise<any[]> {
   try {
-    const { db } = await import("./drizzle.server");
-    const schema = await import("../db/schema");
     const table = (schema as any)[schemaKey];
     if (table) return await db.select().from(table);
-  } catch {
+  } catch (err) {
+    console.error("queryTable error:", err);
     // better-sqlite3 not available (edge runtime) — use JSON snapshot
   }
   const snapshot = await getSnapshot();
@@ -75,9 +77,6 @@ export const searchCompendiumEntriesFromDb = createServerFn({ method: "GET" }).h
     const limit = Math.min(Math.max(data?.limit || 200, 1), 500);
 
     try {
-      const { db } = await import("./drizzle.server");
-      const schema = await import("../db/schema");
-      const { and, eq, like, or, sql } = await import("drizzle-orm");
       const filters = [];
       if (query) {
         const pattern = `%${query}%`;
@@ -113,10 +112,6 @@ export const searchCompendiumEntriesFromDb = createServerFn({ method: "GET" }).h
 
 export const getCompendiumSearchMetaFromDb = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { db } = await import("./drizzle.server");
-    const schema = await import("../db/schema");
-    const { asc, count } = await import("drizzle-orm");
-
     const entityTypes = await db
       .select({
         entityType: schema.compendiumEntries.entityType,
@@ -345,9 +340,6 @@ export const getMonsterFluffByName = createServerFn({ method: "GET" })
   .inputValidator(z.object({ name: z.string() }))
   .handler(async ({ data }) => {
     try {
-      const { db } = await import("./drizzle.server");
-      const schema = await import("../db/schema");
-      const { eq, sql } = await import("drizzle-orm");
       const row = await db
         .select({ fluffJson: schema.monsters.fluffJson })
         .from(schema.monsters)

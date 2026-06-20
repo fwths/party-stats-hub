@@ -18,8 +18,8 @@ import { seedRulesReferences } from "./seeders/seed_rules_references";
 import { seedGenerators } from "./seeders/seed_generators";
 import { formatSourceConfigSummary } from "./source-config";
 
-// Locate the sqlite.db file at the root of the project
-const dbPath = path.join(process.cwd(), "sqlite.db");
+// Locate the sqlite database from deployment config, falling back to the project root.
+const dbPath = process.env.DATABASE_URL || path.join(process.cwd(), "sqlite.db");
 const sqlite = new Database(dbPath);
 const db = drizzle(sqlite, { schema });
 

@@ -10,6 +10,7 @@
     "enrich:species": "tsx src/pipeline/enrich-species.ts",
     "enrich:2024": "tsx src/pipeline/enrich-2024-core.ts",
     "build": "vite build",
+    "start": "node .output/server/index.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

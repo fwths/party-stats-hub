@@ -57,10 +57,11 @@ export function mapSpell(
   level: number,
   prepared = true,
   alwaysPrepared = false,
+  customName?: string,
 ): PreparedSpell {
   return {
     level,
-    name: def.name,
+    name: customName || def.name,
     description: def.description,
     school: def.school || undefined,
     activation: def.activation
@@ -102,13 +103,21 @@ export function computeSpellsList(data: any): {
   const preparedSpells: PreparedSpell[] = [];
   const allSpells: PreparedSpell[] = [];
 
+  const nameOverrides = new Map<number, string>();
+  for (const cv of data?.characterValues ?? []) {
+    if (cv.typeId === 8 && cv.valueId) {
+      nameOverrides.set(Number(cv.valueId), cv.value);
+    }
+  }
+
   // 1. Process data.spells (race, background, item, feat, and subclass/class always-prepared)
   const sources = ["race", "class", "background", "item", "feat"] as const;
   for (const source of sources) {
     const list = data?.spells?.[source] ?? [];
     for (const s of list) {
       const def = s.definition ?? {};
-      const name = def.name;
+      const customName = nameOverrides.get(s.id) || s.override?.name || s.clientOverrides?.name || s.displayAs;
+      const name = customName || def.name;
       if (!name) continue;
       const level = def.level ?? 0;
       const isCantrip = level === 0;
@@ -120,7 +129,7 @@ export function computeSpellsList(data: any): {
         source === "race"
       );
 
-      const mapped = mapSpell(def, level, isPrep, !!s.alwaysPrepared);
+      const mapped = mapSpell(def, level, isPrep, !!s.alwaysPrepared, customName);
       if (isCantrip) {
         cantrips.push(mapped);
       } else {
@@ -142,7 +151,8 @@ export function computeSpellsList(data: any): {
     const spells = cs.spells ?? [];
     for (const s of spells) {
       const def = s.definition ?? {};
-      const name = def.name;
+      const customName = nameOverrides.get(s.id) || s.override?.name || s.clientOverrides?.name || s.displayAs;
+      const name = customName || def.name;
       if (!name) continue;
       const level = def.level ?? 0;
       const isCantrip = level === 0;
@@ -153,7 +163,7 @@ export function computeSpellsList(data: any): {
         !!s.alwaysPrepared ||
         (!isPreparedCaster && !!s.countsAsKnownSpell);
 
-      const mapped = mapSpell(def, level, isAvailable, !!s.alwaysPrepared);
+      const mapped = mapSpell(def, level, isAvailable, !!s.alwaysPrepared, customName);
       if (isCantrip) {
         cantrips.push(mapped);
       } else {

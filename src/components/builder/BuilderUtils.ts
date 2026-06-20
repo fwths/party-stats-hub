@@ -1,3 +1,9 @@
+import type { ForgeData } from "@/lib/forge/forge-data";
+import { validateRuleChoiceGroup } from "@/lib/rules/choices";
+import { speciesToRuleChoicesAndGrants } from "@/lib/rules/adapters/species";
+import { backgroundToRuleChoicesAndGrants } from "@/lib/rules/adapters/backgrounds";
+import { classToRuleChoicesAndGrants } from "@/lib/rules/adapters/classes";
+import { classFeatureToRuleChoicesAndGrants } from "@/lib/rules/adapters/features";
 import {
   ABILITIES,
   SKILL_OPTIONS,
@@ -21,27 +27,7 @@ export type BuilderState = {
   level: number;
   abilities: Record<string, number>;
   abilityBonuses: Record<string, number>;
-  speciesTraitChoices: Record<string, string>;
-  speciesSkillChoices: string[];
-  speciesToolChoices: string[];
-  speciesLanguageChoices: string[];
-  backgroundToolChoices: string[];
-  backgroundLanguageChoices: string[];
-  backgroundEquipmentOption: string | null;
-  featChoices: {
-    spellList?: string;
-    spellcastingAbility?: string;
-    cantrips: string[];
-    spells: string[];
-    skills: string[];
-    tools: string[];
-  };
-  classSkillChoices: string[];
-  classToolChoices: string[];
-  classEquipmentOption: string | null;
-  featureChoices: Record<string, string[]>;
-  cantripChoices: string[];
-  preparedSpellChoices: string[];
+  ruleChoices: Record<string, string[]>;
   highLevelFeatChoices?: Record<number, string>;
   
   // Biography
@@ -76,14 +62,6 @@ export type BuilderState = {
   // Multiclassing
   multiClasses?: Array<{ classId: string; subclassId: string | null; level: number }>;
   
-  // Nested feat choices
-  highLevelFeatExtraChoices?: Record<string, {
-    skills?: string[];
-    tools?: string[];
-    spells?: string[];
-    cantrips?: string[];
-    ability?: string;
-  }>;
 
   // New validation and multiclass spellcasting fields
   abilitiesMethod?: "standard" | "pointbuy" | "roll";
@@ -230,100 +208,8 @@ export function normalizeChoiceName(value: unknown): string {
     .replace("'S", "'s");
 }
 
-export function getSpeciesTraitGroups(species: any): TraitChoiceGroup[] {
-  if (!species) return [];
-  const id = species.id;
-  if (id === "elf") {
-    return [
-      { id: "elvenLineage", label: "Elven Lineage", options: ["Drow", "High Elf", "Wood Elf"] },
-    ];
-  }
-  if (id === "gnome") {
-    return [
-      { id: "gnomishLineage", label: "Gnomish Lineage", options: ["Forest Gnome", "Rock Gnome"] },
-    ];
-  }
-  if (id === "tiefling") {
-    return [
-      {
-        id: "fiendishLegacy",
-        label: "Fiendish Legacy",
-        options: ["Abyssal", "Chthonic", "Infernal"],
-      },
-    ];
-  }
-  if (id === "goliath") {
-    return [
-      {
-        id: "giantAncestry",
-        label: "Giant Ancestry",
-        options: [
-          "Cloud's Jaunt",
-          "Fire's Burn",
-          "Frost's Chill",
-          "Hill's Tumble",
-          "Stone's Endurance",
-          "Storm's Thunder",
-        ],
-      },
-    ];
-  }
-  if (id === "shifter") {
-    return [
-      {
-        id: "shiftingForm",
-        label: "Shifting Benefit",
-        options: ["Beasthide", "Longtooth", "Swiftstride", "Wildhunt"],
-      },
-    ];
-  }
-  if (id === "dragonborn" || id === "dragonborn-metallic") {
-    return [
-      {
-        id: "draconicAncestry",
-        label: "Draconic Ancestry",
-        options: [
-          "Black",
-          "Blue",
-          "Brass",
-          "Bronze",
-          "Copper",
-          "Gold",
-          "Green",
-          "Red",
-          "Silver",
-          "White",
-        ],
-      },
-    ];
-  }
-  if (id === "dragonborn-chromatic") {
-    return [
-      {
-        id: "draconicAncestry",
-        label: "Chromatic Ancestry",
-        options: ["Black", "Blue", "Green", "Red", "White"],
-      },
-    ];
-  }
-  if (id === "dragonborn-gem") {
-    return [
-      {
-        id: "draconicAncestry",
-        label: "Gem Ancestry",
-        options: ["Amethyst", "Crystal", "Emerald", "Sapphire", "Topaz"],
-      },
-    ];
-  }
-  return [];
-}
 
-export function areTraitGroupsComplete(
-  groups: TraitChoiceGroup[],
-  choices: Record<string, string>,
-): boolean {
-  return groups.every((group) => Boolean(choices[group.id]));
-}
+
 
 export function getProficiencyChoiceGroups(
   raw: unknown,
@@ -688,19 +574,7 @@ export function isSpellStepValid(character: BuilderState, classes: any[]): boole
 
 export function getBuilderValidationIssues(
   character: BuilderState,
-  data: {
-    backgrounds: any[];
-    classes: any[];
-    feats: any[];
-    species: any[];
-    speciesVariants?: any[];
-    subclasses: any[];
-    classFeatures: any[];
-    languages?: any[];
-    skills?: any[];
-    mundaneGear?: any[];
-    itemTypes?: any[];
-  },
+  data: ForgeData,
 ): string[] {
   const issues: string[] = [];
   const skillOptions = getSkillOptionsFromDb(data.skills);
@@ -725,37 +599,19 @@ export function getBuilderValidationIssues(
         issues.push("Choose a species subrace / variant.");
       }
     }
-    getSpeciesTraitGroups(race)
-      .filter((group) => !character.speciesTraitChoices[group.id])
-      .forEach((group) => issues.push(`Choose ${group.label}.`));
 
-    const speciesProficiencies = getJsonField(race, "proficienciesJson", "proficiencies_json");
-    if (
-      !areChoiceGroupsComplete(
-        getProficiencyChoiceGroups(speciesProficiencies, "skills", skillOptions),
-        character.speciesSkillChoices,
-      )
-    ) {
-      issues.push("Complete species skill choices.");
-    }
-    if (
-      !areChoiceGroupsComplete(
-        getProficiencyChoiceGroups(speciesProficiencies, "tools", toolOptions),
-        character.speciesToolChoices,
-      )
-    ) {
-      issues.push("Complete species tool choices.");
-    }
-    if (
-      !areChoiceGroupsComplete(
-        getLanguageChoiceGroups(
-          getJsonField(race, "languagesJson", "languages_json"),
-          getLanguageOptions(data.languages || []),
-        ),
-        character.speciesLanguageChoices,
-      )
-    ) {
-      issues.push("Complete species language choices.");
+
+    const speciesData = subrace || race;
+    const { choices: speciesChoices } = speciesData
+      ? speciesToRuleChoicesAndGrants(speciesData)
+      : { choices: [] };
+
+    for (const group of speciesChoices) {
+      const selectedIds = character.ruleChoices[group.id] || [];
+      const result = validateRuleChoiceGroup(group, selectedIds);
+      if (!result.isValid) {
+        issues.push(...result.issues);
+      }
     }
   }
 
@@ -765,27 +621,16 @@ export function getBuilderValidationIssues(
     if (!isValidAbilityBonusSet(character)) {
       issues.push("Choose one +2 and one +1 background ability bonus.");
     }
-    if (
-      !areChoiceGroupsComplete(
-        getToolChoiceGroups(
-          getJsonField(background, "toolProficienciesJson", "tool_proficiencies_json"),
-          toolOptions,
-        ),
-        character.backgroundToolChoices,
-      )
-    ) {
-      issues.push("Complete background tool choices.");
-    }
-    if (
-      !areChoiceGroupsComplete(
-        getLanguageChoiceGroups(
-          getJsonField(background, "languageProficienciesJson", "language_proficiencies_json"),
-          getLanguageOptions(data.languages || []),
-        ),
-        character.backgroundLanguageChoices,
-      )
-    ) {
-      issues.push("Complete background language choices.");
+    const { choices: bgChoices } = background
+      ? backgroundToRuleChoicesAndGrants(background)
+      : { choices: [] };
+
+    for (const group of bgChoices) {
+      const selectedIds = character.ruleChoices[group.id] || [];
+      const result = validateRuleChoiceGroup(group, selectedIds);
+      if (!result.isValid) {
+        issues.push(...result.issues);
+      }
     }
     const backgroundEquipmentOptions = getEquipmentOptions(
       getJsonField(background, "startingEquipmentJson", "starting_equipment_json"),
@@ -813,23 +658,6 @@ export function getBuilderValidationIssues(
     ) {
       issues.push(`Choose a subclass for level ${subclassLevel} or higher.`);
     }
-    const classProficiencies = parseJsonValue(cls.proficienciesJson, {});
-    if (
-      !areChoiceGroupsComplete(
-        getProficiencyChoiceGroups(classProficiencies, "skills", skillOptions),
-        character.classSkillChoices,
-      )
-    ) {
-      issues.push("Complete class skill choices.");
-    }
-    if (
-      !areChoiceGroupsComplete(
-        getToolChoiceGroups(classProficiencies?.starting?.toolProficiencies, toolOptions),
-        character.classToolChoices,
-      )
-    ) {
-      issues.push("Complete class tool choices.");
-    }
     const classEquipmentOptions = getEquipmentOptions(cls.startingEquipmentJson);
     if (
       classEquipmentOptions.length > 0 &&
@@ -837,13 +665,54 @@ export function getBuilderValidationIssues(
     ) {
       issues.push("Choose a class equipment package.");
     }
-    if (
-      !areFeatureChoicesComplete(
-        getUnlockedFeatureOptionGroups(character, data.classFeatures, skillOptions),
-        character.featureChoices,
-      )
-    ) {
-      issues.push("Complete class feature choices.");
+
+    // Validate Class & Feature rule choices
+    const allClassesToValidate = [
+      { classId: cls.id, subclassId: character.subclassId, level: character.level, isPrimary: true },
+      ...(character.multiClasses || []).filter((mc) => mc.classId && mc.level > 0).map((mc) => ({
+        classId: mc.classId,
+        subclassId: mc.subclassId,
+        level: mc.level,
+        isPrimary: false,
+      })),
+    ];
+
+    for (const mc of allClassesToValidate) {
+      const mcClass = data.classes.find((c) => c.id === mc.classId);
+      if (!mcClass) continue;
+
+      const { choices: classChoices } = classToRuleChoicesAndGrants(mcClass, mc.isPrimary);
+      const activeFeatures = (data.classFeatures || []).filter((feature: any) => {
+        const classId = feature.classId ?? feature.class_id;
+        const subclassId = feature.subclassId ?? feature.subclass_id;
+        const levelRequired = feature.levelRequired ?? feature.level_required ?? 0;
+        return (
+          classId === mc.classId &&
+          (!subclassId || subclassId === mc.subclassId) &&
+          Number(levelRequired || 0) <= mc.level
+        );
+      });
+
+      const featureChoices = activeFeatures.flatMap(
+        (feature) =>
+          classFeatureToRuleChoicesAndGrants(
+            feature,
+            mc.level,
+            character.ruleChoices || {},
+            selectedSkillNames(character)
+          ).choices
+      );
+
+      const allChoices = [...classChoices, ...featureChoices];
+      for (const group of allChoices) {
+        // Adjust ID for multiclass if not primary
+        const groupId = mc.isPrimary ? group.id : `mc_${mc.classId}_${group.id}`;
+        const selectedIds = character.ruleChoices[groupId] || [];
+        const result = validateRuleChoiceGroup({ ...group, id: groupId }, selectedIds);
+        if (!result.isValid) {
+          issues.push(...result.issues);
+        }
+      }
     }
   }
 

@@ -86,6 +86,24 @@ async function resetCompendiumTables() {
   await db.delete(schema.psionics);
 }
 
+const snapshotFieldsToOmit = new Set(["rawJson"]);
+const snapshotTableFieldOmissions: Record<string, readonly string[]> = {
+  source_documents: ["searchText"],
+};
+
+function slimSnapshotRows(tableName: string, rows: Record<string, any>[]) {
+  const tableFieldsToOmit = snapshotTableFieldOmissions[tableName] || [];
+  const fieldsToOmit = new Set([...snapshotFieldsToOmit, ...tableFieldsToOmit]);
+
+  return rows.map((row) => {
+    const slimRow = { ...row };
+    for (const field of fieldsToOmit) {
+      delete slimRow[field];
+    }
+    return slimRow;
+  });
+}
+
 async function seedAll() {
   console.log("==============================================");
   console.log("🚀 STARTING UNIFIED DATABASE INGESTION PIPELINE");
@@ -188,7 +206,7 @@ async function seedAll() {
     for (const [key, table] of Object.entries(tableMap)) {
       try {
         const rows = await db.select().from(table);
-        snapshot[key] = rows;
+        snapshot[key] = slimSnapshotRows(key, rows);
         console.log(`  Exported ${rows.length} rows from ${key}`);
       } catch (e) {
         console.warn(`  Skipped ${key} (may not exist)`);

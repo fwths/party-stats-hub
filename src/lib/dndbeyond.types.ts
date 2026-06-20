@@ -248,6 +248,8 @@ export interface PartyMember {
   tools: string[];
   armorProficiencies: string[];
   weaponProficiencies: string[];
+  features: FeatureInfo[];
+  _generatedGrants?: any[];
   specialSpeeds: Array<{ type: string; value: number }>;
   spellcasting: SpellcastingInfo[];
   hitDice: string;

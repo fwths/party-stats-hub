@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { ForgeData } from "@/lib/forge/forge-data";
 import {
   getBackgroundsFromDb,
   getActiveEffectsFromDb,
@@ -36,7 +37,7 @@ import {
 } from "@/lib/db-functions";
 
 export const Route = createFileRoute("/builder")({
-  loader: async () => {
+  loader: async (): Promise<ForgeData> => {
     const classes = await getClassesFromDb();
     const species = await getSpeciesFromDb();
     const speciesVariants = await getSpeciesVariantsFromDb();
@@ -70,6 +71,7 @@ export const Route = createFileRoute("/builder")({
     const itemCardReferences = await getItemCardReferencesFromDb();
     const challengeRatings = await getChallengeRatingsFromDb();
     const creatureBuilderEntries = await getCreatureBuilderEntriesFromDb();
+    
     return {
       classes,
       species,
@@ -107,4 +109,3 @@ export const Route = createFileRoute("/builder")({
     };
   },
 });
-

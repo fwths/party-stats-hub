@@ -1,0 +1,35 @@
+export interface ForgeData {
+  classes: any[];
+  species: any[];
+  speciesVariants: any[];
+  subclasses: any[];
+  backgrounds: any[];
+  feats: any[];
+  spells: any[];
+  classSpells: any[];
+  classFeatures: any[];
+  languages: any[];
+  activeEffects: any[];
+  featureActiveEffects: any[];
+  itemActiveEffects: any[];
+  spellActiveEffects: any[];
+  magicItems: any[];
+  weapons: any[];
+  armor: any[];
+  skills: any[];
+  senses: any[];
+  conditions: any[];
+  rulesActions: any[];
+  optionalFeatures: any[];
+  charOptions: any[];
+  mundaneGear: any[];
+  weaponMasteries: any[];
+  itemProperties: any[];
+  itemTypes: any[];
+  itemTypeAdditionalEntries: any[];
+  itemGroups: any[];
+  magicVariants: any[];
+  itemCardReferences: any[];
+  challengeRatings: any[];
+  creatureBuilderEntries: any[];
+}

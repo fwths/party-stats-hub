@@ -61,6 +61,12 @@ import {
   getToolOptionsFromDb,
   getArtisanToolOptions,
 } from "./BuilderUtils";
+import { spellcastingToRuleChoicesAndGrants } from "../../lib/rules/adapters/spells";
+import { equipmentToRuleChoicesAndGrants } from "../../lib/rules/adapters/items";
+import { speciesToRuleChoicesAndGrants } from "../../lib/rules/adapters/species";
+import { backgroundToRuleChoicesAndGrants } from "../../lib/rules/adapters/backgrounds";
+import { classToRuleChoicesAndGrants } from "../../lib/rules/adapters/classes";
+import { RuleChoiceGroupPicker } from "./RuleChoiceGroupPicker";
 
 interface StepProps {
   character: BuilderState;
@@ -68,48 +74,6 @@ interface StepProps {
   theme?: ClassTheme;
 }
 
-export function TraitChoicePicker({
-  groups,
-  selected,
-  onChange,
-}: {
-  groups: TraitChoiceGroup[];
-  selected: Record<string, string>;
-  onChange: (selected: Record<string, string>) => void;
-}) {
-  if (groups.length === 0) return null;
-  return (
-    <div className="space-y-4 rounded-xl border border-border/30 bg-secondary/20 p-4">
-      <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-        Species Choices
-      </div>
-      {groups.map((group) => (
-        <div key={group.id} className="space-y-2">
-          <div className="text-sm font-bold">{group.label}</div>
-          <div className="flex flex-wrap gap-2">
-            {group.options.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => onChange({ ...selected, [group.id]: option })}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                  selected[group.id] === option
-                    ? "bg-primary/20 text-primary border-primary/40"
-                    : "bg-background/50 text-muted-foreground border-border/40 hover:text-foreground"
-                }`}
-              >
-                {option}
-                {group.id === "draconicAncestry" && DRAGON_DAMAGE_BY_ANCESTRY[option]
-                  ? ` (${DRAGON_DAMAGE_BY_ANCESTRY[option]})`
-                  : ""}
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export function ChoiceGroupPicker({
   groups,
@@ -264,159 +228,7 @@ export function SpellChoiceList({
   );
 }
 
-export function OriginFeatChoicePanel({
-  originFeat,
-  character,
-  updateCharacter,
-}: {
-  originFeat: any;
-  character: BuilderState;
-  updateCharacter: (updates: Partial<BuilderState>) => void;
-}) {
-  const { classSpells, spells, skills, mundaneGear, itemTypes } = useLoaderData({ from: "/builder" }) as any;
-  const skillOptions = getSkillOptionsFromDb(skills);
-  const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
-  if (!originFeat) return null;
 
-  const setFeatChoices = (updates: Partial<BuilderState["featChoices"]>) =>
-    updateCharacter({ featChoices: { ...character.featChoices, ...updates } });
-
-  if (originFeat.id === "crafter") {
-    const artisanTools = getArtisanToolOptions(toolOptions);
-    return (
-      <ChoiceGroupPicker
-        groups={[
-          {
-            id: "crafter-tools",
-            label: "Crafter: choose 3 artisan tools",
-            count: 3,
-            options: artisanTools,
-          },
-        ]}
-        selected={character.featChoices.tools}
-        onChange={(choices) => setFeatChoices({ tools: choices })}
-      />
-    );
-  }
-
-  if (originFeat.id === "skilled") {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ChoiceGroupPicker
-          groups={[
-            { id: "skilled-skills", label: "Skilled: skills", count: 3, options: skillOptions },
-          ]}
-          selected={character.featChoices.skills}
-          onChange={(choices) =>
-            setFeatChoices({
-              skills: choices.slice(0, Math.max(0, 3 - character.featChoices.tools.length)),
-            })
-          }
-        />
-        <ChoiceGroupPicker
-          groups={[
-            { id: "skilled-tools", label: "Skilled: tools", count: 3, options: toolOptions },
-          ]}
-          selected={character.featChoices.tools}
-          onChange={(choices) =>
-            setFeatChoices({
-              tools: choices.slice(0, Math.max(0, 3 - character.featChoices.skills.length)),
-            })
-          }
-        />
-      </div>
-    );
-  }
-
-  if (originFeat.id === "magic-initiate" || originFeat.id === "aberrant-dragonmark") {
-    const spellList =
-      originFeat.id === "aberrant-dragonmark" ? "sorcerer" : character.featChoices.spellList;
-    const cantrips = getClassSpellOptions(spellList, 0, spells, classSpells);
-    const firstLevelSpells = getClassSpellOptions(spellList, 1, spells, classSpells);
-    const cantripLimit = originFeat.id === "magic-initiate" ? 2 : 1;
-
-    return (
-      <div className="space-y-4 rounded-xl border border-border/30 bg-secondary/20 p-4">
-        <div>
-          <h4 className="text-lg font-bold">{originFeat.name} Choices</h4>
-          <p className="text-xs text-muted-foreground">
-            These choices will be saved as feat-granted spells.
-          </p>
-        </div>
-
-        {originFeat.id === "magic-initiate" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                Spell List
-              </label>
-              <Select
-                value={character.featChoices.spellList || ""}
-                onValueChange={(value) =>
-                  setFeatChoices({ spellList: value, cantrips: [], spells: [] })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose list" />
-                </SelectTrigger>
-                <SelectContent>
-                  {["cleric", "druid", "wizard"].map((list) => (
-                    <SelectItem key={list} value={list}>
-                      {normalizeChoiceName(list)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                Spellcasting Ability
-              </label>
-              <Select
-                value={character.featChoices.spellcastingAbility || ""}
-                onValueChange={(value) => setFeatChoices({ spellcastingAbility: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose ability" />
-                </SelectTrigger>
-                <SelectContent>
-                  {["INT", "WIS", "CHA"].map((ability) => (
-                    <SelectItem key={ability} value={ability}>
-                      {ABILITY_NAMES[ability]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
-
-        {spellList && (
-          <div className="space-y-4">
-            <SpellChoiceList
-              title="Feat Cantrips"
-              spells={cantrips}
-              selected={character.featChoices.cantrips}
-              limit={cantripLimit}
-              exact
-              onChange={(choices) => setFeatChoices({ cantrips: choices })}
-            />
-            <SpellChoiceList
-              title="Feat Level 1 Spell"
-              spells={firstLevelSpells}
-              selected={character.featChoices.spells}
-              limit={1}
-              exact
-              onChange={(choices) => setFeatChoices({ spells: choices })}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return null;
-}
 
 export function StepRace({ character, updateCharacter, theme }: StepProps) {
   const activeTheme = theme || DEFAULT_THEME;
@@ -426,25 +238,7 @@ export function StepRace({ character, updateCharacter, theme }: StepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Player's Handbook");
   const selectedRace = species.find((race: any) => race.id === character.raceId);
-  const speciesSkillGroups = getProficiencyChoiceGroups(
-    getJsonField(selectedRace, "proficienciesJson", "proficiencies_json"),
-    "skills",
-    skillOptions,
-  );
-  const speciesToolGroups = getProficiencyChoiceGroups(
-    getJsonField(selectedRace, "proficienciesJson", "proficiencies_json"),
-    "tools",
-    toolOptions,
-  );
   const languageOptions = getLanguageOptions(languages);
-  const speciesLanguageGroups = getLanguageChoiceGroups(
-    getJsonField(selectedRace, "languagesJson", "languages_json"),
-    languageOptions,
-  );
-  const fixedSpeciesLanguages = getFixedLanguages(
-    getJsonField(selectedRace, "languagesJson", "languages_json"),
-  );
-  const speciesTraitGroups = getSpeciesTraitGroups(selectedRace);
   const subraces = (speciesVariants || []).filter((sv: any) => sv.speciesId === selectedRace?.id);
   const selectedSubrace = subraces.find((sv: any) => sv.id === character.speciesVariantId);
 
@@ -538,7 +332,7 @@ export function StepRace({ character, updateCharacter, theme }: StepProps) {
                     updateCharacter({
                       raceId: race.id,
                       speciesVariantId: null,
-                      speciesTraitChoices: {},
+
                       speciesSkillChoices: [],
                       speciesToolChoices: [],
                       speciesLanguageChoices: [],
@@ -593,9 +387,7 @@ export function StepRace({ character, updateCharacter, theme }: StepProps) {
           )}
           {selectedRace &&
             (subraces.length > 0 ||
-              speciesTraitGroups.length > 0 ||
-              speciesSkillGroups.length > 0 ||
-              speciesToolGroups.length > 0) && (
+              speciesToRuleChoicesAndGrants(selectedSubrace || selectedRace).choices.length > 0) && (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 {subraces.length > 0 && (
                   <div className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4 md:col-span-2">
@@ -660,38 +452,19 @@ export function StepRace({ character, updateCharacter, theme }: StepProps) {
                   </div>
                 )}
 
-                <TraitChoicePicker
-                  groups={speciesTraitGroups}
-                  selected={character.speciesTraitChoices}
-                  onChange={(choices) => updateCharacter({ speciesTraitChoices: choices })}
+                <RuleChoiceGroupPicker
+                  groups={speciesToRuleChoicesAndGrants(selectedSubrace || selectedRace).choices}
+                  globalOptions={{ skills: skillOptions, tools: toolOptions, languages: getLanguageOptions(languages) }}
+                  selected={character.ruleChoices || {}}
+                  onChange={(groupId, choiceList) => {
+                    updateCharacter({
+                      ruleChoices: {
+                        ...(character.ruleChoices || {}),
+                        [groupId]: choiceList,
+                      },
+                    });
+                  }}
                 />
-                <ChoiceGroupPicker
-                  groups={speciesSkillGroups}
-                  selected={character.speciesSkillChoices}
-                  onChange={(choices) => updateCharacter({ speciesSkillChoices: choices })}
-                />
-                <ChoiceGroupPicker
-                  groups={speciesToolGroups}
-                  selected={character.speciesToolChoices}
-                  onChange={(choices) => updateCharacter({ speciesToolChoices: choices })}
-                />
-                {(fixedSpeciesLanguages.length > 0 || speciesLanguageGroups.length > 0) && (
-                  <div className="space-y-3">
-                    {fixedSpeciesLanguages.length > 0 && (
-                      <div className="rounded-xl border border-border/30 bg-secondary/20 p-4 text-sm">
-                        <span className="font-bold text-foreground">Languages:</span>{" "}
-                        <span className="text-muted-foreground">
-                          {fixedSpeciesLanguages.join(", ")}
-                        </span>
-                      </div>
-                    )}
-                    <ChoiceGroupPicker
-                      groups={speciesLanguageGroups}
-                      selected={character.speciesLanguageChoices}
-                      onChange={(choices) => updateCharacter({ speciesLanguageChoices: choices })}
-                    />
-                  </div>
-                )}
               </div>
             )}
         </div>
@@ -744,8 +517,11 @@ export function StepBackground({ character, updateCharacter }: StepProps) {
     backgroundLanguageRaw,
     getLanguageOptions(languages),
   );
-  const backgroundEquipmentOptions = getEquipmentOptions(
+  const { choices: backgroundEquipmentGroups } = equipmentToRuleChoicesAndGrants(
     getJsonField(selectedBackground, "startingEquipmentJson", "starting_equipment_json"),
+    selectedBackground?.id || "",
+    selectedBackground?.name || "",
+    "background"
   );
 
   return (
@@ -943,58 +719,38 @@ export function StepBackground({ character, updateCharacter }: StepProps) {
           )}
           {selectedBackground && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ChoiceGroupPicker
-                groups={backgroundToolGroups}
-                selected={character.backgroundToolChoices}
-                onChange={(choices) => updateCharacter({ backgroundToolChoices: choices })}
+              <RuleChoiceGroupPicker
+                groups={backgroundToRuleChoicesAndGrants(selectedBackground).choices}
+                globalOptions={{ skills: skillOptions, tools: toolOptions, languages: getLanguageOptions(languages) }}
+                selected={character.ruleChoices || {}}
+                onChange={(groupId, choiceList) => {
+                  updateCharacter({
+                    ruleChoices: {
+                      ...(character.ruleChoices || {}),
+                      [groupId]: choiceList,
+                    },
+                  });
+                }}
               />
-              {(fixedBackgroundLanguages.length > 0 || backgroundLanguageGroups.length > 0) && (
-                <div className="space-y-3">
-                  {fixedBackgroundLanguages.length > 0 && (
-                    <div className="rounded-xl border border-border/30 bg-secondary/20 p-4 text-sm">
-                      <span className="font-bold text-foreground">Languages:</span>{" "}
-                      <span className="text-muted-foreground">
-                        {fixedBackgroundLanguages.join(", ")}
-                      </span>
-                    </div>
-                  )}
-                  <ChoiceGroupPicker
-                    groups={backgroundLanguageGroups}
-                    selected={character.backgroundLanguageChoices}
-                    onChange={(choices) => updateCharacter({ backgroundLanguageChoices: choices })}
-                  />
-                </div>
-              )}
-              {backgroundEquipmentOptions.length > 0 && (
-                <div className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4">
-                  <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Background Equipment
-                  </div>
-                  <Select
-                    value={character.backgroundEquipmentOption || ""}
-                    onValueChange={(value) => updateCharacter({ backgroundEquipmentOption: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose equipment package" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {backgroundEquipmentOptions.map((option) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.id}: {option.summary}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
           )}
           {originFeat && (
-            <OriginFeatChoicePanel
-              originFeat={originFeat}
-              character={character}
-              updateCharacter={updateCharacter}
-            />
+            <div className="mt-4 border-t border-border/30 pt-4">
+              <h4 className="text-lg font-bold mb-4">{originFeat.name} Choices</h4>
+              <RuleChoiceGroupPicker
+                groups={featToRuleChoicesAndGrants(originFeat, 1, []).choices}
+                globalOptions={{ skills: skillOptions, tools: toolOptions, languages: getLanguageOptions(languages) }}
+                selected={character.ruleChoices || {}}
+                onChange={(groupId, choiceList) => {
+                  updateCharacter({
+                    ruleChoices: {
+                      ...(character.ruleChoices || {}),
+                      [groupId]: choiceList,
+                    },
+                  });
+                }}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -1011,10 +767,7 @@ export function StepClass({ character, updateCharacter, theme }: StepProps) {
   const subclassChoiceLevel =
     availableSubclasses.length > 0 ? getSubclassChoiceLevel(availableSubclasses) : 3;
   const selectedClass = classes.find((cls: any) => cls.id === character.classId);
-  const classProficiencies = parseJsonValue(selectedClass?.proficienciesJson, {});
-  const classSkillGroups = getProficiencyChoiceGroups(classProficiencies, "skills", skillOptions);
-  const classToolGroups = getToolChoiceGroups(classProficiencies?.starting?.toolProficiencies, toolOptions);
-  const classEquipmentOptions = getEquipmentOptions(selectedClass?.startingEquipmentJson);
+
   const featureOptionGroups = getUnlockedFeatureOptionGroups(character, classFeatures, skillOptions);
 
   return (
@@ -1168,43 +921,24 @@ export function StepClass({ character, updateCharacter, theme }: StepProps) {
             </div>
           )}
 
-          {(classSkillGroups.length > 0 ||
-            classToolGroups.length > 0 ||
-            classEquipmentOptions.length > 0 ||
+          {(classToRuleChoicesAndGrants(selectedClass, true).choices.length > 0 ||
             featureOptionGroups.length > 0) && (
             <div className="mt-8 pt-6 border-t border-border/30 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ChoiceGroupPicker
-                groups={classSkillGroups}
-                selected={character.classSkillChoices}
-                onChange={(choices) => updateCharacter({ classSkillChoices: choices })}
-              />
-              <ChoiceGroupPicker
-                groups={classToolGroups}
-                selected={character.classToolChoices}
-                onChange={(choices) => updateCharacter({ classToolChoices: choices })}
-              />
-              {classEquipmentOptions.length > 0 && (
-                <div className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4 md:col-span-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                    Class Equipment
-                  </div>
-                  <Select
-                    value={character.classEquipmentOption || ""}
-                    onValueChange={(value) => updateCharacter({ classEquipmentOption: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose equipment package" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classEquipmentOptions.map((option) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.id}: {option.summary}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div className="md:col-span-2">
+                <RuleChoiceGroupPicker
+                  groups={classToRuleChoicesAndGrants(selectedClass, true).choices}
+                  globalOptions={{ skills: skillOptions, tools: toolOptions, languages: getLanguageOptions(languages) }}
+                  selected={character.ruleChoices || {}}
+                  onChange={(groupId, choiceList) => {
+                    updateCharacter({
+                      ruleChoices: {
+                        ...(character.ruleChoices || {}),
+                        [groupId]: choiceList,
+                      },
+                    });
+                  }}
+                />
+              </div>
               <FeatureChoicePanel
                 groups={featureOptionGroups}
                 selected={character.featureChoices}
@@ -1416,7 +1150,7 @@ export function StepAbilities({ character, updateCharacter, theme }: StepProps) 
   const method = character.abilitiesMethod || "standard";
   const [rollDetails, setRollDetails] = useState<Record<string, { rolls: number[]; dropped: number; total: number }>>({});
   const [rollingStat, setRollingStat] = useState<string | null>(null);
-  const { feats, spells, classes, subclasses, skills, mundaneGear, itemTypes } = useLoaderData({ from: "/builder" }) as any;
+  const { feats, spells, classes, subclasses, skills, mundaneGear, itemTypes, languages } = useLoaderData({ from: "/builder" }) as any;
   const skillOptions = getSkillOptionsFromDb(skills);
   const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const featLevels = getFeatChoiceLevels(character.classId, character.level);
@@ -1761,428 +1495,23 @@ export function StepAbilities({ character, updateCharacter, theme }: StepProps) 
                   )}
 
                   {/* Nested choices for specific feats */}
-                  {selectedFeat && (() => {
-                    const name = selectedFeat.name.toLowerCase();
-                    const extraKey = `${lvl}:${selectedFeatId}`;
-                    const extra = character.highLevelFeatExtraChoices?.[extraKey] || {};
-
-                    if (name === "skilled" || selectedFeatId === "skilled") {
-                      const skilledChoices = [...(extra.skills || []), ...(extra.tools || [])];
-                      return (
-                        <div 
-                          className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
-                          style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}
-                        >
-                          <div className={`text-xs font-bold ${activeTheme.text} uppercase tracking-widest`}>
-                            Skilled choices (Choose 3 skills or tools)
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            {[0, 1, 2].map((i) => (
-                              <Select
-                                key={i}
-                                value={skilledChoices[i] || ""}
-                                onValueChange={(val) => {
-                                  const nextChoices = [...skilledChoices];
-                                  nextChoices[i] = val;
-                                  const finalChoices = nextChoices.filter(Boolean);
-                                  const nextSkills = finalChoices.filter(c => skillOptions.includes(c));
-                                  const nextTools = finalChoices.filter(c => toolOptions.includes(c));
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, skills: nextSkills, tools: nextTools }
-                                    }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder={`Select option ${i + 1}`} />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[250px]">
-                                  <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase bg-secondary/50">Skills</div>
-                                  {skillOptions.map((skill) => (
-                                    <SelectItem key={skill} value={skill}>{skill}</SelectItem>
-                                  ))}
-                                  <div className="px-2 py-1.5 text-[10px] font-bold text-muted-foreground uppercase bg-secondary/50 border-t border-border/20 mt-1">Tools</div>
-                                  {toolOptions.map((tool) => (
-                                    <SelectItem key={tool} value={tool}>{tool}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (name === "magic initiate" || selectedFeatId.startsWith("magic-initiate")) {
-                      const cantrips = extra.cantrips || [];
-                      const spellsList = extra.spells || [];
-                      return (
-                        <div 
-                          className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
-                          style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}
-                        >
-                          <div className={`text-xs font-bold ${activeTheme.text} uppercase tracking-widest`}>
-                            Magic Initiate choices
-                          </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Cantrip 1</span>
-                              <Select
-                                value={cantrips[0] || ""}
-                                onValueChange={(val) => {
-                                  const next = [...cantrips];
-                                  next[0] = val;
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, cantrips: next.filter(Boolean) }
-                                    }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder="Select cantrip" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[250px]">
-                                  {allCantrips.map((spell: any) => (
-                                    <SelectItem key={spell.id} value={spell.id}>{spell.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Cantrip 2</span>
-                              <Select
-                                value={cantrips[1] || ""}
-                                onValueChange={(val) => {
-                                  const next = [...cantrips];
-                                  next[1] = val;
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, cantrips: next.filter(Boolean) }
-                                    }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder="Select cantrip" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[250px]">
-                                  {allCantrips.map((spell: any) => (
-                                    <SelectItem key={spell.id} value={spell.id}>{spell.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase">1st-Level Spell</span>
-                              <Select
-                                value={spellsList[0] || ""}
-                                onValueChange={(val) => {
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, spells: [val] }
-                                    }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder="Select 1st-level spell" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[250px]">
-                                  {allFirstLevelSpells.map((spell: any) => (
-                                    <SelectItem key={spell.id} value={spell.id}>{spell.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Casting Ability</span>
-                              <Select
-                                value={extra.ability || ""}
-                                onValueChange={(val) => {
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, ability: val }
-                                    }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder="Select ability" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[250px]">
-                                  <SelectItem value="INT">Intelligence</SelectItem>
-                                  <SelectItem value="WIS">Wisdom</SelectItem>
-                                  <SelectItem value="CHA">Charisma</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (name === "skill expert" || selectedFeatId === "skill-expert") {
-                      return (
-                        <div 
-                          className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
-                          style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}
-                        >
-                          <div className={`text-xs font-bold ${activeTheme.text} uppercase tracking-widest`}>
-                            Skill Expert choices
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase">ASI (+1)</span>
-                              <Select
-                                value={extra.ability || ""}
-                                onValueChange={(val) => {
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, ability: val }
-                                    }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder="Select ability" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {ABILITIES.map((ab) => (
-                                    <SelectItem key={ab} value={ab}>{ab}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Proficiency</span>
-                              <Select
-                                value={extra.skills?.[0] || ""}
-                                onValueChange={(val) => {
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, skills: [val] }
-                                    }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder="Select skill" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[250px]">
-                                  {skillOptions.map((skill) => (
-                                    <SelectItem key={skill} value={skill}>{skill}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Expertise</span>
-                              <Select
-                                value={extra.tools?.[0] || ""}
-                                onValueChange={(val) => {
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, tools: [val] }
-                                    }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder="Select expertise" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[250px]">
-                                  {skillOptions.map((skill) => (
-                                    <SelectItem key={skill} value={skill}>{skill}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (name === "resilient" || selectedFeatId.startsWith("resilient")) {
-                      return (
-                        <div 
-                          className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
-                          style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}
-                        >
-                          <div className={`text-xs font-bold ${activeTheme.text} uppercase tracking-widest`}>
-                            Resilient choices
-                          </div>
-                          <div className="space-y-1 max-w-xs">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase">Save & ASI (+1)</span>
-                            <Select
-                              value={extra.ability || ""}
-                              onValueChange={(val) => {
-                                updateCharacter({
-                                  highLevelFeatExtraChoices: {
-                                    ...character.highLevelFeatExtraChoices,
-                                    [extraKey]: { ...extra, ability: val }
-                                  }
-                                });
-                              }}
-                            >
-                              <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder="Select ability" />
-                              </SelectTrigger>
-                              <SelectContent className="max-h-[250px]">
-                                {ABILITIES.map((ab) => (
-                                  <SelectItem key={ab} value={ab}>{ab}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (name === "ability score improvement" || selectedFeatId === "ability-score-improvement" || selectedFeatId.startsWith("ability-score-improvement")) {
-                      const mode = extra.mode || "single";
-                      return (
-                        <div className="mt-3 p-4 rounded-xl border space-y-3 animate-in fade-in duration-300"
-                             style={{ borderColor: `${getThemeHex(activeTheme.text)}33`, backgroundColor: `${getThemeHex(activeTheme.text)}0d` }}>
-                          <div className={`text-xs font-bold uppercase tracking-widest ${activeTheme.text}`}>
-                            Ability Score Improvement Choices
-                          </div>
-                          
-                          <div className="flex gap-4">
-                            <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
-                              <input
-                                type="radio"
-                                name={`asi-mode-${lvl}`}
-                                checked={mode === "single"}
-                                onChange={() => {
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, mode: "single" }
-                                    }
-                                  });
-                                }}
-                                style={{ accentColor: getThemeHex(activeTheme.text) }}
-                              />
-                              +2 to One Score
-                            </label>
-                            <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
-                              <input
-                                type="radio"
-                                name={`asi-mode-${lvl}`}
-                                checked={mode === "split"}
-                                onChange={() => {
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, mode: "split" }
-                                    }
-                                  });
-                                }}
-                                style={{ accentColor: getThemeHex(activeTheme.text) }}
-                              />
-                              +1 to Two Scores
-                            </label>
-                          </div>
-
-                          {mode === "single" ? (
-                            <div className="space-y-1 max-w-xs animate-in fade-in duration-300">
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase">Select Ability (+2)</span>
-                              <Select
-                                value={extra.ability || ""}
-                                onValueChange={(val) => {
-                                  updateCharacter({
-                                    highLevelFeatExtraChoices: {
-                                      ...character.highLevelFeatExtraChoices,
-                                      [extraKey]: { ...extra, ability: val }
-                                    }
-                                  });
-                                }}
-                              >
-                                <SelectTrigger className="bg-background border-border/40 text-xs">
-                                  <SelectValue placeholder="Select ability" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[250px]">
-                                  {ABILITIES.map((ab) => (
-                                    <SelectItem key={ab} value={ab}>{ab}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in duration-300">
-                              <div className="space-y-1">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Ability 1 (+1)</span>
-                                <Select
-                                  value={extra.ability1 || ""}
-                                  onValueChange={(val) => {
-                                    updateCharacter({
-                                      highLevelFeatExtraChoices: {
-                                        ...character.highLevelFeatExtraChoices,
-                                        [extraKey]: { ...extra, ability1: val }
-                                      }
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="bg-background border-border/40 text-xs">
-                                    <SelectValue placeholder="Select ability" />
-                                  </SelectTrigger>
-                                  <SelectContent className="max-h-[250px]">
-                                    {ABILITIES.map((ab) => (
-                                      <SelectItem key={ab} value={ab}>{ab}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="space-y-1">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Ability 2 (+1)</span>
-                                <Select
-                                  value={extra.ability2 || ""}
-                                  onValueChange={(val) => {
-                                    updateCharacter({
-                                      highLevelFeatExtraChoices: {
-                                        ...character.highLevelFeatExtraChoices,
-                                        [extraKey]: { ...extra, ability2: val }
-                                      }
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="bg-background border-border/40 text-xs">
-                                    <SelectValue placeholder="Select ability" />
-                                  </SelectTrigger>
-                                  <SelectContent className="max-h-[250px]">
-                                    {ABILITIES.map((ab) => (
-                                      <SelectItem key={ab} value={ab}>{ab}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    return null;
-                  })()}
+                  {selectedFeat && (
+                    <div className="mt-4 border-t border-border/30 pt-4">
+                      <RuleChoiceGroupPicker
+                        groups={featToRuleChoicesAndGrants(selectedFeat, lvl, []).choices}
+                        globalOptions={{ skills: skillOptions, tools: toolOptions, languages: getLanguageOptions(languages) }}
+                        selected={character.ruleChoices || {}}
+                        onChange={(groupId, choiceList) => {
+                          updateCharacter({
+                            ruleChoices: {
+                              ...(character.ruleChoices || {}),
+                              [groupId]: choiceList,
+                            },
+                          });
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -2331,38 +1660,11 @@ export function StepSpells({ character, updateCharacter }: StepProps) {
   );
 
   const maxSpellLevel = getMaxSpellLevel(activeLvl, activeCls);
-  const cantripLimit = getCantripLimit(activeLvl, activeCls);
-  const preparedLimit = getPreparedSpellLimit(character.abilities, activeCls, activeLvl);
+  const { choices } = spellcastingToRuleChoicesAndGrants(character, activeCls, activeLvl);
 
   const classSpellList = spells
     .filter((spell: any) => linkedSpellIds.has(spell.id))
     .sort((a: any, b: any) => a.level - b.level || a.name.localeCompare(b.name));
-
-  const cantrips = classSpellList.filter((spell: any) => spell.level === 0);
-  const leveledSpells = classSpellList.filter(
-    (spell: any) => spell.level > 0 && spell.level <= maxSpellLevel,
-  );
-
-  const selectedCantrips = getClassCantripChoices(character, currentClassId);
-  const selectedPrepared = getClassPreparedSpellChoices(character, currentClassId);
-
-  const handleCantripsChange = (choices: string[]) => {
-    const byClass = { ...character.cantripChoicesByClass, [currentClassId]: choices };
-    const updates: Partial<BuilderState> = { cantripChoicesByClass: byClass };
-    if (currentClassId === character.classId) {
-      updates.cantripChoices = choices;
-    }
-    updateCharacter(updates);
-  };
-
-  const handlePreparedChange = (choices: string[]) => {
-    const byClass = { ...character.preparedSpellChoicesByClass, [currentClassId]: choices };
-    const updates: Partial<BuilderState> = { preparedSpellChoicesByClass: byClass };
-    if (currentClassId === character.classId) {
-      updates.preparedSpellChoices = choices;
-    }
-    updateCharacter(updates);
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-5xl mx-auto">
@@ -2401,27 +1703,22 @@ export function StepSpells({ character, updateCharacter }: StepProps) {
           <p className="text-xs text-muted-foreground mt-1">
             Uses <span className="font-bold text-foreground">{getSpellcastingInfo(activeCls).ability?.toUpperCase()}</span> for spellcasting.
             Level {activeLvl} spells up to level {maxSpellLevel} are available.
-            Choose exactly <span className="font-bold text-foreground">{cantripLimit}</span> cantrips and up to <span className="font-bold text-foreground">{preparedLimit}</span> prepared/known spells.
           </p>
         </div>
 
-        {cantripLimit > 0 && (
-          <SpellChoiceList
-            title="Cantrips"
-            spells={cantrips}
-            selected={selectedCantrips}
-            limit={cantripLimit}
-            exact
-            onChange={handleCantripsChange}
-          />
-        )}
-
-        <SpellChoiceList
-          title="Prepared / Known Spells"
-          spells={leveledSpells}
-          selected={selectedPrepared}
-          limit={preparedLimit}
-          onChange={handlePreparedChange}
+        <RuleChoiceGroupPicker
+          groups={choices}
+          globalOptions={{ skills: [], tools: [], languages: [] }}
+          spells={classSpellList}
+          selected={character.ruleChoices || {}}
+          onChange={(groupId, choiceList) => {
+            updateCharacter({
+              ruleChoices: {
+                ...(character.ruleChoices || {}),
+                [groupId]: choiceList,
+              },
+            });
+          }}
         />
       </div>
     </div>
@@ -2963,12 +2260,14 @@ export function StepReview({
   const originFeat = background?.originFeatId
     ? feats.find((feat: any) => feat.id === background.originFeatId)
     : null;
+  const classEquipmentId = character.ruleChoices?.[`class_${character.classId}_equipment`]?.[0];
   const classEquipment = getEquipmentOptions(cls?.startingEquipmentJson).find(
-    (option) => option.id === character.classEquipmentOption,
+    (option) => option.id === classEquipmentId,
   );
+  const backgroundEquipmentId = character.ruleChoices?.[`background_${character.backgroundId}_equipment`]?.[0];
   const backgroundEquipment = getEquipmentOptions(
     getJsonField(background, "startingEquipmentJson", "starting_equipment_json"),
-  ).find((option) => option.id === character.backgroundEquipmentOption);
+  ).find((option) => option.id === backgroundEquipmentId);
   const selectedSkills = [
     ...character.speciesSkillChoices,
     ...formatList(getJsonField(background, "skillProficienciesJson", "skill_proficiencies_json"))
@@ -2991,7 +2290,7 @@ export function StepReview({
     ),
     ...character.backgroundLanguageChoices,
   ];
-  const selectedTraitChoices = Object.entries(character.speciesTraitChoices);
+
   const selectedFeatureChoices = getUnlockedFeatureOptionGroups(character, classFeatures, skillOptions)
     .map((group) => ({
       name: group.featureName,
@@ -3175,12 +2474,6 @@ export function StepReview({
           {subrace && (
             <p>
               <span className="font-bold text-foreground">Subrace:</span> {subrace.name}
-            </p>
-          )}
-          {selectedTraitChoices.length > 0 && (
-            <p>
-              <span className="font-bold text-foreground">Species Traits:</span>{" "}
-              {selectedTraitChoices.map(([, value]) => value).join(", ")}
             </p>
           )}
           {selectedFeatureChoices.length > 0 && (

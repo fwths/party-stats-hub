@@ -14,6 +14,14 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { z } from "zod";
 import { normalizeActiveEffects } from "./rules-effects";
+import { speciesToRuleChoicesAndGrants } from "./rules/adapters/species";
+import { backgroundToRuleChoicesAndGrants } from "./rules/adapters/backgrounds";
+import { resolveRuleChoicesToGrants } from "./rules/choices";
+import { classToRuleChoicesAndGrants } from "./rules/adapters/classes";
+import { classFeatureToRuleChoicesAndGrants } from "./rules/adapters/features";
+import { featToRuleChoicesAndGrants } from "./rules/adapters/feats";
+import { spellcastingToRuleChoicesAndGrants } from "./rules/adapters/spells";
+import { RuleGrant, parseFoundryEffectsToGrants } from "./rules/grants";
 
 const ABILITIES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 const SKILLS = [
@@ -152,61 +160,11 @@ function parseFixedLanguages(value: unknown): string[] {
   });
 }
 
-function parseSenses(value: unknown) {
-  return asStringArray(value).map((sense) => {
-    const match = sense.match(/^(.+?)\s+(\d+)/);
-    return {
-      name: match ? match[1].trim() : sense,
-      value: match ? Number(match[2]) : null,
-    };
-  });
-}
-
-function parseDefenses(value: unknown, type: "resistance" | "immunity" | "vulnerability") {
-  return asStringArray(value).map((damageType) => ({ type, damageType }));
-}
-
-function parseFeatureEntries(
-  value: unknown,
-  source: "class" | "race" | "background" | "other" | "feat",
-  sourceName: string,
-) {
-  const parsed = parseJsonValue(value, []);
-  if (!Array.isArray(parsed)) return [];
-  return parsed
-    .map((entry: any) => {
-      if (typeof entry === "string") {
-        return { name: stripTags(entry), description: "", source, sourceName, isUnlocked: true };
-      }
-      return {
-        name: stripTags(entry?.name || sourceName),
-        description: stripTags(
-          Array.isArray(entry?.entries) ? entry.entries.join(" ") : entry?.description || "",
-        ),
-        source,
-        sourceName,
-        level: entry?.level,
-        isUnlocked: true,
-      };
-    })
-    .filter((feature) => feature.name);
-}
 
 function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
-function getEquipmentPackages(raw: unknown): Record<string, any[]> {
-  const parsed = parseJsonValue(raw, {});
-  const packages = Array.isArray(parsed) ? parsed[0] : parsed?.defaultData?.[0];
-  return packages && typeof packages === "object" ? packages : {};
-}
-
-function getSelectedEquipment(raw: unknown, optionId: string | null | undefined): any[] {
-  const packages = getEquipmentPackages(raw);
-  if (!optionId || !packages[optionId]) return [];
-  return packages[optionId];
-}
 
 function equipmentItemName(item: any): string {
   if (item.displayName) return normalizeName(item.displayName);
@@ -472,199 +430,6 @@ const DRAGON_DAMAGE_BY_ANCESTRY: Record<string, string> = {
   Topaz: "Necrotic",
 };
 
-function makeTraitSpell(name: string, level: number): PreparedSpell {
-  return spellToPreparedSpell({
-    name,
-    level,
-    description: "Granted by species trait.",
-    school: "",
-    range: "",
-    duration: "",
-  });
-}
-
-function getSpeciesTraitEffects(
-  raceId: string | undefined,
-  choices: Record<string, string>,
-  level: number,
-) {
-  const effects: {
-    speed?: number;
-    senses: Array<{ name: string; value: number | null }>;
-    defenses: Array<{ type: "resistance"; damageType: string }>;
-    features: Array<{
-      name: string;
-      description: string;
-      source: "race";
-      sourceName: string;
-      isUnlocked: boolean;
-    }>;
-    cantrips: PreparedSpell[];
-    preparedSpells: PreparedSpell[];
-  } = { senses: [], defenses: [], features: [], cantrips: [], preparedSpells: [] };
-
-  const addFeature = (name: string, description: string) => {
-    effects.features.push({
-      name,
-      description,
-      source: "race",
-      sourceName: name,
-      isUnlocked: true,
-    });
-  };
-  const addProgressionSpell = (spellLevel: number, name: string) => {
-    if (level >= spellLevel)
-      effects.preparedSpells.push(makeTraitSpell(name, spellLevel === 3 ? 1 : 2));
-  };
-
-  if (raceId === "elf") {
-    const lineage = choices.elvenLineage;
-    if (lineage === "Drow") {
-      effects.senses.push({ name: "Darkvision", value: 120 });
-      effects.cantrips.push(makeTraitSpell("Dancing Lights", 0));
-      addProgressionSpell(3, "Faerie Fire");
-      addProgressionSpell(5, "Darkness");
-    } else if (lineage === "High Elf") {
-      effects.cantrips.push(makeTraitSpell("Prestidigitation", 0));
-      addProgressionSpell(3, "Detect Magic");
-      addProgressionSpell(5, "Misty Step");
-    } else if (lineage === "Wood Elf") {
-      effects.speed = 35;
-      effects.cantrips.push(makeTraitSpell("Druidcraft", 0));
-      addProgressionSpell(3, "Longstrider");
-      addProgressionSpell(5, "Pass without Trace");
-    }
-    if (lineage) addFeature(`Elven Lineage: ${lineage}`, `${lineage} lineage selected.`);
-  }
-
-  if (raceId === "gnome") {
-    const lineage = choices.gnomishLineage;
-    if (lineage === "Forest Gnome") {
-      effects.cantrips.push(makeTraitSpell("Minor Illusion", 0));
-      effects.preparedSpells.push(makeTraitSpell("Speak with Animals", 1));
-    } else if (lineage === "Rock Gnome") {
-      effects.cantrips.push(makeTraitSpell("Mending", 0), makeTraitSpell("Prestidigitation", 0));
-    }
-    if (lineage) addFeature(`Gnomish Lineage: ${lineage}`, `${lineage} lineage selected.`);
-  }
-
-  if (raceId === "tiefling") {
-    const legacy = choices.fiendishLegacy;
-    if (legacy === "Abyssal") {
-      effects.defenses.push({ type: "resistance", damageType: "Poison" });
-      effects.cantrips.push(makeTraitSpell("Poison Spray", 0));
-      addProgressionSpell(3, "Ray of Sickness");
-      addProgressionSpell(5, "Hold Person");
-    } else if (legacy === "Chthonic") {
-      effects.defenses.push({ type: "resistance", damageType: "Necrotic" });
-      effects.cantrips.push(makeTraitSpell("Chill Touch", 0));
-      addProgressionSpell(3, "False Life");
-      addProgressionSpell(5, "Ray of Enfeeblement");
-    } else if (legacy === "Infernal") {
-      effects.defenses.push({ type: "resistance", damageType: "Fire" });
-      effects.cantrips.push(makeTraitSpell("Fire Bolt", 0));
-      addProgressionSpell(3, "Hellish Rebuke");
-      addProgressionSpell(5, "Darkness");
-    }
-    if (legacy) addFeature(`Fiendish Legacy: ${legacy}`, `${legacy} legacy selected.`);
-  }
-
-  if (raceId?.startsWith("dragonborn")) {
-    const ancestry = choices.draconicAncestry;
-    const damageType = DRAGON_DAMAGE_BY_ANCESTRY[ancestry];
-    if (damageType) {
-      effects.defenses.push({ type: "resistance", damageType });
-      addFeature(
-        `Draconic Ancestry: ${ancestry}`,
-        `Breath Weapon and resistance use ${damageType} damage.`,
-      );
-    }
-  }
-
-  if (raceId === "goliath" && choices.giantAncestry) {
-    addFeature(`Giant Ancestry: ${choices.giantAncestry}`, `${choices.giantAncestry} selected.`);
-  }
-
-  if (raceId === "shifter" && choices.shiftingForm) {
-    addFeature(`Shifting: ${choices.shiftingForm}`, `${choices.shiftingForm} benefit selected.`);
-  }
-
-  return effects;
-}
-
-function featureChoiceFeatures(
-  choices: Record<string, string[]> | undefined,
-  classFeatures: any[],
-) {
-  return Object.entries(choices || {}).flatMap(([featureId, selected]) => {
-    const sourceId = featureId.split(":")[0];
-    const feature = classFeatures.find((candidate) => candidate.id === sourceId);
-    const sourceName = feature?.name || sourceId;
-    return selected.map((choice) => ({
-      name: `Feature Choice: ${choice}`,
-      description: `${choice} selected for ${sourceName}.`,
-      source: "class" as const,
-      sourceName,
-      isUnlocked: true,
-    }));
-  });
-}
-
-function unlockedClassFeatureEntries(
-  classFeatures: any[],
-  state: any,
-  classData: any,
-  subclassData: any,
-): FeatureInfo[] {
-  return classFeatures
-    .filter((feature) => {
-      const classId = getField(feature, "classId", "class_id");
-      const subclassId = getField(feature, "subclassId", "subclass_id");
-      const levelRequired = Number(getField(feature, "levelRequired", "level_required") || 0);
-      
-      // Check primary class
-      if (classId === classData?.id && (!subclassId || subclassId === subclassData?.id)) {
-        return levelRequired <= Number(state.level || 1);
-      }
-      
-      // Check multiclasses
-      if (state.multiClasses) {
-        const mc = state.multiClasses.find((m: any) => m.classId === classId);
-        if (mc) {
-          if (!subclassId || subclassId === mc.subclassId) {
-            return levelRequired <= Number(mc.level || 0);
-          }
-        }
-      }
-      
-      return false;
-    })
-    .map((feature) => {
-      const classId = getField(feature, "classId", "class_id");
-      const isPrimary = classId === classData?.id;
-      const mc = !isPrimary && state.multiClasses ? state.multiClasses.find((m: any) => m.classId === classId) : null;
-      
-      let sourceName = "Class";
-      if (isPrimary) {
-        sourceName = subclassData && getField(feature, "subclassId", "subclass_id")
-          ? subclassData.name
-          : classData?.name || "Class";
-      } else if (mc) {
-        sourceName = mc.subclassId && getField(feature, "subclassId", "subclass_id")
-          ? mc.subclassId
-          : mc.classId;
-      }
-      
-      return {
-        name: stripTags(feature.name),
-        description: stripTags(feature.description),
-        source: "class" as const,
-        sourceName,
-        level: Number(getField(feature, "levelRequired", "level_required") || 0) || undefined,
-        isUnlocked: true,
-      };
-    });
-}
 
 function selectedFeatureOptionDetails(
   choices: Record<string, string[]> | undefined,
@@ -767,152 +532,7 @@ function spellEffectDetails(
     .filter(Boolean);
 }
 
-type ParsedEffects = {
-  abilityBonuses: Record<string, number>;
-  abilityOverrides: Record<string, number>;
-  acBonus: number;
-  speedBonuses: Record<string, number>;
-  senses: Array<{ name: string; value: number | null }>;
-  defenses: Array<{ type: "resistance" | "immunity" | "vulnerability"; damageType: string }>;
-  actions: ActionInfo[];
-};
-
-function parseFoundryJsonEffects(
-  foundryJsonStr: string | null | undefined,
-  effectsAccumulator: ParsedEffects,
-  finalScores: Record<string, number>,
-  proficiencyBonus: number,
-  sourceName: string,
-) {
-  if (!foundryJsonStr) return;
-  const parsed = parseJsonValue(foundryJsonStr, null);
-  if (!parsed) return;
-
-  const effects = Array.isArray(parsed.effects) ? parsed.effects : [];
-  for (const effect of effects) {
-    if (effect.disabled === true) continue;
-
-    const changes = Array.isArray(effect.changes) ? effect.changes : [];
-    for (const change of changes) {
-      const key = String(change.key || "");
-      const mode = change.mode;
-      const rawValue = change.value;
-
-      const parseValNum = (val: any): number => {
-        if (typeof val === "number") return val;
-        if (typeof val === "string") {
-          const parsedNum = parseInt(val, 10);
-          return isNaN(parsedNum) ? 0 : parsedNum;
-        }
-        return 0;
-      };
-
-      // 1. Ability Scores
-      const abilityMatch = key.match(/^system\.abilities\.([a-z]{3})\.value$/i);
-      if (abilityMatch) {
-        const ability = abilityMatch[1].toUpperCase();
-        const valNum = parseValNum(rawValue);
-        if (mode === "OVERRIDE" || mode === 5 || mode === "UPGRADE" || mode === 4) {
-          effectsAccumulator.abilityOverrides[ability] = Math.max(
-            effectsAccumulator.abilityOverrides[ability] || 0,
-            valNum,
-          );
-        } else {
-          effectsAccumulator.abilityBonuses[ability] =
-            (effectsAccumulator.abilityBonuses[ability] || 0) + valNum;
-        }
-        continue;
-      }
-
-      // 2. Armor Class
-      if (key === "system.attributes.ac.bonus") {
-        const valNum = parseValNum(rawValue);
-        effectsAccumulator.acBonus += valNum;
-        continue;
-      }
-
-      // 3. Speed
-      const movementMatch = key.match(/^system\.attributes\.movement\.([a-z]+)$/i);
-      if (movementMatch) {
-        const moveType = movementMatch[1].toLowerCase();
-        const valNum = parseValNum(rawValue);
-        effectsAccumulator.speedBonuses[moveType] =
-          (effectsAccumulator.speedBonuses[moveType] || 0) + valNum;
-        continue;
-      }
-
-      // 4. Senses
-      const sensesMatch = key.match(/^system\.attributes\.senses\.([a-z]+)$/i);
-      if (sensesMatch) {
-        const senseType = sensesMatch[1].toLowerCase();
-        const valNum = parseValNum(rawValue);
-        const name =
-          senseType === "darkvision"
-            ? "Darkvision"
-            : senseType === "blindsight"
-              ? "Blindsight"
-              : senseType === "truesight"
-                ? "Truesight"
-                : senseType.charAt(0).toUpperCase() + senseType.slice(1);
-        effectsAccumulator.senses.push({ name, value: valNum });
-        continue;
-      }
-
-      // 5. Defenses (Resistances/Immunities/Vulnerabilities)
-      if (key === "system.traits.dr.value" || key === "system.traits.dr") {
-        const types =
-          typeof rawValue === "string"
-            ? [rawValue]
-            : Array.isArray(rawValue)
-              ? rawValue
-              : [];
-        for (const t of types) {
-          effectsAccumulator.defenses.push({ type: "resistance", damageType: normalizeName(t) });
-        }
-        continue;
-      }
-      if (key === "system.traits.di.value") {
-        const types =
-          typeof rawValue === "string"
-            ? [rawValue]
-            : Array.isArray(rawValue)
-              ? rawValue
-              : [];
-        for (const t of types) {
-          effectsAccumulator.defenses.push({ type: "immunity", damageType: normalizeName(t) });
-        }
-        continue;
-      }
-      if (key === "system.traits.dv.value") {
-        const types =
-          typeof rawValue === "string"
-            ? [rawValue]
-            : Array.isArray(rawValue)
-              ? rawValue
-              : [];
-        for (const t of types) {
-          effectsAccumulator.defenses.push({
-            type: "vulnerability",
-            damageType: normalizeName(t),
-          });
-        }
-        continue;
-      }
-      if (key === "system.traits.ci.value") {
-        const types =
-          typeof rawValue === "string"
-            ? [rawValue]
-            : Array.isArray(rawValue)
-              ? rawValue
-              : [];
-        for (const t of types) {
-          effectsAccumulator.defenses.push({ type: "immunity", damageType: normalizeName(t) });
-        }
-        continue;
-      }
-    }
-  }
-}
+// Removed parseFoundryJsonEffects, use parseFoundryEffectsToGrants directly where needed.
 
 
 function activationFromDescription(description: string) {
@@ -951,57 +571,30 @@ function featureUsesFromDescription(
   };
 }
 
-function unlockedClassFeatureActions(
-  classFeatures: any[],
-  state: any,
-  classData: any,
-  subclassData: any,
+function deriveActionsFromFeatures(
+  features: FeatureInfo[],
   finalScores: Record<string, number>,
 ): ActionInfo[] {
-  return classFeatures
-    .filter((feature) => {
-      const classId = getField(feature, "classId", "class_id");
-      const subclassId = getField(feature, "subclassId", "subclass_id");
-      const levelRequired = Number(getField(feature, "levelRequired", "level_required") || 0);
-      
-      // Check primary class
-      if (classId === classData?.id && (!subclassId || subclassId === subclassData?.id)) {
-        return levelRequired <= Number(state.level || 1);
-      }
-      
-      // Check multiclasses
-      if (state.multiClasses) {
-        const mc = state.multiClasses.find((m: any) => m.classId === classId);
-        if (mc) {
-          if (!subclassId || subclassId === mc.subclassId) {
-            return levelRequired <= Number(mc.level || 0);
-          }
-        }
-      }
-      
-      return false;
-    })
-    .flatMap((feature) => {
-      const description = stripTags(feature.description);
-      const activation = activationFromDescription(description);
-      const classId = getField(feature, "classId", "class_id");
-      const featLvl = classId === classData?.id ? (state.level || 1) : (state.multiClasses?.find((m: any) => m.classId === classId)?.level || 1);
-      
-      const uses = featureUsesFromDescription(feature.name, description, {
-        ...finalScores,
-        level: featLvl,
-      });
-      if (!activation && !uses) return [];
-      return [
-        {
-          name: stripTags(feature.name),
-          source: "class",
-          description,
-          activation,
-          uses,
-        },
-      ];
+  return features.flatMap((feature) => {
+    const description = feature.description;
+    const activation = activationFromDescription(description);
+    const featLvl = feature.level || 1;
+    
+    const uses = featureUsesFromDescription(feature.name, description, {
+      ...finalScores,
+      level: featLvl,
     });
+    if (!activation && !uses) return [];
+    return [
+      {
+        name: feature.name,
+        source: feature.source,
+        description: "",
+        activation,
+        uses,
+      },
+    ];
+  });
 }
 
 export function createNativePartyMember(
@@ -1048,14 +641,128 @@ export function createNativePartyMember(
   const totalLevel = level + (state.multiClasses || []).reduce((sum: number, mc: any) => sum + (mc.level || 0), 0);
   const proficiencyBonus = Math.ceil(totalLevel / 4) + 1;
 
-  // Gather equipment & inventory first
-  const selectedEquipment = [
-    ...getSelectedEquipment(
-      getField(backgroundData, "startingEquipmentJson", "starting_equipment_json"),
-      state.backgroundEquipmentOption,
-    ),
-    ...getSelectedEquipment(classData?.startingEquipmentJson, state.classEquipmentOption),
+  const { choices: speciesChoices, grants: speciesGrants } = speciesToRuleChoicesAndGrants(speciesVariantData || raceData);
+  const { choices: bgChoices, grants: bgGrants } = backgroundToRuleChoicesAndGrants(backgroundData);
+  const resolvedSpeciesGrants = resolveRuleChoicesToGrants(state.ruleChoices || {}, speciesChoices);
+  const resolvedBgGrants = resolveRuleChoicesToGrants(state.ruleChoices || {}, bgChoices);
+
+  // Class and Features Grants
+  const classGrants: any[] = [];
+  const resolvedClassGrants: any[] = [];
+  
+  if (classData) {
+    const { choices: classChoices, grants: cGrants } = classToRuleChoicesAndGrants(classData, true);
+    classGrants.push(...cGrants);
+    resolvedClassGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, classChoices));
+
+    const { choices: spellChoices, grants: sGrants } = spellcastingToRuleChoicesAndGrants(state, classData, level);
+    classGrants.push(...sGrants);
+    resolvedClassGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, spellChoices));
+  }
+
+  const mcGrants: any[] = [];
+  const resolvedMcGrants: any[] = [];
+  if (state.multiClasses && effectData?.classes) {
+    for (const mc of state.multiClasses) {
+      if (!mc.classId || mc.level <= 0) continue;
+      const mcClass = effectData.classes.find((c: any) => c.id === mc.classId);
+      if (!mcClass) continue;
+      
+      const { choices: mcChoices, grants: mGrants } = classToRuleChoicesAndGrants(mcClass, false);
+      mcGrants.push(...mGrants);
+      // Need to map the groupId prefix for multiclasses
+      let mappedChoices = mcChoices.map(c => ({...c, id: `mc_${mc.classId}_${c.id}`}));
+      resolvedMcGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, mappedChoices));
+
+      const { choices: mcSpellChoices, grants: mcSGrants } = spellcastingToRuleChoicesAndGrants(state, mcClass, mc.level);
+      mcGrants.push(...mcSGrants);
+      mappedChoices = mcSpellChoices.map(c => ({...c, id: `mc_${mc.classId}_${c.id}`}));
+      resolvedMcGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, mappedChoices));
+    }
+  }
+
+  const featureGrants: any[] = [];
+  const resolvedFeatureGrants: any[] = [];
+  const engineClassFeatures = effectData?.classFeatures || classFeatures;
+  if (engineClassFeatures) {
+    const activeFeatures = engineClassFeatures.filter((feature: any) => {
+      const cid = feature.classId ?? feature.class_id;
+      const sid = feature.subclassId ?? feature.subclass_id;
+      const lvlRequired = feature.levelRequired ?? feature.level_required ?? 0;
+      
+      // Is primary?
+      if (cid === state.classId && (!sid || sid === state.subclassId) && lvlRequired <= level) return true;
+      
+      // Is multiclass?
+      if (state.multiClasses) {
+        for (const mc of state.multiClasses) {
+          if (cid === mc.classId && (!sid || sid === mc.subclassId) && lvlRequired <= mc.level) return true;
+        }
+      }
+      return false;
+    });
+
+    for (const feature of activeFeatures) {
+      // Find the character level or mc level for this feature
+      const cid = feature.classId ?? feature.class_id;
+      let featureLevel = level;
+      if (cid !== state.classId && state.multiClasses) {
+        const mc = state.multiClasses.find((m: any) => m.classId === cid);
+        if (mc) featureLevel = mc.level;
+      }
+
+      const { choices: fChoices, grants: fGrants } = classFeatureToRuleChoicesAndGrants(
+        feature, 
+        featureLevel, 
+        state.ruleChoices || {}, 
+        [] // high level feat skills omitted here, rely on later mapping
+      );
+      featureGrants.push(...fGrants);
+
+      const mappedFChoices = cid === state.classId ? fChoices : fChoices.map(c => ({...c, id: `mc_${cid}_${c.id}`}));
+      resolvedFeatureGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, mappedFChoices));
+    }
+  }
+
+  const featGrants: any[] = [];
+  const resolvedFeatGrants: any[] = [];
+  
+  if (state.originFeatId && effectData?.feats) {
+    const originFeat = effectData.feats.find((f: any) => f.id === state.originFeatId);
+    if (originFeat) {
+      const { choices, grants } = featToRuleChoicesAndGrants(originFeat, 1, state.ruleChoices?.[`feat_${originFeat.id}_skill`] || []);
+      featGrants.push(...grants);
+      resolvedFeatGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, choices));
+    }
+  }
+
+  const _generatedGrants = [
+    ...speciesGrants, ...resolvedSpeciesGrants, 
+    ...bgGrants, ...resolvedBgGrants,
+    ...classGrants, ...resolvedClassGrants,
+    ...mcGrants, ...resolvedMcGrants,
+    ...featureGrants, ...resolvedFeatureGrants,
+    ...featGrants, ...resolvedFeatGrants
   ];
+
+  const generatedSkills = _generatedGrants
+    .filter((g) => g.type === "skill_proficiency")
+    .map((g) => g.value);
+
+  const proficientSkills = new Set(generatedSkills.map(skill => skill.toLowerCase()));
+  
+  const savingThrowProficiencies = new Set(
+    _generatedGrants
+      .filter((g) => g.type === "saving_throw_proficiency")
+      .map((g) => toAbility(g.value))
+  );
+
+  // Gather equipment & inventory first
+  const selectedEquipment = _generatedGrants
+    .filter(g => g.type === "item_grant")
+    .map(g => g.value)
+    .flat();
+    
   const inventory = equipmentToInventory(selectedEquipment);
 
   if (state.customEquipment) {
@@ -1101,44 +808,17 @@ export function createNativePartyMember(
     ]),
   ) as Record<string, number>;
 
-  // Apply high-level feat ASI choice (e.g. Resilient, Skill Expert, Ability Score Improvement)
-  if (state.highLevelFeatExtraChoices && effectData?.feats) {
-    for (const [key, extra] of Object.entries(state.highLevelFeatExtraChoices)) {
-      const featId = key.split(":")[1];
-      const featRecord = effectData.feats.find((f: any) => f.id === featId);
-      if (!featRecord) continue;
-      const name = featRecord.name.toLowerCase();
-      if ((name === "skill expert" || featId === "skill-expert" || name === "resilient" || featId.startsWith("resilient")) && extra?.ability) {
-        const ab = extra.ability.toUpperCase();
-        if (baseScores[ab] !== undefined) {
-          baseScores[ab] += 1;
-        }
-      } else if (name === "ability score improvement" || featId === "ability-score-improvement" || featId.startsWith("ability-score-improvement")) {
-        if (extra?.mode === "single" && extra?.ability) {
-          const ab = extra.ability.toUpperCase();
-          if (baseScores[ab] !== undefined) {
-            baseScores[ab] += 2;
-          }
-        } else if (extra?.mode === "split" && extra?.ability1 && extra?.ability2) {
-          const ab1 = extra.ability1.toUpperCase();
-          const ab2 = extra.ability2.toUpperCase();
-          if (baseScores[ab1] !== undefined) baseScores[ab1] += 1;
-          if (baseScores[ab2] !== undefined) baseScores[ab2] += 1;
-        }
+  // Apply ability score bonuses from canonical grants (e.g. from feats)
+  for (const grant of _generatedGrants) {
+    if (grant.type === "ability_bonus" && grant.value && typeof grant.value === "string") {
+      const ab = grant.value.toUpperCase();
+      if (baseScores[ab] !== undefined) {
+        baseScores[ab] += 1;
       }
     }
   }
 
-  // Accumulate all active effects and foundryJson modifications
-  const parsedAccumulator: ParsedEffects = {
-    abilityBonuses: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
-    abilityOverrides: {},
-    acBonus: 0,
-    speedBonuses: {},
-    senses: [],
-    defenses: [],
-    actions: [],
-  };
+  // Removed parsedAccumulator
 
   // 1. Equipped Inventory Items foundryJson
   for (const item of inventory) {
@@ -1159,77 +839,25 @@ export function createNativePartyMember(
       (mi) => mi.name.toLowerCase() === item.name.toLowerCase(),
     );
     if (dbItem?.foundryJson) {
-      parseFoundryJsonEffects(
-        dbItem.foundryJson,
-        parsedAccumulator,
-        baseScores,
-        proficiencyBonus,
-        item.name,
-      );
+      _generatedGrants.push(...parseFoundryEffectsToGrants(dbItem.foundryJson, item.name, item.name));
     }
   }
 
   // 2. Active Spells foundryJson
   for (const spell of selectedSpells) {
-    if (spell?.foundryJson) {
-      parseFoundryJsonEffects(
-        spell.foundryJson,
-        parsedAccumulator,
-        baseScores,
-        proficiencyBonus,
-        spell.name,
-      );
-    }
-  }
-
-  // 3. Feats foundryJson
-  if (originFeat?.foundryJson) {
-    parseFoundryJsonEffects(
-      originFeat.foundryJson,
-      parsedAccumulator,
-      baseScores,
-      proficiencyBonus,
-      originFeat.name,
-    );
-  }
-
-  // Parse high-level feats foundryJson
-  if (state.highLevelFeatChoices && effectData?.feats) {
-    const selectedHighLevelFeatIds = Object.values(state.highLevelFeatChoices) as string[];
-    for (const featId of selectedHighLevelFeatIds) {
-      const featRecord = effectData.feats.find((f: any) => f.id === featId);
-      if (featRecord?.foundryJson) {
-        parseFoundryJsonEffects(
-          featRecord.foundryJson,
-          parsedAccumulator,
-          baseScores,
-          proficiencyBonus,
-          featRecord.name,
-        );
-      }
+    if (spell.foundryJson) {
+      _generatedGrants.push(...parseFoundryEffectsToGrants(spell.foundryJson, spell.name, spell.name));
     }
   }
 
   // 4. Species foundryJson
   if (raceData?.foundryJson) {
-    parseFoundryJsonEffects(
-      raceData.foundryJson,
-      parsedAccumulator,
-      baseScores,
-      proficiencyBonus,
-      raceData.name,
-    );
+    _generatedGrants.push(...parseFoundryEffectsToGrants(raceData.foundryJson, raceData.name, raceData.name));
   }
 
   // 4b. Species Variant (Subrace) foundryJson
   if (speciesVariantData?.foundryJson) {
-    parseFoundryJsonEffects(
-      speciesVariantData.foundryJson,
-      parsedAccumulator,
-      baseScores,
-      proficiencyBonus,
-      speciesVariantData.name,
-    );
+    _generatedGrants.push(...parseFoundryEffectsToGrants(speciesVariantData.foundryJson, speciesVariantData.name, speciesVariantData.name));
   }
 
   // 5. Unlocked Class Features foundryJson
@@ -1257,13 +885,7 @@ export function createNativePartyMember(
   });
   for (const feature of unlockedFeatures) {
     if (feature?.foundryJson) {
-      parseFoundryJsonEffects(
-        feature.foundryJson,
-        parsedAccumulator,
-        baseScores,
-        proficiencyBonus,
-        feature.name,
-      );
+      _generatedGrants.push(...parseFoundryEffectsToGrants(feature.foundryJson, feature.name, feature.name));
     }
   }
 
@@ -1297,6 +919,13 @@ export function createNativePartyMember(
     proficiencyBonus,
     source: "spell",
   });
+  const speedBonuses: Record<string, number> = {};
+  for (const g of _generatedGrants) {
+    if (g.type === "speed_bonus") {
+      const type = Object.keys(g.value)[0];
+      speedBonuses[type] = (speedBonuses[type] || 0) + Number(g.value[type]);
+    }
+  }
 
   // Extract speed adjustments from database active effects changesJson
   const allDatabaseEffects = [...linkedFeatureEffects, ...linkedItemEffects, ...linkedSpellEffects];
@@ -1306,9 +935,20 @@ export function createNativePartyMember(
       for (const speedAdjust of changes.speeds) {
         const type = (speedAdjust.type || "walk").toLowerCase();
         const valNum = typeof speedAdjust.value === "number" ? speedAdjust.value : 0;
-        parsedAccumulator.speedBonuses[type] =
-          (parsedAccumulator.speedBonuses[type] || 0) + valNum;
+        speedBonuses[type] = (speedBonuses[type] || 0) + valNum;
       }
+    }
+  }
+
+  const abilityOverrides: Record<string, number> = {};
+  const abilityBonuses: Record<string, number> = {};
+  for (const g of _generatedGrants) {
+    if (g.type === "ability_score_bonus") {
+      const ability = Object.keys(g.value)[0];
+      abilityBonuses[ability] = (abilityBonuses[ability] || 0) + Number(g.value[ability]);
+    } else if (g.type === "ability_override") {
+      const ability = Object.keys(g.value)[0];
+      abilityOverrides[ability] = Math.max(abilityOverrides[ability] || 0, Number(g.value[ability]));
     }
   }
 
@@ -1316,8 +956,8 @@ export function createNativePartyMember(
   const finalScores = Object.fromEntries(
     ABILITIES.map((ability) => {
       let score = baseScores[ability];
-      score += parsedAccumulator.abilityBonuses[ability] || 0;
-      const override = parsedAccumulator.abilityOverrides[ability];
+      score += abilityBonuses[ability] || 0;
+      const override = abilityOverrides[ability];
       if (override !== undefined && override > score) {
         score = override;
       }
@@ -1334,25 +974,14 @@ export function createNativePartyMember(
   // Features, expertises, and skills/saves
   const featureOptionDetails = selectedFeatureOptionDetails(state.featureChoices, classFeatures);
   
-  const highLevelFeatExpertise: string[] = [];
-  if (state.highLevelFeatExtraChoices) {
-    for (const [key, extra] of Object.entries(state.highLevelFeatExtraChoices)) {
-      const featId = key.split(":")[1];
-      const featRecord = effectData?.feats?.find((f: any) => f.id === featId);
-      if (!featRecord) continue;
-      const name = featRecord.name.toLowerCase();
-      if ((name === "skill expert" || featId === "skill-expert") && extra?.tools) {
-        highLevelFeatExpertise.push(...extra.tools);
-      }
-    }
-  }
-
   const expertiseSkills = new Set(
     [
       ...featureOptionDetails
         .filter((detail) => /expertise/i.test(detail.featureName))
         .map((detail) => detail.choice.toLowerCase()),
-      ...highLevelFeatExpertise.map(e => e.toLowerCase()),
+      ..._generatedGrants
+        .filter((g) => g.type === "expertise")
+        .map((g) => String(g.value).toLowerCase()),
     ]
   );
 
@@ -1386,48 +1015,8 @@ export function createNativePartyMember(
     hpMax = 10;
   }
 
-  const highLevelFeatSkills: string[] = [];
-  if (state.highLevelFeatExtraChoices) {
-    for (const extra of Object.values(state.highLevelFeatExtraChoices) as any[]) {
-      if (extra?.skills) {
-        highLevelFeatSkills.push(...extra.skills);
-      }
-    }
-  }
 
-  const backgroundSkills = parseProficiencyNames(
-    getField(backgroundData, "skillProficienciesJson", "skill_proficiencies_json"),
-  );
-  const speciesSkills = parseProficiencyNames(
-    getField(raceData, "proficienciesJson", "proficiencies_json"),
-    "skills",
-  );
-  const proficientSkills = new Set(
-    [
-      ...backgroundSkills,
-      ...speciesSkills,
-      ...(state.speciesSkillChoices || []),
-      ...(state.classSkillChoices || []),
-      ...(state.featChoices?.skills || []),
-      ...highLevelFeatSkills,
-    ].map((skill) => skill.toLowerCase()),
-  );
-  
-  const classProficiencies = parseJsonValue(classData?.proficienciesJson, {});
-  const savingThrowProficiencies = new Set(
-    (classProficiencies?.savingThrows || []).map((save: string) => toAbility(save)),
-  );
-  if (state.highLevelFeatExtraChoices) {
-    for (const [key, extra] of Object.entries(state.highLevelFeatExtraChoices)) {
-      const featId = key.split(":")[1];
-      const featRecord = effectData?.feats?.find((f: any) => f.id === featId);
-      if (!featRecord) continue;
-      const name = featRecord.name.toLowerCase();
-      if ((name === "resilient" || featId.startsWith("resilient")) && extra?.ability) {
-        savingThrowProficiencies.add(extra.ability.toUpperCase());
-      }
-    }
-  }
+
 
   const abilities = Object.entries(finalScores).map(([name, score]) => ({
     name,
@@ -1468,55 +1057,35 @@ export function createNativePartyMember(
     };
   });
 
-  const highLevelFeatTools: string[] = [];
-  if (state.highLevelFeatExtraChoices) {
-    for (const [key, extra] of Object.entries(state.highLevelFeatExtraChoices)) {
-      const featId = key.split(":")[1];
-      const featRecord = effectData?.feats?.find((f: any) => f.id === featId);
-      if (!featRecord) continue;
-      const name = featRecord.name.toLowerCase();
-      if ((name === "skilled" || featId === "skilled") && extra?.tools) {
-        highLevelFeatTools.push(...extra.tools);
-      }
-    }
-  }
-
-  const armorProficiencies = asStringArray(classProficiencies?.starting?.armor);
-  const weaponProficiencies = asStringArray(classProficiencies?.starting?.weapons);
+  const armorProficiencies = unique([
+    ..._generatedGrants.filter(g => g.type === "armor_proficiency").map(g => g.value),
+  ]);
+  const weaponProficiencies = unique([
+    ..._generatedGrants.filter(g => g.type === "weapon_proficiency").map(g => g.value),
+  ]);
   const tools = unique([
-    ...asStringArray(getField(backgroundData, "toolProficienciesJson", "tool_proficiencies_json")),
-    ...(state.backgroundToolChoices || []),
-    ...(state.featChoices?.tools || []),
-    ...highLevelFeatTools,
-    ...asStringArray(classProficiencies?.starting?.tools),
-    ...(state.classToolChoices || []),
-    ...parseProficiencyNames(
-      getField(raceData, "proficienciesJson", "proficiencies_json"),
-      "tools",
-    ),
-    ...(state.speciesToolChoices || []),
+    ..._generatedGrants.filter(g => g.type === "tool_proficiency").map(g => g.value),
   ]);
   const languages = unique([
     "Common",
-    ...parseFixedLanguages(getField(raceData, "languagesJson", "languages_json")),
-    ...(state.speciesLanguageChoices || []),
-    ...parseFixedLanguages(
-      getField(backgroundData, "languageProficienciesJson", "language_proficiencies_json"),
-    ),
-    ...(state.backgroundLanguageChoices || []),
+    ..._generatedGrants.filter(g => g.type === "language").map(g => g.value),
   ]);
 
-  const traitEffects = getSpeciesTraitEffects(raceData?.id, state.speciesTraitChoices || {}, level);
 
   // Merge speed, senses, defenses, actions
-  const armorClass = calculateArmorClass(inventory, dexMod) + parsedAccumulator.acBonus;
+  let acBonus = 0;
+  for (const g of _generatedGrants) {
+    if (g.type === "armor_class_bonus") {
+      acBonus += Number(g.value);
+    }
+  }
+  const armorClass = calculateArmorClass(inventory, dexMod) + acBonus;
   const attacks = inventoryToAttacks(inventory, finalScores, proficiencyBonus);
 
   // Speed
-  const speed =
-    (traitEffects.speed || raceData?.speed || 30) + (parsedAccumulator.speedBonuses.walk || 0);
-  const specialSpeeds = [...(traitEffects.speed ? [] : [])];
-  for (const [type, value] of Object.entries(parsedAccumulator.speedBonuses)) {
+  const speed = (raceData?.speed || 30) + (speedBonuses.walk || 0);
+  const specialSpeeds = [...(speedBonuses.fly ? [{ name: "Fly", value: speedBonuses.fly }] : [])];
+  for (const [type, value] of Object.entries(speedBonuses)) {
     if (type !== "walk" && type !== "speed") {
       specialSpeeds.push({ type, value });
     }
@@ -1524,14 +1093,15 @@ export function createNativePartyMember(
 
   // Senses: deduplicate by name
   const sensesList = [
-    ...parseSenses(getField(raceData, "sensesJson", "senses_json")).filter(
-      (sense) => !traitEffects.senses.some((traitSense) => traitSense.name === sense.name),
-    ),
-    ...traitEffects.senses,
+    ..._generatedGrants
+      .filter((g) => g.type === "sense")
+      .map((g) => {
+        const name = Object.keys(g.value)[0];
+        return { name, value: Number(g.value[name]) || null };
+      }),
     ...normalizedFeatureEffects.senses,
     ...normalizedItemEffects.senses,
     ...normalizedSpellEffects.senses,
-    ...parsedAccumulator.senses,
   ];
   const uniqueSensesMap = new Map<string, number | null>();
   for (const s of sensesList) {
@@ -1547,17 +1117,22 @@ export function createNativePartyMember(
 
   // Defenses: deduplicate by type and damageType
   const defensesList = [
-    ...parseDefenses(getField(raceData, "resistancesJson", "resistances_json"), "resistance"),
-    ...parseDefenses(getField(raceData, "immunitiesJson", "immunities_json"), "immunity"),
-    ...parseDefenses(
-      getField(raceData, "vulnerabilitiesJson", "vulnerabilities_json"),
-      "vulnerability",
-    ),
-    ...traitEffects.defenses,
+    ..._generatedGrants
+      .filter((g) => ["damage_resistance", "damage_immunity", "damage_vulnerability", "condition_immunity"].includes(g.type))
+      .map((g) => ({
+        type:
+          g.type === "damage_resistance"
+            ? "resistance"
+            : g.type === "damage_immunity"
+            ? "immunity"
+            : g.type === "damage_vulnerability"
+            ? "vulnerability"
+            : "condition_immunity",
+        damageType: String(g.value),
+      })),
     ...normalizedFeatureEffects.defenses,
     ...normalizedItemEffects.defenses,
     ...normalizedSpellEffects.defenses,
-    ...parsedAccumulator.defenses,
   ];
   const uniqueDefensesMap = new Map<string, DefenseInfo>();
   for (const d of defensesList) {
@@ -1567,46 +1142,26 @@ export function createNativePartyMember(
   const defenses = Array.from(uniqueDefensesMap.values());
 
   // Features list
-  const features = [
-    ...parseFeatureEntries(
-      getField(raceData, "featuresJson", "features_json"),
-      "race",
-      raceData?.name || "Species",
-    ),
-    ...(speciesVariantData
-      ? parseFeatureEntries(
-          getField(speciesVariantData, "featuresJson", "features_json"),
-          "race",
-          speciesVariantData.name,
-        )
-      : []),
-    ...(backgroundData
-      ? [
-          {
-            name: backgroundData.name,
-            description: stripTags(backgroundData.description),
-            source: "background" as const,
-            sourceName: backgroundData.name,
-            isUnlocked: true,
-          },
-        ]
-      : []),
-    ...(subclassData
-      ? [
-          {
-            name: subclassData.name,
-            description: stripTags(subclassData.description),
-            source: "class" as const,
-            sourceName: subclassData.name,
-            level: subclassData.levelChosen,
-            isUnlocked: true,
-          },
-        ]
-      : []),
-    ...unlockedClassFeatureEntries(classFeatures, state, classData, subclassData),
-    ...traitEffects.features,
-    ...featureChoiceFeatures(state.featureChoices, classFeatures),
-  ];
+  const features = _generatedGrants
+    .filter((g) => g.type === "feature_reference" && g.value.source !== "feat")
+    .map((g) => ({
+      name: g.value.name,
+      description: stripTags(g.value.description),
+      source: g.value.source as any,
+      sourceName: g.value.sourceName,
+      level: g.value.level,
+      isUnlocked: true,
+    }));
+
+  const actions = deriveActionsFromFeatures(features, finalScores)
+    .concat(normalizedFeatureEffects.actions)
+    .concat(normalizedItemEffects.actions)
+    .concat(normalizedSpellEffects.actions);
+  const uniqueActionsMap = new Map<string, ActionInfo>();
+  for (const a of actions) {
+    uniqueActionsMap.set(a.name, a);
+  }
+  const finalActions = Array.from(uniqueActionsMap.values());
 
   const metamagic = featureOptionDetails
     .filter((detail) => /metamagic/i.test(detail.featureName))
@@ -1626,58 +1181,14 @@ export function createNativePartyMember(
       name: detail.choice,
       description: `${detail.choice} selected as a weapon mastery option.`,
     }));
-  const featSpellChoices = selectedSpells
-    .filter(
-      (spell) =>
-        state.featChoices?.cantrips?.includes(spell.id) ||
-        state.featChoices?.spells?.includes(spell.id),
-    )
-    .map((spell) => spell.name);
-  const characterFeats = originFeat
-    ? [
-        {
-          name: originFeat.name,
-          description: stripTags(originFeat.description),
-          choices: [
-            state.featChoices?.spellList,
-            state.featChoices?.spellcastingAbility,
-            ...(state.featChoices?.skills || []),
-            ...(state.featChoices?.tools || []),
-            ...featSpellChoices,
-          ].filter(Boolean) as string[],
-        },
-      ]
-    : [];
 
-  if (state.highLevelFeatChoices && effectData?.feats) {
-    const selectedHighLevelFeatIds = Object.values(state.highLevelFeatChoices) as string[];
-    for (const featId of selectedHighLevelFeatIds) {
-      const featRecord = effectData.feats.find((f: any) => f.id === featId);
-      if (featRecord) {
-        characterFeats.push({
-          name: featRecord.name,
-          description: stripTags(featRecord.description),
-          choices: [],
-        });
-      }
-    }
-  }
-
-  const actions = unlockedClassFeatureActions(
-    classFeatures,
-    state,
-    classData,
-    subclassData,
-    finalScores,
-  )
-    .concat(normalizedFeatureEffects.actions)
-    .concat(normalizedItemEffects.actions)
-    .concat(normalizedSpellEffects.actions);
-  const uniqueActionsMap = new Map<string, ActionInfo>();
-  for (const a of actions) {
-    uniqueActionsMap.set(a.name, a);
-  }
-  const finalActions = Array.from(uniqueActionsMap.values());
+  const characterFeats = _generatedGrants
+    .filter((g) => g.type === "feature_reference" && g.value.source === "feat")
+    .map((g) => ({
+      name: g.value.name,
+      description: stripTags(g.value.description),
+      choices: [], // Legacy compat
+    }));
 
   const spellcastingData = parseJsonValue(classData?.spellcastingJson, {});
   const spellcastingAbility = String(spellcastingData?.ability || "")
@@ -1827,6 +1338,8 @@ export function createNativePartyMember(
   }
   const hitDiceString = hitDicePools.join(", ");
 
+  // _generatedGrants is now built earlier in this function
+
   const member: PartyMember = {
     id,
     name: state.name || "Unnamed",
@@ -1838,6 +1351,7 @@ export function createNativePartyMember(
     classes: classesString,
     subclasses: subclassesList,
     level: totalLevel,
+    _generatedGrants,
     hpMax: Math.max(totalLevel, hpMax) + (originFeat?.id === "tough" ? totalLevel * 2 : 0),
     hpCurrent: Math.max(totalLevel, hpMax) + (originFeat?.id === "tough" ? totalLevel * 2 : 0),
     tempHp: 0,
@@ -1877,13 +1391,11 @@ export function createNativePartyMember(
     weightCarried: 0,
     carryingCapacity: finalScores.STR * 15,
     attacks,
-    cantrips: [...cantrips, ...traitEffects.cantrips],
-    preparedSpells: [...preparedSpells, ...traitEffects.preparedSpells],
+    cantrips,
+    preparedSpells,
     allSpells: [
       ...cantrips,
-      ...traitEffects.cantrips,
       ...preparedSpells,
-      ...traitEffects.preparedSpells,
     ],
     features,
     characteristics: {

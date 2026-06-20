@@ -16,8 +16,7 @@ import { Button } from "@/components/ui/button";
 import {
   BuilderState,
   getBuilderValidationIssues,
-  areTraitGroupsComplete,
-  getSpeciesTraitGroups,
+
   getJsonField,
   areChoiceGroupsComplete,
   getProficiencyChoiceGroups,
@@ -115,29 +114,13 @@ function BuilderWizard() {
       level: 1,
       abilities: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
       abilityBonuses: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
-      speciesTraitChoices: {},
-      speciesSkillChoices: [],
-      speciesToolChoices: [],
-      speciesLanguageChoices: [],
-      backgroundToolChoices: [],
-      backgroundLanguageChoices: [],
-      backgroundEquipmentOption: null,
-      featChoices: { cantrips: [], spells: [], skills: [], tools: [] },
-      classSkillChoices: [],
-      classToolChoices: [],
-      classEquipmentOption: null,
-      featureChoices: {},
-      cantripChoices: [],
-      preparedSpellChoices: [],
+      ruleChoices: {},
       highLevelFeatChoices: {},
       hpType: "fixed",
       manualHpRolls: {},
       customEquipment: [],
       multiClasses: [],
-      highLevelFeatExtraChoices: {},
       abilitiesMethod: "standard",
-      cantripChoicesByClass: {},
-      preparedSpellChoicesByClass: {},
     };
   });
 
@@ -210,14 +193,6 @@ function BuilderWizard() {
       const originFeat = backgroundData?.originFeatId
         ? feats.find((feat: any) => feat.id === backgroundData.originFeatId)
         : null;
-      const highLevelFeatSpellsList: string[] = [];
-      if (character.highLevelFeatExtraChoices) {
-        for (const extra of Object.values(character.highLevelFeatExtraChoices)) {
-          if (extra.cantrips) highLevelFeatSpellsList.push(...extra.cantrips);
-          if (extra.spells) highLevelFeatSpellsList.push(...extra.spells);
-        }
-      }
-
       const allClassSpells: string[] = [];
       if (character.cantripChoicesByClass) {
         for (const list of Object.values(character.cantripChoicesByClass)) {
@@ -230,14 +205,16 @@ function BuilderWizard() {
         }
       }
 
+      const allRuleChoiceValues = new Set(
+        Object.values(character.ruleChoices || {}).flat()
+      );
+
       const selectedSpells = spells.filter(
         (spell: any) =>
           character.cantripChoices.includes(spell.id) ||
           character.preparedSpellChoices.includes(spell.id) ||
           allClassSpells.includes(spell.id) ||
-          character.featChoices.cantrips.includes(spell.id) ||
-          character.featChoices.spells.includes(spell.id) ||
-          highLevelFeatSpellsList.includes(spell.id),
+          allRuleChoiceValues.has(spell.id),
       );
 
       const newMember = createNativePartyMember(
@@ -304,7 +281,7 @@ function BuilderWizard() {
         character.name.trim() !== "" &&
         character.raceId !== null &&
         (subraces.length === 0 || character.speciesVariantId !== null) &&
-        areTraitGroupsComplete(getSpeciesTraitGroups(race), character.speciesTraitChoices) &&
+
         areChoiceGroupsComplete(
           getProficiencyChoiceGroups(
             getJsonField(race, "proficienciesJson", "proficiencies_json"),

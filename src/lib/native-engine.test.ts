@@ -184,7 +184,7 @@ describe("createNativePartyMember with active effects", () => {
       },
     );
 
-    expect(resultEquipped.defenses).toContainEqual({ type: "resistance", damageType: "Fire" });
+    expect(resultEquipped.defenses).toContainEqual({ type: "resistance", damageType: "fire" });
     expect(resultEquipped.senses).toContainEqual({ name: "Darkvision", value: 60 });
   });
 
@@ -251,9 +251,7 @@ describe("createNativePartyMember with active effects", () => {
 
     const stateWithFeats = {
       ...mockState,
-      highLevelFeatChoices: {
-        4: "tough",
-      },
+      originFeatId: "tough",
     };
 
     const result = createNativePartyMember(
@@ -262,7 +260,7 @@ describe("createNativePartyMember with active effects", () => {
       mockClassData,
       undefined,
       undefined,
-      undefined,
+      mockFeatData,
       [],
       [],
       {
@@ -275,8 +273,8 @@ describe("createNativePartyMember with active effects", () => {
     expect(featInfo).toBeDefined();
     expect(featInfo?.description).toBe(mockFeatData.description);
 
-    // Active effect (AC +1) should be applied
-    expect(result.armorClass).toBe(10 + 1 + 1); // 10 base + 1 dex + 1 feat AC bonus
+    // Active effect (AC +1) should be applied. 10 base + 1 dex + 1 feat AC bonus
+    expect(result.armorClass).toBe(12);
   });
 
   it("calculates multiclassing levels, hit dice pools, and combined spell slots", () => {

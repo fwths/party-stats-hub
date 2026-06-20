@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { SpellSlotLevel, ActionInfo } from "@/lib/dndbeyond.types";
-import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
+import { syncedLocalStorage as syncedStorage } from "@/lib/synced-storage";
 
 export interface LocalHpData {
   hpCurrent: number;
@@ -44,7 +44,7 @@ export function useLocalRage(memberId: number) {
   const storageKey = `party-stats:rage:${memberId}`;
   const [rage, setRage] = useState<string>(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
+      const stored = syncedStorage.getItem(storageKey);
       if (stored !== null) {
         return stored;
       }
@@ -57,7 +57,7 @@ export function useLocalRage(memberId: number) {
   const updateRage = (nextRage: string) => {
     setRage(nextRage);
     try {
-      localStorage.setItem(storageKey, nextRage);
+      syncedStorage.setItem(storageKey, nextRage);
     } catch (e) {
       console.warn("Failed to save Rage state to localStorage:", e);
     }
@@ -73,7 +73,7 @@ export function useLocalMetamagic(
   const storageKey = `party-stats:metamagic:${memberId}`;
   const [metamagic, setMetamagic] = useState<Array<{ name: string; description: string }>>(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
+      const stored = syncedStorage.getItem(storageKey);
       if (stored !== null) {
         return stored === "null" ? [] : JSON.parse(stored);
       }
@@ -86,7 +86,7 @@ export function useLocalMetamagic(
   const updateMetamagic = (nextMetamagic: Array<{ name: string; description: string }>) => {
     setMetamagic(nextMetamagic);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(nextMetamagic));
+      syncedStorage.setItem(storageKey, JSON.stringify(nextMetamagic));
     } catch (e) {
       console.warn("Failed to save metamagic to localStorage:", e);
     }
@@ -102,7 +102,7 @@ export function useLocalWeaponMasteries(
   const storageKey = `party-stats:weapon-masteries:${memberId}`;
   const [masteries, setMasteries] = useState<Array<{ name: string; description: string }>>(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
+      const stored = syncedStorage.getItem(storageKey);
       if (stored !== null) {
         return stored === "null" ? [] : JSON.parse(stored);
       }
@@ -115,7 +115,7 @@ export function useLocalWeaponMasteries(
   const updateMasteries = (nextMasteries: Array<{ name: string; description: string }>) => {
     setMasteries(nextMasteries);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(nextMasteries));
+      syncedStorage.setItem(storageKey, JSON.stringify(nextMasteries));
     } catch (e) {
       console.warn("Failed to save weapon masteries to localStorage:", e);
     }
@@ -135,7 +135,7 @@ export function useLocalHpState(
   const storageKey = `party-stats:hp:${memberId}`;
   const [localData, setLocalData] = useState<LocalHpData>(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
+      const stored = syncedStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (
@@ -162,7 +162,7 @@ export function useLocalHpState(
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(localData));
+      syncedStorage.setItem(storageKey, JSON.stringify(localData));
     } catch (e) {
       console.warn("Failed to save HP data to localStorage:", e);
     }
@@ -335,7 +335,7 @@ export function useLocalHpState(
       spentHitDice: {},
       deathSaves: deathSavesInit,
     });
-    localStorage.removeItem(storageKey);
+    syncedStorage.removeItem(storageKey);
   };
 
   return {
@@ -365,7 +365,7 @@ export function useLocalSpellSlots(
   const storageKey = `party-stats:slots:${memberId}`;
   const [localData, setLocalData] = useState<LocalSlotsData>(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
+      const stored = syncedStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.spellSlotsUsed && parsed.pactSlotsUsed) {
@@ -380,7 +380,7 @@ export function useLocalSpellSlots(
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(localData));
+      syncedStorage.setItem(storageKey, JSON.stringify(localData));
     } catch (e) {
       console.warn("Failed to save spell slots to localStorage:", e);
     }
@@ -440,7 +440,7 @@ export function useLocalSpellSlots(
 
   const reset = () => {
     setLocalData({ spellSlotsUsed: {}, pactSlotsUsed: {} });
-    localStorage.removeItem(storageKey);
+    syncedStorage.removeItem(storageKey);
   };
 
   const getEffectiveSlots = (slots: SpellSlotLevel[], isPact: boolean) => {
@@ -485,7 +485,7 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
   const storageKey = `party-stats:resources:${memberId}`;
   const [localData, setLocalData] = useState<LocalResourcesData>(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
+      const stored = syncedStorage.getItem(storageKey);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.spent) {
@@ -500,7 +500,7 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
 
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(localData));
+      syncedStorage.setItem(storageKey, JSON.stringify(localData));
     } catch (e) {
       console.warn("Failed to save class resources to localStorage:", e);
     }
@@ -584,7 +584,7 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
 
   const reset = () => {
     setLocalData({ spent: {} });
-    localStorage.removeItem(storageKey);
+    syncedStorage.removeItem(storageKey);
   };
 
   const getEffectiveResource = (a: ActionInfo) => {
@@ -622,7 +622,7 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
     Record<string, { equipped?: boolean; attuned?: boolean }>
   >(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = syncedStorage.getItem(storageKey);
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -631,7 +631,7 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
 
   const [customItems, setCustomItems] = useState<any[]>(() => {
     try {
-      const saved = localStorage.getItem(customItemsKey);
+      const saved = syncedStorage.getItem(customItemsKey);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -689,20 +689,20 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
                 }
               });
               try {
-                localStorage.setItem(storageKey, JSON.stringify(nextOver));
+                syncedStorage.setItem(storageKey, JSON.stringify(nextOver));
               } catch {}
               return nextOver;
             });
 
             try {
-              localStorage.setItem(customItemsKey, JSON.stringify(finalNext));
+              syncedStorage.setItem(customItemsKey, JSON.stringify(finalNext));
             } catch {}
             return finalNext;
           }
         }
 
         try {
-          localStorage.setItem(customItemsKey, JSON.stringify(next));
+          syncedStorage.setItem(customItemsKey, JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -766,7 +766,7 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
                 return other;
               });
               try {
-                localStorage.setItem(customItemsKey, JSON.stringify(nextCustom));
+                syncedStorage.setItem(customItemsKey, JSON.stringify(nextCustom));
               } catch {}
               return nextCustom;
             });
@@ -775,7 +775,7 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
       }
 
       try {
-        localStorage.setItem(storageKey, JSON.stringify(next));
+        syncedStorage.setItem(storageKey, JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -790,7 +790,7 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
           return { ...item, attuned: !item.attuned };
         });
         try {
-          localStorage.setItem(customItemsKey, JSON.stringify(next));
+          syncedStorage.setItem(customItemsKey, JSON.stringify(next));
         } catch {}
         return next;
       });
@@ -810,7 +810,7 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
         },
       };
       try {
-        localStorage.setItem(storageKey, JSON.stringify(next));
+        syncedStorage.setItem(storageKey, JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -824,7 +824,7 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
     setCustomItems((prev) => {
       const next = [...prev, newItem];
       try {
-        localStorage.setItem(customItemsKey, JSON.stringify(next));
+        syncedStorage.setItem(customItemsKey, JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -834,7 +834,7 @@ export function useLocalInventoryState(memberId: number, initialItems: any[]) {
     setCustomItems((prev) => {
       const next = prev.filter((item) => item.name !== itemName);
       try {
-        localStorage.setItem(customItemsKey, JSON.stringify(next));
+        syncedStorage.setItem(customItemsKey, JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -866,7 +866,7 @@ export function useLocalArmorModel(memberId: number, initialArmorModel: string |
   const storageKey = `party-stats:armor-model:${memberId}`;
   const [armorModel, setArmorModel] = useState<string | null>(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
+      const stored = syncedStorage.getItem(storageKey);
       if (stored !== null) {
         return stored === "null" ? null : stored;
       }
@@ -880,9 +880,9 @@ export function useLocalArmorModel(memberId: number, initialArmorModel: string |
     setArmorModel(model);
     try {
       if (model === null) {
-        localStorage.setItem(storageKey, "null");
+        syncedStorage.setItem(storageKey, "null");
       } else {
-        localStorage.setItem(storageKey, model);
+        syncedStorage.setItem(storageKey, model);
       }
     } catch (e) {
       console.warn("Failed to save armor model to localStorage:", e);
@@ -896,7 +896,7 @@ export function useLocalActiveInfusions(memberId: number, initialActiveInfusions
   const storageKey = `party-stats:active-infusions:${memberId}`;
   const [activeInfusions, setActiveInfusions] = useState<string[]>(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = syncedStorage.getItem(storageKey);
       return saved ? JSON.parse(saved) : initialActiveInfusions;
     } catch (e) {
       console.warn("Failed to load active infusions from localStorage:", e);
@@ -908,7 +908,7 @@ export function useLocalActiveInfusions(memberId: number, initialActiveInfusions
     setActiveInfusions((prev) => {
       const next = prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name];
       try {
-        localStorage.setItem(storageKey, JSON.stringify(next));
+        syncedStorage.setItem(storageKey, JSON.stringify(next));
       } catch (e) {
         console.warn("Failed to save active infusions to localStorage:", e);
       }
@@ -926,7 +926,7 @@ export function useLocalTotemAspects(
   const storageKey = `party-stats:totem-aspects:${memberId}`;
   const [aspects, setAspects] = useState<Array<{ name: string; description: string }>>(() => {
     try {
-      const stored = localStorage.getItem(storageKey);
+      const stored = syncedStorage.getItem(storageKey);
       if (stored !== null) {
         return stored === "null" ? [] : JSON.parse(stored);
       }
@@ -939,7 +939,7 @@ export function useLocalTotemAspects(
   const updateAspects = (nextAspects: Array<{ name: string; description: string }>) => {
     setAspects(nextAspects);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(nextAspects));
+      syncedStorage.setItem(storageKey, JSON.stringify(nextAspects));
     } catch (e) {
       console.warn("Failed to save totem aspects to localStorage:", e);
     }

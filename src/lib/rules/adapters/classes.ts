@@ -178,21 +178,27 @@ export function classToRuleChoicesAndGrants(
   const profJson = parseJsonValue(classEntity.proficienciesJson, {});
   const rawJson = parseJsonValue(classEntity.rawJson, {});
 
-  let proficienciesToParse = isPrimary ? profJson.starting : rawJson.multiclassing?.proficienciesGained;
-  
+  let proficienciesToParse = isPrimary
+    ? profJson.starting
+    : rawJson.multiclassing?.proficienciesGained;
+
   if (isPrimary && profJson.savingThrows) {
     if (!proficienciesToParse) proficienciesToParse = {};
     proficienciesToParse.savingThrows = profJson.savingThrows;
   }
 
-  const { choices, grants } = parseProficiencies(proficienciesToParse || {}, sourceEntity, provenance);
+  const { choices, grants } = parseProficiencies(
+    proficienciesToParse || {},
+    sourceEntity,
+    provenance,
+  );
 
   if (isPrimary && classEntity.startingEquipmentJson) {
     const equip = equipmentToRuleChoicesAndGrants(
       classEntity.startingEquipmentJson,
       classEntity.id,
       classEntity.name,
-      "class"
+      "class",
     );
     choices.push(...equip.choices);
     grants.push(...equip.grants);
@@ -201,9 +207,10 @@ export function classToRuleChoicesAndGrants(
   return { choices, grants };
 }
 
-export function subclassToRuleChoicesAndGrants(
-  subclassEntity: any,
-): { choices: RuleChoiceGroup[]; grants: RuleGrant[] } {
+export function subclassToRuleChoicesAndGrants(subclassEntity: any): {
+  choices: RuleChoiceGroup[];
+  grants: RuleGrant[];
+} {
   const choices: RuleChoiceGroup[] = [];
   const grants: RuleGrant[] = [];
 

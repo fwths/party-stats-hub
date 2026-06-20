@@ -71,7 +71,7 @@ export const Route = createFileRoute("/builder")({
     const itemCardReferences = await getItemCardReferencesFromDb();
     const challengeRatings = await getChallengeRatingsFromDb();
     const creatureBuilderEntries = await getCreatureBuilderEntriesFromDb();
-    
+
     return {
       classes,
       species,

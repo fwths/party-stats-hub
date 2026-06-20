@@ -226,7 +226,7 @@ function loadSpeciesFoundryMap(): Map<string, any> {
 
 function getSubraceFoundry(
   sub: { name?: string; raceName: string; source: string },
-  foundryMap: Map<string, any>
+  foundryMap: Map<string, any>,
 ): any {
   const variantName = sub.name || sub.raceName;
   // Try direct name + source match

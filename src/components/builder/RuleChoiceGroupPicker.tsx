@@ -19,13 +19,38 @@ export function RuleChoiceGroupPicker({
     <div className="space-y-4">
       {groups.map((group) => {
         const currentSelected = selected[group.id] || [];
-        
+
         if (group.optionType === "spell") {
+          let filteredSpells = spells;
+          if (group.prerequisites && group.prerequisites.length > 0) {
+            filteredSpells = spells.filter((spell) => {
+              for (const req of group.prerequisites) {
+                if (req.type === "level") {
+                  if (Number(spell.level || 0) !== Number(req.value)) return false;
+                }
+                if (req.type === "maxLevel") {
+                  if (Number(spell.level || 0) > Number(req.value)) return false;
+                  if (Number(spell.level || 0) === 0) return false; // Usually maxLevel means non-cantrip prepared spells
+                }
+                if (req.type === "class") {
+                  if (
+                    !spell.classes?.fromClassList?.some(
+                      (c: any) => c.name.toLowerCase() === req.value.toLowerCase(),
+                    )
+                  ) {
+                    return false;
+                  }
+                }
+              }
+              return true;
+            });
+          }
+
           return (
             <SpellChoiceList
               key={group.id}
               title={group.label}
-              spells={spells}
+              spells={filteredSpells}
               selected={currentSelected}
               limit={group.max}
               exact={group.exact}
@@ -36,7 +61,10 @@ export function RuleChoiceGroupPicker({
 
         if (group.optionType === "item") {
           return (
-            <div key={group.id} className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4">
+            <div
+              key={group.id}
+              className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4"
+            >
               <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 {group.label}
               </div>
@@ -48,11 +76,13 @@ export function RuleChoiceGroupPicker({
                   <SelectValue placeholder={`Choose ${group.label.toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.isArray(group.options) && group.options.map((option) => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.label}{option.description ? `: ${option.description}` : ""}
-                    </SelectItem>
-                  ))}
+                  {Array.isArray(group.options) &&
+                    group.options.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.label}
+                        {option.description ? `: ${option.description}` : ""}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -62,9 +92,9 @@ export function RuleChoiceGroupPicker({
         if (group.optionType === "ability") {
           const options = Array.isArray(group.options) ? group.options : [];
           const max = group.max || 1;
-          
+
           const handleAbilityClick = (abilityId: string) => {
-            const count = currentSelected.filter(id => id === abilityId).length;
+            const count = currentSelected.filter((id) => id === abilityId).length;
             if (group.repeatable) {
               if (currentSelected.length < max) {
                 onChange(group.id, [...currentSelected, abilityId]);
@@ -77,7 +107,10 @@ export function RuleChoiceGroupPicker({
               }
             } else {
               if (currentSelected.includes(abilityId)) {
-                onChange(group.id, currentSelected.filter(id => id !== abilityId));
+                onChange(
+                  group.id,
+                  currentSelected.filter((id) => id !== abilityId),
+                );
               } else if (currentSelected.length < max) {
                 onChange(group.id, [...currentSelected, abilityId]);
               }
@@ -85,13 +118,16 @@ export function RuleChoiceGroupPicker({
           };
 
           return (
-            <div key={group.id} className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4">
+            <div
+              key={group.id}
+              className="space-y-3 rounded-xl border border-border/30 bg-secondary/20 p-4"
+            >
               <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 {group.label}
               </div>
               <div className="flex flex-wrap gap-2">
                 {options.map((option) => {
-                  const count = currentSelected.filter(id => id === option.id).length;
+                  const count = currentSelected.filter((id) => id === option.id).length;
                   const isActive = count > 0;
                   return (
                     <button
@@ -128,7 +164,7 @@ export function RuleChoiceGroupPicker({
           else if (group.optionType === "tool") options = globalOptions.tools;
           else if (group.optionType === "language") options = globalOptions.languages;
         } else {
-          options = (group.options as any[]).map(o => o.id);
+          options = (group.options as any[]).map((o) => o.id);
         }
 
         // Translate RuleChoiceGroup to ChoiceGroup format expected by ChoiceGroupPicker

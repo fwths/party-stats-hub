@@ -23,7 +23,15 @@ export type RuleChoiceOptionType =
   | "free text";
 
 export interface RuleChoicePrerequisite {
-  type: "level" | "ability" | "species" | "class" | "spellcasting" | "proficiency" | "feat" | "source";
+  type:
+    | "level"
+    | "ability"
+    | "species"
+    | "class"
+    | "spellcasting"
+    | "proficiency"
+    | "feat"
+    | "source";
   value: any;
   description?: string;
 }
@@ -32,6 +40,7 @@ export interface RuleChoiceOption {
   id: string;
   label: string;
   description?: string;
+  source?: string; // The canonical source book for this specific option
   grants?: any[]; // Will be typed as RuleGrant[]
   prerequisites?: RuleChoicePrerequisite[];
 }
@@ -63,21 +72,24 @@ export interface RuleChoiceValidationResult {
   issues: string[];
 }
 
-export function validateRuleChoiceGroup(group: RuleChoiceGroup, selectedIds: string[]): RuleChoiceValidationResult {
+export function validateRuleChoiceGroup(
+  group: RuleChoiceGroup,
+  selectedIds: string[],
+): RuleChoiceValidationResult {
   const issues: string[] = [];
-  
+
   if (selectedIds.length < group.min) {
     issues.push(`Please select at least ${group.min} option(s) for ${group.label}.`);
   }
-  
+
   if (group.exact && selectedIds.length !== group.min) {
     issues.push(`Please select exactly ${group.min} option(s) for ${group.label}.`);
   }
-  
+
   if (selectedIds.length > group.max) {
     issues.push(`Please select no more than ${group.max} option(s) for ${group.label}.`);
   }
-  
+
   if (!group.repeatable) {
     const unique = new Set(selectedIds);
     if (unique.size !== selectedIds.length) {
@@ -87,7 +99,7 @@ export function validateRuleChoiceGroup(group: RuleChoiceGroup, selectedIds: str
 
   // Validate against provided explicit options if not "all"
   if (group.options !== "all") {
-    const validOptionIds = new Set(group.options.map(opt => opt.id));
+    const validOptionIds = new Set(group.options.map((opt) => opt.id));
     for (const id of selectedIds) {
       if (!validOptionIds.has(id)) {
         issues.push(`Invalid selection: ${id} for ${group.label}.`);
@@ -103,7 +115,7 @@ export function validateRuleChoiceGroup(group: RuleChoiceGroup, selectedIds: str
 
 export function resolveRuleChoicesToGrants(
   choices: Record<string, string[]>,
-  groups: RuleChoiceGroup[]
+  groups: RuleChoiceGroup[],
 ): RuleGrant[] {
   const grants: RuleGrant[] = [];
 
@@ -111,15 +123,13 @@ export function resolveRuleChoicesToGrants(
     const selectedIds = choices[group.id] || [];
     for (const id of selectedIds) {
       // Find the specific option if it was explicitly listed
-      const optionDef = group.options !== "all" 
-        ? group.options.find(opt => opt.id === id) 
-        : null;
-        
+      const optionDef = group.options !== "all" ? group.options.find((opt) => opt.id === id) : null;
+
       // If the option explicitly provides nested grants, include them
       if (optionDef?.grants && Array.isArray(optionDef.grants)) {
         grants.push(...optionDef.grants);
       }
-      
+
       // Also map the standard option type into a basic grant
       if (group.optionType === "skill") {
         grants.push({

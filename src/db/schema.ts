@@ -262,6 +262,7 @@ export const feats = sqliteTable("feats", {
   description: text("description").notNull(),
   prerequisite: text("prerequisite"),
   levelRequirement: integer("level_requirement"),
+  prerequisitesJson: text("prerequisites_json"),
   repeatable: integer("repeatable", { mode: "boolean" }).notNull().default(false),
   abilityScoreImprovementJson: text("ability_score_improvement_json"),
   source: text("source"),
@@ -810,6 +811,7 @@ export const characters = sqliteTable("characters", {
   featureUsesExpendedJson: text("feature_uses_expended_json").notNull(),
 
   activeEffectIdsJson: text("active_effect_ids_json").notNull(),
+  builderStateJson: text("builder_state_json"),
   rawJson: text("raw_json"),
 });
 
@@ -871,3 +873,63 @@ export const classSpells = sqliteTable(
     pk: primaryKey({ columns: [t.classId, t.spellId] }),
   }),
 );
+
+export const characterClasses = sqliteTable("character_classes", {
+  id: text("id").primaryKey(),
+  characterId: text("character_id")
+    .notNull()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  classId: text("class_id").notNull(),
+  subclassId: text("subclass_id"),
+  level: integer("level").notNull(),
+  isPrimary: integer("is_primary", { mode: "boolean" }).notNull().default(false),
+});
+
+export const characterChoices = sqliteTable("character_choices", {
+  id: text("id").primaryKey(),
+  characterId: text("character_id")
+    .notNull()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  groupId: text("group_id").notNull(),
+  choiceId: text("choice_id").notNull(),
+});
+
+export const characterInventory = sqliteTable("character_inventory", {
+  id: text("id").primaryKey(),
+  characterId: text("character_id")
+    .notNull()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  itemId: text("item_id").notNull(),
+  quantity: integer("quantity").notNull().default(1),
+  isEquipped: integer("is_equipped", { mode: "boolean" }).notNull().default(false),
+  isAttuned: integer("is_attuned", { mode: "boolean" }).notNull().default(false),
+});
+
+export const characterSpells = sqliteTable("character_spells", {
+  id: text("id").primaryKey(),
+  characterId: text("character_id")
+    .notNull()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  spellId: text("spell_id").notNull(),
+  classId: text("class_id"), // Source class for the spell
+  isPrepared: integer("is_prepared", { mode: "boolean" }).notNull().default(false),
+  isAlwaysPrepared: integer("is_always_prepared", { mode: "boolean" }).notNull().default(false),
+});
+
+export const characterSources = sqliteTable("character_sources", {
+  id: text("id").primaryKey(),
+  characterId: text("character_id")
+    .notNull()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  sourceId: text("source_id").notNull(), // A book or source abbreviation
+});
+
+export const characterOverrides = sqliteTable("character_overrides", {
+  id: text("id").primaryKey(),
+  characterId: text("character_id")
+    .notNull()
+    .references(() => characters.id, { onDelete: "cascade" }),
+  entityId: text("entity_id").notNull(), // e.g. a skill ID, or ability score
+  overrideType: text("override_type").notNull(), // e.g. "set_score", "set_proficiency"
+  value: text("value").notNull(),
+});

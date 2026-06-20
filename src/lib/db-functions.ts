@@ -359,7 +359,7 @@ export const getMonsterFluffByName = createServerFn({ method: "GET" })
       try {
         const snapshot = await getSnapshot();
         const m = (snapshot.monsters || []).find(
-          (mon: any) => mon.name.toLowerCase() === data.name.toLowerCase()
+          (mon: any) => mon.name.toLowerCase() === data.name.toLowerCase(),
         );
         return m?.fluffJson || null;
       } catch {
@@ -367,4 +367,3 @@ export const getMonsterFluffByName = createServerFn({ method: "GET" })
       }
     }
   });
-

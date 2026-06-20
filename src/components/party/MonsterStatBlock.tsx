@@ -27,7 +27,13 @@ function resolveFluffImage(pathStr: string): string {
   return `https://5e.tools/img/${pathStr}`;
 }
 
-function EntryRenderer({ entry, depth = 0 }: { entry: any; depth?: number }): React.JSX.Element | null {
+function EntryRenderer({
+  entry,
+  depth = 0,
+}: {
+  entry: any;
+  depth?: number;
+}): React.JSX.Element | null {
   if (!entry) return null;
 
   if (typeof entry === "string") {
@@ -95,7 +101,10 @@ function EntryRenderer({ entry, depth = 0 }: { entry: any; depth?: number }): Re
             )}
             <tbody>
               {entry.rows?.map((row: any[], rIdx: number) => (
-                <tr key={rIdx} className="border-b border-border/10 last:border-0 hover:bg-secondary/5">
+                <tr
+                  key={rIdx}
+                  className="border-b border-border/10 last:border-0 hover:bg-secondary/5"
+                >
                   {row.map((cell: any, cIdx: number) => (
                     <td key={cIdx} className="p-2 text-foreground/70">
                       <EntryRenderer entry={cell} />
@@ -123,7 +132,9 @@ function EntryRenderer({ entry, depth = 0 }: { entry: any; depth?: number }): Re
             }}
           />
           {entry.title && (
-            <span className="text-[10px] text-muted-foreground italic">{stripTags(entry.title)}</span>
+            <span className="text-[10px] text-muted-foreground italic">
+              {stripTags(entry.title)}
+            </span>
           )}
         </div>
       );
@@ -140,13 +151,11 @@ function EntryRenderer({ entry, depth = 0 }: { entry: any; depth?: number }): Re
 }
 
 export function MonsterStatBlock({ monster, onRoll, compact = false }: MonsterStatBlockProps) {
-  if (!monster) return null;
-
   const [fluff, setFluff] = useState<any>(null);
 
   useEffect(() => {
     let active = true;
-    if (monster.name) {
+    if (monster?.name) {
       getMonsterFluffByName({ data: { name: monster.name } })
         .then((fluffJson) => {
           if (!active) return;
@@ -169,7 +178,9 @@ export function MonsterStatBlock({ monster, onRoll, compact = false }: MonsterSt
     return () => {
       active = false;
     };
-  }, [monster.name]);
+  }, [monster?.name]);
+
+  if (!monster) return null;
 
   // Helper to format ability modifier
   const getMod = (score: number) => {
@@ -310,7 +321,8 @@ export function MonsterStatBlock({ monster, onRoll, compact = false }: MonsterSt
           </p>
         </div>
         {(() => {
-          const firstFluffImage = fluff?.images?.[0]?.href?.path || fluff?.images?.[0]?.path || null;
+          const firstFluffImage =
+            fluff?.images?.[0]?.href?.path || fluff?.images?.[0]?.path || null;
           const showLargeImage = !compact && firstFluffImage;
           if (showLargeImage) {
             return null; // Render large image below title/info for better layout

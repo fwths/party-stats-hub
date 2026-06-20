@@ -45,7 +45,7 @@ export interface RuleGrant {
 export function parseFoundryEffectsToGrants(
   foundryJsonStr: string | null | undefined,
   sourceEntity: string,
-  provenance: string
+  provenance: string,
 ): RuleGrant[] {
   if (!foundryJsonStr) return [];
   // Use a simple JSON.parse to avoid circular dependency with BuilderUtils
@@ -156,34 +156,70 @@ export function parseFoundryEffectsToGrants(
         continue;
       }
 
-      const normalizeName = (val: any) => String(val || "").replace(/[^a-zA-Z0-9]/g, " ").trim().toLowerCase();
+      const normalizeName = (val: any) =>
+        String(val || "")
+          .replace(/[^a-zA-Z0-9]/g, " ")
+          .trim()
+          .toLowerCase();
 
       // Defenses (Resistances/Immunities/Vulnerabilities/Conditions)
       if (key === "system.traits.dr.value" || key === "system.traits.dr") {
-        const types = typeof rawValue === "string" ? [rawValue] : Array.isArray(rawValue) ? rawValue : [];
+        const types =
+          typeof rawValue === "string" ? [rawValue] : Array.isArray(rawValue) ? rawValue : [];
         for (const t of types) {
-          grants.push({ id: `${sourceEntity}_dr_${normalizeName(t)}`, type: "damage_resistance", value: normalizeName(t), mode: "fixed", sourceEntity, provenance });
+          grants.push({
+            id: `${sourceEntity}_dr_${normalizeName(t)}`,
+            type: "damage_resistance",
+            value: normalizeName(t),
+            mode: "fixed",
+            sourceEntity,
+            provenance,
+          });
         }
         continue;
       }
       if (key === "system.traits.di.value") {
-        const types = typeof rawValue === "string" ? [rawValue] : Array.isArray(rawValue) ? rawValue : [];
+        const types =
+          typeof rawValue === "string" ? [rawValue] : Array.isArray(rawValue) ? rawValue : [];
         for (const t of types) {
-          grants.push({ id: `${sourceEntity}_di_${normalizeName(t)}`, type: "damage_immunity", value: normalizeName(t), mode: "fixed", sourceEntity, provenance });
+          grants.push({
+            id: `${sourceEntity}_di_${normalizeName(t)}`,
+            type: "damage_immunity",
+            value: normalizeName(t),
+            mode: "fixed",
+            sourceEntity,
+            provenance,
+          });
         }
         continue;
       }
       if (key === "system.traits.dv.value") {
-        const types = typeof rawValue === "string" ? [rawValue] : Array.isArray(rawValue) ? rawValue : [];
+        const types =
+          typeof rawValue === "string" ? [rawValue] : Array.isArray(rawValue) ? rawValue : [];
         for (const t of types) {
-          grants.push({ id: `${sourceEntity}_dv_${normalizeName(t)}`, type: "damage_vulnerability", value: normalizeName(t), mode: "fixed", sourceEntity, provenance });
+          grants.push({
+            id: `${sourceEntity}_dv_${normalizeName(t)}`,
+            type: "damage_vulnerability",
+            value: normalizeName(t),
+            mode: "fixed",
+            sourceEntity,
+            provenance,
+          });
         }
         continue;
       }
       if (key === "system.traits.ci.value") {
-        const types = typeof rawValue === "string" ? [rawValue] : Array.isArray(rawValue) ? rawValue : [];
+        const types =
+          typeof rawValue === "string" ? [rawValue] : Array.isArray(rawValue) ? rawValue : [];
         for (const t of types) {
-          grants.push({ id: `${sourceEntity}_ci_${normalizeName(t)}`, type: "condition_immunity", value: normalizeName(t), mode: "fixed", sourceEntity, provenance });
+          grants.push({
+            id: `${sourceEntity}_ci_${normalizeName(t)}`,
+            type: "condition_immunity",
+            value: normalizeName(t),
+            mode: "fixed",
+            sourceEntity,
+            provenance,
+          });
         }
         continue;
       }

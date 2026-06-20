@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createNativePartyMember } from "./native-engine";
+import { computeCharacterSnapshot, createNativePartyMember } from "./native-engine";
 
 const mockState = {
   name: "Arthur Pendragon",
@@ -51,6 +51,26 @@ describe("createNativePartyMember with active effects", () => {
     expect(result.armorClass).toBe(10 + 1); // no armor equipped, dex mod is 1
   });
 
+  it("deduplicates skills and tools correctly based on overlap rules", () => {
+    // This is essentially testing the deduplication in the final mapping,
+    // which operates on `_generatedGrants` and unique().
+    const state = { ...mockState };
+    const fakeRace = {
+      id: "fake_race",
+      name: "Fake Race",
+      foundryJson: JSON.stringify([
+        { type: "skill_proficiency", value: "stealth" },
+        { type: "skill_proficiency", value: "stealth" }, // Duplicate!
+      ]),
+    };
+
+    const member = createNativePartyMember(state, fakeRace, null);
+
+    // Stealth should only appear once in member.skills if overlap detection works!
+    const stealthSkills = member.skills.filter((s) => s.name.toLowerCase() === "stealth");
+    expect(stealthSkills.length).toBe(1);
+  });
+
   it("applies ability score overrides and AC bonuses from equipped items foundryJson", () => {
     // E.g. Gauntlets of Ogre Power setting Strength to 19, and Cloak of Protection giving +1 AC
     const result = createNativePartyMember(
@@ -82,9 +102,7 @@ describe("createNativePartyMember with active effects", () => {
               effects: [
                 {
                   disabled: false,
-                  changes: [
-                    { key: "system.abilities.str.value", mode: "OVERRIDE", value: 19 },
-                  ],
+                  changes: [{ key: "system.abilities.str.value", mode: "OVERRIDE", value: 19 }],
                 },
               ],
             }),
@@ -95,9 +113,7 @@ describe("createNativePartyMember with active effects", () => {
               effects: [
                 {
                   disabled: false,
-                  changes: [
-                    { key: "system.attributes.ac.bonus", mode: "ADD", value: 1 },
-                  ],
+                  changes: [{ key: "system.attributes.ac.bonus", mode: "ADD", value: 1 }],
                 },
               ],
             }),
@@ -152,9 +168,7 @@ describe("createNativePartyMember with active effects", () => {
         startingEquipmentJson: JSON.stringify({
           defaultData: [
             {
-              opt1: [
-                { item: "Ring of Fire Resistance", quantity: 1, equipped: true },
-              ],
+              opt1: [{ item: "Ring of Fire Resistance", quantity: 1, equipped: true }],
             },
           ],
         }),
@@ -198,9 +212,7 @@ describe("createNativePartyMember with active effects", () => {
         effects: [
           {
             disabled: false,
-            changes: [
-              { key: "system.attributes.movement.walk", mode: "ADD", value: 5 },
-            ],
+            changes: [{ key: "system.attributes.movement.walk", mode: "ADD", value: 5 }],
           },
         ],
       }),
@@ -241,9 +253,7 @@ describe("createNativePartyMember with active effects", () => {
         effects: [
           {
             disabled: false,
-            changes: [
-              { key: "system.attributes.ac.bonus", mode: "ADD", value: 1 },
-            ],
+            changes: [{ key: "system.attributes.ac.bonus", mode: "ADD", value: 1 }],
           },
         ],
       }),
@@ -313,7 +323,7 @@ describe("createNativePartyMember with active effects", () => {
     expect(result.level).toBe(6);
     expect(result.classes).toBe("Fighter 4 / Wizard 2");
     expect(result.hitDice).toBe("4d10, 2d6");
-    
+
     // Caster level 2 slots should be [3] (3 first-level slots)
     expect(result.spellSlots.length).toBe(1);
     expect(result.spellSlots[0]).toEqual({ level: 1, max: 3, used: 0 });
@@ -359,9 +369,7 @@ describe("createNativePartyMember with active effects", () => {
         effects: [
           {
             disabled: false,
-            changes: [
-              { key: "system.attributes.ac.bonus", mode: "ADD", value: 1 },
-            ],
+            changes: [{ key: "system.attributes.ac.bonus", mode: "ADD", value: 1 }],
           },
         ],
       }),
@@ -404,5 +412,61 @@ describe("createNativePartyMember with active effects", () => {
 
     // AC should be increased by 1 from Ring of Protection
     expect(result.armorClass).toBe(10 + 1 + 1); // 10 base + 1 dex + 1 ring AC bonus
+  });
+
+  it("recomputes a native snapshot from canonical builder state and Forge data", () => {
+    const forgeData = {
+      species: [mockRaceData],
+      speciesVariants: [],
+      backgrounds: [{ id: "soldier", name: "Soldier" }],
+      classes: [mockClassData],
+      subclasses: [],
+      feats: [],
+      spells: [{ id: "shield", name: "Shield", level: 1 }],
+      classFeatures: [],
+      activeEffects: [],
+      featureActiveEffects: [],
+      itemActiveEffects: [],
+      spellActiveEffects: [],
+      magicItems: [],
+      weapons: [],
+      armor: [],
+      skills: [],
+      senses: [],
+      conditions: [],
+      rulesActions: [],
+      optionalFeatures: [],
+      charOptions: [],
+      mundaneGear: [],
+      weaponMasteries: [],
+      itemProperties: [],
+      itemTypes: [],
+      itemTypeAdditionalEntries: [],
+      itemGroups: [],
+      magicVariants: [],
+      itemCardReferences: [],
+      challengeRatings: [],
+      creatureBuilderEntries: [],
+      classSpells: [],
+      languages: [],
+    };
+
+    const result = computeCharacterSnapshot(
+      {
+        builderState: {
+          ...mockState,
+          raceId: "human",
+          backgroundId: "soldier",
+          classId: "fighter",
+          preparedSpellChoicesByClass: { fighter: ["shield"] },
+        },
+      },
+      forgeData,
+    );
+
+    expect(result.name).toBe("Arthur Pendragon");
+    expect(result.race).toBe("Human");
+    expect(result.classes).toBe("Fighter 5");
+    expect(result.preparedSpells.some((spell) => spell.name === "Shield")).toBe(true);
   });
 });

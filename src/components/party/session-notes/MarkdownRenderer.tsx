@@ -269,10 +269,11 @@ export function MarkdownRenderer({
               const linkId = match[2];
 
               const normalize = (val: string) =>
-                val.toLowerCase()
-                   .replace(/[“”"']/g, "")
-                   .replace(/\s+/g, " ")
-                   .trim();
+                val
+                  .toLowerCase()
+                  .replace(/[“”"']/g, "")
+                  .replace(/\s+/g, " ")
+                  .trim();
 
               const getCleanName = (name: string) => {
                 // Strip nicknames in quotes/smart quotes
@@ -332,10 +333,11 @@ export function MarkdownRenderer({
             }
 
             const normalize = (val: string) =>
-              val.toLowerCase()
-                 .replace(/[“”"']/g, "")
-                 .replace(/\s+/g, " ")
-                 .trim();
+              val
+                .toLowerCase()
+                .replace(/[“”"']/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
 
             const getCleanName = (name: string) => {
               return name.replace(/["'“‘”’].*?["'“‘”’]/g, "");

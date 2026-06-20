@@ -1,3 +1,4 @@
+import { mapDdbModifiersToGrants } from "./grants-mapper";
 import {
   AbilityScore,
   CharacterCharacteristics,
@@ -116,6 +117,7 @@ export function parseCharacterPayload(id: number, payload: any): PartyMember {
     }
 
     const modifiers = flattenModifiers(data);
+    const generatedGrants = mapDdbModifiersToGrants(modifiers);
 
     const abilities: AbilityScore[] = ABILITY_NAMES.map((name, i) => {
       const score = computeFinalScore(
@@ -882,6 +884,7 @@ export function parseCharacterPayload(id: number, payload: any): PartyMember {
       totemAspects,
       weaponMasteries,
       creatures,
+      _generatedGrants: generatedGrants,
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
   } catch (err: any) {

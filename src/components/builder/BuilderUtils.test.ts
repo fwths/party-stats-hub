@@ -9,7 +9,7 @@ describe("BuilderUtils Coverage", () => {
       { name: "Animal Handling" },
       { name: "Arcana" },
       // testing normalization
-      { name: "{@skill Athletics}" }
+      { name: "{@skill Athletics}" },
     ];
 
     const result = getSkillOptionsFromDb(mockDbSkills);
@@ -27,12 +27,12 @@ describe("BuilderUtils Coverage", () => {
     const mockMundaneGear = [
       { name: "Alchemist's Supplies", type: "AT" },
       { name: "Thieves' Tools", type: "T" },
-      { name: "Rope, Hempen", type: "G" } // Not a tool
+      { name: "Rope, Hempen", type: "G" }, // Not a tool
     ];
-    
+
     const mockItemTypes = [
       { name: "Artisan's Tools", abbreviation: "AT" },
-      { name: "Gaming Set", abbreviation: "GS" }
+      { name: "Gaming Set", abbreviation: "GS" },
     ];
 
     const result = getToolOptionsFromDb(mockMundaneGear, mockItemTypes);

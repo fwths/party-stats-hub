@@ -3,7 +3,10 @@ import { RuleGrant } from "../grants";
 import { parseJsonValue, normalizeChoiceName } from "../../../components/builder/BuilderUtils";
 import { equipmentToRuleChoicesAndGrants } from "./items";
 
-export function backgroundToRuleChoicesAndGrants(backgroundEntity: any): { choices: RuleChoiceGroup[]; grants: RuleGrant[] } {
+export function backgroundToRuleChoicesAndGrants(backgroundEntity: any): {
+  choices: RuleChoiceGroup[];
+  grants: RuleGrant[];
+} {
   if (!backgroundEntity) return { choices: [], grants: [] };
 
   const choices: RuleChoiceGroup[] = [];
@@ -40,8 +43,8 @@ export function backgroundToRuleChoicesAndGrants(backgroundEntity: any): { choic
           repeatable: false,
           optionType: "skill",
           options: prof.choose.from.map((sk: string) => ({
-             id: normalizeChoiceName(sk),
-             label: normalizeChoiceName(sk)
+            id: normalizeChoiceName(sk),
+            label: normalizeChoiceName(sk),
           })),
           provenance,
         });
@@ -67,19 +70,19 @@ export function backgroundToRuleChoicesAndGrants(backgroundEntity: any): { choic
   if (Array.isArray(toolProficienciesJson)) {
     toolProficienciesJson.forEach((prof: any, i: number) => {
       if (prof.anyStandard || prof.any) {
-         const count = Number(prof.anyStandard || prof.any);
-         choices.push({
-           id: `${sourceEntity}_tool_any_${i}`,
-           sourceEntity,
-           label: `Choose ${count} tool${count > 1 ? "s" : ""}`,
-           min: count,
-           max: count,
-           exact: true,
-           repeatable: false,
-           optionType: "tool",
-           options: "all",
-           provenance,
-         });
+        const count = Number(prof.anyStandard || prof.any);
+        choices.push({
+          id: `${sourceEntity}_tool_any_${i}`,
+          sourceEntity,
+          label: `Choose ${count} tool${count > 1 ? "s" : ""}`,
+          min: count,
+          max: count,
+          exact: true,
+          repeatable: false,
+          optionType: "tool",
+          options: "all",
+          provenance,
+        });
       } else if (prof.choose?.from) {
         const count = Number(prof.choose.count || 1);
         choices.push({
@@ -92,24 +95,27 @@ export function backgroundToRuleChoicesAndGrants(backgroundEntity: any): { choic
           repeatable: false,
           optionType: "tool",
           options: prof.choose.from.map((t: string) => ({
-             id: normalizeChoiceName(t),
-             label: normalizeChoiceName(t)
+            id: normalizeChoiceName(t),
+            label: normalizeChoiceName(t),
           })),
           provenance,
         });
       } else {
-         Object.entries(prof).forEach(([key, val]) => {
-           if (val === true && !["any", "choose", "other", "anystandard"].includes(key.toLowerCase())) {
-             grants.push({
-               id: `${sourceEntity}_tool_${key}`,
-               type: "tool_proficiency",
-               value: normalizeChoiceName(key),
-               mode: "fixed",
-               sourceEntity,
-               provenance,
-             });
-           }
-         });
+        Object.entries(prof).forEach(([key, val]) => {
+          if (
+            val === true &&
+            !["any", "choose", "other", "anystandard"].includes(key.toLowerCase())
+          ) {
+            grants.push({
+              id: `${sourceEntity}_tool_${key}`,
+              type: "tool_proficiency",
+              value: normalizeChoiceName(key),
+              mode: "fixed",
+              sourceEntity,
+              provenance,
+            });
+          }
+        });
       }
     });
   }
@@ -145,23 +151,26 @@ export function backgroundToRuleChoicesAndGrants(backgroundEntity: any): { choic
           optionType: "language",
           options: lang.choose.from.map((l: string) => ({
             id: normalizeChoiceName(l),
-            label: normalizeChoiceName(l)
+            label: normalizeChoiceName(l),
           })),
           provenance,
         });
       } else {
-         Object.entries(lang).forEach(([key, val]) => {
-           if (val === true && !["any", "anystandard", "other", "choose"].includes(key.toLowerCase())) {
-             grants.push({
-               id: `${sourceEntity}_language_${key}`,
-               type: "language",
-               value: normalizeChoiceName(key),
-               mode: "fixed",
-               sourceEntity,
-               provenance,
-             });
-           }
-         });
+        Object.entries(lang).forEach(([key, val]) => {
+          if (
+            val === true &&
+            !["any", "anystandard", "other", "choose"].includes(key.toLowerCase())
+          ) {
+            grants.push({
+              id: `${sourceEntity}_language_${key}`,
+              type: "language",
+              value: normalizeChoiceName(key),
+              mode: "fixed",
+              sourceEntity,
+              provenance,
+            });
+          }
+        });
       }
     });
   }
@@ -171,7 +180,7 @@ export function backgroundToRuleChoicesAndGrants(backgroundEntity: any): { choic
       backgroundEntity.startingEquipmentJson,
       backgroundEntity.id,
       backgroundEntity.name,
-      "background"
+      "background",
     );
     choices.push(...equip.choices);
     grants.push(...equip.grants);

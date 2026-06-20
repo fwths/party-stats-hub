@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
+import { syncedLocalStorage as syncedStorage } from "@/lib/synced-storage";
 import {
   Award,
   BookOpen,
@@ -221,7 +221,7 @@ export function CharacterDetailView({
   const [activeLayout, setActiveLayout] = useState<"classic" | "sticky" | "tabbed" | "widescreen">(
     () => {
       try {
-        const stored = localStorage.getItem("party-stats:detail-layout");
+        const stored = syncedStorage.getItem("party-stats:detail-layout");
         if (
           stored === "classic" ||
           stored === "sticky" ||
@@ -258,7 +258,7 @@ export function CharacterDetailView({
   const [selectedMetamagicName, setSelectedMetamagicName] = useState<string | null>(null);
   const [localPrepOverride, setLocalPrepOverride] = useState<Record<string, boolean>>(() => {
     try {
-      const stored = localStorage.getItem(`party-stats:prep-override:${member.id}`);
+      const stored = syncedStorage.getItem(`party-stats:prep-override:${member.id}`);
       return stored ? JSON.parse(stored) : {};
     } catch {
       return {};
@@ -267,7 +267,7 @@ export function CharacterDetailView({
 
   useEffect(() => {
     try {
-      localStorage.setItem(
+      syncedStorage.setItem(
         `party-stats:prep-override:${member.id}`,
         JSON.stringify(localPrepOverride),
       );
@@ -276,7 +276,7 @@ export function CharacterDetailView({
 
   const [localInnateSorcery, setLocalInnateSorcery] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem(`party-stats:innate-sorcery:${member.id}`);
+      const stored = syncedStorage.getItem(`party-stats:innate-sorcery:${member.id}`);
       return stored === "true";
     } catch {
       return false;
@@ -285,14 +285,14 @@ export function CharacterDetailView({
 
   useEffect(() => {
     try {
-      localStorage.setItem(`party-stats:innate-sorcery:${member.id}`, String(localInnateSorcery));
+      syncedStorage.setItem(`party-stats:innate-sorcery:${member.id}`, String(localInnateSorcery));
     } catch {}
   }, [localInnateSorcery, member.id]);
 
   const [localStarryForm, setLocalStarryForm] = useState<"None" | "Archer" | "Chalice" | "Dragon">(
     (() => {
       try {
-        const stored = localStorage.getItem(`party-stats:starry-form:${member.id}`);
+        const stored = syncedStorage.getItem(`party-stats:starry-form:${member.id}`);
         if (stored === "Archer" || stored === "Chalice" || stored === "Dragon") return stored;
       } catch {}
       return "None";
@@ -301,13 +301,13 @@ export function CharacterDetailView({
 
   useEffect(() => {
     try {
-      localStorage.setItem(`party-stats:starry-form:${member.id}`, localStarryForm);
+      syncedStorage.setItem(`party-stats:starry-form:${member.id}`, localStarryForm);
     } catch {}
   }, [localStarryForm, member.id]);
 
   const [localMantleOfMajesty, setLocalMantleOfMajesty] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem(`party-stats:mantle-majesty:${member.id}`);
+      const stored = syncedStorage.getItem(`party-stats:mantle-majesty:${member.id}`);
       return stored === "true";
     } catch {
       return false;
@@ -316,7 +316,10 @@ export function CharacterDetailView({
 
   useEffect(() => {
     try {
-      localStorage.setItem(`party-stats:mantle-majesty:${member.id}`, String(localMantleOfMajesty));
+      syncedStorage.setItem(
+        `party-stats:mantle-majesty:${member.id}`,
+        String(localMantleOfMajesty),
+      );
     } catch {}
   }, [localMantleOfMajesty, member.id]);
 
@@ -408,7 +411,7 @@ export function CharacterDetailView({
       setLocalActiveInfusions(member.activeInfusions);
       try {
         const storageKey = `party-stats:active-infusions:${member.id}`;
-        localStorage.setItem(storageKey, JSON.stringify(member.activeInfusions));
+        syncedStorage.setItem(storageKey, JSON.stringify(member.activeInfusions));
       } catch (e) {
         console.warn(e);
       }
@@ -1525,10 +1528,10 @@ export function CharacterDetailView({
                                   onClick={() => {
                                     try {
                                       const storageKey = `party-stats:hp:${otherId}`;
-                                      const stored = localStorage.getItem(storageKey);
+                                      const stored = syncedStorage.getItem(storageKey);
                                       const data = stored ? JSON.parse(stored) : {};
                                       data.tempHp = Math.max(data.tempHp || 0, 5);
-                                      localStorage.setItem(storageKey, JSON.stringify(data));
+                                      syncedStorage.setItem(storageKey, JSON.stringify(data));
 
                                       if (biAction) {
                                         localResources.useResource(biAction.name, maxBI);
@@ -2024,7 +2027,7 @@ export function CharacterDetailView({
               onClick={() => {
                 setActiveLayout(opt.id);
                 try {
-                  localStorage.setItem("party-stats:detail-layout", opt.id);
+                  syncedStorage.setItem("party-stats:detail-layout", opt.id);
                 } catch {}
               }}
               className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer ${
@@ -2372,8 +2375,8 @@ export function CharacterDetailView({
                   setLocalActiveInfusions(member.activeInfusions || []);
                   setLocalRage("None");
                   try {
-                    localStorage.removeItem(`party-stats:item-overrides:${member.id}`);
-                    localStorage.removeItem(`party-stats:custom-items:${member.id}`);
+                    syncedStorage.removeItem(`party-stats:item-overrides:${member.id}`);
+                    syncedStorage.removeItem(`party-stats:custom-items:${member.id}`);
                   } catch {}
                   setAllInvOverrides({});
                   setLocalCustomItems([]);

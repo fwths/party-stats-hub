@@ -6,7 +6,7 @@ export function equipmentToRuleChoicesAndGrants(
   rawJson: unknown,
   sourceId: string,
   sourceName: string,
-  sourceType: "class" | "background"
+  sourceType: "class" | "background",
 ): { choices: RuleChoiceGroup[]; grants: RuleGrant[] } {
   const choices: RuleChoiceGroup[] = [];
   const grants: RuleGrant[] = [];
@@ -23,8 +23,8 @@ export function equipmentToRuleChoicesAndGrants(
   const provenance = `${sourceName} Starting Equipment`;
 
   // If there is only one option (e.g. "default"), just grant it directly
-  const packageKeys = Object.keys(packages).filter(k => k !== "_"); // ignore meta keys if any
-  
+  const packageKeys = Object.keys(packages).filter((k) => k !== "_"); // ignore meta keys if any
+
   if (packageKeys.length === 1) {
     grants.push({
       id: `${sourceEntity}_grant_${packageKeys[0]}`,
@@ -59,8 +59,8 @@ export function equipmentToRuleChoicesAndGrants(
               mode: "fixed",
               sourceEntity,
               provenance,
-            }
-          ]
+            },
+          ],
         };
       }),
       provenance,

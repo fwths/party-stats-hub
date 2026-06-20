@@ -15,11 +15,43 @@ const FIGHTING_STYLE_OPTIONS = [
 ];
 
 const WEAPON_MASTERY_OPTIONS = [
-  "Battleaxe", "Blowgun", "Club", "Dagger", "Dart", "Flail", "Glaive", "Greataxe", "Greatclub", 
-  "Greatsword", "Halberd", "Hand Crossbow", "Handaxe", "Heavy Crossbow", "Javelin", "Lance", 
-  "Light Crossbow", "Light Hammer", "Longbow", "Longsword", "Mace", "Maul", "Morningstar", 
-  "Net", "Pike", "Quarterstaff", "Rapier", "Scimitar", "Shortbow", "Shortsword", "Sickle", 
-  "Sling", "Spear", "Trident", "War Pick", "Warhammer", "Whip"
+  "Battleaxe",
+  "Blowgun",
+  "Club",
+  "Dagger",
+  "Dart",
+  "Flail",
+  "Glaive",
+  "Greataxe",
+  "Greatclub",
+  "Greatsword",
+  "Halberd",
+  "Hand Crossbow",
+  "Handaxe",
+  "Heavy Crossbow",
+  "Javelin",
+  "Lance",
+  "Light Crossbow",
+  "Light Hammer",
+  "Longbow",
+  "Longsword",
+  "Mace",
+  "Maul",
+  "Morningstar",
+  "Net",
+  "Pike",
+  "Quarterstaff",
+  "Rapier",
+  "Scimitar",
+  "Shortbow",
+  "Shortsword",
+  "Sickle",
+  "Sling",
+  "Spear",
+  "Trident",
+  "War Pick",
+  "Warhammer",
+  "Whip",
 ];
 
 function weaponMasteryCount(classId: string | null, level: number): number {
@@ -56,9 +88,10 @@ export function classFeatureToRuleChoicesAndGrants(
       exact: true,
       repeatable: false,
       optionType: "skill",
-      options: selectedSkillNames.length > 0
-        ? selectedSkillNames.map(sk => ({ id: sk, label: sk }))
-        : "all",
+      options:
+        selectedSkillNames.length > 0
+          ? selectedSkillNames.map((sk) => ({ id: sk, label: sk }))
+          : "all",
       provenance,
     });
   }
@@ -74,7 +107,7 @@ export function classFeatureToRuleChoicesAndGrants(
       exact: true,
       repeatable: false,
       optionType: "free text",
-      options: FIGHTING_STYLE_OPTIONS.map(fs => ({ id: fs, label: fs })),
+      options: FIGHTING_STYLE_OPTIONS.map((fs) => ({ id: fs, label: fs })),
       provenance,
     });
   }
@@ -92,7 +125,7 @@ export function classFeatureToRuleChoicesAndGrants(
         exact: true,
         repeatable: false,
         optionType: "weapon mastery",
-        options: WEAPON_MASTERY_OPTIONS.map(wm => ({ id: wm, label: wm })),
+        options: WEAPON_MASTERY_OPTIONS.map((wm) => ({ id: wm, label: wm })),
         provenance,
       });
     }
@@ -124,10 +157,22 @@ export function classFeatureToRuleChoicesAndGrants(
           exact: true,
           repeatable: false,
           optionType,
-          options: group.options.map((opt: string) => ({
-            id: normalizeChoiceName(opt),
-            label: normalizeChoiceName(opt),
-          })),
+          options: group.options.map((opt: any) => {
+            if (opt && typeof opt === "object") {
+              const id = opt.id || normalizeChoiceName(opt.name || opt.label);
+              return {
+                id,
+                label: opt.label || opt.name || id,
+                description: opt.description,
+                source: opt.source,
+                grants: Array.isArray(opt.grants) ? opt.grants : undefined,
+              };
+            }
+            return {
+              id: normalizeChoiceName(opt),
+              label: normalizeChoiceName(opt),
+            };
+          }),
           provenance,
         });
       }
@@ -138,7 +183,7 @@ export function classFeatureToRuleChoicesAndGrants(
   const inlineGrants = parseFoundryEffectsToGrants(
     feature.foundryJson ?? feature.foundry_json,
     sourceEntity,
-    provenance
+    provenance,
   );
   grants.push(...inlineGrants);
 

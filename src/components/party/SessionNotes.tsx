@@ -62,10 +62,11 @@ export default function SessionNotes({ members }: SessionNotesProps) {
   const matchedMember = useMemo(() => {
     if (!selectedPageTitle || !members) return null;
     const normalize = (val: string) =>
-      val.toLowerCase()
-         .replace(/[“”"']/g, "")
-         .replace(/\s+/g, " ")
-         .trim();
+      val
+        .toLowerCase()
+        .replace(/[“”"']/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
     const getCleanName = (name: string) => {
       return name.replace(/["'“‘”’].*?["'“‘”’]/g, "");
     };
@@ -502,7 +503,8 @@ export default function SessionNotes({ members }: SessionNotesProps) {
                         <div className="flex-1 text-center sm:text-left">
                           <h3 className="text-lg font-bold text-gold">{matchedMember.name}</h3>
                           <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                            {matchedMember.race} • {matchedMember.classes} (Level {matchedMember.level})
+                            {matchedMember.race} • {matchedMember.classes} (Level{" "}
+                            {matchedMember.level})
                           </p>
                           <div className="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1.5 mt-2.5 text-[10px] text-foreground/80 font-semibold uppercase tracking-wider">
                             <span className="bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded text-emerald-400">

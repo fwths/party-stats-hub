@@ -1,3 +1,5 @@
+import { SOURCES, BLOCKED_SOURCES } from "./source-constants";
+
 export interface ForgeSourcePolicy {
   allowOfficial: boolean;
   allowHomebrew: boolean;
@@ -29,15 +31,45 @@ export const DEFAULT_CONTENT_TOGGLES: ForgeContentToggles = {
 /**
  * Checks if a specific source ID is allowed by the given policy.
  */
-export function isSourceAllowedByPolicy(source: string, policy: ForgeSourcePolicy = DEFAULT_SOURCE_POLICY): boolean {
+export function isSourceAllowedByPolicy(
+  source: string,
+  policy: ForgeSourcePolicy = DEFAULT_SOURCE_POLICY,
+): boolean {
   if (!source) return false;
+
+  // 1. Exact exclusions
   if (policy.excludedSources.includes(source)) return false;
-  
-  // Note: Detailed resolution mapping source IDs to their tiers/status
-  // requires access to the source catalog data, which can be done at runtime.
-  // This default helper enforces explicit exclusions and general official-only logic.
-  
-  // Currently, we assume all sources passed to the builder are official
-  // and pre-filtered by the global source config, unless homebrew.
-  return policy.allowOfficial;
+
+  // 2. Blocked homebrew / UA content
+  if (BLOCKED_SOURCES.includes(source)) {
+    if (source === "HB" || source === "HOMEBREW") {
+      return false;
+    }
+    // UA or other prerelease content
+    if (source.startsWith("UA")) {
+      return policy.allowPrerelease;
+    }
+    return false; // Safely block anything else in the list
+  }
+
+  // 3. Official Tiers
+  let sourceTier = "unknown";
+  for (const [tier, sources] of Object.entries(SOURCES)) {
+    if (sources.includes(source)) {
+      sourceTier = tier;
+      break;
+    }
+  }
+
+  if (sourceTier !== "unknown") {
+    // If it's a known official tier, check if that tier is enabled
+    if (!policy.allowedTiers.includes(sourceTier)) return false;
+    return policy.allowOfficial;
+  }
+
+  // If it's not a recognized official source, but isn't explicitly blocked,
+  // we assume it is some partner or third-party content.
+  // If we only allow official content, we block it.
+  if (policy.allowPartner) return true;
+  return false;
 }

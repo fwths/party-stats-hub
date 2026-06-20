@@ -1,9 +1,5 @@
+import { validateCharacterDraft } from "../../lib/rules/validate-character";
 import type { ForgeData } from "@/lib/forge/forge-data";
-import { validateRuleChoiceGroup } from "@/lib/rules/choices";
-import { speciesToRuleChoicesAndGrants } from "@/lib/rules/adapters/species";
-import { backgroundToRuleChoicesAndGrants } from "@/lib/rules/adapters/backgrounds";
-import { classToRuleChoicesAndGrants } from "@/lib/rules/adapters/classes";
-import { classFeatureToRuleChoicesAndGrants } from "@/lib/rules/adapters/features";
 import {
   ABILITIES,
   SKILL_OPTIONS,
@@ -29,7 +25,9 @@ export type BuilderState = {
   abilityBonuses: Record<string, number>;
   ruleChoices: Record<string, string[]>;
   highLevelFeatChoices?: Record<number, string>;
-  
+  sourcePolicy?: any;
+  contentToggles?: any;
+
   // Biography
   avatarUrl?: string;
   playerName?: string;
@@ -41,11 +39,11 @@ export type BuilderState = {
   skin?: string;
   hair?: string;
   backstory?: string;
-  
+
   // HP custom rolling
   hpType: "fixed" | "manual";
   manualHpRolls?: Record<number, number>;
-  
+
   // Custom equipment catalog
   customEquipment?: Array<{
     name: string;
@@ -58,10 +56,9 @@ export type BuilderState = {
     description?: string;
     rarity?: string;
   }>;
-  
+
   // Multiclassing
   multiClasses?: Array<{ classId: string; subclassId: string | null; level: number }>;
-  
 
   // New validation and multiclass spellcasting fields
   abilitiesMethod?: "standard" | "pointbuy" | "roll";
@@ -208,9 +205,6 @@ export function normalizeChoiceName(value: unknown): string {
     .replace("'S", "'s");
 }
 
-
-
-
 export function getProficiencyChoiceGroups(
   raw: unknown,
   type: "skills" | "tools",
@@ -303,10 +297,7 @@ export function getSkillOptionsFromDb(skills: any[] | undefined): string[] {
   return options.length > 0 ? Array.from(new Set(options)).sort() : SKILL_OPTIONS;
 }
 
-export function getToolOptionsFromDb(
-  mundaneGear: any[] | undefined,
-  itemTypes?: any[],
-): string[] {
+export function getToolOptionsFromDb(mundaneGear: any[] | undefined, itemTypes?: any[]): string[] {
   const toolTypeCodes = new Set(["AT", "GS", "INS", "T"]);
   const typeNames = (itemTypes || [])
     .filter((type: any) => toolTypeCodes.has(String(type.abbreviation || "").split("|")[0]))
@@ -326,7 +317,9 @@ export function getToolOptionsFromDb(
 
 export function getArtisanToolOptions(toolOptions: string[]): string[] {
   const artisanTools = toolOptions.filter((tool) => /Supplies|Tools|Utensils/i.test(tool));
-  return artisanTools.length > 0 ? artisanTools : TOOL_OPTIONS.filter((tool) => /Supplies|Tools|Utensils/i.test(tool));
+  return artisanTools.length > 0
+    ? artisanTools
+    : TOOL_OPTIONS.filter((tool) => /Supplies|Tools|Utensils/i.test(tool));
 }
 
 export function getLanguageChoiceGroups(raw: unknown, languageOptions: string[]): ChoiceGroup[] {
@@ -485,12 +478,14 @@ export function getPreparedSpellLimit(
   const ability = String(getSpellcastingInfo(cls)?.ability || "int")
     .slice(0, 3)
     .toUpperCase();
-  const abilityScore =
-    (abilities[ability] || 10) + (bonuses[ability] || 0);
+  const abilityScore = (abilities[ability] || 10) + (bonuses[ability] || 0);
   return Math.max(1, level + Math.floor((abilityScore - 10) / 2));
 }
 
-export function getSpellcasters(character: BuilderState, classes: any[]): Array<{ cls: any; level: number }> {
+export function getSpellcasters(
+  character: BuilderState,
+  classes: any[],
+): Array<{ cls: any; level: number }> {
   const result: Array<{ cls: any; level: number }> = [];
   if (character.classId) {
     const cls = classes.find((c) => c.id === character.classId);
@@ -565,276 +560,43 @@ export function isSpellStepValid(character: BuilderState, classes: any[]): boole
     const selectedPrepared = getClassPreparedSpellChoices(character, cls.id);
 
     if (selectedCantrips.length !== cantripLimit) return false;
-    if (selectedPrepared.length < Math.min(1, preparedLimit) || selectedPrepared.length > preparedLimit) {
+    if (
+      selectedPrepared.length < Math.min(1, preparedLimit) ||
+      selectedPrepared.length > preparedLimit
+    ) {
       return false;
     }
   }
   return true;
 }
 
-export function getBuilderValidationIssues(
-  character: BuilderState,
-  data: ForgeData,
-): string[] {
-  const issues: string[] = [];
-  const skillOptions = getSkillOptionsFromDb(data.skills);
-  const toolOptions = getToolOptionsFromDb(data.mundaneGear, data.itemTypes);
-  const race = data.species.find((item) => item.id === character.raceId);
-  const background = data.backgrounds.find((item) => item.id === character.backgroundId);
-  const cls = data.classes.find((item) => item.id === character.classId);
-  const availableSubclasses = data.subclasses.filter((item) => item.classId === character.classId);
-  const subclassLevel =
-    availableSubclasses.length > 0 ? getSubclassChoiceLevel(availableSubclasses) : 0;
-  const originFeat = background?.originFeatId
-    ? data.feats.find((feat) => feat.id === background.originFeatId)
-    : null;
+export function meetsClassPrerequisites(
+  classEntity: any,
+  finalAbilities: Record<string, number>,
+): boolean {
+  if (!classEntity?.primaryAbilityJson) return true;
+  const prim = parseJsonValue(classEntity.primaryAbilityJson, []);
+  if (!Array.isArray(prim) || prim.length === 0) return true;
 
-  if (!character.name.trim()) issues.push("Enter a character name.");
-  if (!race) {
-    issues.push("Choose a species.");
-  } else {
-    if (data.speciesVariants) {
-      const subraces = data.speciesVariants.filter((sv: any) => sv.speciesId === race.id);
-      if (subraces.length > 0 && !character.speciesVariantId) {
-        issues.push("Choose a species subrace / variant.");
-      }
-    }
+  return prim.some((condition: any) => {
+    return Object.keys(condition).every((abilityKey) => {
+      const score = finalAbilities[abilityKey.toUpperCase()] || 10;
+      return score >= 13;
+    });
+  });
+}
 
-
-    const speciesData = subrace || race;
-    const { choices: speciesChoices } = speciesData
-      ? speciesToRuleChoicesAndGrants(speciesData)
-      : { choices: [] };
-
-    for (const group of speciesChoices) {
-      const selectedIds = character.ruleChoices[group.id] || [];
-      const result = validateRuleChoiceGroup(group, selectedIds);
-      if (!result.isValid) {
-        issues.push(...result.issues);
-      }
-    }
+export function calculateFinalAbilities(character: BuilderState): Record<string, number> {
+  const finalAbilities: Record<string, number> = {};
+  for (const ab of ABILITIES) {
+    finalAbilities[ab] = (character.abilities[ab] || 10) + (character.abilityBonuses[ab] || 0);
   }
+  return finalAbilities;
+}
 
-  if (!background) {
-    issues.push("Choose a background.");
-  } else {
-    if (!isValidAbilityBonusSet(character)) {
-      issues.push("Choose one +2 and one +1 background ability bonus.");
-    }
-    const { choices: bgChoices } = background
-      ? backgroundToRuleChoicesAndGrants(background)
-      : { choices: [] };
-
-    for (const group of bgChoices) {
-      const selectedIds = character.ruleChoices[group.id] || [];
-      const result = validateRuleChoiceGroup(group, selectedIds);
-      if (!result.isValid) {
-        issues.push(...result.issues);
-      }
-    }
-    const backgroundEquipmentOptions = getEquipmentOptions(
-      getJsonField(background, "startingEquipmentJson", "starting_equipment_json"),
-    );
-    if (
-      backgroundEquipmentOptions.length > 0 &&
-      !backgroundEquipmentOptions.some(
-        (option) => option.id === character.backgroundEquipmentOption,
-      )
-    ) {
-      issues.push("Choose a background equipment package.");
-    }
-    if (!areOriginFeatChoicesComplete(originFeat, character)) {
-      issues.push(`Complete ${originFeat?.name || "origin feat"} choices.`);
-    }
-  }
-
-  if (!cls) {
-    issues.push("Choose a class.");
-  } else {
-    if (
-      availableSubclasses.length > 0 &&
-      character.level >= subclassLevel &&
-      !availableSubclasses.some((subclass) => subclass.id === character.subclassId)
-    ) {
-      issues.push(`Choose a subclass for level ${subclassLevel} or higher.`);
-    }
-    const classEquipmentOptions = getEquipmentOptions(cls.startingEquipmentJson);
-    if (
-      classEquipmentOptions.length > 0 &&
-      !classEquipmentOptions.some((option) => option.id === character.classEquipmentOption)
-    ) {
-      issues.push("Choose a class equipment package.");
-    }
-
-    // Validate Class & Feature rule choices
-    const allClassesToValidate = [
-      { classId: cls.id, subclassId: character.subclassId, level: character.level, isPrimary: true },
-      ...(character.multiClasses || []).filter((mc) => mc.classId && mc.level > 0).map((mc) => ({
-        classId: mc.classId,
-        subclassId: mc.subclassId,
-        level: mc.level,
-        isPrimary: false,
-      })),
-    ];
-
-    for (const mc of allClassesToValidate) {
-      const mcClass = data.classes.find((c) => c.id === mc.classId);
-      if (!mcClass) continue;
-
-      const { choices: classChoices } = classToRuleChoicesAndGrants(mcClass, mc.isPrimary);
-      const activeFeatures = (data.classFeatures || []).filter((feature: any) => {
-        const classId = feature.classId ?? feature.class_id;
-        const subclassId = feature.subclassId ?? feature.subclass_id;
-        const levelRequired = feature.levelRequired ?? feature.level_required ?? 0;
-        return (
-          classId === mc.classId &&
-          (!subclassId || subclassId === mc.subclassId) &&
-          Number(levelRequired || 0) <= mc.level
-        );
-      });
-
-      const featureChoices = activeFeatures.flatMap(
-        (feature) =>
-          classFeatureToRuleChoicesAndGrants(
-            feature,
-            mc.level,
-            character.ruleChoices || {},
-            selectedSkillNames(character)
-          ).choices
-      );
-
-      const allChoices = [...classChoices, ...featureChoices];
-      for (const group of allChoices) {
-        // Adjust ID for multiclass if not primary
-        const groupId = mc.isPrimary ? group.id : `mc_${mc.classId}_${group.id}`;
-        const selectedIds = character.ruleChoices[groupId] || [];
-        const result = validateRuleChoiceGroup({ ...group, id: groupId }, selectedIds);
-        if (!result.isValid) {
-          issues.push(...result.issues);
-        }
-      }
-    }
-  }
-
-  // Abilities Validation
-  const abilitiesMethod = character.abilitiesMethod || "standard";
-  if (abilitiesMethod === "standard") {
-    const sortedVals = Object.values(character.abilities).sort((a, b) => a - b);
-    const expected = [8, 10, 12, 13, 14, 15];
-    const ok = sortedVals.length === 6 && sortedVals.every((v, i) => v === expected[i]);
-    if (!ok) {
-      issues.push("Assign every ability score using Standard Array values (15, 14, 13, 12, 10, 8) exactly once.");
-    }
-  } else if (abilitiesMethod === "pointbuy") {
-    const spent = getPointsUsed(character.abilities);
-    const outOfRange = Object.values(character.abilities).some((v) => v < 8 || v > 15);
-    if (outOfRange) {
-      issues.push("Point Buy base scores must be between 8 and 15.");
-    }
-    if (spent !== 27) {
-      issues.push(`Spend exactly 27 points in Point Buy (spent: ${spent}/27).`);
-    }
-  } else if (abilitiesMethod === "roll") {
-    const outOfRange = Object.values(character.abilities).some((v) => v < 3 || v > 18);
-    const incomplete = Object.values(character.abilities).some((v) => !v || v <= 0);
-    if (incomplete) {
-      issues.push("Assign every ability score.");
-    } else if (outOfRange) {
-      issues.push("Rolled/manual ability scores must be between 3 and 18.");
-    }
-  }
-
-  // Spells Validation
-  const spellcasters = getSpellcasters(character, data.classes);
-  for (const { cls: spellcasterClass, level: spellcasterLevel } of spellcasters) {
-    const cantripLimit = getCantripLimit(spellcasterLevel, spellcasterClass);
-    const preparedLimit = getPreparedSpellLimit(character.abilities, spellcasterClass, spellcasterLevel);
-    const selectedCantrips = getClassCantripChoices(character, spellcasterClass.id);
-    const selectedPrepared = getClassPreparedSpellChoices(character, spellcasterClass.id);
-
-    if (selectedCantrips.length !== cantripLimit) {
-      issues.push(`Choose exactly ${cantripLimit} cantrips for ${spellcasterClass.name}.`);
-    }
-    if (selectedPrepared.length < Math.min(1, preparedLimit) || selectedPrepared.length > preparedLimit) {
-      issues.push(`Choose between 1 and ${preparedLimit} prepared spells for ${spellcasterClass.name}.`);
-    }
-  }
-
-  const featLevels = getFeatChoiceLevels(character.classId, character.level);
-  for (const lvl of featLevels) {
-    if (!character.highLevelFeatChoices?.[lvl]) {
-      issues.push(`Choose a feat for level ${lvl}.`);
-    }
-  }
-
-  // Validate nested feat choices
-  if (character.highLevelFeatChoices) {
-    for (const [lvlStr, featId] of Object.entries(character.highLevelFeatChoices)) {
-      const lvl = Number(lvlStr);
-      const featRecord = data.feats.find((f) => f.id === featId);
-      if (!featRecord) continue;
-      const name = featRecord.name.toLowerCase();
-      const extra = character.highLevelFeatExtraChoices?.[`${lvl}:${featId}`];
-
-      if (name === "skilled" || featId === "skilled") {
-        const skillsCount = (extra?.skills || []).length;
-        const toolsCount = (extra?.tools || []).length;
-        if (skillsCount + toolsCount !== 3) {
-          issues.push(`Level ${lvl} Feat (Skilled): Choose exactly 3 skill/tool proficiencies.`);
-        }
-      } else if (name === "magic initiate" || featId.startsWith("magic-initiate")) {
-        if ((extra?.cantrips || []).length !== 2) {
-          issues.push(`Level ${lvl} Feat (Magic Initiate): Choose exactly 2 cantrips.`);
-        }
-        if ((extra?.spells || []).length !== 1) {
-          issues.push(`Level ${lvl} Feat (Magic Initiate): Choose exactly 1 first-level spell.`);
-        }
-        if (!extra?.ability) {
-          issues.push(`Level ${lvl} Feat (Magic Initiate): Choose a spellcasting ability.`);
-        }
-      } else if (name === "skill expert" || featId === "skill-expert") {
-        if (!extra?.ability) {
-          issues.push(`Level ${lvl} Feat (Skill Expert): Choose an ability score to increase.`);
-        }
-        if ((extra?.skills || []).length !== 1) {
-          issues.push(`Level ${lvl} Feat (Skill Expert): Choose 1 skill proficiency.`);
-        }
-      } else if (name === "resilient" || featId.startsWith("resilient")) {
-        if (!extra?.ability) {
-          issues.push(`Level ${lvl} Feat (Resilient): Choose an ability score.`);
-        }
-      }
-    }
-  }
-
-  // Validate multi-classing subclasses and class validity
-  if (character.multiClasses) {
-    for (let i = 0; i < character.multiClasses.length; i++) {
-      const mc = character.multiClasses[i];
-      if (!mc.classId) {
-        issues.push(`Multi-class slot ${i + 1}: Select a class or remove the slot.`);
-        continue;
-      }
-      const availableMcSubclasses = data.subclasses.filter((sub) => sub.classId === mc.classId);
-      const mcSubclassLevel = availableMcSubclasses.length > 0 ? getSubclassChoiceLevel(availableMcSubclasses) : 3;
-      if (availableMcSubclasses.length > 0 && mc.level >= mcSubclassLevel && !mc.subclassId) {
-        const mcClass = data.classes.find((c) => c.id === mc.classId);
-        issues.push(`Multi-class ${mcClass?.name || mc.classId}: Choose a subclass for level ${mcSubclassLevel}+.`);
-      }
-    }
-  }
-
-  // Validate Manual HP rolls
-  if (character.hpType === "manual") {
-    const totalLevel = character.level + (character.multiClasses || []).reduce((sum, mc) => sum + mc.level, 0);
-    for (let lvl = 2; lvl <= totalLevel; lvl++) {
-      if (!character.manualHpRolls?.[lvl] || Number(character.manualHpRolls[lvl]) <= 0) {
-        issues.push(`Level ${lvl} HP Roll: Enter a valid roll value.`);
-      }
-    }
-  }
-
-  return issues;
+export function getBuilderValidationIssues(character: BuilderState, data: ForgeData): string[] {
+  const issues = validateCharacterDraft(character, data);
+  return issues.map((i) => i.message);
 }
 
 export function spellSummary(spell: any): string {

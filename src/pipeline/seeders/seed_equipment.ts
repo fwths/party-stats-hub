@@ -421,7 +421,11 @@ async function seedItemPropertiesAndTypes(db: any) {
   console.log(`Seeded ${allowedTypeEntries.length} item type additional entries.`);
 }
 
-async function seedMundaneGearAndMasteries(db: any, fluffMap: Map<string, any>, foundryMap: Map<string, any>) {
+async function seedMundaneGearAndMasteries(
+  db: any,
+  fluffMap: Map<string, any>,
+  foundryMap: Map<string, any>,
+) {
   console.log("Seeding mundane gear and weapon masteries...");
   const data = JSON.parse(
     fs.readFileSync(path.join(process.cwd(), "new data/items-base.json"), "utf-8"),

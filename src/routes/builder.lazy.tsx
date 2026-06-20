@@ -12,11 +12,13 @@ import {
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SourceFiltersPanel } from "@/components/builder/SourceFiltersPanel";
+import { DEFAULT_SOURCE_POLICY, DEFAULT_CONTENT_TOGGLES } from "@/lib/forge/source-policy";
+import { createNativePartyMember, saveNativeCharacter } from "@/lib/native-engine";
 
 import {
   BuilderState,
   getBuilderValidationIssues,
-
   getJsonField,
   areChoiceGroupsComplete,
   getProficiencyChoiceGroups,
@@ -38,6 +40,8 @@ import {
 import { CLASS_THEMES, DEFAULT_THEME } from "@/components/builder/BuilderConstants";
 import {
   StepRace,
+  StepFeats,
+  StepEquipment,
   StepBackground,
   StepClass,
   StepAbilities,
@@ -89,6 +93,7 @@ function BuilderWizard() {
   const skillOptions = getSkillOptionsFromDb(skills);
   const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const [step, setStep] = useState(1);
+  const [showFilters] = useState(false);
   const [character, setCharacter] = useState<BuilderState>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -124,7 +129,9 @@ function BuilderWizard() {
     };
   });
 
-  const theme = character.classId ? (CLASS_THEMES[character.classId] || DEFAULT_THEME) : DEFAULT_THEME;
+  const theme = character.classId
+    ? CLASS_THEMES[character.classId] || DEFAULT_THEME
+    : DEFAULT_THEME;
   const getThemeHex = (themeText: string) => {
     const name = themeText.replace("text-", "").replace("-500", "").replace("-400", "");
     const map: Record<string, string> = {
@@ -157,7 +164,7 @@ function BuilderWizard() {
     setCharacter((prev) => ({ ...prev, ...updates }));
   };
 
-  const nextStep = () => setStep((s) => Math.min(7, s + 1));
+  const nextStep = () => setStep((s) => Math.min(9, s + 1));
   const prevStep = () => setStep((s) => Math.max(1, s - 1));
   const validationIssues = getBuilderValidationIssues(character, {
     backgrounds,
@@ -182,11 +189,12 @@ function BuilderWizard() {
         return;
       }
 
-      const { createNativePartyMember, saveNativeCharacter } = await import("@/lib/native-engine");
       const { STORAGE_KEY, COOKIE_KEY, readStoredIds, addPartyId } = await import("@/lib/party");
 
       const raceData = species.find((r: any) => r.id === character.raceId);
-      const speciesVariantData = speciesVariants?.find((sv: any) => sv.id === character.speciesVariantId);
+      const speciesVariantData = speciesVariants?.find(
+        (sv: any) => sv.id === character.speciesVariantId,
+      );
       const backgroundData = backgrounds.find((b: any) => b.id === character.backgroundId);
       const classData = classes.find((c: any) => c.id === character.classId);
       const subclassData = subclasses.find((s: any) => s.id === character.subclassId);
@@ -205,9 +213,7 @@ function BuilderWizard() {
         }
       }
 
-      const allRuleChoiceValues = new Set(
-        Object.values(character.ruleChoices || {}).flat()
-      );
+      const allRuleChoiceValues = new Set(Object.values(character.ruleChoices || {}).flat());
 
       const selectedSpells = spells.filter(
         (spell: any) =>
@@ -256,7 +262,9 @@ function BuilderWizard() {
         },
         speciesVariantData,
       );
-      const newId = await saveNativeCharacter({ data: { character: newMember } });
+      const newId = await saveNativeCharacter({
+        data: { character: newMember, builderState: character },
+      });
 
       const ids = addPartyId(readStoredIds(), newId);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
@@ -276,12 +284,12 @@ function BuilderWizard() {
   const isStepValidAt = (stepNum: number) => {
     if (stepNum === 1) {
       const race = species.find((r: any) => r.id === character.raceId);
-      const subraces = speciesVariants?.filter((sv: any) => sv.speciesId === character.raceId) || [];
+      const subraces =
+        speciesVariants?.filter((sv: any) => sv.speciesId === character.raceId) || [];
       return (
         character.name.trim() !== "" &&
         character.raceId !== null &&
         (subraces.length === 0 || character.speciesVariantId !== null) &&
-
         areChoiceGroupsComplete(
           getProficiencyChoiceGroups(
             getJsonField(race, "proficienciesJson", "proficiencies_json"),
@@ -338,26 +346,29 @@ function BuilderWizard() {
     if (stepNum === 3) {
       if (!character.classId) return false;
       const selectedClass = classes.find((c: any) => c.id === character.classId);
-      const classProficiencies = parseJsonValue(selectedClass?.proficienciesJson, {});
+      if (!selectedClass) return false;
       const classSubclasses = subclasses.filter((s: any) => s.classId === character.classId);
       const subclassLevel = getSubclassChoiceLevel(classSubclasses);
-      const unlockedFeatureOptions = getUnlockedFeatureOptionGroups(character, classFeatures, skillOptions);
+
+      const unlockedFeatureOptions = getUnlockedFeatureOptionGroups(
+        character,
+        classFeatures,
+        skillOptions,
+      );
+      if (!areFeatureChoicesComplete(unlockedFeatureOptions, character.featureChoices))
+        return false;
+
+      const skillGroups = getProficiencyChoiceGroups(
+        parseJsonValue(selectedClass.proficienciesJson, {}),
+        "skills",
+        skillOptions,
+      );
+      if (!areChoiceGroupsComplete(skillGroups, character.classSkillChoices)) return false;
+
       return (
-        areChoiceGroupsComplete(
-          getProficiencyChoiceGroups(classProficiencies, "skills", skillOptions),
-          character.classSkillChoices,
-        ) &&
-        areChoiceGroupsComplete(
-          getToolChoiceGroups(classProficiencies?.starting?.toolProficiencies, toolOptions),
-          character.classToolChoices,
-        ) &&
-        getEquipmentOptions(selectedClass?.startingEquipmentJson).some(
-          (option) => option.id === character.classEquipmentOption,
-        ) &&
-        areFeatureChoicesComplete(unlockedFeatureOptions, character.featureChoices) &&
-        (classSubclasses.length === 0 ||
-          character.level < subclassLevel ||
-          character.subclassId !== null)
+        subclasses.filter((s: any) => s.classId === character.classId).length === 0 ||
+        character.level < subclassLevel ||
+        character.subclassId !== null
       );
     }
     if (stepNum === 4) {
@@ -378,24 +389,41 @@ function BuilderWizard() {
       return false;
     }
     if (stepNum === 5) {
+      return true;
+    }
+    if (stepNum === 6) {
       return isSpellStepValid(character, classes);
+    }
+    if (stepNum === 7) {
+      return true;
+    }
+    if (stepNum === 8) {
+      return true;
+    }
+    if (stepNum === 9) {
+      return validationIssues.length === 0;
     }
     return true;
   };
-
   const isStepValid = () => isStepValidAt(step);
 
   return (
-    <div 
+    <div
       className="container mx-auto p-4 md:p-8 min-h-screen animate-in fade-in duration-700"
-      style={{ '--primary': getThemeHex(theme.text) } as React.CSSProperties}
+      style={{ "--primary": getThemeHex(theme.text) } as React.CSSProperties}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] via-background to-background -z-10"
-           style={{ backgroundImage: `radial-gradient(ellipse at top, ${getThemeHex(theme.text)}1a, transparent 70%)` }} />
+      <div
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] via-background to-background -z-10"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at top, ${getThemeHex(theme.text)}1a, transparent 70%)`,
+        }}
+      />
 
       <div className="flex items-center gap-4 mb-10 relative w-full">
-        <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-32 h-32 blur-[50px] rounded-full -z-10"
-             style={{ backgroundColor: `${getThemeHex(theme.text)}33` }} />
+        <div
+          className="absolute -left-10 top-1/2 -translate-y-1/2 w-32 h-32 blur-[50px] rounded-full -z-10"
+          style={{ backgroundColor: `${getThemeHex(theme.text)}33` }}
+        />
         <Link to="/">
           <Button
             variant="outline"
@@ -415,7 +443,7 @@ function BuilderWizard() {
             onClick={() => {
               if (
                 confirm(
-                  "Are you sure you want to reset your character draft? All unsaved progress will be lost."
+                  "Are you sure you want to reset your character draft? All unsaved progress will be lost.",
                 )
               ) {
                 localStorage.removeItem("party_stats_forge_draft");
@@ -429,15 +457,28 @@ function BuilderWizard() {
         </div>
       </div>
 
+      {showFilters && (
+        <div className="mb-8 max-w-4xl mx-auto">
+          <SourceFiltersPanel
+            policy={character.sourcePolicy || DEFAULT_SOURCE_POLICY}
+            toggles={character.contentToggles || DEFAULT_CONTENT_TOGGLES}
+            onChangePolicy={(p) => setCharacter({ ...character, sourcePolicy: p })}
+            onChangeToggles={(t) => setCharacter({ ...character, contentToggles: t })}
+          />
+        </div>
+      )}
+
       <div className="flex gap-4 mb-10 max-w-4xl mx-auto">
         {[
           { id: 1, label: "Heritage", icon: User },
           { id: 2, label: "Background", icon: BookOpen },
           { id: 3, label: "Path", icon: Swords },
           { id: 4, label: "Attributes", icon: Dices },
-          { id: 5, label: "Spells", icon: Wand2 },
-          { id: 6, label: "Biography", icon: FileText },
-          { id: 7, label: "Review", icon: Save },
+          { id: 5, label: "Feats", icon: BookOpen },
+          { id: 6, label: "Spells", icon: Wand2 },
+          { id: 7, label: "Equipment", icon: Swords },
+          { id: 8, label: "Biography", icon: FileText },
+          { id: 9, label: "Review", icon: Save },
         ].map((s) => {
           const valid = isStepValidAt(s.id);
           return (
@@ -454,15 +495,19 @@ function BuilderWizard() {
               {step === s.id && (
                 <div className="absolute inset-0 bg-gradient-to-t from-current/5 to-transparent pointer-events-none" />
               )}
-              {valid && s.id < 7 && (
-                <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-black shadow-sm animate-in zoom-in duration-300"
-                     style={{ backgroundColor: getThemeHex(theme.text) }}>
+              {valid && s.id < 10 && (
+                <div
+                  className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-black shadow-sm animate-in zoom-in duration-300"
+                  style={{ backgroundColor: getThemeHex(theme.text) }}
+                >
                   ✓
                 </div>
               )}
               <s.icon
                 className={`h-7 w-7 mb-2 transition-transform duration-300 ${step === s.id ? "scale-110" : ""}`}
-                style={step === s.id ? { filter: `drop-shadow(0 0 8px ${getThemeHex(theme.text)})` } : {}}
+                style={
+                  step === s.id ? { filter: `drop-shadow(0 0 8px ${getThemeHex(theme.text)})` } : {}
+                }
               />
               <span className="text-xs font-black uppercase tracking-[0.2em]">{s.label}</span>
               {step > s.id && (
@@ -492,25 +537,49 @@ function BuilderWizard() {
             backgroundImage: `linear-gradient(to right, transparent, ${getThemeHex(theme.text)}50, transparent)`,
           }}
         />
-        {step === 1 && <StepRace character={character} updateCharacter={updateCharacter} theme={theme} />}
-        {step === 2 && <StepBackground character={character} updateCharacter={updateCharacter} theme={theme} />}
-        {step === 3 && <StepClass character={character} updateCharacter={updateCharacter} theme={theme} />}
-        {step === 4 && <StepAbilities character={character} updateCharacter={updateCharacter} theme={theme} />}
-        {step === 5 && <StepSpells character={character} updateCharacter={updateCharacter} theme={theme} />}
-        {step === 6 && <StepBiography character={character} updateCharacter={updateCharacter} theme={theme} />}
-        {step === 7 && <StepReview character={character} validationIssues={validationIssues} theme={theme} />}
+        {step === 1 && (
+          <StepRace character={character} updateCharacter={updateCharacter} theme={theme} />
+        )}
+        {step === 2 && (
+          <StepBackground character={character} updateCharacter={updateCharacter} theme={theme} />
+        )}
+        {step === 3 && (
+          <StepClass character={character} updateCharacter={updateCharacter} theme={theme} />
+        )}
+        {step === 4 && (
+          <StepAbilities character={character} updateCharacter={updateCharacter} theme={theme} />
+        )}
+        {step === 5 && (
+          <StepFeats character={character} updateCharacter={updateCharacter} theme={theme} />
+        )}
+        {step === 6 && (
+          <StepSpells character={character} updateCharacter={updateCharacter} theme={theme} />
+        )}
+        {step === 7 && (
+          <StepEquipment character={character} updateCharacter={updateCharacter} theme={theme} />
+        )}
+        {step === 8 && (
+          <StepBiography character={character} updateCharacter={updateCharacter} theme={theme} />
+        )}
+        {step === 9 && (
+          <StepReview character={character} validationIssues={validationIssues} theme={theme} />
+        )}
       </div>
 
       <div className="flex justify-between mt-8 max-w-4xl mx-auto">
         <Button variant="outline" onClick={prevStep} disabled={step === 1}>
           <ChevronLeft className="mr-2 h-4 w-4" /> Previous
         </Button>
-        {step < 7 ? (
+        {step < 9 ? (
           <Button onClick={nextStep} disabled={!isStepValid()} className={theme.primaryBtn}>
             Next <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
         ) : (
-          <Button onClick={saveCharacter} disabled={validationIssues.length > 0} className={theme.primaryBtn}>
+          <Button
+            onClick={saveCharacter}
+            disabled={validationIssues.length > 0}
+            className={theme.primaryBtn}
+          >
             Save Character <Save className="ml-2 h-4 w-4" />
           </Button>
         )}

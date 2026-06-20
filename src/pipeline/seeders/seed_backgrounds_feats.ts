@@ -137,6 +137,7 @@ export async function seedBackgroundsFeats(db: any) {
             description: renderEntries(feat.entries),
             prerequisite: feat.prerequisite ? renderEntries(feat.prerequisite) : null,
             levelRequirement: extractLevelRequirement(feat.prerequisite),
+            prerequisitesJson: feat.prerequisite ? JSON.stringify(feat.prerequisite) : null,
             repeatable: !!feat.repeatable,
             abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
             source: feat.source,

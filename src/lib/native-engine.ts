@@ -160,11 +160,9 @@ function parseFixedLanguages(value: unknown): string[] {
   });
 }
 
-
 function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
-
 
 function equipmentItemName(item: any): string {
   if (item.displayName) return normalizeName(item.displayName);
@@ -249,7 +247,8 @@ function inferInventoryItem(item: any): InventoryItem {
     type: weapon ? "Weapon" : isShield ? "Shield" : armor?.type || "Adventuring Gear",
     rarity: "Mundane",
     magic: false,
-    equipped: item.equipped !== undefined ? Boolean(item.equipped) : Boolean(weapon || armor || isShield),
+    equipped:
+      item.equipped !== undefined ? Boolean(item.equipped) : Boolean(weapon || armor || isShield),
     attuned: item.attuned !== undefined ? Boolean(item.attuned) : false,
     quantity: item.quantity || 1,
     damage: weapon?.damage,
@@ -430,7 +429,6 @@ const DRAGON_DAMAGE_BY_ANCESTRY: Record<string, string> = {
   Topaz: "Necrotic",
 };
 
-
 function selectedFeatureOptionDetails(
   choices: Record<string, string[]> | undefined,
   classFeatures: any[],
@@ -534,7 +532,6 @@ function spellEffectDetails(
 
 // Removed parseFoundryJsonEffects, use parseFoundryEffectsToGrants directly where needed.
 
-
 function activationFromDescription(description: string) {
   const text = description.toLowerCase();
   if (/\bbonus action\b/.test(text)) return { activationTime: 1, activationType: 3 };
@@ -579,7 +576,7 @@ function deriveActionsFromFeatures(
     const description = feature.description;
     const activation = activationFromDescription(description);
     const featLvl = feature.level || 1;
-    
+
     const uses = featureUsesFromDescription(feature.name, description, {
       ...finalScores,
       level: featLvl,
@@ -638,10 +635,13 @@ export function createNativePartyMember(
 ): PartyMember {
   const id = Math.floor(Math.random() * 1000000) + 900000000; // Native IDs are 900M+
   const level = state.level || 1;
-  const totalLevel = level + (state.multiClasses || []).reduce((sum: number, mc: any) => sum + (mc.level || 0), 0);
+  const totalLevel =
+    level + (state.multiClasses || []).reduce((sum: number, mc: any) => sum + (mc.level || 0), 0);
   const proficiencyBonus = Math.ceil(totalLevel / 4) + 1;
 
-  const { choices: speciesChoices, grants: speciesGrants } = speciesToRuleChoicesAndGrants(speciesVariantData || raceData);
+  const { choices: speciesChoices, grants: speciesGrants } = speciesToRuleChoicesAndGrants(
+    speciesVariantData || raceData,
+  );
   const { choices: bgChoices, grants: bgGrants } = backgroundToRuleChoicesAndGrants(backgroundData);
   const resolvedSpeciesGrants = resolveRuleChoicesToGrants(state.ruleChoices || {}, speciesChoices);
   const resolvedBgGrants = resolveRuleChoicesToGrants(state.ruleChoices || {}, bgChoices);
@@ -649,13 +649,17 @@ export function createNativePartyMember(
   // Class and Features Grants
   const classGrants: any[] = [];
   const resolvedClassGrants: any[] = [];
-  
+
   if (classData) {
     const { choices: classChoices, grants: cGrants } = classToRuleChoicesAndGrants(classData, true);
     classGrants.push(...cGrants);
     resolvedClassGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, classChoices));
 
-    const { choices: spellChoices, grants: sGrants } = spellcastingToRuleChoicesAndGrants(state, classData, level);
+    const { choices: spellChoices, grants: sGrants } = spellcastingToRuleChoicesAndGrants(
+      state,
+      classData,
+      level,
+    );
     classGrants.push(...sGrants);
     resolvedClassGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, spellChoices));
   }
@@ -667,16 +671,20 @@ export function createNativePartyMember(
       if (!mc.classId || mc.level <= 0) continue;
       const mcClass = effectData.classes.find((c: any) => c.id === mc.classId);
       if (!mcClass) continue;
-      
+
       const { choices: mcChoices, grants: mGrants } = classToRuleChoicesAndGrants(mcClass, false);
       mcGrants.push(...mGrants);
       // Need to map the groupId prefix for multiclasses
-      let mappedChoices = mcChoices.map(c => ({...c, id: `mc_${mc.classId}_${c.id}`}));
+      let mappedChoices = mcChoices.map((c) => ({ ...c, id: `mc_${mc.classId}_${c.id}` }));
       resolvedMcGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, mappedChoices));
 
-      const { choices: mcSpellChoices, grants: mcSGrants } = spellcastingToRuleChoicesAndGrants(state, mcClass, mc.level);
+      const { choices: mcSpellChoices, grants: mcSGrants } = spellcastingToRuleChoicesAndGrants(
+        state,
+        mcClass,
+        mc.level,
+      );
       mcGrants.push(...mcSGrants);
-      mappedChoices = mcSpellChoices.map(c => ({...c, id: `mc_${mc.classId}_${c.id}`}));
+      mappedChoices = mcSpellChoices.map((c) => ({ ...c, id: `mc_${mc.classId}_${c.id}` }));
       resolvedMcGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, mappedChoices));
     }
   }
@@ -689,14 +697,16 @@ export function createNativePartyMember(
       const cid = feature.classId ?? feature.class_id;
       const sid = feature.subclassId ?? feature.subclass_id;
       const lvlRequired = feature.levelRequired ?? feature.level_required ?? 0;
-      
+
       // Is primary?
-      if (cid === state.classId && (!sid || sid === state.subclassId) && lvlRequired <= level) return true;
-      
+      if (cid === state.classId && (!sid || sid === state.subclassId) && lvlRequired <= level)
+        return true;
+
       // Is multiclass?
       if (state.multiClasses) {
         for (const mc of state.multiClasses) {
-          if (cid === mc.classId && (!sid || sid === mc.subclassId) && lvlRequired <= mc.level) return true;
+          if (cid === mc.classId && (!sid || sid === mc.subclassId) && lvlRequired <= mc.level)
+            return true;
         }
       }
       return false;
@@ -712,80 +722,105 @@ export function createNativePartyMember(
       }
 
       const { choices: fChoices, grants: fGrants } = classFeatureToRuleChoicesAndGrants(
-        feature, 
-        featureLevel, 
-        state.ruleChoices || {}, 
-        [] // high level feat skills omitted here, rely on later mapping
+        feature,
+        featureLevel,
+        state.ruleChoices || {},
+        [], // high level feat skills omitted here, rely on later mapping
       );
       featureGrants.push(...fGrants);
 
-      const mappedFChoices = cid === state.classId ? fChoices : fChoices.map(c => ({...c, id: `mc_${cid}_${c.id}`}));
-      resolvedFeatureGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, mappedFChoices));
+      const mappedFChoices =
+        cid === state.classId ? fChoices : fChoices.map((c) => ({ ...c, id: `mc_${cid}_${c.id}` }));
+      resolvedFeatureGrants.push(
+        ...resolveRuleChoicesToGrants(state.ruleChoices || {}, mappedFChoices),
+      );
     }
   }
 
   const featGrants: any[] = [];
   const resolvedFeatGrants: any[] = [];
-  
+
   if (state.originFeatId && effectData?.feats) {
     const originFeat = effectData.feats.find((f: any) => f.id === state.originFeatId);
     if (originFeat) {
-      const { choices, grants } = featToRuleChoicesAndGrants(originFeat, 1, state.ruleChoices?.[`feat_${originFeat.id}_skill`] || []);
+      const { choices, grants } = featToRuleChoicesAndGrants(
+        originFeat,
+        1,
+        state.ruleChoices?.[`feat_${originFeat.id}_skill`] || [],
+      );
       featGrants.push(...grants);
       resolvedFeatGrants.push(...resolveRuleChoicesToGrants(state.ruleChoices || {}, choices));
     }
   }
 
   const _generatedGrants = [
-    ...speciesGrants, ...resolvedSpeciesGrants, 
-    ...bgGrants, ...resolvedBgGrants,
-    ...classGrants, ...resolvedClassGrants,
-    ...mcGrants, ...resolvedMcGrants,
-    ...featureGrants, ...resolvedFeatureGrants,
-    ...featGrants, ...resolvedFeatGrants
+    ...speciesGrants,
+    ...resolvedSpeciesGrants,
+    ...bgGrants,
+    ...resolvedBgGrants,
+    ...classGrants,
+    ...resolvedClassGrants,
+    ...mcGrants,
+    ...resolvedMcGrants,
+    ...featureGrants,
+    ...resolvedFeatureGrants,
+    ...featGrants,
+    ...resolvedFeatGrants,
   ];
 
   const generatedSkills = _generatedGrants
     .filter((g) => g.type === "skill_proficiency")
     .map((g) => g.value);
 
-  const proficientSkills = new Set(generatedSkills.map(skill => skill.toLowerCase()));
-  
+  const proficientSkills = new Set(generatedSkills.map((skill) => skill.toLowerCase()));
+
   const savingThrowProficiencies = new Set(
     _generatedGrants
       .filter((g) => g.type === "saving_throw_proficiency")
-      .map((g) => toAbility(g.value))
+      .map((g) => toAbility(g.value)),
   );
 
   // Gather equipment & inventory first
   const selectedEquipment = _generatedGrants
-    .filter(g => g.type === "item_grant")
-    .map(g => g.value)
+    .filter((g) => g.type === "item_grant")
+    .map((g) => g.value)
     .flat();
-    
+
   const inventory = equipmentToInventory(selectedEquipment);
 
   if (state.customEquipment) {
     for (const item of state.customEquipment) {
       // Find matches in database
-      const dbWeapon = effectData?.weapons?.find((w: any) => w.name.toLowerCase() === item.name.toLowerCase());
-      const dbArmor = effectData?.armor?.find((a: any) => a.name.toLowerCase() === item.name.toLowerCase());
-      const dbMagicItem = effectData?.magicItems?.find((mi: any) => mi.name.toLowerCase() === item.name.toLowerCase());
-      
+      const dbWeapon = effectData?.weapons?.find(
+        (w: any) => w.name.toLowerCase() === item.name.toLowerCase(),
+      );
+      const dbArmor = effectData?.armor?.find(
+        (a: any) => a.name.toLowerCase() === item.name.toLowerCase(),
+      );
+      const dbMagicItem = effectData?.magicItems?.find(
+        (mi: any) => mi.name.toLowerCase() === item.name.toLowerCase(),
+      );
+
       const isShield = item.name.toLowerCase() === "shield";
       const inferredArmor = ARMOR_AC[item.name];
       const inferredWeapon = WEAPON_DAMAGE[item.name];
-      
+
       // Determine weapon stats
-      const damage = dbWeapon ? `${dbWeapon.damageDice} ${dbWeapon.damageType}` : inferredWeapon?.damage;
-      const properties = dbWeapon ? parseJsonValue(dbWeapon.propertiesJson, []) : inferredWeapon?.properties;
-      
+      const damage = dbWeapon
+        ? `${dbWeapon.damageDice} ${dbWeapon.damageType}`
+        : inferredWeapon?.damage;
+      const properties = dbWeapon
+        ? parseJsonValue(dbWeapon.propertiesJson, [])
+        : inferredWeapon?.properties;
+
       // Determine armor stats
-      const armorClass = dbArmor ? dbArmor.baseAc : (isShield ? 2 : inferredArmor?.base);
-      
+      const armorClass = dbArmor ? dbArmor.baseAc : isShield ? 2 : inferredArmor?.base;
+
       inventory.push({
         name: item.name,
-        type: item.type || (dbWeapon ? "Weapon" : dbArmor ? "Armor" : isShield ? "Shield" : "Adventuring Gear"),
+        type:
+          item.type ||
+          (dbWeapon ? "Weapon" : dbArmor ? "Armor" : isShield ? "Shield" : "Adventuring Gear"),
         rarity: item.rarity || dbMagicItem?.rarity || "Mundane",
         magic: Boolean(dbMagicItem || (item.rarity && item.rarity !== "Mundane")),
         equipped: Boolean(item.equipped),
@@ -794,7 +829,11 @@ export function createNativePartyMember(
         damage,
         properties,
         armorClass,
-        description: item.description || dbMagicItem?.description || dbWeapon?.description || dbArmor?.description,
+        description:
+          item.description ||
+          dbMagicItem?.description ||
+          dbWeapon?.description ||
+          dbArmor?.description,
       });
     }
   }
@@ -839,25 +878,37 @@ export function createNativePartyMember(
       (mi) => mi.name.toLowerCase() === item.name.toLowerCase(),
     );
     if (dbItem?.foundryJson) {
-      _generatedGrants.push(...parseFoundryEffectsToGrants(dbItem.foundryJson, item.name, item.name));
+      _generatedGrants.push(
+        ...parseFoundryEffectsToGrants(dbItem.foundryJson, item.name, item.name),
+      );
     }
   }
 
   // 2. Active Spells foundryJson
   for (const spell of selectedSpells) {
     if (spell.foundryJson) {
-      _generatedGrants.push(...parseFoundryEffectsToGrants(spell.foundryJson, spell.name, spell.name));
+      _generatedGrants.push(
+        ...parseFoundryEffectsToGrants(spell.foundryJson, spell.name, spell.name),
+      );
     }
   }
 
   // 4. Species foundryJson
   if (raceData?.foundryJson) {
-    _generatedGrants.push(...parseFoundryEffectsToGrants(raceData.foundryJson, raceData.name, raceData.name));
+    _generatedGrants.push(
+      ...parseFoundryEffectsToGrants(raceData.foundryJson, raceData.name, raceData.name),
+    );
   }
 
   // 4b. Species Variant (Subrace) foundryJson
   if (speciesVariantData?.foundryJson) {
-    _generatedGrants.push(...parseFoundryEffectsToGrants(speciesVariantData.foundryJson, speciesVariantData.name, speciesVariantData.name));
+    _generatedGrants.push(
+      ...parseFoundryEffectsToGrants(
+        speciesVariantData.foundryJson,
+        speciesVariantData.name,
+        speciesVariantData.name,
+      ),
+    );
   }
 
   // 5. Unlocked Class Features foundryJson
@@ -865,12 +916,12 @@ export function createNativePartyMember(
     const classId = getField(feature, "classId", "class_id");
     const subclassId = getField(feature, "subclassId", "subclass_id");
     const levelRequired = Number(getField(feature, "levelRequired", "level_required") || 0);
-    
+
     // Check primary class
     if (classId === classData?.id && (!subclassId || subclassId === subclassData?.id)) {
       return levelRequired <= Number(state.level || 1);
     }
-    
+
     // Check multiclasses
     if (state.multiClasses) {
       const mc = state.multiClasses.find((m: any) => m.classId === classId);
@@ -880,12 +931,14 @@ export function createNativePartyMember(
         }
       }
     }
-    
+
     return false;
   });
   for (const feature of unlockedFeatures) {
     if (feature?.foundryJson) {
-      _generatedGrants.push(...parseFoundryEffectsToGrants(feature.foundryJson, feature.name, feature.name));
+      _generatedGrants.push(
+        ...parseFoundryEffectsToGrants(feature.foundryJson, feature.name, feature.name),
+      );
     }
   }
 
@@ -948,7 +1001,10 @@ export function createNativePartyMember(
       abilityBonuses[ability] = (abilityBonuses[ability] || 0) + Number(g.value[ability]);
     } else if (g.type === "ability_override") {
       const ability = Object.keys(g.value)[0];
-      abilityOverrides[ability] = Math.max(abilityOverrides[ability] || 0, Number(g.value[ability]));
+      abilityOverrides[ability] = Math.max(
+        abilityOverrides[ability] || 0,
+        Number(g.value[ability]),
+      );
     }
   }
 
@@ -973,17 +1029,15 @@ export function createNativePartyMember(
 
   // Features, expertises, and skills/saves
   const featureOptionDetails = selectedFeatureOptionDetails(state.featureChoices, classFeatures);
-  
-  const expertiseSkills = new Set(
-    [
-      ...featureOptionDetails
-        .filter((detail) => /expertise/i.test(detail.featureName))
-        .map((detail) => detail.choice.toLowerCase()),
-      ..._generatedGrants
-        .filter((g) => g.type === "expertise")
-        .map((g) => String(g.value).toLowerCase()),
-    ]
-  );
+
+  const expertiseSkills = new Set([
+    ...featureOptionDetails
+      .filter((detail) => /expertise/i.test(detail.featureName))
+      .map((detail) => detail.choice.toLowerCase()),
+    ..._generatedGrants
+      .filter((g) => g.type === "expertise")
+      .map((g) => String(g.value).toLowerCase()),
+  ]);
 
   const levelHitDice: number[] = [];
   const primaryHitDie = classData?.hitDice ?? 8;
@@ -1014,9 +1068,6 @@ export function createNativePartyMember(
   } else {
     hpMax = 10;
   }
-
-
-
 
   const abilities = Object.entries(finalScores).map(([name, score]) => ({
     name,
@@ -1058,19 +1109,18 @@ export function createNativePartyMember(
   });
 
   const armorProficiencies = unique([
-    ..._generatedGrants.filter(g => g.type === "armor_proficiency").map(g => g.value),
+    ..._generatedGrants.filter((g) => g.type === "armor_proficiency").map((g) => g.value),
   ]);
   const weaponProficiencies = unique([
-    ..._generatedGrants.filter(g => g.type === "weapon_proficiency").map(g => g.value),
+    ..._generatedGrants.filter((g) => g.type === "weapon_proficiency").map((g) => g.value),
   ]);
   const tools = unique([
-    ..._generatedGrants.filter(g => g.type === "tool_proficiency").map(g => g.value),
+    ..._generatedGrants.filter((g) => g.type === "tool_proficiency").map((g) => g.value),
   ]);
   const languages = unique([
     "Common",
-    ..._generatedGrants.filter(g => g.type === "language").map(g => g.value),
+    ..._generatedGrants.filter((g) => g.type === "language").map((g) => g.value),
   ]);
-
 
   // Merge speed, senses, defenses, actions
   let acBonus = 0;
@@ -1106,10 +1156,7 @@ export function createNativePartyMember(
   const uniqueSensesMap = new Map<string, number | null>();
   for (const s of sensesList) {
     const existing = uniqueSensesMap.get(s.name);
-    if (
-      existing === undefined ||
-      (s.value !== null && (existing === null || s.value > existing))
-    ) {
+    if (existing === undefined || (s.value !== null && (existing === null || s.value > existing))) {
       uniqueSensesMap.set(s.name, s.value);
     }
   }
@@ -1118,16 +1165,23 @@ export function createNativePartyMember(
   // Defenses: deduplicate by type and damageType
   const defensesList = [
     ..._generatedGrants
-      .filter((g) => ["damage_resistance", "damage_immunity", "damage_vulnerability", "condition_immunity"].includes(g.type))
+      .filter((g) =>
+        [
+          "damage_resistance",
+          "damage_immunity",
+          "damage_vulnerability",
+          "condition_immunity",
+        ].includes(g.type),
+      )
       .map((g) => ({
         type:
           g.type === "damage_resistance"
             ? "resistance"
             : g.type === "damage_immunity"
-            ? "immunity"
-            : g.type === "damage_vulnerability"
-            ? "vulnerability"
-            : "condition_immunity",
+              ? "immunity"
+              : g.type === "damage_vulnerability"
+                ? "vulnerability"
+                : "condition_immunity",
         damageType: String(g.value),
       })),
     ...normalizedFeatureEffects.defenses,
@@ -1198,15 +1252,19 @@ export function createNativePartyMember(
   // Combine caster level
   let casterLevelFloat = 0;
   let pactLevel = 0;
-  
+
   // Check primary class
-  const primProg = classData?.spellcastingJson ? parseJsonValue(classData.spellcastingJson, {})?.progression : "";
-  const isMulticlassCaster = (state.multiClasses && state.multiClasses.length > 0 && 
-    (primProg || state.multiClasses.some((mc: any) => {
-      const mcCls = effectData?.classes?.find((c: any) => c.id === mc.classId);
-      return mcCls?.spellcastingJson;
-    }))
-  );
+  const primProg = classData?.spellcastingJson
+    ? parseJsonValue(classData.spellcastingJson, {})?.progression
+    : "";
+  const isMulticlassCaster =
+    state.multiClasses &&
+    state.multiClasses.length > 0 &&
+    (primProg ||
+      state.multiClasses.some((mc: any) => {
+        const mcCls = effectData?.classes?.find((c: any) => c.id === mc.classId);
+        return mcCls?.spellcastingJson;
+      }));
 
   if (primProg === "full") {
     casterLevelFloat += level;
@@ -1218,7 +1276,11 @@ export function createNativePartyMember(
     }
   } else if (primProg === "artificer") {
     casterLevelFloat += Math.ceil(level / 2);
-  } else if (primProg === "third" || subclassData?.id === "eldritch-knight" || subclassData?.id === "arcane-trickster") {
+  } else if (
+    primProg === "third" ||
+    subclassData?.id === "eldritch-knight" ||
+    subclassData?.id === "arcane-trickster"
+  ) {
     if (isMulticlassCaster) {
       casterLevelFloat += Math.floor(level / 3);
     } else {
@@ -1235,14 +1297,18 @@ export function createNativePartyMember(
       if (!mcCls) continue;
       const mcProgData = parseJsonValue(mcCls.spellcastingJson, {});
       const mcProg = mcProgData?.progression || "";
-      
+
       if (mcProg === "full") {
         casterLevelFloat += mc.level;
       } else if (mcProg === "half") {
         casterLevelFloat += Math.floor(mc.level / 2);
       } else if (mcProg === "artificer") {
         casterLevelFloat += Math.ceil(mc.level / 2);
-      } else if (mcProg === "third" || mc.subclassId === "eldritch-knight" || mc.subclassId === "arcane-trickster") {
+      } else if (
+        mcProg === "third" ||
+        mc.subclassId === "eldritch-knight" ||
+        mc.subclassId === "arcane-trickster"
+      ) {
         casterLevelFloat += Math.floor(mc.level / 3);
       } else if (mcProg === "pact") {
         pactLevel += mc.level;
@@ -1253,13 +1319,15 @@ export function createNativePartyMember(
   const effectiveCasterLevel = Math.max(0, Math.floor(casterLevelFloat));
   let spellSlots = [];
   if (effectiveCasterLevel > 0) {
-    spellSlots = (FULL_CASTER_SLOTS[Math.min(20, effectiveCasterLevel) - 1] || []).map((max, index) => ({
-      level: index + 1,
-      max,
-      used: 0,
-    }));
+    spellSlots = (FULL_CASTER_SLOTS[Math.min(20, effectiveCasterLevel) - 1] || []).map(
+      (max, index) => ({
+        level: index + 1,
+        max,
+        used: 0,
+      }),
+    );
   }
-  
+
   let pactSlots = [];
   if (pactLevel > 0) {
     const pact = PACT_SLOTS[Math.min(20, Math.max(1, pactLevel)) - 1];
@@ -1346,7 +1414,7 @@ export function createNativePartyMember(
     avatarUrl: state.avatarUrl || null,
     race: speciesVariantData
       ? `${speciesVariantData.name} ${raceData?.name || "Species"}`
-      : (raceData?.name || "Unknown"),
+      : raceData?.name || "Unknown",
     background: backgroundData?.name || "Custom",
     classes: classesString,
     subclasses: subclassesList,
@@ -1393,10 +1461,7 @@ export function createNativePartyMember(
     attacks,
     cantrips,
     preparedSpells,
-    allSpells: [
-      ...cantrips,
-      ...preparedSpells,
-    ],
+    allSpells: [...cantrips, ...preparedSpells],
     features,
     characteristics: {
       personalityTraits: "",
@@ -1438,9 +1503,12 @@ export function createNativePartyMember(
 }
 
 export const saveNativeCharacter = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ character: z.custom<PartyMember>() }))
+  .inputValidator(
+    z.object({ character: z.custom<PartyMember>(), builderState: z.any().optional() }),
+  )
   .handler(async ({ data }) => {
     const character = data.character;
+    const builderState = data.builderState;
     const cacheDir = path.join(process.cwd(), "data", "cache");
     await fs.mkdir(cacheDir, { recursive: true });
     const filePath = path.join(cacheDir, `native-char-${character.id}.json`);
@@ -1454,52 +1522,193 @@ export const saveNativeCharacter = createServerFn({ method: "POST" })
     try {
       const { db } = await import("./drizzle.server");
       const schema = await import("../db/schema");
+      const { eq } = await import("drizzle-orm");
 
-      const classes = (character as any).classDetails || [{
-        classId: character.classes || "",
-        subclassId: character.subclasses?.[0] || null,
-        level: character.level || 1,
-      }];
+      const classRows = [
+        {
+          classId: builderState?.classId || character.classes || "",
+          subclassId: builderState?.subclassId || character.subclasses?.[0] || null,
+          level: builderState?.level || character.level || 1,
+          isPrimary: true,
+        },
+        ...(builderState?.multiClasses || []).map((mc: any) => ({
+          classId: mc.classId,
+          subclassId: mc.subclassId || null,
+          level: Number(mc.level || 0),
+          isPrimary: false,
+        })),
+      ].filter((row) => row.classId && row.level > 0);
 
-      await db.insert(schema.characters).values({
-        id: character.id.toString(),
-        name: character.name,
-        playerName: (character as any).playerName || "Native Builder",
-        speciesId: character.race || "unknown",
-        backgroundId: character.background || "unknown",
-        classesJson: JSON.stringify(classes),
-        baseStatsJson: JSON.stringify(character.abilities || {}),
-        currencyJson: JSON.stringify(character.currencies || { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 }),
-        inventoryJson: JSON.stringify(character.inventory || []),
-        equippedWeaponIdsJson: JSON.stringify([]),
-        equippedArmorId: null,
-        attunedItemIdsJson: JSON.stringify([]),
-        currentHp: character.hpCurrent || 10,
-        temporaryHp: character.tempHp || 0,
-        exhaustionLevel: character.exhaustion || 0,
-        heroicInspiration: character.inspiration || false,
-        deathSavesJson: JSON.stringify(character.deathSaves || { successes: 0, failures: 0, stabilized: false }),
-        hitDiceExpendedJson: JSON.stringify([]),
-        spellSlotsExpendedJson: JSON.stringify([]),
-        featureUsesExpendedJson: JSON.stringify([]),
-        activeEffectIdsJson: JSON.stringify([]),
-        rawJson: JSON.stringify(character),
-      }).onConflictDoUpdate({
-        target: schema.characters.id,
-        set: {
+      await db
+        .insert(schema.characters)
+        .values({
+          id: character.id.toString(),
           name: character.name,
-          classesJson: JSON.stringify(classes),
+          playerName: (character as any).playerName || "Native Builder",
+          speciesId: builderState?.raceId || builderState?.speciesId || character.race || "unknown",
+          backgroundId: builderState?.backgroundId || character.background || "unknown",
+          classesJson: JSON.stringify(classRows),
           baseStatsJson: JSON.stringify(character.abilities || {}),
-          currencyJson: JSON.stringify(character.currencies || { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 }),
+          currencyJson: JSON.stringify(
+            character.currencies || { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+          ),
           inventoryJson: JSON.stringify(character.inventory || []),
+          equippedWeaponIdsJson: JSON.stringify([]),
+          equippedArmorId: null,
+          attunedItemIdsJson: JSON.stringify([]),
           currentHp: character.hpCurrent || 10,
           temporaryHp: character.tempHp || 0,
           exhaustionLevel: character.exhaustion || 0,
           heroicInspiration: character.inspiration || false,
-          deathSavesJson: JSON.stringify(character.deathSaves || { successes: 0, failures: 0, stabilized: false }),
+          deathSavesJson: JSON.stringify(
+            character.deathSaves || { successes: 0, failures: 0, stabilized: false },
+          ),
+          hitDiceExpendedJson: JSON.stringify([]),
+          spellSlotsExpendedJson: JSON.stringify([]),
+          featureUsesExpendedJson: JSON.stringify([]),
+          activeEffectIdsJson: JSON.stringify([]),
+          builderStateJson: builderState ? JSON.stringify(builderState) : null,
           rawJson: JSON.stringify(character),
+        })
+        .onConflictDoUpdate({
+          target: schema.characters.id,
+          set: {
+            name: character.name,
+            speciesId:
+              builderState?.raceId || builderState?.speciesId || character.race || "unknown",
+            backgroundId: builderState?.backgroundId || character.background || "unknown",
+            classesJson: JSON.stringify(classRows),
+            baseStatsJson: JSON.stringify(character.abilities || {}),
+            currencyJson: JSON.stringify(
+              character.currencies || { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+            ),
+            inventoryJson: JSON.stringify(character.inventory || []),
+            currentHp: character.hpCurrent || 10,
+            temporaryHp: character.tempHp || 0,
+            exhaustionLevel: character.exhaustion || 0,
+            heroicInspiration: character.inspiration || false,
+            deathSavesJson: JSON.stringify(
+              character.deathSaves || { successes: 0, failures: 0, stabilized: false },
+            ),
+            builderStateJson: builderState ? JSON.stringify(builderState) : null,
+            rawJson: JSON.stringify(character),
+          },
+        });
+
+      const characterId = character.id.toString();
+      await db
+        .delete(schema.characterClasses)
+        .where(eq(schema.characterClasses.characterId, characterId));
+      await db
+        .delete(schema.characterChoices)
+        .where(eq(schema.characterChoices.characterId, characterId));
+      await db
+        .delete(schema.characterInventory)
+        .where(eq(schema.characterInventory.characterId, characterId));
+      await db
+        .delete(schema.characterSpells)
+        .where(eq(schema.characterSpells.characterId, characterId));
+      await db
+        .delete(schema.characterSources)
+        .where(eq(schema.characterSources.characterId, characterId));
+      await db
+        .delete(schema.characterOverrides)
+        .where(eq(schema.characterOverrides.characterId, characterId));
+
+      if (classRows.length > 0) {
+        await db.insert(schema.characterClasses).values(
+          classRows.map((row, index) => ({
+            id: `${characterId}:class:${index}`,
+            characterId,
+            classId: row.classId,
+            subclassId: row.subclassId,
+            level: row.level,
+            isPrimary: row.isPrimary,
+          })),
+        );
+      }
+
+      const ruleChoices = builderState?.ruleChoices || {};
+      const choiceRows = Object.entries(ruleChoices).flatMap(([groupId, choiceIds]) =>
+        (Array.isArray(choiceIds) ? choiceIds : []).map((choiceId: any, index: number) => ({
+          id: `${characterId}:choice:${groupId}:${index}`,
+          characterId,
+          groupId,
+          choiceId: String(choiceId),
+        })),
+      );
+      if (choiceRows.length > 0) {
+        await db.insert(schema.characterChoices).values(choiceRows);
+      }
+
+      const inventoryRows = (character.inventory || []).map(
+        (item: InventoryItem, index: number) => ({
+          id: `${characterId}:inventory:${index}`,
+          characterId,
+          itemId: item.name,
+          quantity: Number(item.quantity || 1),
+          isEquipped: Boolean(item.equipped),
+          isAttuned: Boolean(item.attuned),
+        }),
+      );
+      if (inventoryRows.length > 0) {
+        await db.insert(schema.characterInventory).values(inventoryRows);
+      }
+
+      const spellRows: Array<{
+        id: string;
+        characterId: string;
+        spellId: string;
+        classId: string | null;
+        isPrepared: boolean;
+        isAlwaysPrepared: boolean;
+      }> = [];
+      for (const [classId, spellIds] of Object.entries(builderState?.cantripChoicesByClass || {})) {
+        for (const spellId of Array.isArray(spellIds) ? spellIds : []) {
+          spellRows.push({
+            id: `${characterId}:spell:${classId}:cantrip:${spellRows.length}`,
+            characterId,
+            spellId: String(spellId),
+            classId,
+            isPrepared: true,
+            isAlwaysPrepared: false,
+          });
         }
-      });
+      }
+      for (const [classId, spellIds] of Object.entries(
+        builderState?.preparedSpellChoicesByClass || {},
+      )) {
+        for (const spellId of Array.isArray(spellIds) ? spellIds : []) {
+          spellRows.push({
+            id: `${characterId}:spell:${classId}:prepared:${spellRows.length}`,
+            characterId,
+            spellId: String(spellId),
+            classId,
+            isPrepared: true,
+            isAlwaysPrepared: false,
+          });
+        }
+      }
+      if (spellRows.length > 0) {
+        await db.insert(schema.characterSpells).values(spellRows);
+      }
+
+      const sourceIds = new Set<string>();
+      for (const source of Object.values((character as any).sourceIds || {}) as string[]) {
+        if (source) sourceIds.add(source);
+      }
+      for (const source of builderState?.sourcePolicy?.excludedSources || []) {
+        if (source) sourceIds.add(`excluded:${source}`);
+      }
+      if (sourceIds.size > 0) {
+        await db.insert(schema.characterSources).values(
+          Array.from(sourceIds).map((sourceId, index) => ({
+            id: `${characterId}:source:${index}`,
+            characterId,
+            sourceId,
+          })),
+        );
+      }
     } catch (dbErr) {
       console.error("Failed to save character to SQLite table:", dbErr);
     }
@@ -1545,3 +1754,100 @@ export const getNativeCharacter = createServerFn({ method: "GET" })
       return null;
     }
   });
+
+function parseCanonicalCharacterInput(canonicalCharacter: any) {
+  if (!canonicalCharacter) return {};
+  if (canonicalCharacter.builderState) return canonicalCharacter.builderState;
+  if (canonicalCharacter.builderStateJson) {
+    return parseJsonValue(canonicalCharacter.builderStateJson, {});
+  }
+  if (canonicalCharacter.rawJson) {
+    const raw = parseJsonValue(canonicalCharacter.rawJson, {});
+    return raw?.builderState || raw;
+  }
+  return canonicalCharacter;
+}
+
+function selectedSpellIdsFromState(state: any) {
+  const ids = new Set<string>();
+  for (const id of state.cantripChoices || []) ids.add(id);
+  for (const id of state.preparedSpellChoices || []) ids.add(id);
+  for (const list of Object.values(state.cantripChoicesByClass || {}) as any[]) {
+    for (const id of list || []) ids.add(id);
+  }
+  for (const list of Object.values(state.preparedSpellChoicesByClass || {}) as any[]) {
+    for (const id of list || []) ids.add(id);
+  }
+  for (const values of Object.values(state.ruleChoices || {}) as any[]) {
+    for (const id of values || []) ids.add(id);
+  }
+  for (const extra of Object.values(state.highLevelFeatExtraChoices || {}) as any[]) {
+    for (const id of extra?.cantrips || []) ids.add(id);
+    for (const id of extra?.spells || []) ids.add(id);
+  }
+  return ids;
+}
+
+export function computeCharacterSnapshot(canonicalCharacter: any, forgeData: any) {
+  const state = parseCanonicalCharacterInput(canonicalCharacter);
+  const raceData = forgeData?.species?.find(
+    (race: any) => race.id === state.raceId || race.id === state.speciesId,
+  );
+  const speciesVariantData = forgeData?.speciesVariants?.find(
+    (variant: any) => variant.id === state.speciesVariantId,
+  );
+  const backgroundData = forgeData?.backgrounds?.find(
+    (background: any) => background.id === state.backgroundId,
+  );
+  const classData = forgeData?.classes?.find((cls: any) => cls.id === state.classId);
+  const subclassData = forgeData?.subclasses?.find(
+    (subclass: any) => subclass.id === state.subclassId,
+  );
+  const originFeat = backgroundData?.originFeatId
+    ? forgeData?.feats?.find((feat: any) => feat.id === backgroundData.originFeatId)
+    : undefined;
+  const selectedSpellIds = selectedSpellIdsFromState(state);
+  const selectedSpells = (forgeData?.spells || []).filter((spell: any) =>
+    selectedSpellIds.has(spell.id),
+  );
+
+  return createNativePartyMember(
+    state,
+    raceData,
+    classData,
+    backgroundData,
+    subclassData,
+    originFeat,
+    selectedSpells,
+    forgeData?.classFeatures || [],
+    {
+      activeEffects: forgeData?.activeEffects || [],
+      featureActiveEffects: forgeData?.featureActiveEffects || [],
+      itemActiveEffects: forgeData?.itemActiveEffects || [],
+      spellActiveEffects: forgeData?.spellActiveEffects || [],
+      magicItems: forgeData?.magicItems || [],
+      feats: forgeData?.feats || [],
+      weapons: forgeData?.weapons || [],
+      armor: forgeData?.armor || [],
+      classes: forgeData?.classes || [],
+      subclasses: forgeData?.subclasses || [],
+      skills: forgeData?.skills || [],
+      senses: forgeData?.senses || [],
+      conditions: forgeData?.conditions || [],
+      rulesActions: forgeData?.rulesActions || [],
+      optionalFeatures: forgeData?.optionalFeatures || [],
+      charOptions: forgeData?.charOptions || [],
+      mundaneGear: forgeData?.mundaneGear || [],
+      weaponMasteries: forgeData?.weaponMasteries || [],
+      itemProperties: forgeData?.itemProperties || [],
+      itemTypes: forgeData?.itemTypes || [],
+      itemTypeAdditionalEntries: forgeData?.itemTypeAdditionalEntries || [],
+      itemGroups: forgeData?.itemGroups || [],
+      magicVariants: forgeData?.magicVariants || [],
+      itemCardReferences: forgeData?.itemCardReferences || [],
+      challengeRatings: forgeData?.challengeRatings || [],
+      creatureBuilderEntries: forgeData?.creatureBuilderEntries || [],
+    },
+    speciesVariantData,
+  );
+}

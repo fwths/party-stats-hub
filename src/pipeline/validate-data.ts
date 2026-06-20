@@ -21,7 +21,7 @@ const tablesToCheck = [
   "vehicles",
   "bastions",
   "hazards",
-  "vehicle_upgrades"
+  "vehicle_upgrades",
 ];
 
 console.log("==============================================");
@@ -32,16 +32,24 @@ let failedAny = false;
 
 for (const tableName of tablesToCheck) {
   try {
-    const totalRow = db.prepare(`SELECT count(*) as count FROM ${tableName}`).get() as { count: number };
+    const totalRow = db.prepare(`SELECT count(*) as count FROM ${tableName}`).get() as {
+      count: number;
+    };
     const totalCount = totalRow.count;
 
-    const fluffRow = db.prepare(`SELECT count(*) as count FROM ${tableName} WHERE fluff_json IS NOT NULL`).get() as { count: number };
+    const fluffRow = db
+      .prepare(`SELECT count(*) as count FROM ${tableName} WHERE fluff_json IS NOT NULL`)
+      .get() as { count: number };
     const fluffCount = fluffRow.count;
 
-    const foundryRow = db.prepare(`SELECT count(*) as count FROM ${tableName} WHERE foundry_json IS NOT NULL`).get() as { count: number };
+    const foundryRow = db
+      .prepare(`SELECT count(*) as count FROM ${tableName} WHERE foundry_json IS NOT NULL`)
+      .get() as { count: number };
     const foundryCount = foundryRow.count;
 
-    console.log(`Table: ${tableName.padEnd(20)} | Total: ${String(totalCount).padStart(5)} | Has Fluff: ${String(fluffCount).padStart(5)} (${Math.round((fluffCount / (totalCount || 1)) * 100)}%) | Has Foundry: ${String(foundryCount).padStart(5)} (${Math.round((foundryCount / (totalCount || 1)) * 100)}%)`);
+    console.log(
+      `Table: ${tableName.padEnd(20)} | Total: ${String(totalCount).padStart(5)} | Has Fluff: ${String(fluffCount).padStart(5)} (${Math.round((fluffCount / (totalCount || 1)) * 100)}%) | Has Foundry: ${String(foundryCount).padStart(5)} (${Math.round((foundryCount / (totalCount || 1)) * 100)}%)`,
+    );
 
     // Let's assert that core tables have at least some populated rows
     if (["spells", "classes", "feats", "magic_items", "monsters"].includes(tableName)) {

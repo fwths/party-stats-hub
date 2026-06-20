@@ -1,71 +1,17 @@
 import * as fs from "fs";
 import * as path from "path";
 
-export const SOURCES = {
-  core: ["XPHB", "XMM", "XDMG"],
-  supplements: ["TCE", "XGE", "FTD", "BGG", "BMT", "MPMM", "VGM", "MTF", "AI", "RHW"],
-  settings: [
-    "FRAiF",
-    "FRHoF",
-    "EFA",
-    "ERLW",
-    "GGR",
-    "EGW",
-    "MOT",
-    "VRGR",
-    "SCC",
-    "SCAG",
-    "AAG",
-    "BAM",
-    "MPP",
-    "SatO",
-  ],
-} as const;
+import { SOURCES, type SourceTier, BLOCKED_SOURCES } from "../lib/forge/source-constants";
+export { SOURCES, type SourceTier, BLOCKED_SOURCES };
 
-export type SourceTier = keyof typeof SOURCES;
-
-export const ENABLED_TIERS: SourceTier[] = ["core", "supplements", "settings"];
+export const ENABLED_TIERS: import("../lib/forge/source-constants").SourceTier[] = [
+  "core",
+  "supplements",
+  "settings",
+];
 export const EXCLUDED_SOURCES: string[] = [];
 const EXCLUDED_SOURCE_GROUPS = new Set(["homecraft"]);
 const GENERIC_SOURCES = new Set(["GENERIC"]);
-
-// Keep non-official, prerelease/playtest, and local brew source codes out even if they are
-// accidentally added to a tier later.
-export const BLOCKED_SOURCES: string[] = [
-  "HB",
-  "HOMEBREW",
-  "UA",
-  "UAA",
-  "UAB",
-  "UACFV",
-  "UACFV2",
-  "UACFV3",
-  "UACFV4",
-  "UACFV5",
-  "UACFV6",
-  "UACFV7",
-  "UACFV8",
-  "UACFV9",
-  "UACFV10",
-  "UACFV11",
-  "UAE",
-  "UAEAG",
-  "UAF",
-  "UAFPP",
-  "UAM",
-  "UAR",
-  "UAS",
-  "UATMC",
-  "UATRR",
-  "UAWGE",
-  "PSA",
-  "PSD",
-  "PSI",
-  "PSK",
-  "PSX",
-  "PSZ",
-  "UATHEMYSTICCLASS",
-];
 
 let catalogSourcesCache: string[] | null = null;
 

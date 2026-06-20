@@ -57,7 +57,13 @@ function resolveFluffImage(pathStr: string): string {
   return `https://5e.tools/img/${pathStr}`;
 }
 
-function EntryRenderer({ entry, depth = 0 }: { entry: any; depth?: number }): React.JSX.Element | null {
+function EntryRenderer({
+  entry,
+  depth = 0,
+}: {
+  entry: any;
+  depth?: number;
+}): React.JSX.Element | null {
   if (!entry) return null;
 
   if (typeof entry === "string") {
@@ -127,7 +133,10 @@ function EntryRenderer({ entry, depth = 0 }: { entry: any; depth?: number }): Re
             )}
             <tbody>
               {entry.rows?.map((row: any[], rIdx: number) => (
-                <tr key={rIdx} className="border-b border-border/20 last:border-0 hover:bg-secondary/10">
+                <tr
+                  key={rIdx}
+                  className="border-b border-border/20 last:border-0 hover:bg-secondary/10"
+                >
                   {row.map((cell: any, cIdx: number) => (
                     <td key={cIdx} className="p-3 text-foreground/80">
                       <EntryRenderer entry={cell} />

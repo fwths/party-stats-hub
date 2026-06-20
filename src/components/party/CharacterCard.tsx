@@ -15,6 +15,7 @@ import {
   Moon,
   Award,
   Swords,
+  ChevronDown,
 } from "lucide-react";
 import { PartyMember } from "@/lib/dndbeyond.types";
 import { SKILL_ABILITY } from "@/lib/constants";
@@ -47,6 +48,14 @@ export function CharacterCard({ member }: { member: PartyMember }) {
     remove: removeLocalCondition,
     tick: tickLocalCondition,
   } = useCharacterConditions(member.id);
+
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setIsExpanded(false);
+    }
+  }, []);
 
   const mods = getFullyModifiedStats(member);
   const {
@@ -167,14 +176,25 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                 <TooltipContent>Inspiration</TooltipContent>
               </Tooltip>
             )}
-            {(member as any).isNative && (
+             {(member as any).isNative && (
               <span
-                className="ml-auto shrink-0 rounded border border-ui-emerald/40 bg-ui-emerald/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-ui-emerald select-none"
+                className="shrink-0 rounded border border-ui-emerald/40 bg-ui-emerald/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-ui-emerald select-none"
                 title="Built natively in Party Stats Hub"
               >
                 Native
               </span>
             )}
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="ml-auto shrink-0 p-1 rounded hover:bg-secondary/60 text-muted-foreground hover:text-foreground transition-all duration-200 cursor-pointer"
+              aria-label={isExpanded ? "Collapse details" : "Expand details"}
+            >
+              <ChevronDown
+                size={16}
+                className={`transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`}
+              />
+            </button>
           </div>
           <p className="truncate text-xs text-muted-foreground">
             {member.race}
@@ -309,659 +329,663 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             </div>
           )}
 
-          <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
-          <div className="grid grid-cols-4 2xl:grid-cols-2 gap-1.5 text-center">
-            <Stat
-              label="AC"
-              icon={Shield}
-              iconClassName="text-primary/90 drop-shadow-[0_0_3px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
-              value={
-                ac !== member.armorClass ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="text-gold font-bold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_60%,transparent)] cursor-help animate-pulse">
-                        {ac}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>{acNotes.join(", ")}</TooltipContent>
-                  </Tooltip>
-                ) : (
-                  ac
-                )
-              }
-            />
-            <Stat
-              label="Initiative"
-              icon={Zap}
-              iconClassName="text-primary/90 drop-shadow-[0_0_3px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
-              value={fmt(member.initiative)}
-            />
-            <Stat
-              label="Speed"
-              icon={Flame}
-              iconClassName="text-primary/90 drop-shadow-[0_0_3px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
-              value={
-                speed !== member.speed ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="text-accent font-bold cursor-help">{speed}ft</span>
-                    </TooltipTrigger>
-                    <TooltipContent>{speedNotes.join(", ")}</TooltipContent>
-                  </Tooltip>
-                ) : (
-                  `${speed}ft`
-                )
-              }
-            />
-            <Stat label="Proficiency" value={fmt(member.proficiencyBonus)} />
-          </div>
+          {isExpanded && (
+            <div className="animate-in fade-in duration-200">
+              <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
+              <div className="grid grid-cols-4 2xl:grid-cols-2 gap-1.5 text-center">
+                <Stat
+                  label="AC"
+                  icon={Shield}
+                  iconClassName="text-primary/90 drop-shadow-[0_0_3px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
+                  value={
+                    ac !== member.armorClass ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-gold font-bold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_60%,transparent)] cursor-help animate-pulse">
+                            {ac}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>{acNotes.join(", ")}</TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      ac
+                    )
+                  }
+                />
+                <Stat
+                  label="Initiative"
+                  icon={Zap}
+                  iconClassName="text-primary/90 drop-shadow-[0_0_3px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
+                  value={fmt(member.initiative)}
+                />
+                <Stat
+                  label="Speed"
+                  icon={Flame}
+                  iconClassName="text-primary/90 drop-shadow-[0_0_3px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
+                  value={
+                    speed !== member.speed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-accent font-bold cursor-help">{speed}ft</span>
+                        </TooltipTrigger>
+                        <TooltipContent>{speedNotes.join(", ")}</TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      `${speed}ft`
+                    )
+                  }
+                />
+                <Stat label="Proficiency" value={fmt(member.proficiencyBonus)} />
+              </div>
 
-          <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
-          <div className="grid grid-cols-6 gap-1.5">
-            {member.abilities.map((a) => {
-              const elite = a.score >= 16;
-              const details = ABILITY_DETAILS[a.name];
-              const Icon = details?.Icon;
-              const hoverGlow = details?.hoverGlowClass || "hover:border-accent/40";
-              return (
-                <div
-                  key={a.name}
-                  className={`group rounded-lg border px-1 py-1.5 text-center transition-all duration-300 hover:scale-105 hover:shadow-md ${
-                    elite
-                      ? "border-gold/50 bg-[color-mix(in_oklab,var(--gold)_8%,var(--secondary))] shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_30%,transparent)] text-gold"
-                      : "border-border/30 bg-secondary/20 text-foreground"
-                  } ${hoverGlow}`}
-                >
-                  <div
-                    className={`text-[9.5px] font-bold tracking-wider uppercase flex items-center justify-center gap-1 select-none ${
-                      elite ? "text-gold" : "text-muted-foreground"
-                    }`}
-                  >
-                    {Icon && (
-                      <Icon
-                        size={7.5}
-                        className={`shrink-0 transition-transform duration-300 group-hover:scale-125 ${
-                          elite ? "text-gold" : details?.colorClass || "text-accent/80"
-                        }`}
-                      />
-                    )}
-                    <span>{a.name}</span>
-                  </div>
-                  <div
-                    className={`font-heading text-lg font-bold leading-tight drop-shadow-sm ${
-                      elite ? "text-gold" : "text-foreground"
-                    }`}
-                  >
-                    {a.score}
-                  </div>
-                  <div className="text-[10px] font-mono font-semibold text-muted-foreground/80 mt-0.5">
-                    {a.modifier >= 0 ? `+${a.modifier}` : a.modifier}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {member.saves.length > 0 && (
-            <Section title="Saving Throws">
-              <div className="grid grid-cols-6 gap-1">
-                {member.saves.map((s) => {
-                  const details = ABILITY_DETAILS[s.ability];
+              <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
+              <div className="grid grid-cols-6 gap-1.5">
+                {member.abilities.map((a) => {
+                  const elite = a.score >= 16;
+                  const details = ABILITY_DETAILS[a.name];
                   const Icon = details?.Icon;
-                  const isProf = s.proficiency !== "none";
-                  const hoverGlow = details?.hoverGlowClass || "hover:border-accent/30";
+                  const hoverGlow = details?.hoverGlowClass || "hover:border-accent/40";
                   return (
                     <div
-                      key={s.ability}
-                      className={`group rounded-lg border px-1 py-1 text-center transition-all duration-200 hover:scale-105 ${
-                        isProf
-                          ? "border-accent/50 bg-accent/10 shadow-[0_0_6px_color-mix(in_oklab,var(--accent)_25%,transparent)]"
-                          : "border-border/30 bg-secondary/20"
+                      key={a.name}
+                      className={`group rounded-lg border px-1 py-1.5 text-center transition-all duration-300 hover:scale-105 hover:shadow-md ${
+                        elite
+                          ? "border-gold/50 bg-[color-mix(in_oklab,var(--gold)_8%,var(--secondary))] shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_30%,transparent)] text-gold"
+                          : "border-border/30 bg-secondary/20 text-foreground"
                       } ${hoverGlow}`}
                     >
-                      <div className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-center gap-1 select-none">
+                      <div
+                        className={`text-[9.5px] font-bold tracking-wider uppercase flex items-center justify-center gap-1 select-none ${
+                          elite ? "text-gold" : "text-muted-foreground"
+                        }`}
+                      >
                         {Icon && (
                           <Icon
-                            size={7}
-                            className={`shrink-0 transition-transform duration-300 group-hover:scale-120 ${
-                              isProf
-                                ? "text-accent"
-                                : details?.colorClass || "text-muted-foreground/45"
+                            size={7.5}
+                            className={`shrink-0 transition-transform duration-300 group-hover:scale-125 ${
+                              elite ? "text-gold" : details?.colorClass || "text-accent/80"
                             }`}
                           />
                         )}
-                        <span>{s.ability}</span>
-                        {s.proficiency === "expertise" && (
-                          <span className="text-gold" title="Expertise">
-                            ★
-                          </span>
-                        )}
-                        {s.proficiency === "proficient" && (
-                          <span className="text-accent text-[8px]" title="Proficient">
-                            ●
-                          </span>
-                        )}
+                        <span>{a.name}</span>
                       </div>
-                      <div className="text-xs font-mono font-bold text-foreground mt-0.5">
-                        {fmt(s.modifier)}
+                      <div
+                        className={`font-heading text-lg font-bold leading-tight drop-shadow-sm ${
+                          elite ? "text-gold" : "text-foreground"
+                        }`}
+                      >
+                        {a.score}
+                      </div>
+                      <div className="text-[10px] font-mono font-semibold text-muted-foreground/80 mt-0.5">
+                        {a.modifier >= 0 ? `+${a.modifier}` : a.modifier}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </Section>
-          )}
-          {(member.spellcasting?.length > 0 || spellSlots.length > 0 || pactSlots.length > 0) && (
-            <Section title="Spellcasting">
-              <div className="flex flex-col gap-3">
-                {member.spellcasting && member.spellcasting.length > 0 && (
-                  <div className="flex flex-col gap-3">
-                    {member.spellcasting.map((sc) => {
-                      const abilityMod =
-                        member.abilities.find((a) => a.name === sc.ability)?.modifier ?? 0;
-                      return (
-                        <div
-                          key={sc.className}
-                          className="relative overflow-hidden rounded-xl border border-accent/25 bg-gradient-to-br from-accent/5 to-secondary/30 p-3 shadow-md"
-                        >
-                          <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-accent/8 blur-xl pointer-events-none" />
-                          <div className="mb-3 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-accent select-none">
-                            <Sparkles size={11} className="text-accent/80 animate-pulse" />
-                            <span>
-                              {sc.className} ({sc.ability})
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 text-center divide-x divide-border/20">
-                            <div>
-                              <div className="font-heading text-xl font-extrabold text-foreground leading-tight drop-shadow-sm">
-                                {fmt(abilityMod)}
-                              </div>
-                              <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                                Modifier
-                              </div>
-                            </div>
-                            <div className="pl-1">
-                              <div className="font-heading text-xl font-extrabold text-foreground leading-tight drop-shadow-sm">
-                                {fmt(sc.attackBonus)}
-                              </div>
-                              <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                                Spell Attack
-                              </div>
-                            </div>
-                            <div className="pl-1">
-                              <div className="font-heading text-xl font-extrabold text-gold leading-tight drop-shadow-sm">
-                                {sc.saveDc}
-                              </div>
-                              <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                                Save DC
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {(spellSlots.length > 0 || pactSlots.length > 0) && (
-                  <div className="flex flex-col gap-1.5 border-t border-border/30 pt-2">
-                    {spellSlots.map((s) => {
-                      const available = s.max - s.used;
-                      return (
-                        <div key={`s-${s.level}`} className="flex items-center gap-2">
-                          <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
-                            Level {s.level}
-                          </span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex flex-wrap gap-1.5 cursor-help">
-                                {Array.from({ length: s.max }).map((_, i) => {
-                                  const filled = i < available;
-                                  return (
-                                    <span
-                                      key={i}
-                                      className={`mana-slot ${filled ? "mana-slot-filled" : ""}`}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Level {s.level}: {available}/{s.max} remaining
-                            </TooltipContent>
-                          </Tooltip>
-                          <span className="ml-auto text-[10px] font-mono text-muted-foreground">
-                            {available}/{s.max}
-                          </span>
-                        </div>
-                      );
-                    })}
-                    {pactSlots.map((s) => {
-                      const available = s.max - s.used;
-                      return (
-                        <div key={`p-${s.level}`} className="flex items-center gap-2">
-                          <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-accent">
-                            Pact {s.level}
-                          </span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex flex-wrap gap-1.5 cursor-help">
-                                {Array.from({ length: s.max }).map((_, i) => {
-                                  const filled = i < available;
-                                  return (
-                                    <span
-                                      key={i}
-                                      className={`pact-slot ${filled ? "pact-slot-filled" : ""}`}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Pact (L{s.level}): {available}/{s.max} remaining
-                            </TooltipContent>
-                          </Tooltip>
-                          <span className="ml-auto text-[10px] font-mono text-muted-foreground">
-                            {available}/{s.max}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </Section>
-          )}
 
-          {/* Combat Actions & Spells Section */}
-          {(member.attacks.length > 0 ||
-            member.cantrips.length > 0 ||
-            member.preparedSpells.length > 0) && (
-            <Section
-              title={
-                <span className="flex items-center gap-1.5 font-semibold text-accent/90">
-                  <Swords size={12} className="text-accent" />
-                  <span>Combat & Spells</span>
-                </span>
-              }
-              defaultOpen={false}
-            >
-              <div className="flex flex-col gap-3">
-                {/* Attacks List */}
-                {member.attacks.length > 0 && (
-                  <div>
-                    <div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Attacks & Actions
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      {member.attacks.map((atk, idx) => (
+              {member.saves.length > 0 && (
+                <Section title="Saving Throws">
+                  <div className="grid grid-cols-6 gap-1">
+                    {member.saves.map((s) => {
+                      const details = ABILITY_DETAILS[s.ability];
+                      const Icon = details?.Icon;
+                      const isProf = s.proficiency !== "none";
+                      const hoverGlow = details?.hoverGlowClass || "hover:border-accent/30";
+                      return (
                         <div
-                          key={`${atk.name}-${idx}`}
-                          className="flex items-center justify-between rounded border border-border bg-secondary/40 px-2 py-1 text-xs transition-colors hover:border-accent/40 hover:bg-secondary/60"
+                          key={s.ability}
+                          className={`group rounded-lg border px-1 py-1 text-center transition-all duration-200 hover:scale-105 ${
+                            isProf
+                              ? "border-accent/50 bg-accent/10 shadow-[0_0_6px_color-mix(in_oklab,var(--accent)_25%,transparent)]"
+                              : "border-border/30 bg-secondary/20"
+                          } ${hoverGlow}`}
                         >
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-foreground">{atk.name}</span>
-                            {atk.properties && atk.properties.length > 0 && (
-                              <span className="text-[9px] text-muted-foreground mt-0.5">
-                                {atk.properties.join(", ")}
+                          <div className="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-center gap-1 select-none">
+                            {Icon && (
+                              <Icon
+                                size={7}
+                                className={`shrink-0 transition-transform duration-300 group-hover:scale-120 ${
+                                  isProf
+                                    ? "text-accent"
+                                    : details?.colorClass || "text-muted-foreground/45"
+                                }`}
+                              />
+                            )}
+                            <span>{s.ability}</span>
+                            {s.proficiency === "expertise" && (
+                              <span className="text-gold" title="Expertise">
+                                ★
+                              </span>
+                            )}
+                            {s.proficiency === "proficient" && (
+                              <span className="text-accent text-[8px]" title="Proficient">
+                                ●
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 font-mono">
-                            <span className="text-accent font-semibold">
-                              {atk.attackBonus >= 0 ? `+${atk.attackBonus}` : atk.attackBonus}
-                            </span>
-                            <span className="text-muted-foreground text-[10px]">to hit</span>
-                            <span className="text-foreground font-semibold">{atk.damage}</span>
-                            <span className="text-muted-foreground text-[10px]">
-                              {atk.damageType}
-                            </span>
+                          <div className="text-xs font-mono font-bold text-foreground mt-0.5">
+                            {fmt(s.modifier)}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Spells List */}
-                {(member.cantrips.length > 0 || member.preparedSpells.length > 0) && (
-                  <div className="border-t border-border/30 pt-2 flex flex-col gap-2">
-                    {member.cantrips.length > 0 && (
-                      <div>
-                        <div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                          Cantrips
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {member.cantrips.map((c) => (
-                            <Tooltip key={c.name}>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent">
-                                  {c.name}
-                                </span>
-                              </TooltipTrigger>
-                              {c.description && (
-                                <TooltipContent className="max-w-[280px] text-xs">
-                                  {c.description.replace(/<[^>]*>/g, "")}
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {member.preparedSpells.length > 0 && (
-                      <div>
-                        <div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                          Prepared Spells
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {member.preparedSpells.map((s) => (
-                            <Tooltip key={s.name}>
-                              <TooltipTrigger asChild>
-                                <span className="cursor-help rounded border border-border bg-secondary/50 px-1.5 py-0.5 text-[10px] text-foreground">
-                                  <span className="text-accent mr-1 font-mono text-[9px]">
-                                    L{s.level}
-                                  </span>
-                                  {s.name}
-                                </span>
-                              </TooltipTrigger>
-                              {s.description && (
-                                <TooltipContent className="max-w-[280px] text-xs">
-                                  {s.description.replace(/<[^>]*>/g, "")}
-                                </TooltipContent>
-                              )}
-                            </Tooltip>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </Section>
-          )}
-
-          {(senses.length > 0 || member.passivePerception != null) && (
-            <Section title="Senses">
-              <div className="flex flex-col gap-1.5">
-                {[
-                  { label: "Passive Perception", value: member.passivePerception, icon: Eye },
-                  {
-                    label: "Passive Investigation",
-                    value: member.passiveInvestigation,
-                    icon: Search,
-                  },
-                  { label: "Passive Insight", value: member.passiveInsight, icon: Brain },
-                ]
-                  .filter((p) => p.value != null)
-                  .map((p) => {
-                    const Icon = p.icon;
-                    return (
-                      <div
-                        key={p.label}
-                        className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/20 px-2.5 py-1.5 transition-colors hover:border-accent/40"
-                      >
-                        <div className="flex items-center gap-2 select-none">
-                          <Icon size={9.5} className="shrink-0 text-accent/80" />
-                          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                            {p.label}
-                          </span>
-                        </div>
-                        <span className="flex h-6 w-6 items-center justify-center rounded border border-accent/40 bg-accent/10 text-xs font-mono font-bold text-foreground shadow-[0_0_6px_color-mix(in_oklab,var(--accent)_20%,transparent)]">
-                          {p.value}
-                        </span>
-                      </div>
-                    );
-                  })}
-                {senses.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-1.5 mt-2">
-                    {senses.map((s) => {
-                      const isDarkvision = s.name.toLowerCase().includes("darkvision");
-                      const SenseIcon = isDarkvision ? Moon : Eye;
-                      return (
-                        <span
-                          key={s.name}
-                          className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-0.5 text-[9px] font-bold text-primary uppercase tracking-wider select-none"
-                        >
-                          <ThemeIcon size={10} className="text-primary/90" as={SenseIcon} />
-                          <span>
-                            {s.name}
-                            {s.value != null ? ` ${s.value}ft` : ""}
-                          </span>
-                        </span>
                       );
                     })}
                   </div>
-                )}
-              </div>
-            </Section>
-          )}
-
-          {displaySkills.length > 0 && (
-            <Section title="Skills" defaultOpen={false}>
-              <div className="grid grid-cols-2 2xl:grid-cols-1 gap-x-3 gap-y-0.5 text-xs">
-                {displaySkills.map((s) => {
-                  const abilityAbl = SKILL_ABILITY[s.name] || "STR";
-                  const details = ABILITY_DETAILS[abilityAbl];
-                  const Icon = details?.Icon;
-                  const isProf = s.proficiency !== "none";
-                  const isExpert = s.proficiency === "expertise";
-                  const isHalf = s.proficiency === "half";
-
-                  const iconColor = isExpert
-                    ? "text-gold drop-shadow-[0_0_3px_color-mix(in_oklab,var(--gold)_55%,transparent)]"
-                    : isProf
-                      ? "text-accent/80"
-                      : "text-muted-foreground/25";
-
-                  const nameColor = isExpert
-                    ? "text-gold font-semibold"
-                    : isProf
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground";
-
-                  return (
-                    <div
-                      key={s.key}
-                      className={`group/skill flex items-center justify-between transition-colors py-0.5 hover:bg-secondary/15 rounded px-1 -mx-1 ${isProf ? "" : "opacity-60"}`}
-                    >
-                      <span className={`truncate flex items-center gap-1.5 min-w-0 ${nameColor}`}>
-                        {Icon && (
-                          <Icon
-                            size={8}
-                            className={`shrink-0 transition-transform duration-300 group-hover/skill:scale-120 group-hover/skill:rotate-6 ${iconColor}`}
-                          />
-                        )}
-                        <span className="truncate">{s.name}</span>
-                        {isExpert && (
-                          <span className="text-gold text-[7px] shrink-0" title="Expertise">
-                            ★
-                          </span>
-                        )}
-                        {isHalf && (
-                          <span
-                            className="text-accent/70 text-[7px] shrink-0"
-                            title="Half Proficient"
-                          >
-                            ◐
-                          </span>
-                        )}
-                      </span>
-                      <span
-                        className={`font-mono text-xs shrink-0 pl-1 ${isExpert ? "text-gold font-bold" : isProf ? "text-accent font-semibold" : "text-muted-foreground/60"}`}
-                      >
-                        {fmt(s.modifier)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </Section>
-          )}
-
-          {defenses.length > 0 && (
-            <Section title="Defenses">
-              <div className="flex flex-wrap gap-1">
-                {defenses.map((d) => {
-                  const styles =
-                    d.type === "immunity"
-                      ? "border-gold/60 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] text-gold"
-                      : d.type === "vulnerability"
-                        ? "border-destructive/60 bg-destructive/15 text-destructive"
-                        : "border-accent/50 bg-accent/10 text-accent";
-                  const mark =
-                    d.type === "immunity"
-                      ? "Immunity"
-                      : d.type === "vulnerability"
-                        ? "Vulnerability"
-                        : "Resistance";
-                  return (
-                    <Tooltip key={`${d.type}-${d.damageType}`}>
-                      <TooltipTrigger asChild>
-                        <span
-                          className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider cursor-help ${styles}`}
-                        >
-                          <span className="opacity-70 mr-1">{mark}</span>
-                          {d.damageType}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {d.type}: {d.damageType}
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-            </Section>
-          )}
-
-          {(member.languages.length > 0 || member.tools.length > 0) && (
-            <Section title="Proficiencies">
-              <div className="flex flex-col gap-2">
-                {member.languages.length > 0 && (
-                  <div>
-                    <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">
-                      Languages
-                    </span>
-                    <span className="text-xs text-foreground">{member.languages.join(", ")}</span>
-                  </div>
-                )}
-                {member.tools.length > 0 && (
-                  <div>
-                    <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">
-                      Tools
-                    </span>
-                    <span className="text-xs text-foreground">{member.tools.join(", ")}</span>
-                  </div>
-                )}
-              </div>
-            </Section>
-          )}
-
-          {actions?.filter((a) => a.source === "class" && a.uses).length ? (
-            <Section title="Resources">
-              <div className="flex flex-col gap-2">
-                {[...actions]
-                  .filter((a) => a.source === "class" && a.uses)
-                  .sort((a, b) => {
-                    const getResourceSortValue = (act: any) => {
-                      const type = act.activation?.activationType;
-                      if (type === 1) return 1; // Action
-                      if (type === 3) return 2; // Bonus Action
-                      if (type === 4) return 3; // Reaction
-                      return 4; // Other
-                    };
-                    const sortA = getResourceSortValue(a);
-                    const sortB = getResourceSortValue(b);
-                    if (sortA !== sortB) return sortA - sortB;
-                    return a.name.localeCompare(b.name);
-                  })
-                  .map((a) => {
-                    const u = a.uses!;
-                    const out = u.current <= 0;
-                    const ratio = u.max > 0 ? u.current / u.max : 0;
-                    const isSmallMax = u.max <= 6;
-
-                    return (
-                      <div
-                        key={`${a.source}-${a.name}`}
-                        className="flex flex-col gap-1.5 rounded-lg border border-border/30 bg-secondary/20 p-2.5 transition-all duration-200 hover:border-accent/40"
-                        title={`Resets on ${u.reset}`}
-                      >
-                        <div className="flex items-center justify-between text-xs font-semibold text-foreground">
-                          <span>{a.name}</span>
-                          <span
-                            className={`font-mono text-[10px] ${out ? "text-destructive" : "text-accent"}`}
-                          >
-                            {u.current} / {u.max}
-                          </span>
-                        </div>
-
-                        {isSmallMax ? (
-                          <div className="flex gap-1 mt-0.5">
-                            {Array.from({ length: u.max }).map((_, i) => {
-                              const active = i < u.current;
-                              return (
-                                <span
-                                  key={i}
-                                  className={`h-2 w-2 rounded-full transition-all duration-300 ${
-                                    active
-                                      ? "bg-accent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_60%,transparent)]"
-                                      : "border border-accent/40 bg-transparent"
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="h-1 w-full overflow-hidden rounded-full bg-secondary mt-0.5">
+                </Section>
+              )}
+              {(member.spellcasting?.length > 0 || spellSlots.length > 0 || pactSlots.length > 0) && (
+                <Section title="Spellcasting">
+                  <div className="flex flex-col gap-3">
+                    {member.spellcasting && member.spellcasting.length > 0 && (
+                      <div className="flex flex-col gap-3">
+                        {member.spellcasting.map((sc) => {
+                          const abilityMod =
+                            member.abilities.find((a) => a.name === sc.ability)?.modifier ?? 0;
+                          return (
                             <div
-                              className="h-full bg-accent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_60%,transparent)] transition-all duration-500"
-                              style={{ width: `${ratio * 100}%` }}
-                            />
+                              key={sc.className}
+                              className="relative overflow-hidden rounded-xl border border-accent/25 bg-gradient-to-br from-accent/5 to-secondary/30 p-3 shadow-md"
+                            >
+                              <div className="absolute -right-3 -top-3 h-10 w-10 rounded-full bg-accent/8 blur-xl pointer-events-none" />
+                              <div className="mb-3 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-accent select-none">
+                                <Sparkles size={11} className="text-accent/80 animate-pulse" />
+                                <span>
+                                  {sc.className} ({sc.ability})
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 text-center divide-x divide-border/20">
+                                <div>
+                                  <div className="font-heading text-xl font-extrabold text-foreground leading-tight drop-shadow-sm">
+                                    {fmt(abilityMod)}
+                                  </div>
+                                  <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                                    Modifier
+                                  </div>
+                                </div>
+                                <div className="pl-1">
+                                  <div className="font-heading text-xl font-extrabold text-foreground leading-tight drop-shadow-sm">
+                                    {fmt(sc.attackBonus)}
+                                  </div>
+                                  <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                                    Spell Attack
+                                  </div>
+                                </div>
+                                <div className="pl-1">
+                                  <div className="font-heading text-xl font-extrabold text-gold leading-tight drop-shadow-sm">
+                                    {sc.saveDc}
+                                  </div>
+                                  <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                                    Save DC
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {(spellSlots.length > 0 || pactSlots.length > 0) && (
+                      <div className="flex flex-col gap-1.5 border-t border-border/30 pt-2">
+                        {spellSlots.map((s) => {
+                          const available = s.max - s.used;
+                          return (
+                            <div key={`s-${s.level}`} className="flex items-center gap-2">
+                              <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">
+                                Level {s.level}
+                              </span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex flex-wrap gap-1.5 cursor-help">
+                                    {Array.from({ length: s.max }).map((_, i) => {
+                                      const filled = i < available;
+                                      return (
+                                        <span
+                                          key={i}
+                                          className={`mana-slot ${filled ? "mana-slot-filled" : ""}`}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Level {s.level}: {available}/{s.max} remaining
+                                </TooltipContent>
+                              </Tooltip>
+                              <span className="ml-auto text-[10px] font-mono text-muted-foreground">
+                                {available}/{s.max}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {pactSlots.map((s) => {
+                          const available = s.max - s.used;
+                          return (
+                            <div key={`p-${s.level}`} className="flex items-center gap-2">
+                              <span className="min-w-[2.5rem] text-[10px] font-mono font-semibold uppercase tracking-wider text-accent">
+                                Pact {s.level}
+                              </span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex flex-wrap gap-1.5 cursor-help">
+                                    {Array.from({ length: s.max }).map((_, i) => {
+                                      const filled = i < available;
+                                      return (
+                                        <span
+                                          key={i}
+                                          className={`pact-slot ${filled ? "pact-slot-filled" : ""}`}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Pact (L{s.level}): {available}/{s.max} remaining
+                                </TooltipContent>
+                              </Tooltip>
+                              <span className="ml-auto text-[10px] font-mono text-muted-foreground">
+                                {available}/{s.max}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </Section>
+              )}
+
+              {/* Combat Actions & Spells Section */}
+              {(member.attacks.length > 0 ||
+                member.cantrips.length > 0 ||
+                member.preparedSpells.length > 0) && (
+                <Section
+                  title={
+                    <span className="flex items-center gap-1.5 font-semibold text-accent/90">
+                      <Swords size={12} className="text-accent" />
+                      <span>Combat & Spells</span>
+                    </span>
+                  }
+                  defaultOpen={false}
+                >
+                  <div className="flex flex-col gap-3">
+                    {/* Attacks List */}
+                    {member.attacks.length > 0 && (
+                      <div>
+                        <div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                          Attacks & Actions
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {member.attacks.map((atk, idx) => (
+                            <div
+                              key={`${atk.name}-${idx}`}
+                              className="flex items-center justify-between rounded border border-border bg-secondary/40 px-2 py-1 text-xs transition-colors hover:border-accent/40 hover:bg-secondary/60"
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-foreground">{atk.name}</span>
+                                {atk.properties && atk.properties.length > 0 && (
+                                  <span className="text-[9px] text-muted-foreground mt-0.5">
+                                    {atk.properties.join(", ")}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 font-mono">
+                                <span className="text-accent font-semibold">
+                                  {atk.attackBonus >= 0 ? `+${atk.attackBonus}` : atk.attackBonus}
+                                </span>
+                                <span className="text-muted-foreground text-[10px]">to hit</span>
+                                <span className="text-foreground font-semibold">{atk.damage}</span>
+                                <span className="text-muted-foreground text-[10px]">
+                                  {atk.damageType}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Spells List */}
+                    {(member.cantrips.length > 0 || member.preparedSpells.length > 0) && (
+                      <div className="border-t border-border/30 pt-2 flex flex-col gap-2">
+                        {member.cantrips.length > 0 && (
+                          <div>
+                            <div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                              Cantrips
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {member.cantrips.map((c) => (
+                                <Tooltip key={c.name}>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-help rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent">
+                                      {c.name}
+                                    </span>
+                                  </TooltipTrigger>
+                                  {c.description && (
+                                    <TooltipContent className="max-w-[280px] text-xs">
+                                      {c.description.replace(/<[^>]*>/g, "")}
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {member.preparedSpells.length > 0 && (
+                          <div>
+                            <div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                              Prepared Spells
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {member.preparedSpells.map((s) => (
+                                <Tooltip key={s.name}>
+                                  <TooltipTrigger asChild>
+                                    <span className="cursor-help rounded border border-border bg-secondary/50 px-1.5 py-0.5 text-[10px] text-foreground">
+                                      <span className="text-accent mr-1 font-mono text-[9px]">
+                                        L{s.level}
+                                      </span>
+                                      {s.name}
+                                    </span>
+                                  </TooltipTrigger>
+                                  {s.description && (
+                                    <TooltipContent className="max-w-[280px] text-xs">
+                                      {s.description.replace(/<[^>]*>/g, "")}
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
-                    );
-                  })}
-              </div>
-            </Section>
-          ) : null}
-
-          {member.inventory.length > 0 && (
-            <Section title="Inventory" defaultOpen={false}>
-              <InventoryList
-                items={member.inventory}
-                currencies={member.currencies}
-                weightCarried={member.weightCarried}
-                carryingCapacity={carryingCapacity}
-              />
-            </Section>
-          )}
-
-          {member.feats && member.feats.length > 0 && (
-            <Section title="Feats" defaultOpen={false}>
-              <div className="flex flex-wrap gap-1.5">
-                {member.feats.map((f) => (
-                  <Tooltip key={f.name}>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-secondary/20 px-2.5 py-0.5 text-[9px] font-bold text-foreground/90 uppercase tracking-wider transition-all duration-200 hover:border-accent/40 hover:scale-105 hover:bg-secondary/35 select-none cursor-help">
-                        <Award size={9} className="text-accent/80 shrink-0" />
-                        <span>
-                          {f.name}
-                          {f.choices && f.choices.length > 0 ? ` (${f.choices.join(", ")})` : ""}
-                        </span>
-                      </span>
-                    </TooltipTrigger>
-                    {f.description && (
-                      <TooltipContent className="max-w-[240px] text-xs">
-                        {f.description.replace(/<[^>]*>/g, "")}
-                      </TooltipContent>
                     )}
-                  </Tooltip>
-                ))}
-              </div>
-            </Section>
+                  </div>
+                </Section>
+              )}
+
+              {(senses.length > 0 || member.passivePerception != null) && (
+                <Section title="Senses">
+                  <div className="flex flex-col gap-1.5">
+                    {[
+                      { label: "Passive Perception", value: member.passivePerception, icon: Eye },
+                      {
+                        label: "Passive Investigation",
+                        value: member.passiveInvestigation,
+                        icon: Search,
+                      },
+                      { label: "Passive Insight", value: member.passiveInsight, icon: Brain },
+                    ]
+                      .filter((p) => p.value != null)
+                      .map((p) => {
+                        const Icon = p.icon;
+                        return (
+                          <div
+                            key={p.label}
+                            className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/20 px-2.5 py-1.5 transition-colors hover:border-accent/40"
+                          >
+                            <div className="flex items-center gap-2 select-none">
+                              <Icon size={9.5} className="shrink-0 text-accent/80" />
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                                {p.label}
+                              </span>
+                            </div>
+                            <span className="flex h-6 w-6 items-center justify-center rounded border border-accent/40 bg-accent/10 text-xs font-mono font-bold text-foreground shadow-[0_0_6px_color-mix(in_oklab,var(--accent)_20%,transparent)]">
+                              {p.value}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    {senses.length > 0 && (
+                      <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+                        {senses.map((s) => {
+                          const isDarkvision = s.name.toLowerCase().includes("darkvision");
+                          const SenseIcon = isDarkvision ? Moon : Eye;
+                          return (
+                            <span
+                              key={s.name}
+                              className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-0.5 text-[9px] font-bold text-primary uppercase tracking-wider select-none"
+                            >
+                              <ThemeIcon size={10} className="text-primary/90" as={SenseIcon} />
+                              <span>
+                                {s.name}
+                                {s.value != null ? ` ${s.value}ft` : ""}
+                              </span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </Section>
+              )}
+
+              {displaySkills.length > 0 && (
+                <Section title="Skills" defaultOpen={false}>
+                  <div className="grid grid-cols-2 2xl:grid-cols-1 gap-x-3 gap-y-0.5 text-xs">
+                    {displaySkills.map((s) => {
+                      const abilityAbl = SKILL_ABILITY[s.name] || "STR";
+                      const details = ABILITY_DETAILS[abilityAbl];
+                      const Icon = details?.Icon;
+                      const isProf = s.proficiency !== "none";
+                      const isExpert = s.proficiency === "expertise";
+                      const isHalf = s.proficiency === "half";
+
+                      const iconColor = isExpert
+                        ? "text-gold drop-shadow-[0_0_3px_color-mix(in_oklab,var(--gold)_55%,transparent)]"
+                        : isProf
+                          ? "text-accent/80"
+                          : "text-muted-foreground/25";
+
+                      const nameColor = isExpert
+                        ? "text-gold font-semibold"
+                        : isProf
+                          ? "text-foreground font-medium"
+                          : "text-muted-foreground";
+
+                      return (
+                        <div
+                          key={s.key}
+                          className={`group/skill flex items-center justify-between transition-colors py-0.5 hover:bg-secondary/15 rounded px-1 -mx-1 ${isProf ? "" : "opacity-60"}`}
+                        >
+                          <span className={`truncate flex items-center gap-1.5 min-w-0 ${nameColor}`}>
+                            {Icon && (
+                              <Icon
+                                size={8}
+                                className={`shrink-0 transition-transform duration-300 group-hover/skill:scale-120 group-hover/skill:rotate-6 ${iconColor}`}
+                              />
+                            )}
+                            <span className="truncate">{s.name}</span>
+                            {isExpert && (
+                              <span className="text-gold text-[7px] shrink-0" title="Expertise">
+                                ★
+                              </span>
+                            )}
+                            {isHalf && (
+                              <span
+                                className="text-accent/70 text-[7px] shrink-0"
+                                title="Half Proficient"
+                              >
+                                ◐
+                              </span>
+                            )}
+                          </span>
+                          <span
+                            className={`font-mono text-xs shrink-0 pl-1 ${isExpert ? "text-gold font-bold" : isProf ? "text-accent font-semibold" : "text-muted-foreground/60"}`}
+                          >
+                            {fmt(s.modifier)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Section>
+              )}
+
+              {defenses.length > 0 && (
+                <Section title="Defenses">
+                  <div className="flex flex-wrap gap-1">
+                    {defenses.map((d) => {
+                      const styles =
+                        d.type === "immunity"
+                          ? "border-gold/60 bg-[color-mix(in_oklab,var(--gold)_12%,var(--secondary))] text-gold"
+                          : d.type === "vulnerability"
+                            ? "border-destructive/60 bg-destructive/15 text-destructive"
+                            : "border-accent/50 bg-accent/10 text-accent";
+                      const mark =
+                        d.type === "immunity"
+                          ? "Immunity"
+                          : d.type === "vulnerability"
+                            ? "Vulnerability"
+                            : "Resistance";
+                      return (
+                        <Tooltip key={`${d.type}-${d.damageType}`}>
+                          <TooltipTrigger asChild>
+                            <span
+                              className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider cursor-help ${styles}`}
+                            >
+                              <span className="opacity-70 mr-1">{mark}</span>
+                              {d.damageType}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {d.type}: {d.damageType}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                </Section>
+              )}
+
+              {(member.languages.length > 0 || member.tools.length > 0) && (
+                <Section title="Proficiencies">
+                  <div className="flex flex-col gap-2">
+                    {member.languages.length > 0 && (
+                      <div>
+                        <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">
+                          Languages
+                        </span>
+                        <span className="text-xs text-foreground">{member.languages.join(", ")}</span>
+                      </div>
+                    )}
+                    {member.tools.length > 0 && (
+                      <div>
+                        <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">
+                          Tools
+                        </span>
+                        <span className="text-xs text-foreground">{member.tools.join(", ")}</span>
+                      </div>
+                    )}
+                  </div>
+                </Section>
+              )}
+
+              {actions?.filter((a) => a.source === "class" && a.uses).length ? (
+                <Section title="Resources">
+                  <div className="flex flex-col gap-2">
+                    {[...actions]
+                      .filter((a) => a.source === "class" && a.uses)
+                      .sort((a, b) => {
+                        const getResourceSortValue = (act: any) => {
+                          const type = act.activation?.activationType;
+                          if (type === 1) return 1; // Action
+                          if (type === 3) return 2; // Bonus Action
+                          if (type === 4) return 3; // Reaction
+                          return 4; // Other
+                        };
+                        const sortA = getResourceSortValue(a);
+                        const sortB = getResourceSortValue(b);
+                        if (sortA !== sortB) return sortA - sortB;
+                        return a.name.localeCompare(b.name);
+                      })
+                      .map((a) => {
+                        const u = a.uses!;
+                        const out = u.current <= 0;
+                        const ratio = u.max > 0 ? u.current / u.max : 0;
+                        const isSmallMax = u.max <= 6;
+
+                        return (
+                          <div
+                            key={`${a.source}-${a.name}`}
+                            className="flex flex-col gap-1.5 rounded-lg border border-border/30 bg-secondary/20 p-2.5 transition-all duration-200 hover:border-accent/40"
+                            title={`Resets on ${u.reset}`}
+                          >
+                            <div className="flex items-center justify-between text-xs font-semibold text-foreground">
+                              <span>{a.name}</span>
+                              <span
+                                className={`font-mono text-[10px] ${out ? "text-destructive" : "text-accent"}`}
+                              >
+                                {u.current} / {u.max}
+                              </span>
+                            </div>
+
+                            {isSmallMax ? (
+                              <div className="flex gap-1 mt-0.5">
+                                {Array.from({ length: u.max }).map((_, i) => {
+                                  const active = i < u.current;
+                                  return (
+                                    <span
+                                      key={i}
+                                      className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                                        active
+                                          ? "bg-accent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_60%,transparent)]"
+                                          : "border border-accent/40 bg-transparent"
+                                      }`}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="h-1 w-full overflow-hidden rounded-full bg-secondary mt-0.5">
+                                <div
+                                  className="h-full bg-accent shadow-[0_0_5px_color-mix(in_oklab,var(--accent)_60%,transparent)] transition-all duration-500"
+                                  style={{ width: `${ratio * 100}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </Section>
+              ) : null}
+
+              {member.inventory.length > 0 && (
+                <Section title="Inventory" defaultOpen={false}>
+                  <InventoryList
+                    items={member.inventory}
+                    currencies={member.currencies}
+                    weightCarried={member.weightCarried}
+                    carryingCapacity={carryingCapacity}
+                  />
+                </Section>
+              )}
+
+              {member.feats && member.feats.length > 0 && (
+                <Section title="Feats" defaultOpen={false}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {member.feats.map((f) => (
+                      <Tooltip key={f.name}>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-secondary/20 px-2.5 py-0.5 text-[9px] font-bold text-foreground/90 uppercase tracking-wider transition-all duration-200 hover:border-accent/40 hover:scale-105 hover:bg-secondary/35 select-none cursor-help">
+                            <Award size={9} className="text-accent/80 shrink-0" />
+                            <span>
+                              {f.name}
+                              {f.choices && f.choices.length > 0 ? ` (${f.choices.join(", ")})` : ""}
+                            </span>
+                          </span>
+                        </TooltipTrigger>
+                        {f.description && (
+                          <TooltipContent className="max-w-[240px] text-xs">
+                            {f.description.replace(/<[^>]*>/g, "")}
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    ))}
+                  </div>
+                </Section>
+              )}
+            </div>
           )}
         </>
       )}

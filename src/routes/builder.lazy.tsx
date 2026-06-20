@@ -466,23 +466,23 @@ function BuilderWizard() {
         </div>
       )}
 
-      <div className="flex gap-4 mb-10 max-w-4xl mx-auto">
+      <div className="flex gap-1.5 sm:gap-2 mb-10 max-w-4xl mx-auto">
         {[
-          { id: 1, label: "Heritage", icon: User },
-          { id: 2, label: "Background", icon: BookOpen },
-          { id: 3, label: "Path", icon: Swords },
-          { id: 4, label: "Attributes", icon: Dices },
+          { id: 1, label: "Species", icon: User },
+          { id: 2, label: "Origin", icon: BookOpen },
+          { id: 3, label: "Class", icon: Swords },
+          { id: 4, label: "Stats", icon: Dices },
           { id: 5, label: "Feats", icon: BookOpen },
           { id: 6, label: "Spells", icon: Wand2 },
           { id: 7, label: "Equipment", icon: Swords },
-          { id: 8, label: "Biography", icon: FileText },
+          { id: 8, label: "Bio", icon: FileText },
           { id: 9, label: "Review", icon: Save },
         ].map((s) => {
           const valid = isStepValidAt(s.id);
           return (
             <div
               key={s.id}
-              className={`flex-1 flex flex-col items-center p-3 rounded-xl transition-all duration-500 relative overflow-hidden cursor-pointer ${
+              className={`flex-1 flex flex-col items-center p-1.5 sm:p-2.5 md:p-3 rounded-xl transition-all duration-500 relative overflow-hidden cursor-pointer ${
                 step === s.id
                   ? `${theme.bgActive} ${theme.text} scale-105`
                   : "bg-secondary/30 text-foreground/80 hover:bg-secondary/50"
@@ -502,12 +502,12 @@ function BuilderWizard() {
                 </div>
               )}
               <s.icon
-                className={`h-7 w-7 mb-2 transition-transform duration-300 ${step === s.id ? "scale-110" : ""}`}
+                className={`h-5 w-5 sm:h-6 md:h-7 sm:w-6 md:w-7 mb-1 transition-transform duration-300 ${step === s.id ? "scale-110" : ""}`}
                 style={
                   step === s.id ? { filter: `drop-shadow(0 0 8px ${getThemeHex(theme.text)})` } : {}
                 }
               />
-              <span className="text-xs font-black uppercase tracking-[0.2em]">{s.label}</span>
+              <span className="hidden sm:block text-[8px] md:text-[10px] lg:text-xs font-black uppercase tracking-wider text-center w-full whitespace-nowrap">{s.label}</span>
               {step > s.id && (
                 <div
                   className="absolute bottom-0 left-0 w-full h-1"

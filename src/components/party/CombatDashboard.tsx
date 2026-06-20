@@ -6,6 +6,8 @@ import { getShortName } from "@/lib/utils";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 import { useRouter } from "@tanstack/react-router";
 import { parseHitDice } from "./character-detail/hooks";
+import { useConfirm } from "@/components/ui/confirm";
+import { useToast } from "@/components/ui/toast";
 
 interface CombatDashboardProps {
   members: PartyMember[];
@@ -13,20 +15,21 @@ interface CombatDashboardProps {
 
 export function CombatDashboard({ members }: CombatDashboardProps) {
   const router = useRouter();
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const modifiedMembers = members.map(getFullyModifiedStats);
   const activeMembers = modifiedMembers.filter((m) => !m.error);
 
   if (activeMembers.length === 0) return null;
 
-  const handleShortRest = () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to perform a Short Rest for the entire party?\n" +
-          "This clears death saves, resets Warlock pact slots, and resets short-rest class resources.",
-      )
-    ) {
-      return;
-    }
+  const handleShortRest = async () => {
+    const confirmed = await confirm({
+      title: "Short Rest",
+      message: "Are you sure you want to perform a Short Rest for the entire party?\n\nThis clears death saves, resets Warlock pact slots, and resets short-rest class resources.",
+      variant: "warning",
+      confirmText: "Short Rest",
+    });
+    if (!confirmed) return;
 
     activeMembers.forEach((member) => {
       // 1. Clear death saves
@@ -89,18 +92,18 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
       localStorage.removeItem(`party-stats:rage:${member.id}`);
     });
 
+    toast.success("Short Rest complete for all party members.", "Rest Completed");
     router.invalidate();
   };
 
-  const handleLongRest = () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to perform a Long Rest for the entire party?\n" +
-          "This restores all characters to max HP and full hit dice, resets all spell/pact slots and resources, clears death saves, and removes custom conditions.",
-      )
-    ) {
-      return;
-    }
+  const handleLongRest = async () => {
+    const confirmed = await confirm({
+      title: "Long Rest",
+      message: "Are you sure you want to perform a Long Rest for the entire party?\n\nThis restores all characters to max HP and full hit dice, resets all spell/pact slots and resources, clears death saves, and removes custom conditions.",
+      variant: "warning",
+      confirmText: "Long Rest",
+    });
+    if (!confirmed) return;
 
     activeMembers.forEach((member) => {
       // 1. Clear all local HP overrides, restoring characters to max HP, tempHp: 0, spentHitDice, and clear death saves
@@ -141,6 +144,7 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
     // 5. Remove custom conditions
     localStorage.removeItem("mob.conditions.v1");
 
+    toast.success("Long Rest complete. All characters fully restored.", "Rest Completed");
     router.invalidate();
   };
 

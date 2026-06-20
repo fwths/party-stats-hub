@@ -12,12 +12,16 @@ import ScratchpadEditor from "./session-notes/ScratchpadEditor";
 import { MarkdownRenderer } from "./session-notes/MarkdownRenderer";
 import { parseInlineStyles } from "./session-notes/markdown-inline";
 import SyncNotionModal from "./session-notes/SyncNotionModal";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 
 interface SessionNotesProps {
   members?: PartyMember[];
 }
 
 export default function SessionNotes({ members }: SessionNotesProps) {
+  const { toast } = useToast();
+  const { confirm } = useConfirm();
   // --- Navigation & View Mode ---
   const [activeMode, setActiveMode] = useState<"scratchpad" | "page">("page");
   const [expandedPageIds, setExpandedPageIds] = useState<Set<string>>(() => new Set());
@@ -268,11 +272,11 @@ export default function SessionNotes({ members }: SessionNotesProps) {
           parentType: notionParentType,
         }),
       );
-      alert("Notion configuration saved successfully!");
+      toast.success("Notion configuration saved successfully!", "Config Saved");
       setShowNotionSettings(false);
       setTriggerRefresh((prev) => prev + 1);
     } catch (err) {
-      alert("Failed to save Notion configuration.");
+      toast.error("Failed to save Notion configuration.", "Config Error");
     }
   };
 
@@ -296,12 +300,17 @@ export default function SessionNotes({ members }: SessionNotesProps) {
     setExpandedPageIds(new Set());
   };
 
-  const handleClearNotes = () => {
-    if (
-      window.confirm("Are you sure you want to clear your session notes? This cannot be undone.")
-    ) {
+  const handleClearNotes = async () => {
+    const confirmed = await confirm({
+      title: "Clear Session Notes",
+      message: "Are you sure you want to clear your session notes? This cannot be undone.",
+      variant: "destructive",
+      confirmText: "Clear Notes",
+    });
+    if (confirmed) {
       setNotes("");
       localStorage.setItem(NOTE_KEY, "");
+      toast.success("Session notes cleared.");
     }
   };
 
@@ -317,16 +326,18 @@ export default function SessionNotes({ members }: SessionNotesProps) {
     setShowSyncModal(true);
   };
 
-  const handleLoadPageIntoScratchpad = () => {
-    if (
-      window.confirm(
-        `Are you sure you want to load "${selectedPageTitle}" into your scratchpad?\nWarning: This will overwrite your current active session notes.`,
-      )
-    ) {
+  const handleLoadPageIntoScratchpad = async () => {
+    const confirmed = await confirm({
+      title: "Overwrite Scratchpad?",
+      message: `Are you sure you want to load "${selectedPageTitle}" into your scratchpad?\n\nWarning: This will overwrite your current active session notes.`,
+      variant: "warning",
+      confirmText: "Overwrite",
+    });
+    if (confirmed) {
       setNotes(pageContent);
       localStorage.setItem(NOTE_KEY, pageContent);
       setActiveMode("scratchpad");
-      alert("Notes loaded into active session scratchpad!");
+      toast.success("Notes loaded into active session scratchpad!");
     }
   };
 

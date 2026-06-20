@@ -20,7 +20,7 @@ export const Route = createFileRoute("/")({
     } else {
       ids = readStoredIdsFromCookie();
     }
-    context.queryClient.prefetchQuery(partyQueryOptions(ids));
+    await context.queryClient.prefetchQuery(partyQueryOptions(ids));
     return { ids };
   },
 });

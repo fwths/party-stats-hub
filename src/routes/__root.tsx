@@ -15,6 +15,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { applyTheme } from "../hooks/useThemePreset";
 import { initSyncEngine } from "../lib/sync-engine";
+import { ToastProvider } from "@/components/ui/toast";
+import { ConfirmProvider } from "@/components/ui/confirm";
 
 function NotFoundComponent() {
   return (
@@ -217,8 +219,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <ToastProvider>
+        <ConfirmProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </ConfirmProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

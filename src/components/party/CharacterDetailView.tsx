@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useToast } from "@/components/ui/toast";
 import { PartyMember, PreparedSpell } from "@/lib/dndbeyond.types";
 import { ConditionsPanel, InventoryList, useCharacterConditions } from "./CharacterCard";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
@@ -218,6 +219,7 @@ export function CharacterDetailView({
   member: PartyMember;
   allMembers?: PartyMember[];
 }) {
+  const { toast } = useToast();
   const [activeLayout, setActiveLayout] = useState<"classic" | "sticky" | "tabbed" | "widescreen">(
     () => {
       try {
@@ -1538,7 +1540,7 @@ export function CharacterDetailView({
                                       }
 
                                       setIsMantleInspirationOpen(false);
-                                      alert(`Applied 5 temporary HP to ${name}!`);
+                                      toast.success(`Applied 5 temporary HP to ${name}!`, "Mantle of Inspiration");
                                     } catch {}
                                   }}
                                   className="py-1 px-1.5 border border-border/60 bg-secondary/50 hover:bg-accent hover:text-accent-foreground hover:border-accent rounded text-[9.5px] font-bold text-muted-foreground transition-all cursor-pointer text-left truncate"

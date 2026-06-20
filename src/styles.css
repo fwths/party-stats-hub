@@ -571,6 +571,14 @@
   animation: slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Fix low contrast select options in dark mode and custom overlays */
 select option {
   background-color: var(--card) !important;

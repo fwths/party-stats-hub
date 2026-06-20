@@ -14,6 +14,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
+import { useConfirm } from "@/components/ui/confirm";
+import { useToast } from "@/components/ui/toast";
 
 interface CombatTrackerProps {
   members: PartyMember[];
@@ -60,6 +62,8 @@ const DND_CONDITIONS = [
 
 export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTrackerProps) {
   const router = useRouter();
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const activeMembers = members.filter((m) => !m.error);
 
   const [combatState, setCombatState] = useState<CombatState>({
@@ -128,15 +132,14 @@ export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTr
     localStorage.setItem("party-stats:combat-state", JSON.stringify(state));
   };
 
-  // End combat
-  const handleEndCombat = () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to end this combat? All initiatives and monster tracking will be lost.",
-      )
-    ) {
-      return;
-    }
+  const handleEndCombat = async () => {
+    const confirmed = await confirm({
+      title: "End Combat?",
+      message: "Are you sure you want to end this combat? All initiatives and monster tracking will be lost.",
+      variant: "destructive",
+      confirmText: "End Combat",
+    });
+    if (!confirmed) return;
     const emptyState: CombatState = {
       active: false,
       round: 1,
@@ -147,6 +150,7 @@ export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTr
     if (onEndCombatCallback) {
       onEndCombatCallback();
     }
+    toast.info("Combat encounter ended.", "Encounter Over");
     router.invalidate();
   };
 

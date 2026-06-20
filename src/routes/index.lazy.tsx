@@ -173,7 +173,7 @@ function PartyDashboard({ ids }: { ids: number[] }) {
   return (
     <div className="space-y-6">
       {/* Navigation tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-border/30 pb-3 select-none">
+      <div className="flex overflow-x-auto scrollbar-none gap-2 border-b border-border/30 pb-3 select-none flex-nowrap -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
         <button
           onClick={() => setActiveTab("grid")}
           className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${

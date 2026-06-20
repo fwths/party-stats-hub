@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { PartyMember } from "@/lib/dndbeyond.types";
 import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
 import { Plus, Minus, Trash2, Swords, AlertTriangle } from "lucide-react";
+import { useConfirm } from "@/components/ui/confirm";
+import { useToast } from "@/components/ui/toast";
 
 interface EncounterBuilderProps {
   members: PartyMember[];
@@ -50,6 +52,8 @@ const XP_THRESHOLDS: Record<
 };
 
 export function EncounterBuilder({ members, onStartCombat }: EncounterBuilderProps) {
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const activeMembers = members.filter((m) => !m.error);
 
   const [encounters, setEncounters] = useState<Encounter[]>([]);
@@ -110,9 +114,15 @@ export function EncounterBuilder({ members, onStartCombat }: EncounterBuilderPro
   };
 
   // Delete current encounter
-  const handleDeleteEncounter = () => {
+  const handleDeleteEncounter = async () => {
     if (!selectedEncounterId) return;
-    if (!window.confirm("Are you sure you want to delete this encounter?")) return;
+    const confirmed = await confirm({
+      title: "Delete Encounter",
+      message: "Are you sure you want to delete this encounter?",
+      variant: "destructive",
+      confirmText: "Delete",
+    });
+    if (!confirmed) return;
 
     const updated = encounters.filter((e) => e.id !== selectedEncounterId);
     saveEncountersList(updated);
@@ -121,6 +131,7 @@ export function EncounterBuilder({ members, onStartCombat }: EncounterBuilderPro
     } else {
       setSelectedEncounterId("");
     }
+    toast.success("Encounter deleted.", "Encounter Removed");
   };
 
   // Active encounter object

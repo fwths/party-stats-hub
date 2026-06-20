@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { SourceFiltersPanel } from "@/components/builder/SourceFiltersPanel";
 import { DEFAULT_SOURCE_POLICY, DEFAULT_CONTENT_TOGGLES } from "@/lib/forge/source-policy";
 import { createNativePartyMember, saveNativeCharacter } from "@/lib/native-engine";
+import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 
 import {
   BuilderState,
@@ -56,6 +58,8 @@ export const Route = createLazyFileRoute("/builder")({
 
 function BuilderWizard() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { confirm } = useConfirm();
   const {
     backgrounds,
     classes,
@@ -183,7 +187,7 @@ function BuilderWizard() {
   const saveCharacter = async () => {
     try {
       if (validationIssues.length > 0) {
-        alert(`Finish these choices before saving:\n\n${validationIssues.join("\n")}`);
+        toast.warning(validationIssues.join(", "), "Incomplete Draft");
         return;
       }
 
@@ -271,11 +275,11 @@ function BuilderWizard() {
       // Clear the draft
       localStorage.removeItem("party_stats_forge_draft");
 
-      alert("Character built natively and added to party!");
+      toast.success("Character built natively and added to party!", "Forge Successful");
       navigate({ to: "/" });
     } catch (e) {
       console.error(e);
-      alert("Failed to save character");
+      toast.error("Failed to save character", "Forge Error");
     }
   };
 
@@ -438,12 +442,14 @@ function BuilderWizard() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              if (
-                confirm(
-                  "Are you sure you want to reset your character draft? All unsaved progress will be lost.",
-                )
-              ) {
+            onClick={async () => {
+              const confirmed = await confirm({
+                title: "Reset Draft",
+                message: "Are you sure you want to reset your character draft? All unsaved progress will be lost.",
+                variant: "destructive",
+                confirmText: "Reset Draft",
+              });
+              if (confirmed) {
                 localStorage.removeItem("party_stats_forge_draft");
                 window.location.reload();
               }

@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { ListTodo, Plus, CheckCircle2, Circle, Trash2 } from "lucide-react";
 import { TodoItem, TODO_KEY, BADGES } from "./types";
+import { useConfirm } from "@/components/ui/confirm";
+import { useToast } from "@/components/ui/toast";
 
 export default function QuestTracker() {
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const [todos, setTodos] = useState<TodoItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -54,9 +58,16 @@ export default function QuestTracker() {
     setTodos((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const handleClearCompleted = () => {
-    if (window.confirm("Remove all completed quests/tasks?")) {
+  const handleClearCompleted = async () => {
+    const confirmed = await confirm({
+      title: "Remove Completed Tasks?",
+      message: "Are you sure you want to remove all completed quests/tasks?",
+      variant: "warning",
+      confirmText: "Remove All",
+    });
+    if (confirmed) {
       setTodos((prev) => prev.filter((item) => !item.completed));
+      toast.success("Completed quests/tasks removed.");
     }
   };
 

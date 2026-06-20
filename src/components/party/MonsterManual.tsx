@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { syncedLocalStorage as localStorage } from "@/lib/synced-storage";
 import { Search, Plus, Minus, ChevronDown, ChevronUp, Loader2, BookOpen } from "lucide-react";
 import { MonsterStatBlock } from "./MonsterStatBlock";
+import { useToast } from "@/components/ui/toast";
 
 interface MonsterManualProps {
   onRoll?: (rollName: string, formula: string, resultText: string) => void;
@@ -15,6 +16,7 @@ interface MonsterIndexItem {
 }
 
 export function MonsterManual({ onRoll, onMonsterAddedToEncounter }: MonsterManualProps) {
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [crFilter, setCrFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
@@ -206,7 +208,7 @@ export function MonsterManual({ onRoll, onMonsterAddedToEncounter }: MonsterManu
   // Add monster to selected encounter
   const handleAddToEncounter = (monsterItem: MonsterIndexItem) => {
     if (!selectedEncounterId) {
-      alert("Please create an encounter first in the Encounter Builder.");
+      toast.warning("Please create an encounter first in the Encounter Builder.", "No Active Encounter");
       return;
     }
 
@@ -259,10 +261,10 @@ export function MonsterManual({ onRoll, onMonsterAddedToEncounter }: MonsterManu
       }
 
       // Briefly notify user
-      alert(`Added ${quantityToAdd}x ${monsterItem.name} to "${encounter.name}"`);
+      toast.success(`Added ${quantityToAdd}x ${monsterItem.name} to "${encounter.name}"`, "Monster Added");
     } catch (e) {
       console.error(e);
-      alert("Failed to add monster to encounter.");
+      toast.error("Failed to add monster to encounter.", "Error");
     }
   };
 

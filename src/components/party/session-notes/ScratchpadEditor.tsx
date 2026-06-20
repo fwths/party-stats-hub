@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FileText, Send, Minimize2, Maximize2, CheckCircle2 } from "lucide-react";
 import { NOTE_KEY, HISTORY_KEY } from "./types";
+import { useConfirm } from "@/components/ui/confirm";
+import { useToast } from "@/components/ui/toast";
 
 interface ScratchpadEditorProps {
   notes: string;
@@ -27,6 +29,8 @@ export default function ScratchpadEditor({
   handleOpenSync,
   QuestTracker,
 }: ScratchpadEditorProps) {
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
   const [showHistoryMenu, setShowHistoryMenu] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -159,15 +163,20 @@ export default function ScratchpadEditor({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const content = event.target?.result;
       if (typeof content === "string") {
-        if (
-          window.confirm("Importing this file will replace your current scratchpad notes. Proceed?")
-        ) {
+        const confirmed = await confirm({
+          title: "Import Notes?",
+          message: "Importing this file will replace your current scratchpad notes. Proceed?",
+          variant: "warning",
+          confirmText: "Import",
+        });
+        if (confirmed) {
           setNotes(content);
           localStorage.setItem(NOTE_KEY, content);
           saveHistorySnapshot(content);
+          toast.success("Notes imported successfully.");
         }
       }
     };
@@ -250,15 +259,18 @@ export default function ScratchpadEditor({
                         <button
                           key={idx}
                           type="button"
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                "Restore this draft snapshot? Your current active notes will be overwritten.",
-                              )
-                            ) {
+                          onClick={async () => {
+                            const confirmed = await confirm({
+                              title: "Restore Draft Snapshot?",
+                              message: "Restore this draft snapshot? Your current active notes will be overwritten.",
+                              variant: "warning",
+                              confirmText: "Restore Draft",
+                            });
+                            if (confirmed) {
                               setNotes(snapshot.content);
                               localStorage.setItem(NOTE_KEY, snapshot.content);
                               setShowHistoryMenu(false);
+                              toast.success("Draft snapshot restored.");
                             }
                           }}
                           className="w-full text-left p-2 rounded hover:bg-gold/5 border border-transparent hover:border-gold/20 transition-all duration-150 block"

@@ -58,6 +58,7 @@ export function mapSpell(
   prepared = true,
   alwaysPrepared = false,
   customName?: string,
+  uses?: any,
 ): PreparedSpell {
   return {
     level,
@@ -91,6 +92,7 @@ export function mapSpell(
     ritual: typeof def.ritual === "boolean" ? def.ritual : undefined,
     prepared,
     alwaysPrepared,
+    uses,
   };
 }
 
@@ -116,11 +118,30 @@ export function computeSpellsList(data: any): {
     const list = data?.spells?.[source] ?? [];
     for (const s of list) {
       const def = s.definition ?? {};
-      const customName = nameOverrides.get(s.id) || s.override?.name || s.clientOverrides?.name || s.displayAs;
+      const customName =
+        nameOverrides.get(s.id) || s.override?.name || s.clientOverrides?.name || s.displayAs;
       const name = customName || def.name;
       if (!name) continue;
       const level = def.level ?? 0;
       const isCantrip = level === 0;
+      let uses = undefined;
+      const lu = s.limitedUse;
+      if (lu && typeof lu.maxUses === "number" && lu.maxUses > 0) {
+        const reset =
+          lu.resetType === 1
+            ? "short/long rest"
+            : lu.resetType === 2
+              ? "long rest"
+              : lu.resetType === 3
+                ? "day"
+                : "rest";
+        uses = {
+          current: Math.max(0, lu.maxUses - (lu.numberUsed ?? 0)),
+          max: lu.maxUses,
+          reset,
+        };
+      }
+
       const isPrep = !!(
         s.prepared ||
         s.alwaysPrepared ||
@@ -129,7 +150,7 @@ export function computeSpellsList(data: any): {
         source === "race"
       );
 
-      const mapped = mapSpell(def, level, isPrep, !!s.alwaysPrepared, customName);
+      const mapped = mapSpell(def, level, isPrep, !!s.alwaysPrepared, customName, uses);
       if (isCantrip) {
         cantrips.push(mapped);
       } else {
@@ -151,11 +172,30 @@ export function computeSpellsList(data: any): {
     const spells = cs.spells ?? [];
     for (const s of spells) {
       const def = s.definition ?? {};
-      const customName = nameOverrides.get(s.id) || s.override?.name || s.clientOverrides?.name || s.displayAs;
+      const customName =
+        nameOverrides.get(s.id) || s.override?.name || s.clientOverrides?.name || s.displayAs;
       const name = customName || def.name;
       if (!name) continue;
       const level = def.level ?? 0;
       const isCantrip = level === 0;
+
+      let uses = undefined;
+      const lu = s.limitedUse;
+      if (lu && typeof lu.maxUses === "number" && lu.maxUses > 0) {
+        const reset =
+          lu.resetType === 1
+            ? "short/long rest"
+            : lu.resetType === 2
+              ? "long rest"
+              : lu.resetType === 3
+                ? "day"
+                : "rest";
+        uses = {
+          current: Math.max(0, lu.maxUses - (lu.numberUsed ?? 0)),
+          max: lu.maxUses,
+          reset,
+        };
+      }
 
       const isAvailable =
         isCantrip ||
@@ -163,7 +203,7 @@ export function computeSpellsList(data: any): {
         !!s.alwaysPrepared ||
         (!isPreparedCaster && !!s.countsAsKnownSpell);
 
-      const mapped = mapSpell(def, level, isAvailable, !!s.alwaysPrepared, customName);
+      const mapped = mapSpell(def, level, isAvailable, !!s.alwaysPrepared, customName, uses);
       if (isCantrip) {
         cantrips.push(mapped);
       } else {

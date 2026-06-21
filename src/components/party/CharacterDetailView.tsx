@@ -469,14 +469,24 @@ export function CharacterDetailView({
     return 1;
   };
 
-  const handleCastSpell = (spell: PreparedSpell, isPact: boolean, slotLevel: number) => {
-    const targetSlots = isPact ? localSlots.pactSlots : localSlots.spellSlots;
-    const slot = targetSlots.find((s) => s.level === slotLevel);
-    if (!slot) return;
-    const available = slot.max - slot.used;
-    if (available <= 0) return;
+  const handleCastSpell = (
+    spell: PreparedSpell,
+    isPact: boolean,
+    slotLevel: number,
+    castUsingUse = false,
+  ) => {
+    if (castUsingUse && spell.uses) {
+      const spentKey = `spell-uses:${spell.name}:${spell.uses.reset || "long rest"}`;
+      localResources.useResource(spentKey, spell.uses.max);
+    } else if (slotLevel > 0) {
+      const targetSlots = isPact ? localSlots.pactSlots : localSlots.spellSlots;
+      const slot = targetSlots.find((s) => s.level === slotLevel);
+      if (!slot) return;
+      const available = slot.max - slot.used;
+      if (available <= 0) return;
 
-    localSlots.toggleSlot(slotLevel, 0, isPact);
+      localSlots.toggleSlot(slotLevel, 0, isPact);
+    }
 
     // Deduct Metamagic Sorcery Points if selected
     if (selectedMetamagicName && selectedMetamagicName !== "None") {
@@ -495,7 +505,7 @@ export function CharacterDetailView({
     setCastingSpellState({
       active: true,
       spellName: spell.name,
-      slotLevel,
+      slotLevel: slotLevel > 0 ? slotLevel : undefined,
     });
 
     if (spell.concentration) {
@@ -707,13 +717,13 @@ export function CharacterDetailView({
   const avatarRing = getAvatarRingClass(hpPct);
 
   const heroContent = (
-    <div className="flex flex-col items-start gap-5 md:flex-row">
+    <div className="flex flex-row items-start gap-4 sm:gap-5">
       {member.avatarUrl ? (
         <a
           href={member.readonlyUrl}
           target="_blank"
           rel="noreferrer"
-          className={`block h-32 w-32 flex-shrink-0 rounded-[28%] overflow-hidden transition-all duration-300 hover:scale-105 ${avatarRing}`}
+          className={`block h-20 w-20 sm:h-32 sm:w-32 flex-shrink-0 rounded-[28%] overflow-hidden transition-all duration-300 hover:scale-105 ${avatarRing}`}
         >
           <img
             src={member.avatarUrl}
@@ -723,7 +733,7 @@ export function CharacterDetailView({
         </a>
       ) : (
         <div
-          className={`h-32 w-32 flex-shrink-0 rounded-[28%] border border-border bg-muted ${avatarRing}`}
+          className={`h-20 w-20 sm:h-32 sm:w-32 flex-shrink-0 rounded-[28%] border border-border bg-muted ${avatarRing}`}
         />
       )}
       <div className="min-w-0 flex-1">
@@ -1540,7 +1550,10 @@ export function CharacterDetailView({
                                       }
 
                                       setIsMantleInspirationOpen(false);
-                                      toast.success(`Applied 5 temporary HP to ${name}!`, "Mantle of Inspiration");
+                                      toast.success(
+                                        `Applied 5 temporary HP to ${name}!`,
+                                        "Mantle of Inspiration",
+                                      );
                                     } catch {}
                                   }}
                                   className="py-1 px-1.5 border border-border/60 bg-secondary/50 hover:bg-accent hover:text-accent-foreground hover:border-accent rounded text-[9.5px] font-bold text-muted-foreground transition-all cursor-pointer text-left truncate"
@@ -2066,7 +2079,7 @@ export function CharacterDetailView({
   ];
 
   const tabNavigation = activeLayout === "tabbed" && (
-    <div className="flex flex-wrap gap-1.5 border-b border-border/20 pb-3">
+    <div className="flex overflow-x-auto scrollbar-none gap-1.5 border-b border-border/20 pb-3 select-none flex-nowrap -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
       {tabs.map((tab) => {
         const TabIcon = tab.icon;
         const isActive = activeTab === tab.id;

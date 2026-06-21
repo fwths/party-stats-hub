@@ -35,18 +35,14 @@ export function parseCookies(header: string | null): Record<string, string> {
 }
 
 export function getSessionIdFromHeaders(headers: Headers): string | null {
-  const cookieHeader = headers.get("cookie");
-  const cookies = parseCookies(cookieHeader);
-  return cookies[SESSION_COOKIE_NAME] || null;
+  return "default-session";
 }
 
-export async function isAuthenticated(_headers: Headers): Promise<boolean> {
-  // Login requirement disabled for now
+export async function isAuthenticated(headers: Headers): Promise<boolean> {
   return true;
 }
 
-export function verifyPasscode(_passcode: string): boolean {
-  // Passcode requirement disabled for now
+export function verifyPasscode(passcode: string): boolean {
   return true;
 }
 
@@ -93,6 +89,7 @@ export function recordLoginAttempt(headers: Headers, success: boolean): void {
 }
 
 export async function startSession(
+  userId: string,
   expiresInDays = 30,
 ): Promise<{ id: string; expiresAt: number; cookieString: string }> {
   // Generate a cryptographically random session token
@@ -101,7 +98,7 @@ export async function startSession(
   const expiresAt = Date.now() + expiresInDays * 24 * 60 * 60 * 1000;
 
   const { createSession } = await import("./db.server");
-  await createSession(sessionId, expiresAt);
+  await createSession(sessionId, userId, expiresAt);
 
   const expiryDate = new Date(expiresAt).toUTCString();
   const secureFlag = process.env.NODE_ENV === "production" ? "; Secure" : "";

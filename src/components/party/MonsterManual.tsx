@@ -208,7 +208,10 @@ export function MonsterManual({ onRoll, onMonsterAddedToEncounter }: MonsterManu
   // Add monster to selected encounter
   const handleAddToEncounter = (monsterItem: MonsterIndexItem) => {
     if (!selectedEncounterId) {
-      toast.warning("Please create an encounter first in the Encounter Builder.", "No Active Encounter");
+      toast.warning(
+        "Please create an encounter first in the Encounter Builder.",
+        "No Active Encounter",
+      );
       return;
     }
 
@@ -261,7 +264,10 @@ export function MonsterManual({ onRoll, onMonsterAddedToEncounter }: MonsterManu
       }
 
       // Briefly notify user
-      toast.success(`Added ${quantityToAdd}x ${monsterItem.name} to "${encounter.name}"`, "Monster Added");
+      toast.success(
+        `Added ${quantityToAdd}x ${monsterItem.name} to "${encounter.name}"`,
+        "Monster Added",
+      );
     } catch (e) {
       console.error(e);
       toast.error("Failed to add monster to encounter.", "Error");

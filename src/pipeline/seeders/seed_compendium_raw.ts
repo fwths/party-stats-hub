@@ -22,7 +22,7 @@ type FilterResult = {
 
 const HOMEBREW_GROUPS = new Set(["homecraft"]);
 const METADATA_KEYS = new Set(["_meta", "_copy", "_mod", "_versions", "_preserve"]);
-const ENTRY_BATCH_SIZE = 100;
+const ENTRY_BATCH_SIZE = 2000;
 
 function normalizeSource(source: unknown): string {
   return String(source || "")
@@ -279,7 +279,7 @@ function collectEntries(
   }
 }
 
-export async function seedCompendiumRaw(db: any) {
+export async function seedCompendiumRaw(db: any, sqlite: any) {
   console.log("Seeding lossless 5etools compendium entries...");
 
   const catalog = buildSourceCatalog();
@@ -366,11 +366,28 @@ export async function seedCompendiumRaw(db: any) {
     await db.insert(schema.sourceDocuments).values(documentRows).onConflictDoNothing();
   }
 
-  for (let i = 0; i < entryRows.length; i += ENTRY_BATCH_SIZE) {
-    await db
-      .insert(schema.compendiumEntries)
-      .values(entryRows.slice(i, i + ENTRY_BATCH_SIZE))
-      .onConflictDoNothing();
+  if (entryRows.length > 0) {
+    const stmt = sqlite.prepare(`
+      INSERT OR IGNORE INTO compendium_entries (
+        id, entity_type, name, source, source_group, source_file, page, official, raw_json, fluff_json, foundry_json, search_text
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    for (const row of entryRows) {
+      stmt.run(
+        row.id,
+        row.entityType,
+        row.name,
+        row.source,
+        row.sourceGroup,
+        row.sourceFile,
+        row.page,
+        row.official ? 1 : 0,
+        row.rawJson,
+        row.fluffJson,
+        row.foundryJson,
+        row.searchText,
+      );
+    }
   }
 
   console.log(`Seeded ${sourceRows.length} content sources.`);

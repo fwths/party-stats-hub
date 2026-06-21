@@ -55,7 +55,7 @@ export function isSourceAllowedByPolicy(
   // 3. Official Tiers
   let sourceTier = "unknown";
   for (const [tier, sources] of Object.entries(SOURCES)) {
-    if (sources.includes(source)) {
+    if ((sources as readonly string[]).includes(source)) {
       sourceTier = tier;
       break;
     }

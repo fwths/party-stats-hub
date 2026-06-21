@@ -54,11 +54,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
       {state && (
-        <ConfirmDialog
-          options={state.options}
-          onCancel={handleCancel}
-          onConfirm={handleConfirm}
-        />
+        <ConfirmDialog options={state.options} onCancel={handleCancel} onConfirm={handleConfirm} />
       )}
     </ConfirmContext.Provider>
   );
@@ -126,13 +122,9 @@ function ConfirmDialog({
         className={`card-arcane w-full max-w-md rounded-lg border bg-card p-5 shadow-2xl transition-all duration-300 transform scale-100 ${borderStyles}`}
       >
         <div className="flex gap-3 items-start mb-4">
-          <div className="p-2 rounded-full bg-secondary/60 shrink-0">
-            {icon}
-          </div>
+          <div className="p-2 rounded-full bg-secondary/60 shrink-0">{icon}</div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-heading text-lg font-bold text-foreground mb-1">
-              {title}
-            </h3>
+            <h3 className="font-heading text-lg font-bold text-foreground mb-1">{title}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
               {message}
             </p>

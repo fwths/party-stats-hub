@@ -25,21 +25,30 @@ export type RuleGrantType =
   | "weapon_mastery"
   | "active_effect"
   | "feature_reference"
+  | "feature"
   | "armor_class_bonus"
   | "ability_override"
-  | "speed_bonus";
+  | "speed_bonus"
+  | "saving_throw_proficiency"
+  | "ability_score"
+  | "proficiency"
+  | "expertise"
+  | "spell"
+  | "ability_bonus";
 
-export type RuleGrantMode = "fixed" | "choose" | "derived" | "scaling";
+export type RuleGrantMode = "fixed" | "choose" | "derived" | "scaling" | "add";
 
 export interface RuleGrant {
-  id: string;
+  id?: string;
   type: RuleGrantType;
   value: any; // e.g., "STR", "stealth", "darkvision 60", 2, "fire"
-  mode: RuleGrantMode;
-  sourceEntity: string;
+  mode?: RuleGrantMode;
+  sourceEntity?: string;
   level?: number;
   conditions?: string;
-  provenance: string;
+  provenance?: string;
+  source?: string;
+  metadata?: any;
 }
 
 export function parseFoundryEffectsToGrants(

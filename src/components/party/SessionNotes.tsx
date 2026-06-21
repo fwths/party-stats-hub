@@ -175,21 +175,32 @@ export default function SessionNotes({ members }: SessionNotesProps) {
     setIsLoadingPages(true);
     setPagesError(null);
     try {
-      let url = `/api/notion?token=${encodeURIComponent(notionToken)}`;
+      let url = "/api/notion";
+      const params = new URLSearchParams();
 
       const useWorkspaceSearch =
         notionParentType === "workspace" || !notionParentId || debouncedSearchTerm.trim() !== "";
 
       if (useWorkspaceSearch) {
-        url += `&workspaceSearch=true`;
+        params.append("workspaceSearch", "true");
         if (debouncedSearchTerm.trim()) {
-          url += `&searchQuery=${encodeURIComponent(debouncedSearchTerm.trim())}`;
+          params.append("searchQuery", debouncedSearchTerm.trim());
         }
       } else {
-        url += `&parentId=${encodeURIComponent(notionParentId)}&parentType=${encodeURIComponent(notionParentType)}`;
+        params.append("parentId", notionParentId);
+        params.append("parentType", notionParentType);
       }
 
-      const res = await fetch(url);
+      const queryString = params.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${notionToken}`,
+        },
+      });
       const data = await res.json();
       if (res.ok && data.success) {
         setNotionPages(data.pages || []);
@@ -215,11 +226,15 @@ export default function SessionNotes({ members }: SessionNotesProps) {
       setContentError(null);
       setPageContent("");
       try {
-        let url = `/api/notion?token=${encodeURIComponent(notionToken)}&pageId=${encodeURIComponent(selectedPageId)}`;
+        let url = `/api/notion?pageId=${encodeURIComponent(selectedPageId)}`;
         if (selectedPageIsDb) {
           url += `&isDatabase=true`;
         }
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${notionToken}`,
+          },
+        });
         const data = await res.json();
         if (res.ok && data.success) {
           setPageContent(data.markdown || "");

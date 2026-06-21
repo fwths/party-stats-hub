@@ -35,7 +35,7 @@ export function PartyGridSkeleton() {
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
           </div>
-          <div className="grid grid-cols-6 gap-1.5 mt-4">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 mt-4">
             {Array.from({ length: 6 }).map((_, j) => (
               <Skeleton key={j} className="h-14 w-full" />
             ))}

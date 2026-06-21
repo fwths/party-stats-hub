@@ -37,7 +37,7 @@ export interface SpellcastingInfo {
 }
 
 export interface DefenseInfo {
-  type: "resistance" | "immunity" | "vulnerability";
+  type: "resistance" | "immunity" | "vulnerability" | "condition_immunity";
   damageType: string;
 }
 
@@ -119,6 +119,11 @@ export interface PreparedSpell {
   ritual?: boolean;
   prepared?: boolean;
   alwaysPrepared?: boolean;
+  uses?: {
+    current: number;
+    max: number;
+    reset: string;
+  };
 }
 
 export interface FeatureInfo {

@@ -12,6 +12,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeSelector } from "@/components/party/ThemeSelector";
 import { SourceFiltersPanel } from "@/components/builder/SourceFiltersPanel";
 import { DEFAULT_SOURCE_POLICY, DEFAULT_CONTENT_TOGGLES } from "@/lib/forge/source-policy";
 import { createNativePartyMember, saveNativeCharacter } from "@/lib/native-engine";
@@ -93,7 +94,7 @@ function BuilderWizard() {
     itemCardReferences,
     challengeRatings,
     creatureBuilderEntries,
-  } = Route.useLoaderData() as any;
+  } = Route.useLoaderData();
   const skillOptions = getSkillOptionsFromDb(skills);
   const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const [step, setStep] = useState(1);
@@ -170,19 +171,7 @@ function BuilderWizard() {
 
   const nextStep = () => setStep((s) => Math.min(9, s + 1));
   const prevStep = () => setStep((s) => Math.max(1, s - 1));
-  const validationIssues = getBuilderValidationIssues(character, {
-    backgrounds,
-    classes,
-    feats,
-    species,
-    speciesVariants,
-    subclasses,
-    classFeatures,
-    languages,
-    weapons,
-    mundaneGear,
-    itemTypes,
-  } as any);
+  const validationIssues = getBuilderValidationIssues(character, Route.useLoaderData());
 
   const saveCharacter = async () => {
     try {
@@ -438,14 +427,16 @@ function BuilderWizard() {
         <h1 className="text-4xl font-extrabold tracking-tight flex items-center gap-3 bg-gradient-to-r from-primary via-purple-400 to-blue-500 bg-clip-text text-transparent">
           Character Forge
         </h1>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
+          <ThemeSelector />
           <Button
             variant="ghost"
             size="sm"
             onClick={async () => {
               const confirmed = await confirm({
                 title: "Reset Draft",
-                message: "Are you sure you want to reset your character draft? All unsaved progress will be lost.",
+                message:
+                  "Are you sure you want to reset your character draft? All unsaved progress will be lost.",
                 variant: "destructive",
                 confirmText: "Reset Draft",
               });
@@ -513,7 +504,9 @@ function BuilderWizard() {
                   step === s.id ? { filter: `drop-shadow(0 0 8px ${getThemeHex(theme.text)})` } : {}
                 }
               />
-              <span className="hidden sm:block text-[8px] md:text-[10px] lg:text-xs font-black uppercase tracking-wider text-center w-full whitespace-nowrap">{s.label}</span>
+              <span className="hidden sm:block text-[8px] md:text-[10px] lg:text-xs font-black uppercase tracking-wider text-center w-full whitespace-nowrap">
+                {s.label}
+              </span>
               {step > s.id && (
                 <div
                   className="absolute bottom-0 left-0 w-full h-1"

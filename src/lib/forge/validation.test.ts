@@ -194,4 +194,120 @@ describe("validateCharacterDraft", () => {
     expect(issues.some((issue) => issue.code === "UNKNOWN_ITEM_ACTIVE_EFFECT_SOURCE")).toBe(true);
     expect(issues.some((issue) => issue.code === "UNKNOWN_SPELL_ACTIVE_EFFECT_SOURCE")).toBe(true);
   });
+
+  it("errors when multiclassing without meeting the minimum ability scores of 13", () => {
+    const issues = validateCharacterDraft(
+      {
+        ...baseCharacter,
+        classId: "fighter",
+        abilities: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 8 }, // fails Fighter too if it checked primary, but let's check Wizard: INT 10
+        multiClasses: [{ classId: "wizard", level: 1, subclassId: null }],
+      },
+      {
+        ...forgeData,
+        classes: [
+          { id: "fighter", name: "Fighter", source: "XPHB", proficienciesJson: "{}" },
+          { id: "wizard", name: "Wizard", source: "XPHB", proficienciesJson: "{}" },
+        ],
+      },
+    );
+    expect(issues.some((issue) => issue.code === "INVALID_MULTICLASS_PREREQUISITE")).toBe(true);
+  });
+
+  it("errors when a selected general feat does not meet the level gate or ability score requirements", () => {
+    const customForgeData = {
+      ...forgeData,
+      feats: [
+        {
+          id: "war-caster",
+          name: "War Caster",
+          source: "XPHB",
+          levelRequirement: 4,
+          prerequisitesJson: JSON.stringify({ spellcasting: true, ability: [{ INT: 13 }] }),
+        },
+      ],
+    };
+
+    // Character is level 1, has INT 10, no spellcasting, but selects War Caster
+    const issues = validateCharacterDraft(
+      {
+        ...baseCharacter,
+        level: 1,
+        abilities: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+        highLevelFeatChoices: {
+          "4": "war-caster",
+        },
+      },
+      customForgeData,
+    );
+    expect(issues.some((issue) => issue.code === "INVALID_FEAT_PREREQUISITE")).toBe(true);
+  });
+
+  it("warns when a wizard spellbook exceeds the permitted capacity limits", () => {
+    const customForgeData = {
+      ...forgeData,
+      classes: [{ id: "wizard", name: "Wizard", source: "XPHB", proficienciesJson: "{}" }],
+      spells: [
+        { id: "spell1", name: "Spell 1", level: 1, classId: "wizard", source: "XPHB" },
+        { id: "spell2", name: "Spell 2", level: 1, classId: "wizard", source: "XPHB" },
+        { id: "spell3", name: "Spell 3", level: 1, classId: "wizard", source: "XPHB" },
+        { id: "spell4", name: "Spell 4", level: 1, classId: "wizard", source: "XPHB" },
+        { id: "spell5", name: "Spell 5", level: 1, classId: "wizard", source: "XPHB" },
+        { id: "spell6", name: "Spell 6", level: 1, classId: "wizard", source: "XPHB" },
+        { id: "spell7", name: "Spell 7", level: 1, classId: "wizard", source: "XPHB" }, // 7th spell!
+      ],
+    };
+
+    const issues = validateCharacterDraft(
+      {
+        ...baseCharacter,
+        classId: "wizard",
+        level: 1,
+        selectedSpells: ["spell1", "spell2", "spell3", "spell4", "spell5", "spell6", "spell7"],
+      },
+      customForgeData,
+    );
+    expect(issues.some((issue) => issue.code === "WIZARD_SPELLBOOK_LIMIT")).toBe(true);
+  });
+
+  it("warns when a high-level warlock lacks the required Mystic Arcanum selections", () => {
+    const customForgeData = {
+      ...forgeData,
+      classes: [{ id: "warlock", name: "Warlock", source: "XPHB", proficienciesJson: "{}" }],
+      spells: [{ id: "spell6", name: "Spell 6", level: 6, isMysticArcanum: true, source: "XPHB" }],
+    };
+
+    // Level 11 Warlock expects 1 Mystic Arcanum (level 6 spell with isMysticArcanum)
+    // Here we don't select it, so it warns.
+    const issues = validateCharacterDraft(
+      {
+        ...baseCharacter,
+        classId: "warlock",
+        level: 11,
+        selectedSpells: [], // none selected
+      },
+      customForgeData,
+    );
+    expect(issues.some((issue) => issue.code === "WARLOCK_MYSTIC_ARCANUM")).toBe(true);
+  });
+
+  it("warns when a druid selects wild shape forms that exceed their level/subclass CR cap", () => {
+    const customForgeData = {
+      ...forgeData,
+      classes: [{ id: "druid", name: "Druid", source: "XPHB", proficienciesJson: "{}" }],
+    };
+
+    // Druid level 2 (not Moon Druid, max CR 1/4) selecting CR 1 creature
+    const issues = validateCharacterDraft(
+      {
+        ...baseCharacter,
+        classId: "druid",
+        subclassId: null,
+        level: 2,
+        wildShapeBeasts: [{ name: "Brown Bear", challengeRating: 1.0 }],
+      } as any,
+      customForgeData,
+    );
+    expect(issues.some((issue) => issue.code === "DRUID_WILD_SHAPE")).toBe(true);
+  });
 });

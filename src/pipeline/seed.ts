@@ -21,6 +21,13 @@ import { formatSourceConfigSummary } from "./source-config";
 // Locate the sqlite database from deployment config, falling back to the project root.
 const dbPath = process.env.DATABASE_URL || path.join(process.cwd(), "sqlite.db");
 const sqlite = new Database(dbPath);
+
+// Apply performance pragmas for seeding
+sqlite.pragma("journal_mode = MEMORY");
+sqlite.pragma("synchronous = OFF");
+sqlite.pragma("temp_store = MEMORY");
+sqlite.pragma("cache_size = -32000"); // 32MB cache
+
 const db = drizzle(sqlite, { schema });
 
 async function resetCompendiumTables() {
@@ -111,31 +118,44 @@ async function seedAll() {
   console.log("==============================================\n");
 
   try {
+    console.log("Beginning transaction...");
+    sqlite.exec("BEGIN");
+
     await resetCompendiumTables();
     console.log("----------------------------------------------");
-    await seedClasses(db);
+    const measure = async (name: string, fn: () => Promise<void>) => {
+      const start = Date.now();
+      await fn();
+      console.log(`⏱️  ${name} took ${((Date.now() - start) / 1000).toFixed(2)}s`);
+    };
+
     console.log("----------------------------------------------");
-    await seedSpells(db);
+    await measure("seedClasses", () => seedClasses(db));
     console.log("----------------------------------------------");
-    await seedMonsters(db);
+    await measure("seedSpells", () => seedSpells(db));
     console.log("----------------------------------------------");
-    await seedEquipment(db);
+    await measure("seedMonsters", () => seedMonsters(db));
     console.log("----------------------------------------------");
-    await seedBackgroundsFeats(db);
+    await measure("seedEquipment", () => seedEquipment(db));
     console.log("----------------------------------------------");
-    await seedSpecies(db);
+    await measure("seedBackgroundsFeats", () => seedBackgroundsFeats(db));
     console.log("----------------------------------------------");
-    await seedAdventuringContent(db);
+    await measure("seedSpecies", () => seedSpecies(db));
     console.log("----------------------------------------------");
-    await seedRulesReferences(db);
+    await measure("seedAdventuringContent", () => seedAdventuringContent(db));
     console.log("----------------------------------------------");
-    await seedReferenceEntries(db);
+    await measure("seedRulesReferences", () => seedRulesReferences(db));
     console.log("----------------------------------------------");
-    await seedActiveEffects(db);
+    await measure("seedReferenceEntries", () => seedReferenceEntries(db));
     console.log("----------------------------------------------");
-    await seedGenerators(db);
+    await measure("seedActiveEffects", () => seedActiveEffects(db));
     console.log("----------------------------------------------");
-    await seedCompendiumRaw(db);
+    await measure("seedGenerators", () => seedGenerators(db));
+    console.log("----------------------------------------------");
+    await measure("seedCompendiumRaw", () => seedCompendiumRaw(db, sqlite));
+
+    console.log("Committing transaction...");
+    sqlite.exec("COMMIT");
 
     // Export all tables to a JSON snapshot for edge runtime fallback
     // Uses drizzle queries to get camelCase column names matching the app's expectations

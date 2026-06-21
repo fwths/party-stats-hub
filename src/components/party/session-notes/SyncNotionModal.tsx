@@ -43,9 +43,9 @@ export default function SyncNotionModal({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${notionToken}`,
         },
         body: JSON.stringify({
-          token: notionToken,
           parentId: notionParentId,
           parentType: notionParentType,
           title: syncTitle,

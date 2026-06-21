@@ -578,6 +578,21 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
           nextSpent[a.name] = 0;
         }
       });
+
+      // Reset spell uses
+      Object.keys(nextSpent).forEach((key) => {
+        if (key.startsWith("spell-uses:")) {
+          const parts = key.split(":");
+          const resetType = parts[2] ? parts[2].toLowerCase() : "long rest";
+          const isShortRestResource =
+            resetType.includes("short") || resetType === "rest";
+          const shouldReset = isLongRest || isShortRestResource;
+          if (shouldReset) {
+            nextSpent[key] = 0;
+          }
+        }
+      });
+
       return { spent: nextSpent };
     });
   };

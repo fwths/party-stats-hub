@@ -15,4 +15,3 @@ if (!fs.existsSync(dbDir)) {
 
 const sqlite = new Database(dbPath);
 export const db = drizzle(sqlite, { schema });
-

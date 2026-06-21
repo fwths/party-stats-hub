@@ -22,9 +22,10 @@ export function RuleChoiceGroupPicker({
 
         if (group.optionType === "spell") {
           let filteredSpells = spells;
-          if (group.prerequisites && group.prerequisites.length > 0) {
+          const prerequisites = group.prerequisites;
+          if (prerequisites && prerequisites.length > 0) {
             filteredSpells = spells.filter((spell) => {
-              for (const req of group.prerequisites) {
+              for (const req of prerequisites) {
                 if (req.type === "level") {
                   if (Number(spell.level || 0) !== Number(req.value)) return false;
                 }

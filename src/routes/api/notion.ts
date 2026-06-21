@@ -21,7 +21,8 @@ export const Route = createFileRoute("/api/notion")({
 
           const body = await request.json();
           const { parentId, parentType, title, markdown } = body;
-          let token = body.token || "";
+          let token =
+            request.headers.get("Authorization")?.replace("Bearer ", "") || body.token || "";
           if (!token || token === "default") {
             token = process.env.NOTION_TOKEN || process.env.NOTION_API_KEY || "";
           }
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/api/notion")({
         if (unauthorized) return unauthorized;
 
         const url = new URL(request.url);
-        let token = url.searchParams.get("token") || "";
+        let token = request.headers.get("Authorization")?.replace("Bearer ", "") || "";
         if (!token || token === "default") {
           token = process.env.NOTION_TOKEN || process.env.NOTION_API_KEY || "";
         }

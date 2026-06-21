@@ -6,6 +6,12 @@ import { speciesToRuleChoicesAndGrants } from "./adapters/species";
 import { backgroundToRuleChoicesAndGrants } from "./adapters/backgrounds";
 import { classToRuleChoicesAndGrants } from "./adapters/classes";
 import { classFeatureToRuleChoicesAndGrants } from "./adapters/features";
+import { validateFeatPrerequisites, validateMulticlassStats } from "./prerequisites";
+import {
+  validateWizardSpellbook,
+  validateWarlockMysticArcanum,
+  validateDruidWildShape,
+} from "./class-mechanics";
 import {
   isValidAbilityBonusSet,
   getPointsUsed,
@@ -31,8 +37,47 @@ export interface ValidationIssue {
 
 export function validateCharacterDraft(
   character: BuilderState,
-  data: ForgeData,
+  inputData: ForgeData,
 ): ValidationIssue[] {
+  const data = {
+    species: Array.isArray(inputData?.species) ? inputData.species : [],
+    backgrounds: Array.isArray(inputData?.backgrounds) ? inputData.backgrounds : [],
+    classes: Array.isArray(inputData?.classes) ? inputData.classes : [],
+    subclasses: Array.isArray(inputData?.subclasses) ? inputData.subclasses : [],
+    feats: Array.isArray(inputData?.feats) ? inputData.feats : [],
+    spells: Array.isArray(inputData?.spells) ? inputData.spells : [],
+    weapons: Array.isArray(inputData?.weapons) ? inputData.weapons : [],
+    armor: Array.isArray(inputData?.armor) ? inputData.armor : [],
+    magicItems: Array.isArray(inputData?.magicItems) ? inputData.magicItems : [],
+    mundaneGear: Array.isArray(inputData?.mundaneGear) ? inputData.mundaneGear : [],
+    itemTypes: Array.isArray(inputData?.itemTypes) ? inputData.itemTypes : [],
+    itemGroups: Array.isArray(inputData?.itemGroups) ? inputData.itemGroups : [],
+    magicVariants: Array.isArray(inputData?.magicVariants) ? inputData.magicVariants : [],
+    itemProperties: Array.isArray(inputData?.itemProperties) ? inputData.itemProperties : [],
+    itemCardReferences: Array.isArray(inputData?.itemCardReferences)
+      ? inputData.itemCardReferences
+      : [],
+    languages: Array.isArray(inputData?.languages) ? inputData.languages : [],
+    senses: Array.isArray(inputData?.senses) ? inputData.senses : [],
+    conditions: Array.isArray(inputData?.conditions) ? inputData.conditions : [],
+    rulesActions: Array.isArray(inputData?.rulesActions) ? inputData.rulesActions : [],
+    weaponMasteries: Array.isArray(inputData?.weaponMasteries) ? inputData.weaponMasteries : [],
+    activeEffects: Array.isArray(inputData?.activeEffects) ? inputData.activeEffects : [],
+    classFeatures: Array.isArray(inputData?.classFeatures) ? inputData.classFeatures : [],
+    speciesVariants: Array.isArray(inputData?.speciesVariants) ? inputData.speciesVariants : [],
+    optionalFeatures: Array.isArray(inputData?.optionalFeatures) ? inputData.optionalFeatures : [],
+    charOptions: Array.isArray(inputData?.charOptions) ? inputData.charOptions : [],
+    featureActiveEffects: Array.isArray(inputData?.featureActiveEffects)
+      ? inputData.featureActiveEffects
+      : [],
+    itemActiveEffects: Array.isArray(inputData?.itemActiveEffects)
+      ? inputData.itemActiveEffects
+      : [],
+    spellActiveEffects: Array.isArray(inputData?.spellActiveEffects)
+      ? inputData.spellActiveEffects
+      : [],
+  };
+
   const issues: ValidationIssue[] = [];
   const pushError = (msg: string, code = "INVALID_CHOICE", stepId = 0) => {
     issues.push({ code, severity: "error", message: msg, stepId });
@@ -319,7 +364,7 @@ export function validateCharacterDraft(
     }
   }
 
-  const featLevels = getFeatChoiceLevels(character.classId, character.level);
+  const featLevels = getFeatChoiceLevels(character.classId || null, character.level);
   for (const lvl of featLevels) {
     if (!character.highLevelFeatChoices?.[lvl]) {
       pushError(`Choose a feat for level ${lvl}.`, "MISSING_FEAT", 3);
@@ -332,6 +377,42 @@ export function validateCharacterDraft(
       const featRecord = data.feats.find((f) => f.id === featId);
       if (!featRecord) continue;
       validateSelectedSource(featRecord, "DISABLED_FEAT_SOURCE", 5);
+
+      // Perform prerequisite validation
+      const statsObj = {
+        STR: character.abilities?.STR || 10,
+        DEX: character.abilities?.DEX || 10,
+        CON: character.abilities?.CON || 10,
+        INT: character.abilities?.INT || 10,
+        WIS: character.abilities?.WIS || 10,
+        CHA: character.abilities?.CHA || 10,
+      };
+      const hasSpellcasting = spellcasters.length > 0;
+      const armorProfs = resolvedGrants
+        .filter((g) => g.type === "armor_proficiency")
+        .map((g) => String(g.value));
+      const weaponProfs = resolvedGrants
+        .filter((g) => g.type === "weapon_proficiency")
+        .map((g) => String(g.value));
+      const toolProfs = resolvedGrants
+        .filter((g) => g.type === "tool_proficiency")
+        .map((g) => String(g.value));
+
+      const prereqResult = validateFeatPrerequisites(
+        featRecord,
+        character.level,
+        statsObj,
+        { armor: armorProfs, weapons: weaponProfs, tools: toolProfs },
+        hasSpellcasting,
+      );
+      if (!prereqResult.isValid) {
+        pushError(
+          prereqResult.reason || "Invalid feat prerequisites.",
+          "INVALID_FEAT_PREREQUISITE",
+          3,
+        );
+      }
+
       const name = featRecord.name.toLowerCase();
       const extra = character.highLevelFeatExtraChoices?.[`${lvl}:${featId}`];
 
@@ -397,6 +478,25 @@ export function validateCharacterDraft(
           3,
         );
         continue;
+      }
+
+      if (cls && mc.classId) {
+        const statsObj = {
+          STR: character.abilities?.STR || 10,
+          DEX: character.abilities?.DEX || 10,
+          CON: character.abilities?.CON || 10,
+          INT: character.abilities?.INT || 10,
+          WIS: character.abilities?.WIS || 10,
+          CHA: character.abilities?.CHA || 10,
+        };
+        const mcResult = validateMulticlassStats(statsObj, cls.id, mc.classId);
+        if (!mcResult.isValid) {
+          pushError(
+            mcResult.reason || "Invalid multiclass stats.",
+            "INVALID_MULTICLASS_PREREQUISITE",
+            3,
+          );
+        }
       }
       const availableMcSubclasses = data.subclasses.filter((sub) => sub.classId === mc.classId);
       const mcSubclassLevel =
@@ -493,6 +593,70 @@ export function validateCharacterDraft(
         suggestedAction: "Choose the item from the Equipment catalog when possible.",
       });
     }
+  }
+
+  // Class-specific rules validation
+  try {
+    const wizardLevel =
+      character.classId === "wizard"
+        ? character.level
+        : character.multiClasses?.find((m: any) => m.classId === "wizard")?.level || 0;
+    const warlockLevel =
+      character.classId === "warlock"
+        ? character.level
+        : character.multiClasses?.find((m: any) => m.classId === "warlock")?.level || 0;
+    const druidLevel =
+      character.classId === "druid"
+        ? character.level
+        : character.multiClasses?.find((m: any) => m.classId === "druid")?.level || 0;
+
+    // Find all selected spells
+    const selectedSpells = (data.spells || []).filter((spell) =>
+      character.selectedSpells?.includes(spell.id),
+    );
+
+    if (wizardLevel > 0) {
+      const wizResult = validateWizardSpellbook(character, wizardLevel, selectedSpells);
+      if (!wizResult.isValid) {
+        issues.push({
+          code: "WIZARD_SPELLBOOK_LIMIT",
+          severity: "warning",
+          message: wizResult.reason || "Wizard spellbook limit exceeded.",
+          stepId: 5,
+        });
+      }
+    }
+
+    if (warlockLevel > 0) {
+      const warResult = validateWarlockMysticArcanum(warlockLevel, selectedSpells);
+      if (!warResult.isValid) {
+        issues.push({
+          code: "WARLOCK_MYSTIC_ARCANUM",
+          severity: "warning",
+          message: warResult.reason || "Warlock Mystic Arcanum limit not met.",
+          stepId: 5,
+        });
+      }
+    }
+
+    if (druidLevel > 0) {
+      const druidSubclass =
+        character.classId === "druid"
+          ? character.subclassId
+          : character.multiClasses?.find((m: any) => m.classId === "druid")?.subclassId || null;
+      const wildShapeBeasts = (character as any).wildShapeBeasts || [];
+      const druidResult = validateDruidWildShape(druidLevel, druidSubclass, wildShapeBeasts);
+      if (!druidResult.isValid) {
+        issues.push({
+          code: "DRUID_WILD_SHAPE",
+          severity: "warning",
+          message: druidResult.reason || "Druid Wild Shape limit exceeded.",
+          stepId: 3,
+        });
+      }
+    }
+  } catch (err) {
+    console.error("class-mechanics validation error:", err);
   }
 
   return issues;

@@ -79,109 +79,105 @@ export async function seedSpecies(db: any) {
 
     const speciesList = selectAllowedSpecies(readSpecies());
 
+    const speciesRows: any[] = [];
     for (const species of speciesList) {
       const key = `${species.name.toLowerCase()}|${species.source.toLowerCase()}`;
       const fluff = speciesFluffMap.get(key);
       const foundry = speciesFoundryMap.get(key);
 
-      await db
-        .insert(schema.species)
-        .values({
-          id: slugify(species.name),
-          name: species.name,
-          size: formatSize(species.size),
-          speed: formatSpeed(species.speed),
-          description: renderEntries(species.entries),
-          featuresJson: JSON.stringify(mapFeatures(species.entries)),
-          source: species.source,
-          page: species.page || null,
-          abilityScoreIncreasesJson: JSON.stringify(species.ability || []),
-          languagesJson: JSON.stringify(species.languageProficiencies || []),
-          resistancesJson: JSON.stringify(species.resist || []),
-          immunitiesJson: JSON.stringify(species.immune || []),
-          sensesJson: JSON.stringify(mapSenses(species)),
-          proficienciesJson: JSON.stringify({
-            skills: species.skillProficiencies || [],
-            tools: species.toolProficiencies || [],
-          }),
-          isLineage: !!species.lineage || titleCase(species.name).includes("Lineage"),
-          rawJson: JSON.stringify(species),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.species.id,
-          set: {
-            name: species.name,
-            size: formatSize(species.size),
-            speed: formatSpeed(species.speed),
-            description: renderEntries(species.entries),
-            featuresJson: JSON.stringify(mapFeatures(species.entries)),
-            source: species.source,
-            page: species.page || null,
-            abilityScoreIncreasesJson: JSON.stringify(species.ability || []),
-            languagesJson: JSON.stringify(species.languageProficiencies || []),
-            resistancesJson: JSON.stringify(species.resist || []),
-            immunitiesJson: JSON.stringify(species.immune || []),
-            sensesJson: JSON.stringify(mapSenses(species)),
-            proficienciesJson: JSON.stringify({
-              skills: species.skillProficiencies || [],
-              tools: species.toolProficiencies || [],
-            }),
-            isLineage: !!species.lineage || titleCase(species.name).includes("Lineage"),
-            rawJson: JSON.stringify(species),
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      speciesRows.push({
+        id: slugify(species.name),
+        name: species.name,
+        size: formatSize(species.size),
+        speed: formatSpeed(species.speed),
+        description: renderEntries(species.entries),
+        featuresJson: JSON.stringify(mapFeatures(species.entries)),
+        source: species.source,
+        page: species.page || null,
+        abilityScoreIncreasesJson: JSON.stringify(species.ability || []),
+        languagesJson: JSON.stringify(species.languageProficiencies || []),
+        resistancesJson: JSON.stringify(species.resist || []),
+        immunitiesJson: JSON.stringify(species.immune || []),
+        sensesJson: JSON.stringify(mapSenses(species)),
+        proficienciesJson: JSON.stringify({
+          skills: species.skillProficiencies || [],
+          tools: species.toolProficiencies || [],
+        }),
+        isLineage: !!species.lineage || titleCase(species.name).includes("Lineage"),
+        rawJson: JSON.stringify(species),
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
     }
 
-    console.log(`Seeded ${speciesList.length} species from 5etools.`);
+    const allowedSpeciesSources = new Map<string, string>(
+      speciesList.map((s) => [s.name, s.source]),
+    );
 
-    // Seed subraces / species variants
     const subraces = readSubraces();
-    const allowedSubraces = subraces.filter((s: any) => s.raceName && isSourceAllowed(s.source));
+    const allowedSubraces = subraces.filter((sub: any) => {
+      if (!sub.raceName) return false;
+      if (!isSourceAllowed(sub.source)) return false;
+      const parentSource = allowedSpeciesSources.get(sub.raceName);
+      if (!parentSource) return false;
+      const subRaceSource = sub.raceSource || "PHB";
+      return subRaceSource === parentSource;
+    });
+
+    const selectedSubraces = new Map<string, any>();
     for (const sub of allowedSubraces) {
+      const variantName = sub.name || sub.raceName;
+      const key = `${sub.raceName}:${variantName}`.toLowerCase();
+      const existing = selectedSubraces.get(key);
+      const existingPriority = existing ? getSourcePriority(existing.source, existing.edition) : -1;
+      const priority = getSourcePriority(sub.source, sub.edition);
+      if (!existing || priority > existingPriority) {
+        selectedSubraces.set(key, sub);
+      }
+    }
+
+    const subraceRows: any[] = [];
+    for (const sub of selectedSubraces.values()) {
       const variantName = sub.name || sub.raceName;
       const id = slugify(`${variantName}-${sub.raceName}-${sub.source}`);
       const desc = renderEntries(sub.entries || []);
       const foundry = getSubraceFoundry(sub, speciesFoundryMap);
 
-      await db
-        .insert(schema.speciesVariants)
-        .values({
-          id,
-          speciesId: slugify(sub.raceName),
-          name: variantName,
-          source: sub.source,
-          page: sub.page || null,
-          raceName: sub.raceName,
-          raceSource: sub.raceSource || "PHB",
-          abilityJson: JSON.stringify(sub.ability || []),
-          featuresJson: JSON.stringify(mapFeatures(sub.entries)),
-          description: desc,
-          rawJson: JSON.stringify(sub),
-          fluffJson: null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.speciesVariants.id,
-          set: {
-            speciesId: slugify(sub.raceName),
-            name: variantName,
-            source: sub.source,
-            page: sub.page || null,
-            raceName: sub.raceName,
-            raceSource: sub.raceSource || "PHB",
-            abilityJson: JSON.stringify(sub.ability || []),
-            featuresJson: JSON.stringify(mapFeatures(sub.entries)),
-            description: desc,
-            rawJson: JSON.stringify(sub),
-            fluffJson: null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      subraceRows.push({
+        id,
+        speciesId: slugify(sub.raceName),
+        name: variantName,
+        source: sub.source,
+        page: sub.page || null,
+        raceName: sub.raceName,
+        raceSource: sub.raceSource || "PHB",
+        abilityJson: JSON.stringify(sub.ability || []),
+        featuresJson: JSON.stringify(mapFeatures(sub.entries)),
+        description: desc,
+        rawJson: JSON.stringify(sub),
+        fluffJson: null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
     }
+
+    const BATCH_SIZE = 1000;
+    if (speciesRows.length > 0) {
+      for (let i = 0; i < speciesRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.species)
+          .values(speciesRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
+    }
+    if (subraceRows.length > 0) {
+      for (let i = 0; i < subraceRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.speciesVariants)
+          .values(subraceRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
+    }
+    console.log(`Seeded ${speciesList.length} species from 5etools.`);
     console.log(`Seeded ${allowedSubraces.length} species subraces/variants.`);
   } catch (e) {
     console.error("Error seeding species:", e);

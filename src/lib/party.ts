@@ -33,6 +33,35 @@ export function readStoredIdsFromCookie(): number[] | null {
 export const getStoredIdsServer = createServerFn({ method: "GET" }).handler(async () => {
   const { getRequestHeaders } = await import("@tanstack/react-start/server");
   const headers = getRequestHeaders();
+
+  try {
+    const { getSessionIdFromHeaders } = await import("@/lib/auth.server");
+    const sessionId = getSessionIdFromHeaders(headers);
+    if (sessionId) {
+      const { getUserIdFromSession } = await import("@/lib/db.server");
+      const userId = await getUserIdFromSession(sessionId);
+      if (userId) {
+        const cookieHeader = headers.get("cookie") ?? "";
+        const activeCampaignId = getCookie(cookieHeader, "active_campaign_id");
+        if (activeCampaignId) {
+          const { db } = await import("./drizzle.server");
+          const schema = await import("../db/schema");
+          const { eq } = await import("drizzle-orm");
+
+          const chars = await db
+            .select({ id: schema.characters.id })
+            .from(schema.characters)
+            .where(eq(schema.characters.campaignId, activeCampaignId));
+
+          const dbIds = chars.map((c) => Number(c.id)).filter((n) => Number.isInteger(n) && n > 0);
+          return dbIds; // Return empty array or campaign character IDs
+        }
+      }
+    }
+  } catch (err) {
+    console.error("getStoredIdsServer database fetch failed:", err);
+  }
+
   const cookieHeader = headers.get("cookie") ?? "";
   const cookieVal = getCookie(cookieHeader, COOKIE_KEY);
   return parseCookieIds(cookieVal);

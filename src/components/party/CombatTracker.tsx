@@ -135,7 +135,8 @@ export function CombatTracker({ members, onRoll, onEndCombatCallback }: CombatTr
   const handleEndCombat = async () => {
     const confirmed = await confirm({
       title: "End Combat?",
-      message: "Are you sure you want to end this combat? All initiatives and monster tracking will be lost.",
+      message:
+        "Are you sure you want to end this combat? All initiatives and monster tracking will be lost.",
       variant: "destructive",
       confirmText: "End Combat",
     });

@@ -131,147 +131,110 @@ export async function seedEquipment(db: any) {
     const armors = selectAllowed(baseItems.filter((item) => item.armor));
     const magicItems = selectAllowed(readMagicItems());
 
+    const weaponRows: any[] = [];
     for (const weapon of weapons) {
       const damageTypeCode = weapon.dmgType || "";
       const key = `${weapon.name.toLowerCase()}|${weapon.source.toLowerCase()}`;
       const fluff = itemsFluffMap.get(key);
       const foundry = baseItemsFoundryMap.get(key);
 
-      await db
-        .insert(schema.weapons)
-        .values({
-          id: slugify(weapon.name),
-          name: weapon.name,
-          category: titleCase(weapon.weaponCategory || "Simple"),
-          type: mapWeaponType(weapon.type),
-          costGp: copperToGp(weapon.value),
-          damageDice: weapon.dmg1 || "1d4",
-          damageType: DAMAGE_TYPE_MAP[damageTypeCode] || titleCase(damageTypeCode || "Bludgeoning"),
-          versatileDice: weapon.dmg2 || null,
-          rangeNormal: weapon.range?.normal || null,
-          rangeLong: weapon.range?.long || null,
-          mastery: mapMastery(weapon.mastery),
-          propertiesJson: JSON.stringify(mapProperties(weapon.property)),
-          weight: weapon.weight || 0,
-          source: weapon.source,
-          page: (weapon as any).page || null,
-          rawJson: JSON.stringify(weapon),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.weapons.id,
-          set: {
-            name: weapon.name,
-            category: titleCase(weapon.weaponCategory || "Simple"),
-            type: mapWeaponType(weapon.type),
-            costGp: copperToGp(weapon.value),
-            damageDice: weapon.dmg1 || "1d4",
-            damageType:
-              DAMAGE_TYPE_MAP[damageTypeCode] || titleCase(damageTypeCode || "Bludgeoning"),
-            versatileDice: weapon.dmg2 || null,
-            rangeNormal: weapon.range?.normal || null,
-            rangeLong: weapon.range?.long || null,
-            mastery: mapMastery(weapon.mastery),
-            propertiesJson: JSON.stringify(mapProperties(weapon.property)),
-            weight: weapon.weight || 0,
-            source: weapon.source,
-            page: (weapon as any).page || null,
-            rawJson: JSON.stringify(weapon),
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      weaponRows.push({
+        id: slugify(weapon.name),
+        name: weapon.name,
+        category: titleCase(weapon.weaponCategory || "Simple"),
+        type: mapWeaponType(weapon.type),
+        costGp: copperToGp(weapon.value),
+        damageDice: weapon.dmg1 || "1d4",
+        damageType: DAMAGE_TYPE_MAP[damageTypeCode] || titleCase(damageTypeCode || "Bludgeoning"),
+        versatileDice: weapon.dmg2 || null,
+        rangeNormal: weapon.range?.normal || null,
+        rangeLong: weapon.range?.long || null,
+        mastery: mapMastery(weapon.mastery),
+        propertiesJson: JSON.stringify(mapProperties(weapon.property)),
+        weight: weapon.weight || 0,
+        source: weapon.source,
+        page: (weapon as any).page || null,
+        rawJson: JSON.stringify(weapon),
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
     }
 
+    const armorRows: any[] = [];
     for (const armor of armors) {
       const category = mapArmorCategory(armor.type);
       const key = `${armor.name.toLowerCase()}|${armor.source.toLowerCase()}`;
       const fluff = itemsFluffMap.get(key);
       const foundry = baseItemsFoundryMap.get(key);
 
-      await db
-        .insert(schema.armor)
-        .values({
-          id: slugify(armor.name),
-          name: armor.name,
-          category,
-          costGp: copperToGp(armor.value),
-          acBase: armor.ac || (category === "Shield" ? 2 : 10),
-          acModifier: category === "Shield" || category === "Heavy" ? null : "Dex",
-          acMaxModifier: category === "Medium" ? 2 : null,
-          strengthRequirement: armor.strength ? Number(armor.strength) : null,
-          stealthDisadvantage: !!armor.stealth,
-          weight: armor.weight || 0,
-          source: armor.source,
-          page: (armor as any).page || null,
-          rawJson: JSON.stringify(armor),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.armor.id,
-          set: {
-            name: armor.name,
-            category,
-            costGp: copperToGp(armor.value),
-            acBase: armor.ac || (category === "Shield" ? 2 : 10),
-            acModifier: category === "Shield" || category === "Heavy" ? null : "Dex",
-            acMaxModifier: category === "Medium" ? 2 : null,
-            strengthRequirement: armor.strength ? Number(armor.strength) : null,
-            stealthDisadvantage: !!armor.stealth,
-            weight: armor.weight || 0,
-            source: armor.source,
-            page: (armor as any).page || null,
-            rawJson: JSON.stringify(armor),
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      armorRows.push({
+        id: slugify(armor.name),
+        name: armor.name,
+        category,
+        costGp: copperToGp(armor.value),
+        acBase: armor.ac || (category === "Shield" ? 2 : 10),
+        acModifier: category === "Shield" || category === "Heavy" ? null : "Dex",
+        acMaxModifier: category === "Medium" ? 2 : null,
+        strengthRequirement: armor.strength ? Number(armor.strength) : null,
+        stealthDisadvantage: !!armor.stealth,
+        weight: armor.weight || 0,
+        source: armor.source,
+        page: (armor as any).page || null,
+        rawJson: JSON.stringify(armor),
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
     }
 
+    const magicItemRows: any[] = [];
     for (const item of magicItems) {
       const attunement = mapAttunement(item.reqAttune);
       const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
       const fluff = itemsFluffMap.get(key);
       const foundry = magicItemsFoundryMap.get(key);
 
-      await db
-        .insert(schema.magicItems)
-        .values({
-          id: slugify(item.name),
-          name: item.name,
-          type: mapMagicItemType(item),
-          rarity: titleCase(item.rarity || "Unknown"),
-          requiresAttunement: attunement.requiresAttunement,
-          attunementConditions: attunement.attunementConditions,
-          description: renderEntries(item.entries),
-          weight: item.weight || 0,
-          chargesJson: JSON.stringify(item.charges || null),
-          source: item.source,
-          page: (item as any).page || null,
-          rawJson: JSON.stringify(item),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.magicItems.id,
-          set: {
-            name: item.name,
-            type: mapMagicItemType(item),
-            rarity: titleCase(item.rarity || "Unknown"),
-            requiresAttunement: attunement.requiresAttunement,
-            attunementConditions: attunement.attunementConditions,
-            description: renderEntries(item.entries),
-            weight: item.weight || 0,
-            chargesJson: JSON.stringify(item.charges || null),
-            source: item.source,
-            page: (item as any).page || null,
-            rawJson: JSON.stringify(item),
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      magicItemRows.push({
+        id: slugify(item.name),
+        name: item.name,
+        type: mapMagicItemType(item),
+        rarity: titleCase(item.rarity || "Unknown"),
+        requiresAttunement: attunement.requiresAttunement,
+        attunementConditions: attunement.attunementConditions,
+        description: renderEntries(item.entries),
+        weight: item.weight || 0,
+        chargesJson: JSON.stringify(item.charges || null),
+        source: item.source,
+        page: (item as any).page || null,
+        rawJson: JSON.stringify(item),
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
+    }
+
+    const BATCH_SIZE = 1000;
+    if (weaponRows.length > 0) {
+      for (let i = 0; i < weaponRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.weapons)
+          .values(weaponRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
+    }
+    if (armorRows.length > 0) {
+      for (let i = 0; i < armorRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.armor)
+          .values(armorRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
+    }
+    if (magicItemRows.length > 0) {
+      for (let i = 0; i < magicItemRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.magicItems)
+          .values(magicItemRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
     }
 
     console.log(`Seeded ${weapons.length} weapons.`);
@@ -304,30 +267,25 @@ async function seedItemCardReferences(db: any) {
     ...(data.reducedItemType || []).map((item: any) => ({ ...item, kind: "type" })),
   ].filter((item: any) => isSourceAllowed(item.source));
 
-  for (const item of rows) {
+  const insertRows = rows.map((item) => {
     const id = slugify(`item-card-${item.kind}-${item.abbreviation}-${item.source}`);
+    return {
+      id,
+      abbreviation: item.abbreviation,
+      source: item.source,
+      kind: item.kind,
+      name: item.name || null,
+      description: renderEntries(item.entries || []),
+      rawJson: JSON.stringify(item),
+    };
+  });
+
+  const BATCH_SIZE = 1000;
+  for (let i = 0; i < insertRows.length; i += BATCH_SIZE) {
     await db
       .insert(schema.itemCardReferences)
-      .values({
-        id,
-        abbreviation: item.abbreviation,
-        source: item.source,
-        kind: item.kind,
-        name: item.name || null,
-        description: renderEntries(item.entries || []),
-        rawJson: JSON.stringify(item),
-      })
-      .onConflictDoUpdate({
-        target: schema.itemCardReferences.id,
-        set: {
-          abbreviation: item.abbreviation,
-          source: item.source,
-          kind: item.kind,
-          name: item.name || null,
-          description: renderEntries(item.entries || []),
-          rawJson: JSON.stringify(item),
-        },
-      });
+      .values(insertRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
   }
   console.log(`Seeded ${rows.length} item card references.`);
 }
@@ -340,83 +298,69 @@ async function seedItemPropertiesAndTypes(db: any) {
 
   const properties = data.itemProperty || [];
   const allowedProps = properties.filter((p: any) => isSourceAllowed(p.source));
-  for (const prop of allowedProps) {
+  const propRows = allowedProps.map((prop: any) => {
     const abbreviation = prop.abbreviation;
     const name = prop.name || prop.entries?.[0]?.name || abbreviation;
+    return {
+      abbreviation,
+      name,
+      source: prop.source,
+      page: prop.page || null,
+      description: renderEntries(prop.entries || []),
+      rawJson: JSON.stringify(prop),
+    };
+  });
+
+  const BATCH_SIZE = 1000;
+  for (let i = 0; i < propRows.length; i += BATCH_SIZE) {
     await db
       .insert(schema.itemProperties)
-      .values({
-        abbreviation,
-        name,
-        source: prop.source,
-        page: prop.page || null,
-        description: renderEntries(prop.entries || []),
-        rawJson: JSON.stringify(prop),
-      })
-      .onConflictDoUpdate({
-        target: schema.itemProperties.abbreviation,
-        set: {
-          name,
-          source: prop.source,
-          page: prop.page || null,
-          description: renderEntries(prop.entries || []),
-          rawJson: JSON.stringify(prop),
-        },
-      });
+      .values(propRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
   }
   console.log(`Seeded ${allowedProps.length} item properties.`);
 
   const types = data.itemType || [];
   const allowedTypes = types.filter((t: any) => isSourceAllowed(t.source));
-  for (const type of allowedTypes) {
+  const typeRows = allowedTypes.map((type: any) => {
     const abbreviation = type.abbreviation;
+    return {
+      abbreviation,
+      name: type.name,
+      source: type.source,
+      page: type.page || null,
+      rawJson: JSON.stringify(type),
+    };
+  });
+
+  for (let i = 0; i < typeRows.length; i += BATCH_SIZE) {
     await db
       .insert(schema.itemTypes)
-      .values({
-        abbreviation,
-        name: type.name,
-        source: type.source,
-        page: type.page || null,
-        rawJson: JSON.stringify(type),
-      })
-      .onConflictDoUpdate({
-        target: schema.itemTypes.abbreviation,
-        set: {
-          name: type.name,
-          source: type.source,
-          page: type.page || null,
-          rawJson: JSON.stringify(type),
-        },
-      });
+      .values(typeRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
   }
   console.log(`Seeded ${allowedTypes.length} item types.`);
 
   const typeEntries = data.itemTypeAdditionalEntries || [];
   const allowedTypeEntries = typeEntries.filter((entry: any) => isSourceAllowed(entry.source));
-  for (const entry of allowedTypeEntries) {
+  const entryRows = allowedTypeEntries.map((entry: any) => {
     const id = slugify(`${entry.name}-${entry.appliesTo}-${entry.source}`);
+    return {
+      id,
+      name: entry.name,
+      source: entry.source,
+      page: entry.page || null,
+      appliesTo: entry.appliesTo,
+      description: renderEntries(entry.entries || []),
+      rawJson: JSON.stringify(entry),
+    };
+  });
+
+  for (let i = 0; i < entryRows.length; i += BATCH_SIZE) {
     await db
       .insert(schema.itemTypeAdditionalEntries)
-      .values({
-        id,
-        name: entry.name,
-        source: entry.source,
-        page: entry.page || null,
-        appliesTo: entry.appliesTo,
-        description: renderEntries(entry.entries || []),
-        rawJson: JSON.stringify(entry),
-      })
-      .onConflictDoUpdate({
-        target: schema.itemTypeAdditionalEntries.id,
-        set: {
-          name: entry.name,
-          source: entry.source,
-          page: entry.page || null,
-          appliesTo: entry.appliesTo,
-          description: renderEntries(entry.entries || []),
-          rawJson: JSON.stringify(entry),
-        },
-      });
+      .values(entryRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
   }
   console.log(`Seeded ${allowedTypeEntries.length} item type additional entries.`);
 }
@@ -435,71 +379,57 @@ async function seedMundaneGearAndMasteries(
   const mundane = baseItems.filter(
     (item: any) => !item.weapon && !item.armor && isSourceAllowed(item.source),
   );
-  for (const item of mundane) {
+  const mundaneRows = mundane.map((item: any) => {
     const id = slugify(item.name);
     const desc = renderEntries(item.entries || item.additionalEntries || []);
     const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
     const fluff = fluffMap.get(key);
     const foundry = foundryMap.get(key);
 
+    return {
+      id,
+      name: item.name,
+      source: item.source,
+      page: item.page || null,
+      type: item.type || null,
+      costGp: copperToGp(item.value),
+      weight: item.weight || null,
+      description: desc,
+      rawJson: JSON.stringify(item),
+      fluffJson: fluff ? JSON.stringify(fluff) : null,
+      foundryJson: foundry ? JSON.stringify(foundry) : null,
+    };
+  });
+
+  const BATCH_SIZE = 1000;
+  for (let i = 0; i < mundaneRows.length; i += BATCH_SIZE) {
     await db
       .insert(schema.mundaneGear)
-      .values({
-        id,
-        name: item.name,
-        source: item.source,
-        page: item.page || null,
-        type: item.type || null,
-        costGp: copperToGp(item.value),
-        weight: item.weight || null,
-        description: desc,
-        rawJson: JSON.stringify(item),
-        fluffJson: fluff ? JSON.stringify(fluff) : null,
-        foundryJson: foundry ? JSON.stringify(foundry) : null,
-      })
-      .onConflictDoUpdate({
-        target: schema.mundaneGear.id,
-        set: {
-          name: item.name,
-          source: item.source,
-          page: item.page || null,
-          type: item.type || null,
-          costGp: copperToGp(item.value),
-          weight: item.weight || null,
-          description: desc,
-          rawJson: JSON.stringify(item),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        },
-      });
+      .values(mundaneRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
   }
   console.log(`Seeded ${mundane.length} mundane gear items.`);
 
   const masteries = data.itemMastery || [];
   const allowedMasteries = masteries.filter((m: any) => isSourceAllowed(m.source));
-  for (const mastery of allowedMasteries) {
+  const masteryRows = allowedMasteries.map((mastery: any) => {
     const id = slugify(mastery.name);
     const desc = renderEntries(mastery.entries || []);
+    return {
+      id,
+      name: mastery.name,
+      source: mastery.source,
+      page: mastery.page || null,
+      description: desc,
+      rawJson: JSON.stringify(mastery),
+    };
+  });
+
+  for (let i = 0; i < masteryRows.length; i += BATCH_SIZE) {
     await db
       .insert(schema.weaponMasteries)
-      .values({
-        id,
-        name: mastery.name,
-        source: mastery.source,
-        page: mastery.page || null,
-        description: desc,
-        rawJson: JSON.stringify(mastery),
-      })
-      .onConflictDoUpdate({
-        target: schema.weaponMasteries.id,
-        set: {
-          name: mastery.name,
-          source: mastery.source,
-          page: mastery.page || null,
-          description: desc,
-          rawJson: JSON.stringify(mastery),
-        },
-      });
+      .values(masteryRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
   }
   console.log(`Seeded ${allowedMasteries.length} weapon masteries.`);
 }
@@ -511,31 +441,26 @@ async function seedItemGroupsAndVariants(db: any) {
   );
   const groups = itemsData.itemGroup || [];
   const allowedGroups = groups.filter((g: any) => isSourceAllowed(g.source));
-  for (const group of allowedGroups) {
+  const groupRows = allowedGroups.map((group: any) => {
     const id = slugify(group.name);
     const desc = renderEntries(group.entries || []);
+    return {
+      id,
+      name: group.name,
+      source: group.source,
+      page: group.page || null,
+      itemsJson: JSON.stringify(group.items || []),
+      description: desc,
+      rawJson: JSON.stringify(group),
+    };
+  });
+
+  const BATCH_SIZE = 1000;
+  for (let i = 0; i < groupRows.length; i += BATCH_SIZE) {
     await db
       .insert(schema.itemGroups)
-      .values({
-        id,
-        name: group.name,
-        source: group.source,
-        page: group.page || null,
-        itemsJson: JSON.stringify(group.items || []),
-        description: desc,
-        rawJson: JSON.stringify(group),
-      })
-      .onConflictDoUpdate({
-        target: schema.itemGroups.id,
-        set: {
-          name: group.name,
-          source: group.source,
-          page: group.page || null,
-          itemsJson: JSON.stringify(group.items || []),
-          description: desc,
-          rawJson: JSON.stringify(group),
-        },
-      });
+      .values(groupRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
   }
   console.log(`Seeded ${allowedGroups.length} item groups.`);
 
@@ -546,35 +471,28 @@ async function seedItemGroupsAndVariants(db: any) {
   const allowedVariants = variants.filter((v: any) =>
     isSourceAllowed(v.inherits?.source || v.source || "DMG"),
   );
-  for (const variant of allowedVariants) {
+  const variantRows = allowedVariants.map((variant: any) => {
     const src = variant.inherits?.source || variant.source || "DMG";
     const pg = variant.inherits?.page || variant.page || null;
     const id = slugify(variant.name + "-" + src);
     const desc = renderEntries(variant.entries || variant.inherits?.entries || []);
+    return {
+      id,
+      name: variant.name,
+      source: src,
+      page: pg,
+      requiresJson: JSON.stringify(variant.requires || []),
+      inheritsJson: JSON.stringify(variant.inherits || {}),
+      description: desc,
+      rawJson: JSON.stringify(variant),
+    };
+  });
+
+  for (let i = 0; i < variantRows.length; i += BATCH_SIZE) {
     await db
       .insert(schema.magicVariants)
-      .values({
-        id,
-        name: variant.name,
-        source: src,
-        page: pg,
-        requiresJson: JSON.stringify(variant.requires || []),
-        inheritsJson: JSON.stringify(variant.inherits || {}),
-        description: desc,
-        rawJson: JSON.stringify(variant),
-      })
-      .onConflictDoUpdate({
-        target: schema.magicVariants.id,
-        set: {
-          name: variant.name,
-          source: src,
-          page: pg,
-          requiresJson: JSON.stringify(variant.requires || []),
-          inheritsJson: JSON.stringify(variant.inherits || {}),
-          description: desc,
-          rawJson: JSON.stringify(variant),
-        },
-      });
+      .values(variantRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
   }
   console.log(`Seeded ${allowedVariants.length} magic variants.`);
 }
@@ -585,35 +503,22 @@ async function seedLootAndTreasure(db: any) {
     fs.readFileSync(path.join(process.cwd(), "new data/loot.json"), "utf-8"),
   );
 
+  const lootRows: any[] = [];
   let gemCount = 0;
   const gems = lootData.gems || [];
   for (const gemTable of gems) {
     if (!isSourceAllowed(gemTable.source || "DMG")) continue;
     const id = slugify(gemTable.name);
-    await db
-      .insert(schema.lootTables)
-      .values({
-        id,
-        name: gemTable.name,
-        source: gemTable.source || "DMG",
-        page: gemTable.page || null,
-        type: "gems",
-        value: gemTable.type || null,
-        tableJson: JSON.stringify(gemTable.table || []),
-        rawJson: JSON.stringify(gemTable),
-      })
-      .onConflictDoUpdate({
-        target: schema.lootTables.id,
-        set: {
-          name: gemTable.name,
-          source: gemTable.source || "DMG",
-          page: gemTable.page || null,
-          type: "gems",
-          value: gemTable.type || null,
-          tableJson: JSON.stringify(gemTable.table || []),
-          rawJson: JSON.stringify(gemTable),
-        },
-      });
+    lootRows.push({
+      id,
+      name: gemTable.name,
+      source: gemTable.source || "DMG",
+      page: gemTable.page || null,
+      type: "gems",
+      value: gemTable.type || null,
+      tableJson: JSON.stringify(gemTable.table || []),
+      rawJson: JSON.stringify(gemTable),
+    });
     gemCount++;
   }
 
@@ -622,30 +527,16 @@ async function seedLootAndTreasure(db: any) {
   for (const artTable of artObjects) {
     if (!isSourceAllowed(artTable.source || "DMG")) continue;
     const id = slugify(artTable.name);
-    await db
-      .insert(schema.lootTables)
-      .values({
-        id,
-        name: artTable.name,
-        source: artTable.source || "DMG",
-        page: artTable.page || null,
-        type: "artObjects",
-        value: artTable.type || null,
-        tableJson: JSON.stringify(artTable.table || []),
-        rawJson: JSON.stringify(artTable),
-      })
-      .onConflictDoUpdate({
-        target: schema.lootTables.id,
-        set: {
-          name: artTable.name,
-          source: artTable.source || "DMG",
-          page: artTable.page || null,
-          type: "artObjects",
-          value: artTable.type || null,
-          tableJson: JSON.stringify(artTable.table || []),
-          rawJson: JSON.stringify(artTable),
-        },
-      });
+    lootRows.push({
+      id,
+      name: artTable.name,
+      source: artTable.source || "DMG",
+      page: artTable.page || null,
+      type: "artObjects",
+      value: artTable.type || null,
+      tableJson: JSON.stringify(artTable.table || []),
+      rawJson: JSON.stringify(artTable),
+    });
     artCount++;
   }
 
@@ -654,30 +545,16 @@ async function seedLootAndTreasure(db: any) {
   for (const magicTable of magicItems) {
     if (!isSourceAllowed(magicTable.source || "DMG")) continue;
     const id = slugify(magicTable.name);
-    await db
-      .insert(schema.lootTables)
-      .values({
-        id,
-        name: magicTable.name,
-        source: magicTable.source || "DMG",
-        page: magicTable.page || null,
-        type: "magicItems",
-        value: null,
-        tableJson: JSON.stringify(magicTable.table || []),
-        rawJson: JSON.stringify(magicTable),
-      })
-      .onConflictDoUpdate({
-        target: schema.lootTables.id,
-        set: {
-          name: magicTable.name,
-          source: magicTable.source || "DMG",
-          page: magicTable.page || null,
-          type: "magicItems",
-          value: null,
-          tableJson: JSON.stringify(magicTable.table || []),
-          rawJson: JSON.stringify(magicTable),
-        },
-      });
+    lootRows.push({
+      id,
+      name: magicTable.name,
+      source: magicTable.source || "DMG",
+      page: magicTable.page || null,
+      type: "magicItems",
+      value: null,
+      tableJson: JSON.stringify(magicTable.table || []),
+      rawJson: JSON.stringify(magicTable),
+    });
     magicCount++;
   }
 
@@ -685,77 +562,53 @@ async function seedLootAndTreasure(db: any) {
   const dragonMundane = lootData.dragonMundaneItems || [];
   if (dragonMundane.length > 0) {
     const id = "dragon-mundane-items";
-    await db
-      .insert(schema.lootTables)
-      .values({
-        id,
+    lootRows.push({
+      id,
+      name: "Dragon Mundane Items",
+      source: "FTD",
+      page: 72,
+      type: "dragonMundaneItems",
+      value: null,
+      tableJson: JSON.stringify(dragonMundane),
+      rawJson: JSON.stringify({
         name: "Dragon Mundane Items",
         source: "FTD",
-        page: 72,
-        type: "dragonMundaneItems",
-        value: null,
-        tableJson: JSON.stringify(dragonMundane),
-        rawJson: JSON.stringify({
-          name: "Dragon Mundane Items",
-          source: "FTD",
-          table: dragonMundane,
-        }),
-      })
-      .onConflictDoUpdate({
-        target: schema.lootTables.id,
-        set: {
-          name: "Dragon Mundane Items",
-          source: "FTD",
-          page: 72,
-          type: "dragonMundaneItems",
-          value: null,
-          tableJson: JSON.stringify(dragonMundane),
-          rawJson: JSON.stringify({
-            name: "Dragon Mundane Items",
-            source: "FTD",
-            table: dragonMundane,
-          }),
-        },
-      });
+        table: dragonMundane,
+      }),
+    });
     hasDragonMundane = true;
   }
+
+  const BATCH_SIZE = 1000;
+  for (let i = 0; i < lootRows.length; i += BATCH_SIZE) {
+    await db
+      .insert(schema.lootTables)
+      .values(lootRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
+  }
+
   console.log(
     `Seeded loot tables: ${gemCount} gems, ${artCount} art objects, ${magicCount} magic items tables${hasDragonMundane ? ", 1 dragon mundane table" : ""}.`,
   );
 
+  const treasureRows: any[] = [];
   let indCount = 0;
   const individual = lootData.individual || [];
   for (const indTable of individual) {
     if (!isSourceAllowed(indTable.source || "DMG")) continue;
     const id = slugify(`individual-${indTable.name}-${indTable.source || "DMG"}`);
-    await db
-      .insert(schema.treasureTables)
-      .values({
-        id,
-        name: indTable.name,
-        source: indTable.source || "DMG",
-        page: indTable.page || null,
-        kind: "individual",
-        crMin: indTable.crMin || null,
-        crMax: indTable.crMax || null,
-        coinsJson: JSON.stringify(indTable.coins || {}),
-        tableJson: JSON.stringify(indTable.table || []),
-        rawJson: JSON.stringify(indTable),
-      })
-      .onConflictDoUpdate({
-        target: schema.treasureTables.id,
-        set: {
-          name: indTable.name,
-          source: indTable.source || "DMG",
-          page: indTable.page || null,
-          kind: "individual",
-          crMin: indTable.crMin || null,
-          crMax: indTable.crMax || null,
-          coinsJson: JSON.stringify(indTable.coins || {}),
-          tableJson: JSON.stringify(indTable.table || []),
-          rawJson: JSON.stringify(indTable),
-        },
-      });
+    treasureRows.push({
+      id,
+      name: indTable.name,
+      source: indTable.source || "DMG",
+      page: indTable.page || null,
+      kind: "individual",
+      crMin: indTable.crMin || null,
+      crMax: indTable.crMax || null,
+      coinsJson: JSON.stringify(indTable.coins || {}),
+      tableJson: JSON.stringify(indTable.table || []),
+      rawJson: JSON.stringify(indTable),
+    });
     indCount++;
   }
 
@@ -764,34 +617,18 @@ async function seedLootAndTreasure(db: any) {
   for (const hTable of hoard) {
     if (!isSourceAllowed(hTable.source || "DMG")) continue;
     const id = slugify(`hoard-${hTable.name}-${hTable.source || "DMG"}`);
-    await db
-      .insert(schema.treasureTables)
-      .values({
-        id,
-        name: hTable.name,
-        source: hTable.source || "DMG",
-        page: hTable.page || null,
-        kind: "hoard",
-        crMin: hTable.crMin || null,
-        crMax: hTable.crMax || null,
-        coinsJson: JSON.stringify(hTable.coins || {}),
-        tableJson: JSON.stringify(hTable.table || []),
-        rawJson: JSON.stringify(hTable),
-      })
-      .onConflictDoUpdate({
-        target: schema.treasureTables.id,
-        set: {
-          name: hTable.name,
-          source: hTable.source || "DMG",
-          page: hTable.page || null,
-          kind: "hoard",
-          crMin: hTable.crMin || null,
-          crMax: hTable.crMax || null,
-          coinsJson: JSON.stringify(hTable.coins || {}),
-          tableJson: JSON.stringify(hTable.table || []),
-          rawJson: JSON.stringify(hTable),
-        },
-      });
+    treasureRows.push({
+      id,
+      name: hTable.name,
+      source: hTable.source || "DMG",
+      page: hTable.page || null,
+      kind: "hoard",
+      crMin: hTable.crMin || null,
+      crMax: hTable.crMax || null,
+      coinsJson: JSON.stringify(hTable.coins || {}),
+      tableJson: JSON.stringify(hTable.table || []),
+      rawJson: JSON.stringify(hTable),
+    });
     hoardCount++;
   }
 
@@ -800,36 +637,28 @@ async function seedLootAndTreasure(db: any) {
   for (const dTable of dragon) {
     if (!isSourceAllowed(dTable.source || "FTD")) continue;
     const id = slugify(`dragon-${dTable.name}-${dTable.source || "FTD"}`);
-    await db
-      .insert(schema.treasureTables)
-      .values({
-        id,
-        name: dTable.name,
-        source: dTable.source || "FTD",
-        page: dTable.page || null,
-        kind: "dragon",
-        crMin: null,
-        crMax: null,
-        coinsJson: JSON.stringify(dTable.coins || {}),
-        tableJson: JSON.stringify(dTable.table || []),
-        rawJson: JSON.stringify(dTable),
-      })
-      .onConflictDoUpdate({
-        target: schema.treasureTables.id,
-        set: {
-          name: dTable.name,
-          source: dTable.source || "FTD",
-          page: dTable.page || null,
-          kind: "dragon",
-          crMin: null,
-          crMax: null,
-          coinsJson: JSON.stringify(dTable.coins || {}),
-          tableJson: JSON.stringify(dTable.table || []),
-          rawJson: JSON.stringify(dTable),
-        },
-      });
+    treasureRows.push({
+      id,
+      name: dTable.name,
+      source: dTable.source || "FTD",
+      page: dTable.page || null,
+      kind: "dragon",
+      crMin: null,
+      crMax: null,
+      coinsJson: JSON.stringify(dTable.coins || {}),
+      tableJson: JSON.stringify(dTable.table || []),
+      rawJson: JSON.stringify(dTable),
+    });
     dragonCount++;
   }
+
+  for (let i = 0; i < treasureRows.length; i += BATCH_SIZE) {
+    await db
+      .insert(schema.treasureTables)
+      .values(treasureRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
+  }
+
   console.log(
     `Seeded treasure tables: ${indCount} individual, ${hoardCount} hoard, ${dragonCount} dragon hoard.`,
   );

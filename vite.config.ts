@@ -9,11 +9,32 @@ export default defineConfig({
   },
   nitro: {
     preset: "node-server",
+    rollupConfig: {
+      onwarn(warning, warn) {
+        if (warning.code === "MODULE_LEVEL_DIRECTIVE" && warning.message.includes(`"use client"`)) {
+          return;
+        }
+        warn(warning);
+      },
+    },
   },
   vite: {
     plugins: [visualizer({ open: false, filename: "bundle-stats.html" })],
     ssr: {
       external: ["better-sqlite3"],
+    },
+    build: {
+      rollupOptions: {
+        onwarn(warning, defaultHandler) {
+          if (
+            warning.code === "MODULE_LEVEL_DIRECTIVE" &&
+            warning.message.includes(`"use client"`)
+          ) {
+            return;
+          }
+          defaultHandler(warning);
+        },
+      },
     },
   },
 });

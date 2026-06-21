@@ -120,6 +120,7 @@ async function seedClassSpellLinks(db: any, spellIdsByName: Map<string, string>)
   const sources = JSON.parse(fs.readFileSync(sourcesFile, "utf-8"));
   const seen = new Set<string>();
   let count = 0;
+  const linkRows: any[] = [];
 
   for (const spellSource of Object.values(sources) as any[]) {
     for (const [spellName, metadata] of Object.entries(spellSource) as any[]) {
@@ -133,10 +134,18 @@ async function seedClassSpellLinks(db: any, spellIdsByName: Map<string, string>)
         if (seen.has(linkId)) continue;
         seen.add(linkId);
 
-        await db.insert(schema.classSpells).values({ classId, spellId }).onConflictDoNothing();
+        linkRows.push({ classId, spellId });
         count++;
       }
     }
+  }
+
+  const BATCH_SIZE = 1000;
+  for (let i = 0; i < linkRows.length; i += BATCH_SIZE) {
+    await db
+      .insert(schema.classSpells)
+      .values(linkRows.slice(i, i + BATCH_SIZE))
+      .onConflictDoNothing();
   }
 
   console.log(`Seeded ${count} class spell links.`);
@@ -151,6 +160,7 @@ export async function seedSpells(db: any) {
 
     const spells = selectAllowedSpells(readSpellFiles()).map(mapSpell);
     const spellIdsByName = new Map<string, string>();
+    const spellRows: any[] = [];
 
     for (const spell of spells) {
       spellIdsByName.set(spell.name.toLowerCase(), spell.id);
@@ -158,58 +168,38 @@ export async function seedSpells(db: any) {
       const fluff = fluffMap.get(key);
       const foundry = foundryMap.get(key);
 
+      spellRows.push({
+        id: spell.id,
+        name: spell.name,
+        level: spell.level,
+        school: spell.school,
+        castingTime: spell.castingTime,
+        range: spell.range,
+        duration: spell.duration,
+        concentration: spell.concentration,
+        ritual: spell.ritual,
+        description: spell.description,
+        componentsJson: JSON.stringify(spell.components),
+        damageJson: JSON.stringify(spell.damage),
+        healingJson: JSON.stringify({}),
+        savingThrowJson: JSON.stringify(spell.savingThrow),
+        areaOfEffectJson: JSON.stringify(spell.areaOfEffect),
+        attackRoll: spell.attackRoll,
+        summonsStatBlockIds: JSON.stringify([]),
+        source: spell.source,
+        page: spell.page || null,
+        rawJson: spell.rawJson,
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
+    }
+
+    const BATCH_SIZE = 1000;
+    for (let i = 0; i < spellRows.length; i += BATCH_SIZE) {
       await db
         .insert(schema.spells)
-        .values({
-          id: spell.id,
-          name: spell.name,
-          level: spell.level,
-          school: spell.school,
-          castingTime: spell.castingTime,
-          range: spell.range,
-          duration: spell.duration,
-          concentration: spell.concentration,
-          ritual: spell.ritual,
-          description: spell.description,
-          componentsJson: JSON.stringify(spell.components),
-          damageJson: JSON.stringify(spell.damage),
-          healingJson: JSON.stringify({}),
-          savingThrowJson: JSON.stringify(spell.savingThrow),
-          areaOfEffectJson: JSON.stringify(spell.areaOfEffect),
-          attackRoll: spell.attackRoll,
-          summonsStatBlockIds: JSON.stringify([]),
-          source: spell.source,
-          page: spell.page || null,
-          rawJson: spell.rawJson,
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.spells.id,
-          set: {
-            name: spell.name,
-            level: spell.level,
-            school: spell.school,
-            castingTime: spell.castingTime,
-            range: spell.range,
-            duration: spell.duration,
-            concentration: spell.concentration,
-            ritual: spell.ritual,
-            description: spell.description,
-            componentsJson: JSON.stringify(spell.components),
-            damageJson: JSON.stringify(spell.damage),
-            healingJson: JSON.stringify({}),
-            savingThrowJson: JSON.stringify(spell.savingThrow),
-            areaOfEffectJson: JSON.stringify(spell.areaOfEffect),
-            attackRoll: spell.attackRoll,
-            summonsStatBlockIds: JSON.stringify([]),
-            source: spell.source,
-            page: spell.page || null,
-            rawJson: spell.rawJson,
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+        .values(spellRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
     }
 
     await seedClassSpellLinks(db, spellIdsByName);

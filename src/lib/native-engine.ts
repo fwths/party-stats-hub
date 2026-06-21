@@ -1,6 +1,7 @@
 import {
   ActionInfo,
   AttackInfo,
+  DefenseInfo,
   FeatureInfo,
   InventoryItem,
   PartyMember,
@@ -613,6 +614,7 @@ export function createNativePartyMember(
     weapons?: any[];
     armor?: any[];
     classes?: any[];
+    classFeatures?: any[];
     subclasses?: any[];
     skills?: any[];
     senses?: any[];
@@ -1137,7 +1139,7 @@ export function createNativePartyMember(
   const specialSpeeds = [...(speedBonuses.fly ? [{ name: "Fly", value: speedBonuses.fly }] : [])];
   for (const [type, value] of Object.entries(speedBonuses)) {
     if (type !== "walk" && type !== "speed") {
-      specialSpeeds.push({ type, value });
+      specialSpeeds.push({ name: type, value });
     }
   }
 
@@ -1174,14 +1176,13 @@ export function createNativePartyMember(
         ].includes(g.type),
       )
       .map((g) => ({
-        type:
-          g.type === "damage_resistance"
-            ? "resistance"
-            : g.type === "damage_immunity"
-              ? "immunity"
-              : g.type === "damage_vulnerability"
-                ? "vulnerability"
-                : "condition_immunity",
+        type: (g.type === "damage_resistance"
+          ? "resistance"
+          : g.type === "damage_immunity"
+            ? "immunity"
+            : g.type === "damage_vulnerability"
+              ? "vulnerability"
+              : "condition_immunity") as any,
         damageType: String(g.value),
       })),
     ...normalizedFeatureEffects.defenses,
@@ -1317,7 +1318,7 @@ export function createNativePartyMember(
   }
 
   const effectiveCasterLevel = Math.max(0, Math.floor(casterLevelFloat));
-  let spellSlots = [];
+  let spellSlots: any[] = [];
   if (effectiveCasterLevel > 0) {
     spellSlots = (FULL_CASTER_SLOTS[Math.min(20, effectiveCasterLevel) - 1] || []).map(
       (max, index) => ({
@@ -1328,7 +1329,7 @@ export function createNativePartyMember(
     );
   }
 
-  let pactSlots = [];
+  let pactSlots: any[] = [];
   if (pactLevel > 0) {
     const pact = PACT_SLOTS[Math.min(20, Math.max(1, pactLevel)) - 1];
     if (pact) {

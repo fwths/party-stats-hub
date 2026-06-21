@@ -13,97 +13,55 @@ export async function seedGenerators(db: any) {
       fs.readFileSync(path.join(process.cwd(), "new data/life.json"), "utf-8"),
     );
 
+    const rows: any[] = [];
+
     const classes = lifeData.lifeClass || [];
     for (const c of classes) {
       if (!isSourceAllowed(c.source)) continue;
       const id = slugify(`life-class-${c.name}-${c.source}`);
-      await db
-        .insert(schema.lifeNameTables)
-        .values({
-          id,
-          name: c.name,
-          source: c.source,
-          page: c.page || null,
-          kind: "class",
-          tablesJson: JSON.stringify({
-            reasons: c.reasons || [],
-            other: c.other || {},
-          }),
-          rawJson: JSON.stringify(c),
-        })
-        .onConflictDoUpdate({
-          target: schema.lifeNameTables.id,
-          set: {
-            name: c.name,
-            source: c.source,
-            page: c.page || null,
-            kind: "class",
-            tablesJson: JSON.stringify({
-              reasons: c.reasons || [],
-              other: c.other || {},
-            }),
-            rawJson: JSON.stringify(c),
-          },
-        });
+      rows.push({
+        id,
+        name: c.name,
+        source: c.source,
+        page: c.page || null,
+        kind: "class",
+        tablesJson: JSON.stringify({
+          reasons: c.reasons || [],
+          other: c.other || {},
+        }),
+        rawJson: JSON.stringify(c),
+      });
     }
 
     const backgrounds = lifeData.lifeBackground || [];
     for (const bg of backgrounds) {
       if (!isSourceAllowed(bg.source)) continue;
       const id = slugify(`life-background-${bg.name}-${bg.source}`);
-      await db
-        .insert(schema.lifeNameTables)
-        .values({
-          id,
-          name: bg.name,
-          source: bg.source,
-          page: bg.page || null,
-          kind: "background",
-          tablesJson: JSON.stringify({
-            reasons: bg.reasons || [],
-          }),
-          rawJson: JSON.stringify(bg),
-        })
-        .onConflictDoUpdate({
-          target: schema.lifeNameTables.id,
-          set: {
-            name: bg.name,
-            source: bg.source,
-            page: bg.page || null,
-            kind: "background",
-            tablesJson: JSON.stringify({
-              reasons: bg.reasons || [],
-            }),
-            rawJson: JSON.stringify(bg),
-          },
-        });
+      rows.push({
+        id,
+        name: bg.name,
+        source: bg.source,
+        page: bg.page || null,
+        kind: "background",
+        tablesJson: JSON.stringify({
+          reasons: bg.reasons || [],
+        }),
+        rawJson: JSON.stringify(bg),
+      });
     }
 
     const trinkets = lifeData.lifeTrinket || [];
     if (trinkets.length > 0) {
       const id = "life-trinkets";
-      await db
-        .insert(schema.lifeNameTables)
-        .values({
-          id,
-          name: "Trinkets",
-          source: "PHB",
-          page: 160,
-          kind: "trinket",
-          tablesJson: JSON.stringify(trinkets),
-          rawJson: JSON.stringify({ name: "Trinkets", source: "PHB", trinkets }),
-        })
-        .onConflictDoUpdate({
-          target: schema.lifeNameTables.id,
-          set: {
-            name: "Trinkets",
-            source: "PHB",
-            page: 160,
-            kind: "trinket",
-            tablesJson: JSON.stringify(trinkets),
-            rawJson: JSON.stringify({ name: "Trinkets", source: "PHB", trinkets }),
-          },
-        });
+      rows.push({
+        id,
+        name: "Trinkets",
+        source: "PHB",
+        page: 160,
+        kind: "trinket",
+        tablesJson: JSON.stringify(trinkets),
+        rawJson: JSON.stringify({ name: "Trinkets", source: "PHB", trinkets }),
+      });
     }
 
     // 2. Ingest names.json
@@ -115,29 +73,26 @@ export async function seedGenerators(db: any) {
     for (const nameTable of names) {
       if (!isSourceAllowed(nameTable.source || "XGE")) continue;
       const id = slugify(`name-${nameTable.name}-${nameTable.source || "XGE"}`);
-      await db
-        .insert(schema.lifeNameTables)
-        .values({
-          id,
-          name: nameTable.name,
-          source: nameTable.source || "XGE",
-          page: nameTable.page || null,
-          kind: "name",
-          tablesJson: JSON.stringify(nameTable.tables || []),
-          rawJson: JSON.stringify(nameTable),
-        })
-        .onConflictDoUpdate({
-          target: schema.lifeNameTables.id,
-          set: {
-            name: nameTable.name,
-            source: nameTable.source || "XGE",
-            page: nameTable.page || null,
-            kind: "name",
-            tablesJson: JSON.stringify(nameTable.tables || []),
-            rawJson: JSON.stringify(nameTable),
-          },
-        });
+      rows.push({
+        id,
+        name: nameTable.name,
+        source: nameTable.source || "XGE",
+        page: nameTable.page || null,
+        kind: "name",
+        tablesJson: JSON.stringify(nameTable.tables || []),
+        rawJson: JSON.stringify(nameTable),
+      });
       nameCount++;
+    }
+
+    const BATCH_SIZE = 1000;
+    if (rows.length > 0) {
+      for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.lifeNameTables)
+          .values(rows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
     }
 
     console.log(

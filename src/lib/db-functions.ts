@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { db } from "./drizzle.server";
 import * as schema from "../db/schema";
-import { and, eq, like, or, sql, asc, count } from "drizzle-orm";
+import { and, eq, like, or, sql, asc, count, not } from "drizzle-orm";
 
 async function getSnapshot(): Promise<Record<string, any[]>> {
   try {
@@ -87,7 +87,12 @@ export const searchCompendiumEntriesFromDb = createServerFn({ method: "GET" }).h
           ),
         );
       }
-      if (entityType) filters.push(eq(schema.compendiumEntries.entityType, entityType));
+      if (entityType) {
+        filters.push(eq(schema.compendiumEntries.entityType, entityType));
+      } else {
+        // Exclude raw paragraph blocks by default to keep search results clean
+        filters.push(not(eq(schema.compendiumEntries.entityType, "entries")));
+      }
       if (source) filters.push(eq(schema.compendiumEntries.source, source));
 
       return await db
@@ -100,7 +105,11 @@ export const searchCompendiumEntriesFromDb = createServerFn({ method: "GET" }).h
       const snapshot = await getSnapshot();
       return (snapshot.compendium_entries || [])
         .filter((entry: any) => {
-          if (entityType && entry.entityType !== entityType) return false;
+          if (entityType) {
+            if (entry.entityType !== entityType) return false;
+          } else {
+            if (entry.entityType === "entries") return false;
+          }
           if (source && entry.source !== source) return false;
           if (!query) return true;
           return `${entry.name || ""}\n${entry.searchText || ""}`.toLowerCase().includes(query);

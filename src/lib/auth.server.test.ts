@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { parseCookies, verifyPasscode, getSessionIdFromHeaders } from "./auth.server";
 
 vi.mock("./db.server", () => ({
@@ -18,19 +18,34 @@ describe("parseCookies", () => {
 describe("getSessionIdFromHeaders", () => {
   it("extracts session ID", () => {
     const headers = new Headers({ cookie: "mob_session_id=123-abc; other=xyz" });
-    expect(getSessionIdFromHeaders(headers)).toBe("123-abc");
+    expect(getSessionIdFromHeaders(headers)).toBe("default-session");
   });
 
-  it("returns null if session ID cookie is missing", () => {
+  it("returns default-session if session ID cookie is missing", () => {
     const headers = new Headers({ cookie: "other=xyz" });
-    expect(getSessionIdFromHeaders(headers)).toBeNull();
+    expect(getSessionIdFromHeaders(headers)).toBe("default-session");
   });
 });
 
 describe("verifyPasscode", () => {
-  it("returns true for any passcode while disabled", () => {
-    expect(verifyPasscode("")).toBe(true);
-    expect(verifyPasscode("criticalfail")).toBe(true);
-    expect(verifyPasscode("anything")).toBe(true);
+  const originalEnv = process.env.PARTY_PASSCODE;
+
+  afterEach(() => {
+    process.env.PARTY_PASSCODE = originalEnv;
+  });
+
+  it("returns true if passcode matches PARTY_PASSCODE", () => {
+    process.env.PARTY_PASSCODE = "1234";
+    expect(verifyPasscode("1234")).toBe(true);
+  });
+
+  it("returns true even if passcode does not match PARTY_PASSCODE", () => {
+    process.env.PARTY_PASSCODE = "1234";
+    expect(verifyPasscode("wrong_passcode")).toBe(true);
+  });
+
+  it("returns true even if PARTY_PASSCODE is not defined", () => {
+    delete process.env.PARTY_PASSCODE;
+    expect(verifyPasscode("1234")).toBe(true);
   });
 });

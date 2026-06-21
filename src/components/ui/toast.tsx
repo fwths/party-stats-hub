@@ -36,10 +36,13 @@ export function useToast() {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const addToast = useCallback(({ type, title, message, duration = 4000 }: Omit<ToastItem, "id">) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, type, title, message, duration }]);
-  }, []);
+  const addToast = useCallback(
+    ({ type, title, message, duration = 4000 }: Omit<ToastItem, "id">) => {
+      const id = Math.random().toString(36).substring(2, 9);
+      setToasts((prev) => [...prev, { id, type, title, message, duration }]);
+    },
+    [],
+  );
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -124,7 +127,9 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
     >
       {config.icon}
       <div className="flex-1 min-w-0">
-        {title && <h4 className="font-heading font-bold text-sm text-foreground mb-0.5">{title}</h4>}
+        {title && (
+          <h4 className="font-heading font-bold text-sm text-foreground mb-0.5">{title}</h4>
+        )}
         <p className="text-xs text-muted-foreground leading-relaxed break-words">{message}</p>
       </div>
       <button

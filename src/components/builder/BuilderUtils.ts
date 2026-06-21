@@ -25,6 +25,9 @@ export type BuilderState = {
   abilityBonuses: Record<string, number>;
   ruleChoices: Record<string, string[]>;
   highLevelFeatChoices?: Record<number, string>;
+  featChoices?: any;
+  classToolChoices?: string[];
+  notes?: string;
   sourcePolicy?: any;
   contentToggles?: any;
 
@@ -474,12 +477,16 @@ export function getPreparedSpellLimit(
   let bonuses: Record<string, number> = {};
   let level: number;
 
-  if (characterOrAbilities && "abilities" in characterOrAbilities) {
-    abilities = characterOrAbilities.abilities;
-    bonuses = characterOrAbilities.abilityBonuses || {};
-    level = characterOrAbilities.level;
+  if (
+    characterOrAbilities &&
+    "abilities" in characterOrAbilities &&
+    typeof (characterOrAbilities as any).abilities === "object"
+  ) {
+    abilities = (characterOrAbilities as any).abilities;
+    bonuses = (characterOrAbilities as any).abilityBonuses || {};
+    level = (characterOrAbilities as any).level;
   } else {
-    abilities = characterOrAbilities || {};
+    abilities = characterOrAbilities as Record<string, number>;
     level = levelInput || 1;
   }
 
@@ -716,7 +723,7 @@ export function filterFeatureOptions(
   if (!/eldritch invocation/i.test(name)) return options;
 
   const selectedInvocations = new Set(
-    Object.entries(character.featureChoices)
+    Object.entries(character.featureChoices || {})
       .filter(([featureChoiceId]) => featureChoiceId.startsWith(String(feature.id)))
       .flatMap(([, selected]) => selected),
   );
@@ -735,9 +742,9 @@ export function filterFeatureOptions(
 export function selectedSkillNames(character: BuilderState): string[] {
   return Array.from(
     new Set([
-      ...character.speciesSkillChoices,
-      ...character.featChoices.skills,
-      ...character.classSkillChoices,
+      ...(character.speciesSkillChoices || []),
+      ...(character.featChoices?.skills || []),
+      ...(character.classSkillChoices || []),
     ]),
   ).filter(Boolean);
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Moon, Hourglass, Tent } from "lucide-react";
 import { PartyMember } from "@/lib/dndbeyond.types";
 import { Panel } from "../CharacterDetailView";
@@ -552,115 +553,140 @@ export function RestConsole({
   setRestModal: (val: { type: "short" | "long" } | null) => void;
 }) {
   const pools = parseHitDice(member.hitDice);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 768; // collapsed by default on mobile
+    }
+    return true;
+  });
 
   return (
-    <Panel title="Rest & Hit Dice Tracker" icon={Moon} padding="p-3.5 py-3">
-      <div className="grid gap-4 md:grid-cols-[1fr_2fr] items-start">
-        {/* Left/Top: Rest Controls */}
-        <div className="flex flex-col gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none pl-1">
-            Rest Controls
-          </span>
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setShortRestHealInput("0");
-                setShortRestDiceSpend({});
-                setRestModal({ type: "short" });
-              }}
-              className="w-full rounded-lg border border-border bg-secondary/35 py-2 text-xs font-semibold tracking-wide text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center justify-center gap-2 transition-all duration-200"
-            >
-              <Hourglass size={12} className="text-accent/80" />
-              <span>Short Rest</span>
-            </button>
-            <button
-              onClick={() => {
-                setRestModal({ type: "long" });
-              }}
-              className="w-full rounded-lg border border-border bg-secondary/35 py-2 text-xs font-semibold tracking-wide text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center justify-center gap-2 transition-all duration-200"
-            >
-              <Tent size={12} className="text-accent/80" />
-              <span>Long Rest</span>
-            </button>
+    <section className="card-arcane card-arcane-hover rounded-xl border border-border/40 p-3.5 py-3 shadow-lg">
+      <button
+        type="button"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className={cn(
+          "flex items-center justify-between w-full text-left font-bold uppercase tracking-widest text-accent text-glow-accent select-none focus:outline-none cursor-pointer text-[10px]",
+          !isCollapsed && "border-b border-border/20 pb-2 mb-3",
+        )}
+      >
+        <span className="flex items-center gap-2">
+          <Moon size={13} className="text-accent animate-pulse" />
+          <span>Rest & Hit Dice Tracker</span>
+        </span>
+        <span className="text-[10px] text-muted-foreground font-semibold lowercase tracking-normal bg-secondary/40 border border-border/30 rounded px-1.5 py-0.5 hover:text-accent hover:border-accent/40 transition-colors">
+          {isCollapsed ? "expand" : "collapse"}
+        </span>
+      </button>
+
+      <div
+        className={cn(
+          "grid transition-all duration-200 ease-in-out",
+          isCollapsed
+            ? "grid-rows-[0fr] opacity-0 pointer-events-none"
+            : "grid-rows-[1fr] opacity-100",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="grid gap-4 md:grid-cols-[1fr_2fr] items-start">
+            {/* Left/Top: Rest Controls */}
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground select-none pl-1">
+                Rest Controls
+              </span>
+              <div className="flex flex-row md:flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShortRestHealInput("0");
+                    setShortRestDiceSpend({});
+                    setRestModal({ type: "short" });
+                  }}
+                  className="flex-1 rounded-lg border border-border bg-secondary/35 py-2 text-xs font-semibold tracking-wide text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center justify-center gap-2 transition-all duration-200"
+                >
+                  <Hourglass size={12} className="text-accent/80" />
+                  <span>Short Rest</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRestModal({ type: "long" });
+                  }}
+                  className="flex-1 rounded-lg border border-border bg-secondary/35 py-2 text-xs font-semibold tracking-wide text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center justify-center gap-2 transition-all duration-200"
+                >
+                  <Tent size={12} className="text-accent/80" />
+                  <span>Long Rest</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right/Bottom: Hit Dice Pools */}
+            {pools.length > 0 ? (
+              <div className="flex flex-col gap-2 border-t border-border/10 pt-4 md:border-t-0 md:pt-0 md:border-l md:border-border/10 md:pl-4">
+                {pools.map((pool) => {
+                  const spent = localHp.spentHitDice[pool.die] ?? 0;
+                  const remaining = pool.remaining - spent;
+
+                  return (
+                    <div
+                      key={pool.die}
+                      className="group/hd relative overflow-hidden rounded-lg border border-border/40 bg-secondary/10 p-2.5 transition-all duration-200 hover:border-accent/40 hover:bg-secondary/20"
+                    >
+                      <div className="flex flex-col gap-2">
+                        {/* Header Row */}
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="flex items-center gap-1 font-bold uppercase tracking-wider text-muted-foreground select-none">
+                            <span className="w-4 h-4 text-accent/80 inline-block">
+                              <DieSvg die={pool.die} active={true} />
+                            </span>
+                            <span>{pool.die} Pool</span>
+                          </span>
+                          <span className="font-mono font-bold text-muted-foreground">
+                            <strong className="text-foreground">{remaining}</strong> / {pool.total}{" "}
+                            Remaining
+                          </span>
+                        </div>
+
+                        {/* Visual Dice Slot Grid */}
+                        <div className="flex flex-wrap gap-1 py-0.5">
+                          {Array.from({ length: pool.total }).map((_, i) => {
+                            const active = i < remaining;
+                            return (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => {
+                                  if (active) {
+                                    localHp.spendHitDie(pool.die, 1);
+                                  } else {
+                                    localHp.regainHitDie(pool.die, 1);
+                                  }
+                                }}
+                                className="h-8 w-8 flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none hover:scale-105 active:scale-95"
+                                title={
+                                  active
+                                    ? `Click to spend 1 ${pool.die}`
+                                    : `Click to regain 1 ${pool.die}`
+                                }
+                              >
+                                <DieSvg die={pool.die} active={active} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center text-xs text-muted-foreground border-t border-border/10 pt-4 md:border-t-0 md:pt-0 md:border-l md:border-border/10 md:pl-4 py-4">
+                No hit dice available
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Right/Bottom: Hit Dice Pools */}
-        {pools.length > 0 ? (
-          <div className="flex flex-col gap-2 border-t border-border/10 pt-4 md:border-t-0 md:pt-0 md:border-l md:border-border/10 md:pl-4">
-            {pools.map((pool) => {
-              const spent = localHp.spentHitDice[pool.die] ?? 0;
-              const remaining = pool.remaining - spent;
-              const pct = pool.total > 0 ? (remaining / pool.total) * 100 : 0;
-              const barColor =
-                pct > 50 ? "bg-hp-good" : pct > 20 ? "bg-hp-wounded" : "bg-hp-critical";
-
-              return (
-                <div
-                  key={pool.die}
-                  className="group/hd relative overflow-hidden rounded-lg border border-border/40 bg-secondary/10 p-2.5 transition-all duration-200 hover:border-accent/40 hover:bg-secondary/20"
-                >
-                  <div className="flex flex-col gap-2">
-                    {/* Header Row */}
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="flex items-center gap-1 font-bold uppercase tracking-wider text-muted-foreground select-none">
-                        <span className="w-4 h-4 text-accent/80 inline-block">
-                          <DieSvg die="d20" active={true} />
-                        </span>
-                        <span>{pool.die} Pool</span>
-                      </span>
-                      <span className="font-mono font-bold text-muted-foreground">
-                        <strong className="text-foreground">{remaining}</strong> / {pool.total}{" "}
-                        Remaining
-                      </span>
-                    </div>
-
-                    {/* Visual Dice Slot Grid */}
-                    <div className="flex flex-wrap gap-1 py-0.5">
-                      {Array.from({ length: pool.total }).map((_, i) => {
-                        const active = i < remaining;
-                        return (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => {
-                              if (active) {
-                                localHp.spendHitDie(pool.die, 1);
-                              } else {
-                                localHp.regainHitDie(pool.die, 1);
-                              }
-                            }}
-                            className="h-8 w-8 flex items-center justify-center transition-all duration-200 cursor-pointer focus:outline-none hover:scale-105 active:scale-95"
-                            title={
-                              active
-                                ? `Click to spend 1 ${pool.die}`
-                                : `Click to regain 1 ${pool.die}`
-                            }
-                          >
-                            <DieSvg die={pool.die} active={active} />
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Progress Line */}
-                    <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
-                      <div
-                        className={`h-full ${barColor} transition-all duration-500`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center text-xs text-muted-foreground border-t border-border/10 pt-4 md:border-t-0 md:pt-0 md:border-l md:border-border/10 md:pl-4 py-4">
-            No hit dice available
-          </div>
-        )}
       </div>
-    </Panel>
+    </section>
   );
 }

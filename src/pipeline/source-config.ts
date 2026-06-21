@@ -47,26 +47,36 @@ export function normalizeSource(source: string): string {
   return source.trim().toUpperCase();
 }
 
-export function getEnabledSources(): string[] {
+let allowedSourcesCache: Set<string> | null = null;
+let blockedSourcesCache: Set<string> | null = null;
+
+function initSourceCaches() {
+  if (allowedSourcesCache) return;
   const excluded = new Set(EXCLUDED_SOURCES.map(normalizeSource));
   const blocked = new Set(BLOCKED_SOURCES.map(normalizeSource));
+  blockedSourcesCache = blocked;
+
   const configured = ENABLED_TIERS.flatMap((tier) => SOURCES[tier]).filter(
     (source) => !excluded.has(normalizeSource(source)) && !blocked.has(normalizeSource(source)),
   );
   const catalog = getCatalogSources().filter(
     (source) => !excluded.has(normalizeSource(source)) && !blocked.has(normalizeSource(source)),
   );
-  return [...new Set([...configured, ...catalog])];
+  allowedSourcesCache = new Set([...configured, ...catalog].map(normalizeSource));
+}
+
+export function getEnabledSources(): string[] {
+  initSourceCaches();
+  return Array.from(allowedSourcesCache!);
 }
 
 export function isSourceAllowed(source: string | null | undefined): boolean {
   if (!source) return false;
-  if (GENERIC_SOURCES.has(normalizeSource(source))) return true;
-  const blocked = new Set(BLOCKED_SOURCES.map(normalizeSource));
-  if (blocked.has(normalizeSource(source))) return false;
-
-  const enabled = new Set(getEnabledSources().map(normalizeSource));
-  return enabled.has(normalizeSource(source));
+  const norm = normalizeSource(source);
+  if (GENERIC_SOURCES.has(norm)) return true;
+  initSourceCaches();
+  if (blockedSourcesCache!.has(norm)) return false;
+  return allowedSourcesCache!.has(norm);
 }
 
 export function getSourcePriority(source: string | null | undefined, edition?: string): number {

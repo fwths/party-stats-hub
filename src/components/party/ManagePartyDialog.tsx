@@ -3,6 +3,7 @@ import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { partyQueryOptions } from "@/lib/party";
 import { PartyMember } from "@/lib/dndbeyond.types";
+import { useNavigate } from "@tanstack/react-router";
 
 function parseCharacterIdInput(raw: string): number | null {
   const trimmed = raw.trim();
@@ -22,6 +23,7 @@ export function ManagePartyDialog({
   onChange: (ids: number[]) => void;
   onClose: () => void;
 }) {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const { data } = useSuspenseQuery(partyQueryOptions(ids));
   const [input, setInput] = useState("");
@@ -144,7 +146,8 @@ export function ManagePartyDialog({
           <div className="mt-1">
             <button
               onClick={() => {
-                window.location.href = "/builder";
+                navigate({ to: "/builder" });
+                onClose();
               }}
               className="w-full rounded border border-accent/60 bg-accent/15 px-3 py-2 text-sm text-accent hover:bg-accent/25 transition-colors flex justify-center items-center gap-2 font-medium"
             >

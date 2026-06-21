@@ -17,6 +17,7 @@ import {
   Target,
   Scroll,
   Sparkles,
+  Zap,
 } from "lucide-react";
 
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
@@ -550,7 +551,12 @@ interface SpellbookPanelProps {
   >;
   selectedMetamagicName: string | null;
   setSelectedMetamagicName: React.Dispatch<React.SetStateAction<string | null>>;
-  handleCastSpell: (spell: PreparedSpell, isPact: boolean, slotLevel: number) => void;
+  handleCastSpell: (
+    spell: PreparedSpell,
+    isPact: boolean,
+    slotLevel: number,
+    castUsingUse?: boolean,
+  ) => void;
   getMetamagicCost: (name: string, spellLevel: number) => number;
   getCastSlotOptions: (
     spellLevel: number,
@@ -620,6 +626,21 @@ export default function SpellbookPanel({
       [key]: !prev[key],
     }));
   };
+
+  const getEffectiveSpellUses = useCallback(
+    (spell: PreparedSpell) => {
+      if (!spell.uses) return null;
+      const spentKey = `spell-uses:${spell.name}:${spell.uses.reset || "long rest"}`;
+      const spent = localResources.spent?.[spentKey] ?? 0;
+      const current = Math.max(0, spell.uses.max - spent);
+      return {
+        ...spell.uses,
+        current,
+        spent,
+      };
+    },
+    [localResources.spent],
+  );
 
   const getIsPrepared = useCallback(
     (s: PreparedSpell) => {
@@ -967,6 +988,18 @@ export default function SpellbookPanel({
             </div>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
+            {(() => {
+              const effUses = getEffectiveSpellUses(spell);
+              if (!effUses) return null;
+              return (
+                <span
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/25 font-mono text-xs text-amber-400 font-bold"
+                  title={`Reset: ${effUses.reset}`}
+                >
+                  <Zap className="w-3 h-3 text-amber-400 fill-amber-400/20" /> {effUses.current} / {effUses.max} Uses
+                </span>
+              );
+            })()}
             <span className="inline-block px-2.5 py-1 rounded bg-accent/10 border border-accent/20 font-mono text-xs text-accent font-bold">
               {isCantrip ? "Cantrip" : `Level ${spell.level}`}
             </span>
@@ -1198,6 +1231,33 @@ export default function SpellbookPanel({
             </button>
           ) : (
             <div>
+              {(() => {
+                const effUses = getEffectiveSpellUses(spell);
+                if (!effUses) return null;
+                return (
+                  <div className="mb-4">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
+                      <span>Spell Uses</span>
+                      <span className="text-[9px] text-amber-400 font-normal normal-case">
+                        Cast using innate/item uses
+                      </span>
+                    </div>
+                    <button
+                      disabled={effUses.current <= 0}
+                      onClick={() => handleCastSpell(spell, false, 0, true)}
+                      className="w-full py-2 px-3 rounded-lg border bg-amber-500/5 border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500 text-[10.5px] font-bold transition-all hover:scale-[1.01] active:scale-[0.98] flex flex-col items-center justify-center gap-0.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+                    >
+                      <span className="flex items-center gap-1.5 justify-center">
+                        <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20 animate-pulse" /> Cast using Spell Use
+                      </span>
+                      <span className="text-[8.5px] font-normal opacity-85">
+                        {effUses.current} / {effUses.max} left (Reset: {effUses.reset})
+                      </span>
+                    </button>
+                  </div>
+                );
+              })()}
+
               <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center justify-between">
                 <span>Channel Spell Slots</span>
                 <span className="text-[9px] text-accent font-normal normal-case">
@@ -1507,6 +1567,15 @@ export default function SpellbookPanel({
                                 className={`truncate ${isSpellPrepared ? "text-foreground font-semibold" : "text-muted-foreground/50 italic font-normal"}`}
                               >
                                 {spell.name}
+                                {(() => {
+                                  const effUses = getEffectiveSpellUses(spell);
+                                  if (!effUses) return null;
+                                  return (
+                                    <span className="ml-1.5 px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-mono text-[8px] font-bold">
+                                      {effUses.current}/{effUses.max}
+                                    </span>
+                                  );
+                                })()}
                               </span>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0 text-[8px] font-mono select-none">
@@ -1756,6 +1825,15 @@ export default function SpellbookPanel({
                                 className={`cursor-pointer truncate hover:text-accent transition-colors ${isSpellPrepared ? "text-foreground font-semibold" : "text-muted-foreground/50 italic font-normal"}`}
                               >
                                 {spell.name}
+                                {(() => {
+                                  const effUses = getEffectiveSpellUses(spell);
+                                  if (!effUses) return null;
+                                  return (
+                                    <span className="ml-1.5 px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-mono text-[8px] font-bold">
+                                      {effUses.current}/{effUses.max}
+                                    </span>
+                                  );
+                                })()}
                               </span>
                             </span>
                             <button
@@ -1788,6 +1866,18 @@ export default function SpellbookPanel({
                                     🕒 {getDurationText(spell.duration, spell.concentration)}
                                   </span>
                                 )}
+                                {(() => {
+                                  const effUses = getEffectiveSpellUses(spell);
+                                  if (!effUses) return null;
+                                  return (
+                                    <span
+                                      className="inline-flex items-center gap-0.5 rounded bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-[7px] uppercase tracking-wider text-amber-400 font-bold"
+                                      title={`Reset: ${effUses.reset}`}
+                                    >
+                                      <Zap className="w-2 h-2 text-amber-400 fill-amber-400/20" /> {effUses.current} / {effUses.max} Uses
+                                    </span>
+                                  );
+                                })()}
                               </div>
 
                               {isSorcerer && localInnateSorcery && (

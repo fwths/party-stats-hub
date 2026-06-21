@@ -25,6 +25,7 @@ export type RuleChoiceOptionType =
 export interface RuleChoicePrerequisite {
   type:
     | "level"
+    | "maxLevel"
     | "ability"
     | "species"
     | "class"

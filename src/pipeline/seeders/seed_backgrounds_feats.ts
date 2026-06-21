@@ -107,94 +107,68 @@ export async function seedBackgroundsFeats(db: any) {
     const feats = selectAllowed(readFeats());
     const backgrounds = selectAllowed(readBackgrounds());
 
+    const featRows: any[] = [];
     for (const feat of feats) {
       const key = `${feat.name.toLowerCase()}|${feat.source.toLowerCase()}`;
       const fluff = featFluffMap.get(key);
       const foundry = featFoundryMap.get(key);
 
-      await db
-        .insert(schema.feats)
-        .values({
-          id: slugify(feat.name),
-          name: feat.name,
-          category: mapFeatCategory(feat.category),
-          description: renderEntries(feat.entries),
-          prerequisite: feat.prerequisite ? renderEntries(feat.prerequisite) : null,
-          levelRequirement: extractLevelRequirement(feat.prerequisite),
-          repeatable: !!feat.repeatable,
-          abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
-          source: feat.source,
-          page: feat.page || null,
-          rawJson: JSON.stringify(feat),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.feats.id,
-          set: {
-            name: feat.name,
-            category: mapFeatCategory(feat.category),
-            description: renderEntries(feat.entries),
-            prerequisite: feat.prerequisite ? renderEntries(feat.prerequisite) : null,
-            levelRequirement: extractLevelRequirement(feat.prerequisite),
-            prerequisitesJson: feat.prerequisite ? JSON.stringify(feat.prerequisite) : null,
-            repeatable: !!feat.repeatable,
-            abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
-            source: feat.source,
-            page: feat.page || null,
-            rawJson: JSON.stringify(feat),
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      featRows.push({
+        id: slugify(feat.name),
+        name: feat.name,
+        category: mapFeatCategory(feat.category),
+        description: renderEntries(feat.entries),
+        prerequisite: feat.prerequisite ? renderEntries(feat.prerequisite) : null,
+        levelRequirement: extractLevelRequirement(feat.prerequisite),
+        repeatable: !!feat.repeatable,
+        abilityScoreImprovementJson: JSON.stringify(feat.ability || {}),
+        source: feat.source,
+        page: feat.page || null,
+        rawJson: JSON.stringify(feat),
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
     }
 
+    const backgroundRows: any[] = [];
     for (const background of backgrounds) {
       const key = `${background.name.toLowerCase()}|${background.source.toLowerCase()}`;
       const fluff = backgroundFluffMap.get(key);
 
-      await db
-        .insert(schema.backgrounds)
-        .values({
-          id: slugify(background.name),
-          name: background.name,
-          description: renderEntries(background.entries),
-          abilityScoreIncreasesJson: JSON.stringify(background.ability || []),
-          skillProficienciesJson: JSON.stringify(
-            extractProficiencies(background.skillProficiencies),
-          ),
-          toolProficienciesJson: JSON.stringify(extractProficiencies(background.toolProficiencies)),
-          languageProficienciesJson: JSON.stringify(background.languageProficiencies || []),
-          startingEquipmentJson: JSON.stringify(background.startingEquipment || []),
-          originFeatId: extractOriginFeat(background.feats),
-          source: background.source,
-          page: background.page || null,
-          rawJson: JSON.stringify(background),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: null,
-        })
-        .onConflictDoUpdate({
-          target: schema.backgrounds.id,
-          set: {
-            name: background.name,
-            description: renderEntries(background.entries),
-            abilityScoreIncreasesJson: JSON.stringify(background.ability || []),
-            skillProficienciesJson: JSON.stringify(
-              extractProficiencies(background.skillProficiencies),
-            ),
-            toolProficienciesJson: JSON.stringify(
-              extractProficiencies(background.toolProficiencies),
-            ),
-            languageProficienciesJson: JSON.stringify(background.languageProficiencies || []),
-            startingEquipmentJson: JSON.stringify(background.startingEquipment || []),
-            originFeatId: extractOriginFeat(background.feats),
-            source: background.source,
-            page: background.page || null,
-            rawJson: JSON.stringify(background),
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: null,
-          },
-        });
+      backgroundRows.push({
+        id: slugify(background.name),
+        name: background.name,
+        description: renderEntries(background.entries),
+        abilityScoreIncreasesJson: JSON.stringify(background.ability || []),
+        skillProficienciesJson: JSON.stringify(extractProficiencies(background.skillProficiencies)),
+        toolProficienciesJson: JSON.stringify(extractProficiencies(background.toolProficiencies)),
+        languageProficienciesJson: JSON.stringify(background.languageProficiencies || []),
+        startingEquipmentJson: JSON.stringify(background.startingEquipment || []),
+        originFeatId: extractOriginFeat(background.feats),
+        source: background.source,
+        page: background.page || null,
+        rawJson: JSON.stringify(background),
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: null,
+      });
+    }
+
+    const BATCH_SIZE = 1000;
+    if (featRows.length > 0) {
+      for (let i = 0; i < featRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.feats)
+          .values(featRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
+    }
+    if (backgroundRows.length > 0) {
+      for (let i = 0; i < backgroundRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.backgrounds)
+          .values(backgroundRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
     }
 
     console.log(`Seeded ${feats.length} feats.`);

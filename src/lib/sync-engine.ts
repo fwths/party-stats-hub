@@ -11,23 +11,35 @@ export function queueSync(key: string, value: string | null) {
   }
 
   syncTimeout = setTimeout(async () => {
-    const batch = Object.entries(syncQueue).map(([k, v]) => ({ key: k, value: v }));
+    const snapshot = { ...syncQueue };
     // Clear queued items immediately to avoid race conditions during async request
-    for (const k of Object.keys(syncQueue)) {
+    for (const k of Object.keys(snapshot)) {
       delete syncQueue[k];
     }
+
+    const requeueMissing = () => {
+      for (const [key, value] of Object.entries(snapshot)) {
+        if (!(key in syncQueue)) {
+          syncQueue[key] = value;
+        }
+      }
+    };
 
     try {
       const res = await fetch("/api/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batch }),
+        body: JSON.stringify({
+          batch: Object.entries(snapshot).map(([k, v]) => ({ key: k, value: v })),
+        }),
       });
       if (!res.ok) {
-        console.warn("Failed to sync changes to server:", await res.text());
+        console.warn("Failed to sync changes to server, re-queuing:", await res.text());
+        requeueMissing();
       }
     } catch (err) {
-      console.warn("Network error during sync to server:", err);
+      console.warn("Network error during sync to server, re-queuing:", err);
+      requeueMissing();
     }
   }, 1000); // 1 second debounce
 }

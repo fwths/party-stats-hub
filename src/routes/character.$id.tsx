@@ -68,7 +68,7 @@ export const Route = createFileRoute("/character/$id")({
 
 function CharacterDetail() {
   return (
-    <main className="min-h-screen text-foreground animate-fade-in">
+    <main className="min-h-screen text-foreground animate-fade-in overflow-x-hidden">
       <div className="bg-particles" />
       <div className="bg-particles-2" />
       <TooltipProvider delayDuration={100}>

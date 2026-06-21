@@ -55,7 +55,7 @@ function selectAllowed<T extends SourceItem>(items: T[]): T[] {
 
   for (const item of items) {
     if (!isSourceAllowed(item.source)) continue;
-    const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
+    const key = item.name.toLowerCase();
     const existing = selected.get(key);
     const existingPriority = existing ? getSourcePriority(existing.source, existing.edition) : -1;
     const priority = getSourcePriority(item.source, item.edition);
@@ -156,143 +156,106 @@ export async function seedAdventuringContent(db: any) {
   const traps = selectAllowed(readArray<TrapHazard>("trapshazards.json", "trap"));
   const hazards = selectAllowed(readArray<TrapHazard>("trapshazards.json", "hazard"));
 
+  const vehicleRows: any[] = [];
   for (const vehicle of vehicles) {
     const description = renderEntries(vehicle.entries);
     const key = `${vehicle.name.toLowerCase()}|${vehicle.source.toLowerCase()}`;
     const fluff = vehicleFluffMap.get(key);
 
-    await db
-      .insert(schema.vehicles)
-      .values({
-        id: slugify(vehicle.name, vehicle.source),
-        name: vehicle.name,
-        source: vehicle.source,
-        page: vehicle.page || null,
-        category: titleCase(vehicle.vehicleType || "Vehicle"),
-        description,
-        costGp: Math.round((vehicle.value || 0) / 100),
-        speed: firstNumber(vehicle.speed) || 0,
-        capacityJson: capacityJson(vehicle),
-        ac: acValue(vehicle.ac),
-        hp: hpValue(vehicle.hp),
-        damageThreshold: firstNumber((vehicle as any).dt) || 0,
-        weaponsJson: vehicleWeaponsJson(vehicle),
-        rawJson: JSON.stringify(vehicle),
-        fluffJson: fluff ? JSON.stringify(fluff) : null,
-        foundryJson: null,
-      })
-      .onConflictDoUpdate({
-        target: schema.vehicles.id,
-        set: {
-          name: vehicle.name,
-          source: vehicle.source,
-          page: vehicle.page || null,
-          category: titleCase(vehicle.vehicleType || "Vehicle"),
-          description,
-          costGp: Math.round((vehicle.value || 0) / 100),
-          speed: firstNumber(vehicle.speed) || 0,
-          capacityJson: capacityJson(vehicle),
-          ac: acValue(vehicle.ac),
-          hp: hpValue(vehicle.hp),
-          damageThreshold: firstNumber((vehicle as any).dt) || 0,
-          weaponsJson: vehicleWeaponsJson(vehicle),
-          rawJson: JSON.stringify(vehicle),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: null,
-        },
-      });
+    vehicleRows.push({
+      id: slugify(vehicle.name, vehicle.source),
+      name: vehicle.name,
+      source: vehicle.source,
+      page: vehicle.page || null,
+      category: titleCase(vehicle.vehicleType || "Vehicle"),
+      description,
+      costGp: Math.round((vehicle.value || 0) / 100),
+      speed: firstNumber(vehicle.speed) || 0,
+      capacityJson: capacityJson(vehicle),
+      ac: acValue(vehicle.ac),
+      hp: hpValue(vehicle.hp),
+      damageThreshold: firstNumber((vehicle as any).dt) || 0,
+      weaponsJson: vehicleWeaponsJson(vehicle),
+      rawJson: JSON.stringify(vehicle),
+      fluffJson: fluff ? JSON.stringify(fluff) : null,
+      foundryJson: null,
+    });
   }
 
+  const facilityRows: any[] = [];
   for (const facility of facilities) {
     const description = renderEntries(facility.entries);
     const key = `${facility.name.toLowerCase()}|${facility.source.toLowerCase()}`;
     const fluff = bastionFluffMap.get(key);
 
-    await db
-      .insert(schema.bastions)
-      .values({
-        id: slugify(facility.name, facility.source),
-        name: facility.name,
-        source: facility.source,
-        page: facility.page || null,
-        facilityType: facility.facilityType || "basic",
-        levelRequired: facility.level || 5,
-        prerequisite: facility.prerequisite ? renderEntries(facility.prerequisite) : null,
-        description,
-        costToBuild: facility.cost || 0,
-        daysToBuild: facility.buildTime || 0,
-        ordersJson: JSON.stringify(facility.orders || []),
-        rawJson: JSON.stringify(facility),
-        fluffJson: fluff ? JSON.stringify(fluff) : null,
-        foundryJson: null,
-      })
-      .onConflictDoUpdate({
-        target: schema.bastions.id,
-        set: {
-          name: facility.name,
-          source: facility.source,
-          page: facility.page || null,
-          facilityType: facility.facilityType || "basic",
-          levelRequired: facility.level || 5,
-          prerequisite: facility.prerequisite ? renderEntries(facility.prerequisite) : null,
-          description,
-          costToBuild: facility.cost || 0,
-          daysToBuild: facility.buildTime || 0,
-          ordersJson: JSON.stringify(facility.orders || []),
-          rawJson: JSON.stringify(facility),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: null,
-        },
-      });
+    facilityRows.push({
+      id: slugify(facility.name, facility.source),
+      name: facility.name,
+      source: facility.source,
+      page: facility.page || null,
+      facilityType: facility.facilityType || "basic",
+      levelRequired: facility.level || 5,
+      prerequisite: facility.prerequisite ? renderEntries(facility.prerequisite) : null,
+      description,
+      costToBuild: facility.cost || 0,
+      daysToBuild: facility.buildTime || 0,
+      ordersJson: JSON.stringify(facility.orders || []),
+      rawJson: JSON.stringify(facility),
+      fluffJson: fluff ? JSON.stringify(fluff) : null,
+      foundryJson: null,
+    });
   }
 
+  const hazardRows: any[] = [];
   for (const item of [...traps, ...hazards]) {
     const description = renderEntries(item.entries);
     const kind = traps.includes(item) ? "trap" : "hazard";
     const key = `${item.name.toLowerCase()}|${item.source.toLowerCase()}`;
     const fluff = trapHazardFluffMap.get(key);
 
-    await db
-      .insert(schema.hazards)
-      .values({
-        id: slugify(item.name, item.source),
-        name: item.name,
-        source: item.source,
-        page: item.page || null,
-        kind,
-        hazardType: item.trapHazType || null,
-        ratingJson: JSON.stringify(item.rating || []),
-        description,
-        perceptionDc: extractDc(description, /(?:notice|spot|detect|perceive)[^.]*\bDC\s+(\d{2})/i),
-        disableDc: extractDc(description, /(?:disable|disarm|jam|bypass)[^.]*\bDC\s+(\d{2})/i),
-        saveJson: JSON.stringify(extractSaves(description)),
-        damageJson: JSON.stringify(extractDamage(description)),
-        rawJson: JSON.stringify(item),
-        fluffJson: fluff ? JSON.stringify(fluff) : null,
-        foundryJson: null,
-      })
-      .onConflictDoUpdate({
-        target: schema.hazards.id,
-        set: {
-          name: item.name,
-          source: item.source,
-          page: item.page || null,
-          kind,
-          hazardType: item.trapHazType || null,
-          ratingJson: JSON.stringify(item.rating || []),
-          description,
-          perceptionDc: extractDc(
-            description,
-            /(?:notice|spot|detect|perceive)[^.]*\bDC\s+(\d{2})/i,
-          ),
-          disableDc: extractDc(description, /(?:disable|disarm|jam|bypass)[^.]*\bDC\s+(\d{2})/i),
-          saveJson: JSON.stringify(extractSaves(description)),
-          damageJson: JSON.stringify(extractDamage(description)),
-          rawJson: JSON.stringify(item),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: null,
-        },
-      });
+    hazardRows.push({
+      id: slugify(item.name, item.source),
+      name: item.name,
+      source: item.source,
+      page: item.page || null,
+      kind,
+      hazardType: item.trapHazType || null,
+      ratingJson: JSON.stringify(item.rating || []),
+      description,
+      perceptionDc: extractDc(description, /(?:notice|spot|detect|perceive)[^.]*\bDC\s+(\d{2})/i),
+      disableDc: extractDc(description, /(?:disable|disarm|jam|bypass)[^.]*\bDC\s+(\d{2})/i),
+      saveJson: JSON.stringify(extractSaves(description)),
+      damageJson: JSON.stringify(extractDamage(description)),
+      rawJson: JSON.stringify(item),
+      fluffJson: fluff ? JSON.stringify(fluff) : null,
+      foundryJson: null,
+    });
+  }
+
+  const BATCH_SIZE = 1000;
+  if (vehicleRows.length > 0) {
+    for (let i = 0; i < vehicleRows.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.vehicles)
+        .values(vehicleRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
+    }
+  }
+  if (facilityRows.length > 0) {
+    for (let i = 0; i < facilityRows.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.bastions)
+        .values(facilityRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
+    }
+  }
+  if (hazardRows.length > 0) {
+    for (let i = 0; i < hazardRows.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.hazards)
+        .values(hazardRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
+    }
   }
 
   console.log(`Seeded ${vehicles.length} vehicles.`);
@@ -303,92 +266,81 @@ export async function seedAdventuringContent(db: any) {
   // Seed vehicle upgrades
   const upgrades = readVehicleUpgrades();
   const allowedUpgrades = upgrades.filter((u: any) => isSourceAllowed(u.source));
+  const upgradeRows: any[] = [];
   for (const upgrade of allowedUpgrades) {
     const id = slugify(`${upgrade.name}-${upgrade.source}`);
     const desc = renderEntries(upgrade.entries || []);
     const key = `${upgrade.name.toLowerCase()}|${upgrade.source.toLowerCase()}`;
     const foundry = upgradeFoundryMap.get(key);
 
-    await db
-      .insert(schema.vehicleUpgrades)
-      .values({
-        id,
-        name: upgrade.name,
-        source: upgrade.source,
-        page: upgrade.page || null,
-        upgradeTypeJson: JSON.stringify(upgrade.upgradeType || []),
-        description: desc,
-        rawJson: JSON.stringify(upgrade),
-        fluffJson: null,
-        foundryJson: foundry ? JSON.stringify(foundry) : null,
-      })
-      .onConflictDoUpdate({
-        target: schema.vehicleUpgrades.id,
-        set: {
-          name: upgrade.name,
-          source: upgrade.source,
-          page: upgrade.page || null,
-          upgradeTypeJson: JSON.stringify(upgrade.upgradeType || []),
-          description: desc,
-          rawJson: JSON.stringify(upgrade),
-          fluffJson: null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        },
-      });
+    upgradeRows.push({
+      id,
+      name: upgrade.name,
+      source: upgrade.source,
+      page: upgrade.page || null,
+      upgradeTypeJson: JSON.stringify(upgrade.upgradeType || []),
+      description: desc,
+      rawJson: JSON.stringify(upgrade),
+      fluffJson: null,
+      foundryJson: foundry ? JSON.stringify(foundry) : null,
+    });
+  }
+  if (upgradeRows.length > 0) {
+    for (let i = 0; i < upgradeRows.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.vehicleUpgrades)
+        .values(upgradeRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
+    }
   }
   console.log(`Seeded ${allowedUpgrades.length} vehicle upgrades.`);
 
   // Seed encounters
   const encounters = readEncounters();
   const allowedEncounters = encounters.filter((e: any) => isSourceAllowed(e.source));
+  const encounterRows: any[] = [];
   for (const enc of allowedEncounters) {
     const id = slugify(`${enc.name}-${enc.source}`);
-    await db
-      .insert(schema.encounters)
-      .values({
-        id,
-        name: enc.name,
-        source: enc.source,
-        page: enc.page || null,
-        tablesJson: JSON.stringify(enc.tables || []),
-        rawJson: JSON.stringify(enc),
-      })
-      .onConflictDoUpdate({
-        target: schema.encounters.id,
-        set: {
-          name: enc.name,
-          source: enc.source,
-          page: enc.page || null,
-          tablesJson: JSON.stringify(enc.tables || []),
-          rawJson: JSON.stringify(enc),
-        },
-      });
+    encounterRows.push({
+      id,
+      name: enc.name,
+      source: enc.source,
+      page: enc.page || null,
+      tablesJson: JSON.stringify(enc.tables || []),
+      rawJson: JSON.stringify(enc),
+    });
+  }
+  if (encounterRows.length > 0) {
+    for (let i = 0; i < encounterRows.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.encounters)
+        .values(encounterRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
+    }
   }
   console.log(`Seeded ${allowedEncounters.length} encounters.`);
 
   const encounterShapes = readEncounterShapes().filter((shape: any) =>
     isSourceAllowed(shape.source || "Generic"),
   );
+  const shapeRows: any[] = [];
   for (const shape of encounterShapes) {
     const source = shape.source || "Generic";
-    await db
-      .insert(schema.encounterShapes)
-      .values({
-        id: slugify(`${shape.name}-${source}`),
-        name: shape.name,
-        source,
-        shapeTemplateJson: JSON.stringify(shape.shapeTemplate || []),
-        rawJson: JSON.stringify(shape),
-      })
-      .onConflictDoUpdate({
-        target: schema.encounterShapes.id,
-        set: {
-          name: shape.name,
-          source,
-          shapeTemplateJson: JSON.stringify(shape.shapeTemplate || []),
-          rawJson: JSON.stringify(shape),
-        },
-      });
+    shapeRows.push({
+      id: slugify(`${shape.name}-${source}`),
+      name: shape.name,
+      source,
+      shapeTemplateJson: JSON.stringify(shape.shapeTemplate || []),
+      rawJson: JSON.stringify(shape),
+    });
+  }
+  if (shapeRows.length > 0) {
+    for (let i = 0; i < shapeRows.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.encounterShapes)
+        .values(shapeRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
+    }
   }
   console.log(`Seeded ${encounterShapes.length} encounter shapes.`);
 }

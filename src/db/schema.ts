@@ -783,6 +783,54 @@ export const psionics = sqliteTable("psionics", {
   rawJson: text("raw_json").notNull(),
 });
 
+// USER AUTHENTICATION & CAMPAIGNS
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull().default("player"), // admin, dm, player
+  createdAt: integer("created_at").notNull(),
+});
+
+export const sessions = sqliteTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: integer("expires_at").notNull(),
+});
+
+export const kvStore = sqliteTable("kv_store", {
+  key: text("key").primaryKey(),
+  value: text("value"),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const campaigns = sqliteTable("campaigns", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  dmUserId: text("dm_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  description: text("description").notNull().default(""),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const campaignMembers = sqliteTable(
+  "campaign_members",
+  {
+    campaignId: text("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.campaignId, t.userId] }),
+  }),
+);
+
 // THE AGGREGATOR: CHARACTERS
 export const characters = sqliteTable("characters", {
   id: text("id").primaryKey(),
@@ -790,6 +838,8 @@ export const characters = sqliteTable("characters", {
   playerName: text("player_name").notNull(),
   speciesId: text("species_id").notNull(),
   backgroundId: text("background_id").notNull(),
+  campaignId: text("campaign_id").references(() => campaigns.id, { onDelete: "set null" }),
+  ownerUserId: text("owner_user_id").references(() => users.id, { onDelete: "set null" }),
 
   classesJson: text("classes_json").notNull(), // Array of { classId, subclassId, level }
   baseStatsJson: text("base_stats_json").notNull(),

@@ -12,7 +12,7 @@ const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 export function AbilityScoresPanel({ member }: { member: PartyMember }) {
   return (
     <Panel title="Ability Scores" icon={BookOpen}>
-      <div className="grid grid-cols-6 gap-1.5">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         {member.abilities.map((a) => {
           const elite = a.score >= 16;
           const details = ABILITY_DETAILS[a.name];
@@ -241,7 +241,7 @@ export function SavingThrowsPanel({
 
   return (
     <Panel title="Saving Throws" icon={Shield}>
-      <div className="grid grid-cols-6 gap-1">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         {member.saves.map((s) => {
           const details = ABILITY_DETAILS[s.ability];
           const Icon = details?.Icon;

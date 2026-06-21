@@ -121,6 +121,7 @@ export async function seedMonsters(db: any) {
     const foundryMap = loadMonsterFoundryMap();
 
     const monsters = selectAllowedMonsters(readMonsterFiles());
+    const monsterRows: any[] = [];
 
     for (const monster of monsters) {
       const challengeRating = parseCr(monster.cr);
@@ -131,120 +132,79 @@ export async function seedMonsters(db: any) {
       const fluff = fluffMap.get(key);
       const foundry = foundryMap.get(key);
 
+      monsterRows.push({
+        id: slugify(monster.name),
+        name: monster.name,
+        size: formatSize(monster.size),
+        type: formatType(monster.type),
+        alignment: formatAlignment(monster.alignment),
+        acJson: JSON.stringify(monster.ac || []),
+        hpJson: JSON.stringify(monster.hp || {}),
+        speedJson: JSON.stringify(monster.speed || { walk: 30 }),
+        statsJson: JSON.stringify({
+          str: monster.str || 10,
+          dex: monster.dex || 10,
+          con: monster.con || 10,
+          int: monster.int || 10,
+          wis: monster.wis || 10,
+          cha: monster.cha || 10,
+        }),
+        savesJson: JSON.stringify(monster.save || {}),
+        skillsJson: JSON.stringify(monster.skill || {}),
+        resistancesJson: stringifyUnknownList(monster.resist),
+        immunitiesJson: stringifyUnknownList(monster.immune),
+        vulnerabilitiesJson: stringifyUnknownList(monster.vulnerable),
+        conditionImmunitiesJson: stringifyUnknownList(monster.conditionImmune),
+        sensesJson: JSON.stringify(senses),
+        languagesJson: JSON.stringify(monster.languages || []),
+        challengeRating,
+        proficiencyBonus: getProficiencyBonus(challengeRating),
+        traitsJson: JSON.stringify(renderActionList(monster.trait)),
+        actionsJson: JSON.stringify(renderActionList(monster.action)),
+        bonusActionsJson: JSON.stringify(renderActionList(monster.bonus)),
+        reactionsJson: JSON.stringify(renderActionList(monster.reaction)),
+        legendaryActionsJson: JSON.stringify(renderActionList(monster.legendary)),
+        mythicActionsJson: JSON.stringify(renderActionList(monster.mythic)),
+        lairActionsJson: JSON.stringify([]),
+        source: monster.source,
+        page: monster.page || null,
+        rawJson: JSON.stringify(monster),
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
+    }
+
+    const BATCH_SIZE = 1000;
+    for (let i = 0; i < monsterRows.length; i += BATCH_SIZE) {
       await db
         .insert(schema.monsters)
-        .values({
-          id: slugify(monster.name),
-          name: monster.name,
-          size: formatSize(monster.size),
-          type: formatType(monster.type),
-          alignment: formatAlignment(monster.alignment),
-          acJson: JSON.stringify(monster.ac || []),
-          hpJson: JSON.stringify(monster.hp || {}),
-          speedJson: JSON.stringify(monster.speed || { walk: 30 }),
-          statsJson: JSON.stringify({
-            str: monster.str || 10,
-            dex: monster.dex || 10,
-            con: monster.con || 10,
-            int: monster.int || 10,
-            wis: monster.wis || 10,
-            cha: monster.cha || 10,
-          }),
-          savesJson: JSON.stringify(monster.save || {}),
-          skillsJson: JSON.stringify(monster.skill || {}),
-          resistancesJson: stringifyUnknownList(monster.resist),
-          immunitiesJson: stringifyUnknownList(monster.immune),
-          vulnerabilitiesJson: stringifyUnknownList(monster.vulnerable),
-          conditionImmunitiesJson: stringifyUnknownList(monster.conditionImmune),
-          sensesJson: JSON.stringify(senses),
-          languagesJson: JSON.stringify(monster.languages || []),
-          challengeRating,
-          proficiencyBonus: getProficiencyBonus(challengeRating),
-          traitsJson: JSON.stringify(renderActionList(monster.trait)),
-          actionsJson: JSON.stringify(renderActionList(monster.action)),
-          bonusActionsJson: JSON.stringify(renderActionList(monster.bonus)),
-          reactionsJson: JSON.stringify(renderActionList(monster.reaction)),
-          legendaryActionsJson: JSON.stringify(renderActionList(monster.legendary)),
-          mythicActionsJson: JSON.stringify(renderActionList(monster.mythic)),
-          lairActionsJson: JSON.stringify([]),
-          source: monster.source,
-          page: monster.page || null,
-          rawJson: JSON.stringify(monster),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.monsters.id,
-          set: {
-            name: monster.name,
-            size: formatSize(monster.size),
-            type: formatType(monster.type),
-            alignment: formatAlignment(monster.alignment),
-            acJson: JSON.stringify(monster.ac || []),
-            hpJson: JSON.stringify(monster.hp || {}),
-            speedJson: JSON.stringify(monster.speed || { walk: 30 }),
-            statsJson: JSON.stringify({
-              str: monster.str || 10,
-              dex: monster.dex || 10,
-              con: monster.con || 10,
-              int: monster.int || 10,
-              wis: monster.wis || 10,
-              cha: monster.cha || 10,
-            }),
-            savesJson: JSON.stringify(monster.save || {}),
-            skillsJson: JSON.stringify(monster.skill || {}),
-            resistancesJson: stringifyUnknownList(monster.resist),
-            immunitiesJson: stringifyUnknownList(monster.immune),
-            vulnerabilitiesJson: stringifyUnknownList(monster.vulnerable),
-            conditionImmunitiesJson: stringifyUnknownList(monster.conditionImmune),
-            sensesJson: JSON.stringify(senses),
-            languagesJson: JSON.stringify(monster.languages || []),
-            challengeRating,
-            proficiencyBonus: getProficiencyBonus(challengeRating),
-            traitsJson: JSON.stringify(renderActionList(monster.trait)),
-            actionsJson: JSON.stringify(renderActionList(monster.action)),
-            bonusActionsJson: JSON.stringify(renderActionList(monster.bonus)),
-            reactionsJson: JSON.stringify(renderActionList(monster.reaction)),
-            legendaryActionsJson: JSON.stringify(renderActionList(monster.legendary)),
-            mythicActionsJson: JSON.stringify(renderActionList(monster.mythic)),
-            lairActionsJson: JSON.stringify([]),
-            source: monster.source,
-            page: monster.page || null,
-            rawJson: JSON.stringify(monster),
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+        .values(monsterRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
     }
 
     console.log(`Seeded ${monsters.length} monsters from 5etools.`);
 
     // Seed monster features
     const features = readMonsterFeatures();
+    const featureRows: any[] = [];
     for (const feat of features) {
       const id = slugify(feat.name);
+      featureRows.push({
+        id,
+        name: feat.name,
+        example: feat.example || null,
+        effect: feat.effect,
+        attackBonus: feat.attackBonus ? String(feat.attackBonus) : null,
+        dpr: feat.dpr ? String(feat.dpr) : null,
+        rawJson: JSON.stringify(feat),
+      });
+    }
+
+    for (let i = 0; i < featureRows.length; i += BATCH_SIZE) {
       await db
         .insert(schema.monsterFeatures)
-        .values({
-          id,
-          name: feat.name,
-          example: feat.example || null,
-          effect: feat.effect,
-          attackBonus: feat.attackBonus ? String(feat.attackBonus) : null,
-          dpr: feat.dpr ? String(feat.dpr) : null,
-          rawJson: JSON.stringify(feat),
-        })
-        .onConflictDoUpdate({
-          target: schema.monsterFeatures.id,
-          set: {
-            name: feat.name,
-            example: feat.example || null,
-            effect: feat.effect,
-            attackBonus: feat.attackBonus ? String(feat.attackBonus) : null,
-            dpr: feat.dpr ? String(feat.dpr) : null,
-            rawJson: JSON.stringify(feat),
-          },
-        });
+        .values(featureRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
     }
     console.log(`Seeded ${features.length} monster features.`);
   } catch (e) {

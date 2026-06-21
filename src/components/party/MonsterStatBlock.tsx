@@ -420,7 +420,7 @@ export function MonsterStatBlock({ monster, onRoll, compact = false }: MonsterSt
       <hr className="border-t border-amber-600/30 my-2" />
 
       {/* Ability Scores Grid */}
-      <div className="grid grid-cols-6 text-center gap-1 my-2 bg-secondary/20 py-1.5 rounded border border-border/30">
+      <div className="grid grid-cols-3 sm:grid-cols-6 text-center gap-1 my-2 bg-secondary/20 py-1.5 rounded border border-border/30">
         <div>
           <p className="font-bold text-[10px] text-amber-500/80 uppercase">Str</p>
           <button

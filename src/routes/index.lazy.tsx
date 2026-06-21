@@ -1,20 +1,32 @@
-import { createLazyFileRoute, Link } from "@tanstack/react-router";
+import { createLazyFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import { PARTY_CHARACTER_IDS } from "@/lib/party-config";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { partyQueryOptions, STORAGE_KEY, COOKIE_KEY, withDefaultPartyIds } from "@/lib/party";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { Users, Activity, Package, Swords, BookOpen, Info, LogOut, Plus } from "lucide-react";
+import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getActiveCampaignFn, updateCampaignCharactersFn } from "@/lib/campaign-fns";
+import {
+  Users,
+  Activity,
+  Package,
+  Swords,
+  BookOpen,
+  Info,
+  LogOut,
+  Plus,
+  Settings,
+  ChevronDown,
+} from "lucide-react";
 import { RefreshButton } from "@/components/party/RefreshButton";
 import { PartyHighlights } from "@/components/party/PartyHighlights";
 import { PartyGrid, PartyGridSkeleton } from "@/components/party/PartyGrid";
 import { ManagePartyDialog } from "@/components/party/ManagePartyDialog";
 import { ThemeSelector } from "@/components/party/ThemeSelector";
+import { CampaignSelector } from "@/components/party/CampaignSelector";
 import { CombatDashboard } from "@/components/party/CombatDashboard";
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { GroupDiceRoller } from "@/components/party/GroupDiceRoller";
 import { SharedInventory } from "@/components/party/SharedInventory";
-import { AmbientAudio } from "@/components/party/AmbientAudio";
 import SessionNotes from "@/components/party/SessionNotes";
 import RulesReference from "@/components/party/RulesReference";
 import { DMTools } from "@/components/party/DMTools";
@@ -28,12 +40,32 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function Index() {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
   const { ids: initialIds } = Route.useLoaderData();
   const [ids, setIds] = useState<number[]>(withDefaultPartyIds(initialIds));
   const [managing, setManaging] = useState(false);
   useModalHistorySync(managing, setManaging, "isManagingParty");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+
+  // Sync active campaign's character IDs when they change on the server
+  useEffect(() => {
+    setIds(withDefaultPartyIds(initialIds));
+  }, [initialIds]);
+
+  const { data: activeCampaign } = useQuery({
+    queryKey: ["activeCampaign"],
+    queryFn: () => getActiveCampaignFn(),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (newIds: number[]) => updateCampaignCharactersFn({ data: { ids: newIds } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["party"] });
+    },
+  });
 
   useEffect(() => {
     try {
@@ -87,65 +119,147 @@ export default function Index() {
     try {
       const { logoutFn } = await import("@/lib/auth-fns");
       await logoutFn();
-      window.location.href = "/login";
+      navigate({ to: "/login" });
     } catch (e) {
       console.warn("Logout failed:", e);
     }
   };
 
   return (
-    <main className="min-h-screen text-foreground animate-fade-in">
+    <main className="min-h-screen text-foreground animate-fade-in overflow-x-hidden">
       <div className="bg-particles" />
       <div className="bg-particles-2" />
       <TooltipProvider delayDuration={100}>
         <div className="mx-auto max-w-6xl 2xl:max-w-[1600px] px-4 py-6 relative z-10">
-          <header className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-4">
-            <div className="flex items-center gap-3">
-              <img
-                src="/merged-logo.png?v=2"
-                alt="Mother of Bob Logo"
-                className="w-10 h-10 object-contain select-none pointer-events-none"
-              />
-              <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent select-none">
-                Mother of Bob{" "}
-                <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
-              </h1>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              <AmbientAudio />
-              <ThemeSelector />
-              {showInstallBtn && (
+          <header className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-4">
+            <div className="flex items-center justify-between w-full md:w-auto">
+              <div className="flex items-center gap-3">
+                <img
+                  src="/merged-logo.png?v=2"
+                  alt="Mother of Bob Logo"
+                  className="w-10 h-10 object-contain select-none pointer-events-none"
+                />
+                <h1 className="font-heading text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent select-none">
+                  Mother of Bob{" "}
+                  <span className="text-muted-foreground/40 text-xl tracking-normal">(MOB)</span>
+                </h1>
+              </div>
+
+              {/* Mobile Actions Dropdown (aligned next to title on mobile) */}
+              <div className="relative md:hidden z-50">
                 <button
-                  onClick={handleInstallClick}
-                  className="rounded border border-accent bg-accent/15 hover:bg-accent/25 px-2 py-1 text-accent font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-accent/10 active:scale-95"
+                  onClick={() => setActionsOpen(!actionsOpen)}
+                  className="flex items-center gap-1 rounded border border-border bg-secondary/50 px-2.5 py-1.5 text-foreground hover:border-accent/60 cursor-pointer font-semibold transition-all duration-200 active:scale-95"
                 >
-                  📥 Install App
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>Actions</span>
+                  <ChevronDown
+                    className={`w-3 h-3 transition-transform duration-200 ${actionsOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
-              )}
-              <Link
-                to="/builder"
-                className="rounded border border-accent bg-accent/15 hover:bg-accent/25 px-2 py-1 text-accent font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-accent/10 active:scale-95 flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" /> Create Character
-              </Link>
-              <button
-                onClick={() => setManaging(true)}
-                className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60 cursor-pointer"
-              >
-                ⚙ Manage
-              </button>
-              <a className="underline hover:text-accent font-medium" href="/api/party">
-                JSON
-              </a>
-              <button
-                onClick={handleLogout}
-                className="rounded border border-border bg-secondary/60 hover:bg-destructive/15 hover:text-destructive hover:border-destructive/40 px-2.5 py-1 text-foreground transition-all duration-200 cursor-pointer flex items-center gap-1.5 active:scale-95"
-              >
-                <LogOut className="w-3.5 h-3.5" /> Logout
-              </button>
-              <Suspense fallback={null}>
-                <RefreshButton ids={ids} />
-              </Suspense>
+
+                {actionsOpen && (
+                  <>
+                    {/* Backdrop */}
+                    <div className="fixed inset-0 z-40" onClick={() => setActionsOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-48 origin-top-right rounded-lg border border-border bg-popover/95 p-2 shadow-xl backdrop-blur-md z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-150">
+                      {showInstallBtn && (
+                        <button
+                          onClick={() => {
+                            handleInstallClick();
+                            setActionsOpen(false);
+                          }}
+                          className="w-full text-left rounded hover:bg-secondary/60 px-2.5 py-1.5 text-accent font-semibold transition-colors flex items-center gap-2"
+                        >
+                          📥 Install App
+                        </button>
+                      )}
+                      <Link
+                        to="/builder"
+                        onClick={() => setActionsOpen(false)}
+                        className="w-full text-left rounded hover:bg-secondary/60 px-2.5 py-1.5 text-accent font-semibold transition-colors flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" /> Create Character
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setManaging(true);
+                          setActionsOpen(false);
+                        }}
+                        className="w-full text-left rounded hover:bg-secondary/60 px-2.5 py-1.5 text-foreground transition-colors flex items-center gap-2"
+                      >
+                        ⚙ Manage Party
+                      </button>
+                      <a
+                        className="w-full text-left rounded hover:bg-secondary/60 px-2.5 py-1.5 text-foreground transition-colors flex items-center gap-2"
+                        href="/api/party"
+                        onClick={() => setActionsOpen(false)}
+                      >
+                        📄 View JSON API
+                      </a>
+                      <Suspense fallback={null}>
+                        <RefreshButton
+                          ids={ids}
+                          className="w-full text-left rounded hover:bg-secondary/60 px-2.5 py-1.5 text-foreground transition-colors flex items-center gap-2 disabled:opacity-50"
+                        />
+                      </Suspense>
+                      <div className="border-t border-border/30 my-1" />
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setActionsOpen(false);
+                        }}
+                        className="w-full text-left rounded hover:bg-destructive/15 text-destructive hover:text-destructive px-2.5 py-1.5 transition-colors flex items-center gap-2"
+                      >
+                        <LogOut className="w-4 h-4" /> Logout
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-start md:justify-end gap-3 text-xs text-muted-foreground w-full md:w-auto">
+              <div className="flex items-center gap-2">
+                <CampaignSelector />
+                <ThemeSelector />
+              </div>
+
+              {/* Desktop Actions */}
+              <div className="hidden md:flex items-center gap-3">
+                {showInstallBtn && (
+                  <button
+                    onClick={handleInstallClick}
+                    className="rounded border border-accent bg-accent/15 hover:bg-accent/25 px-2 py-1 text-accent font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-accent/10 active:scale-95"
+                  >
+                    📥 Install App
+                  </button>
+                )}
+                <Link
+                  to="/builder"
+                  className="rounded border border-accent bg-accent/15 hover:bg-accent/25 px-2 py-1 text-accent font-semibold transition-all duration-200 cursor-pointer shadow-sm shadow-accent/10 active:scale-95 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Create Character
+                </Link>
+                <button
+                  onClick={() => setManaging(true)}
+                  className="rounded border border-border bg-secondary/60 px-2 py-1 text-foreground hover:border-accent/60 cursor-pointer"
+                >
+                  ⚙ Manage
+                </button>
+                <a className="underline hover:text-accent font-medium" href="/api/party">
+                  JSON
+                </a>
+                <button
+                  onClick={handleLogout}
+                  className="rounded border border-border bg-secondary/60 hover:bg-destructive/15 hover:text-destructive hover:border-destructive/40 px-2.5 py-1 text-foreground transition-all duration-200 cursor-pointer flex items-center gap-1.5 active:scale-95"
+                >
+                  <LogOut className="w-3.5 h-3.5" /> Logout
+                </button>
+                <Suspense fallback={null}>
+                  <RefreshButton ids={ids} />
+                </Suspense>
+              </div>
             </div>
           </header>
 
@@ -154,7 +268,16 @@ export default function Index() {
           </Suspense>
 
           {managing && (
-            <ManagePartyDialog ids={ids} onClose={() => setManaging(false)} onChange={setIds} />
+            <ManagePartyDialog
+              ids={ids}
+              onClose={() => setManaging(false)}
+              onChange={async (newIds) => {
+                setIds(newIds);
+                if (activeCampaign) {
+                  await updateMutation.mutateAsync(newIds);
+                }
+              }}
+            />
           )}
         </div>
       </TooltipProvider>
@@ -232,15 +355,13 @@ function PartyDashboard({ ids }: { ids: number[] }) {
           <BookOpen size={12} />
           <span>Campaign Journal</span>
         </button>
-        <button
-          onClick={() => {
-            window.location.href = "/compendium";
-          }}
+        <Link
+          to="/compendium"
           className="flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
         >
           <Info size={12} />
           <span>Compendium</span>
-        </button>
+        </Link>
         <button
           onClick={() => setActiveTab("dm")}
           className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${

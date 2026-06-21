@@ -4,6 +4,8 @@ import { BookOpen, User, Swords, ScrollText, Sparkles, Ghost, Wand2, Search } fr
 import { getAllRules } from "@/lib/srd-engine";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { sanitizeHtml } from "@/lib/utils";
+import { ThemeSelector } from "@/components/party/ThemeSelector";
 
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -194,7 +196,7 @@ function rawEntrySummary(entry: any) {
 }
 
 function CompendiumComponent() {
-  const { dbClasses, dbSpecies } = Route.useLoaderData() as any;
+  const { dbClasses, dbSpecies } = Route.useLoaderData();
   const rules = getAllRules();
 
   const [activeTab, setActiveTab] = useState<TabType>("rules");
@@ -204,6 +206,7 @@ function CompendiumComponent() {
   const [search, setSearch] = useState("");
   const [rawEntityType, setRawEntityType] = useState("");
   const [rawSource, setRawSource] = useState("");
+  const [mobileShowDetails, setMobileShowDetails] = useState(false);
 
   const { data: spells = [], isLoading: loadingSpells } = useQuery({
     queryKey: ["db-spells"],
@@ -235,6 +238,8 @@ function CompendiumComponent() {
     enabled: activeTab === "all",
   });
 
+  const isAllSearchActive = !!(search.trim() || rawEntityType || rawSource);
+
   const { data: rawEntries = [], isLoading: loadingRawEntries } = useQuery({
     queryKey: ["raw-compendium", search, rawEntityType, rawSource],
     queryFn: () =>
@@ -246,12 +251,16 @@ function CompendiumComponent() {
           limit: 300,
         },
       } as any),
-    enabled: activeTab === "all",
+    enabled: activeTab === "all" && isAllSearchActive,
   });
 
   const sourceNames = new Map(contentSources.map((source: any) => [source.code, source.name]));
 
-  const isLoading = loadingSpells || loadingMonsters || loadingItems || loadingRawEntries;
+  const isLoading =
+    (activeTab === "spells" && loadingSpells) ||
+    (activeTab === "monsters" && loadingMonsters) ||
+    (activeTab === "items" && loadingItems) ||
+    (activeTab === "all" && loadingRawEntries);
 
   const getActiveData = () => {
     switch (activeTab) {
@@ -288,23 +297,30 @@ function CompendiumComponent() {
   const firstFluffImage = fluff?.images?.[0]?.href?.path || fluff?.images?.[0]?.path || null;
 
   return (
-    <div className="container mx-auto p-4 md:p-8 min-h-screen relative">
+    <div className="container mx-auto p-4 md:p-8 min-h-screen relative overflow-x-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/10 via-background to-background -z-10" />
 
-      <div className="flex items-center gap-4 mb-8">
-        <Link to="/">
-          <Button variant="outline" size="sm" className="backdrop-blur-sm bg-background/50">
-            Back to Dashboard
-          </Button>
-        </Link>
-        <h1 className="text-4xl font-extrabold tracking-tight flex items-center gap-3 bg-gradient-to-r from-blue-400 via-primary to-purple-500 bg-clip-text text-transparent">
-          <BookOpen className="h-8 w-8 text-primary" />
-          The Grand Library
-        </h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-6 border-b border-border/20 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <Link to="/" className="self-start">
+            <Button variant="outline" size="sm" className="backdrop-blur-sm bg-background/50">
+              Back to Dashboard
+            </Button>
+          </Link>
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight flex items-center gap-2 bg-gradient-to-r from-blue-400 via-primary to-purple-500 bg-clip-text text-transparent">
+            <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            The Grand Library
+          </h1>
+        </div>
+        <div className="self-start sm:self-auto">
+          <ThemeSelector />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="md:col-span-1 h-[calc(100vh-12rem)] flex flex-col bg-card/60 backdrop-blur-md border-border/40 shadow-xl overflow-hidden ring-1 ring-white/5">
+        <Card
+          className={`md:col-span-1 h-[calc(100vh-12rem)] bg-card/60 backdrop-blur-md border-border/40 shadow-xl overflow-hidden ring-1 ring-white/5 ${mobileShowDetails ? "hidden md:flex" : "flex flex-col"}`}
+        >
           <CardHeader className="pb-4 bg-secondary/20 border-b border-border/40">
             <div className="grid grid-cols-2 gap-2 mb-2">
               <Button
@@ -314,6 +330,7 @@ function CompendiumComponent() {
                   setActiveTab("rules");
                   setSearch("");
                   setSelectedItemId(rules[0]?.id);
+                  setMobileShowDetails(false);
                 }}
               >
                 <ScrollText className="h-4 w-4 mr-2" /> Rules
@@ -325,6 +342,7 @@ function CompendiumComponent() {
                   setActiveTab("classes");
                   setSearch("");
                   setSelectedItemId(dbClasses[0]?.id ?? null);
+                  setMobileShowDetails(false);
                 }}
               >
                 <Swords className="h-4 w-4 mr-2" /> Classes
@@ -336,6 +354,7 @@ function CompendiumComponent() {
                   setActiveTab("races");
                   setSearch("");
                   setSelectedItemId(dbSpecies[0]?.id);
+                  setMobileShowDetails(false);
                 }}
               >
                 <User className="h-4 w-4 mr-2" /> Species
@@ -347,6 +366,7 @@ function CompendiumComponent() {
                   setActiveTab("spells");
                   setSearch("");
                   setSelectedItemId(null);
+                  setMobileShowDetails(false);
                 }}
               >
                 <Sparkles className="h-4 w-4 mr-2" /> Spells
@@ -358,6 +378,7 @@ function CompendiumComponent() {
                   setActiveTab("monsters");
                   setSearch("");
                   setSelectedItemId(null);
+                  setMobileShowDetails(false);
                 }}
               >
                 <Ghost className="h-4 w-4 mr-2" /> Monsters
@@ -369,6 +390,7 @@ function CompendiumComponent() {
                   setActiveTab("items");
                   setSearch("");
                   setSelectedItemId(null);
+                  setMobileShowDetails(false);
                 }}
               >
                 <Wand2 className="h-4 w-4 mr-2" /> Items
@@ -376,10 +398,12 @@ function CompendiumComponent() {
               <Button
                 variant={activeTab === "all" ? "default" : "secondary"}
                 size="sm"
+                className="col-span-2"
                 onClick={() => {
                   setActiveTab("all");
                   setSearch("");
                   setSelectedItemId(null);
+                  setMobileShowDetails(false);
                 }}
               >
                 <BookOpen className="h-4 w-4 mr-2" /> All Data
@@ -434,7 +458,18 @@ function CompendiumComponent() {
           </CardHeader>
 
           <CardContent className="flex-1 overflow-y-auto p-2">
-            {isLoading ? (
+            {activeTab === "all" && !isAllSearchActive ? (
+              <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground gap-3 animate-fade-in select-none">
+                <Search className="h-10 w-10 opacity-40 text-primary" />
+                <div className="space-y-1.5">
+                  <p className="text-sm font-bold text-foreground">Search the Compendium</p>
+                  <p className="text-[11px] leading-relaxed max-w-[200px] mx-auto text-muted-foreground/75">
+                    Type a query or select a category filter above to browse books, adventures,
+                    rules, and optional features.
+                  </p>
+                </div>
+              </div>
+            ) : isLoading ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground animate-pulse gap-2">
                 <BookOpen className="h-8 w-8 opacity-50" />
                 <span>Consulting ancient tomes...</span>
@@ -451,7 +486,10 @@ function CompendiumComponent() {
                   return (
                     <button
                       key={itemId}
-                      onClick={() => setSelectedItemId(itemId)}
+                      onClick={() => {
+                        setSelectedItemId(itemId);
+                        setMobileShowDetails(true);
+                      }}
                       className={`text-left px-3 py-2 rounded-md transition-all duration-200 text-sm truncate ${
                         isActive
                           ? "bg-primary/20 text-primary font-bold shadow-sm ring-1 ring-primary/30"
@@ -472,7 +510,21 @@ function CompendiumComponent() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-3 h-[calc(100vh-12rem)] overflow-y-auto bg-card/60 backdrop-blur-md border-border/40 shadow-xl ring-1 ring-white/5">
+        <Card
+          className={`md:col-span-3 h-[calc(100vh-12rem)] overflow-y-auto bg-card/60 backdrop-blur-md border-border/40 shadow-xl ring-1 ring-white/5 ${mobileShowDetails ? "flex flex-col animate-in fade-in slide-in-from-right-4 duration-300" : "hidden md:block"}`}
+        >
+          {mobileShowDetails && (
+            <div className="p-4 border-b border-border/20 md:hidden bg-secondary/15 flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileShowDetails(false)}
+                className="text-primary hover:text-primary/80 font-bold"
+              >
+                ← Back to List
+              </Button>
+            </div>
+          )}
           {selectedItem ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               {firstFluffImage && (
@@ -551,7 +603,7 @@ function CompendiumComponent() {
                     {selectedItem.abilityScoreIncreasesJson && (
                       <span className="text-sm font-bold bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-md shadow-sm">
                         ASI:{" "}
-                        {Object.entries(JSON.parse(selectedItem.abilityScoreIncreasesJson))
+                        {Object.entries(parseRawJson(selectedItem.abilityScoreIncreasesJson) || {})
                           .map(([k, v]) => `+${v} ${k.toUpperCase()}`)
                           .join(", ")}
                       </span>
@@ -559,14 +611,14 @@ function CompendiumComponent() {
                     {selectedItem.sensesJson && (
                       <span className="text-sm font-bold bg-green-500/10 border border-green-500/20 text-green-500 px-3 py-1.5 rounded-md shadow-sm">
                         Senses:{" "}
-                        {Object.entries(JSON.parse(selectedItem.sensesJson))
+                        {Object.entries(parseRawJson(selectedItem.sensesJson) || {})
                           .map(([k, v]) => `${k} ${v}ft`)
                           .join(", ")}
                       </span>
                     )}
                     {selectedItem.languagesJson && (
                       <span className="text-sm font-bold bg-purple-500/10 border border-purple-500/20 text-purple-500 px-3 py-1.5 rounded-md shadow-sm">
-                        Languages: {JSON.parse(selectedItem.languagesJson).join(", ")}
+                        Languages: {(parseRawJson(selectedItem.languagesJson) || []).join(", ")}
                       </span>
                     )}
                   </div>
@@ -597,7 +649,7 @@ function CompendiumComponent() {
                       Species Features
                     </h3>
                     <ul className="space-y-4">
-                      {JSON.parse(selectedItem.featuresJson || "[]").map(
+                      {(parseRawJson(selectedItem.featuresJson) || []).map(
                         (feature: any, idx: number) => (
                           <li
                             key={idx}
@@ -609,7 +661,7 @@ function CompendiumComponent() {
                             {feature.html ? (
                               <div
                                 className="text-foreground/80 prose prose-invert max-w-none"
-                                dangerouslySetInnerHTML={{ __html: feature.html }}
+                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(feature.html) }}
                               />
                             ) : (
                               <span className="text-foreground/80">{feature.description}</span>
@@ -662,7 +714,7 @@ function CompendiumComponent() {
                         </span>
                         <span className="text-2xl font-black text-primary">
                           {selectedItem.primaryAbilityJson
-                            ? JSON.parse(selectedItem.primaryAbilityJson).join(", ")
+                            ? (parseRawJson(selectedItem.primaryAbilityJson) || []).join(", ")
                             : ""}
                         </span>
                       </div>
@@ -708,7 +760,7 @@ function CompendiumComponent() {
                         </span>
                         <span className="text-2xl font-black">
                           {selectedItem.acJson
-                            ? JSON.parse(selectedItem.acJson)[0]?.value
+                            ? (parseRawJson(selectedItem.acJson) || [])[0]?.value
                             : selectedItem.armor_class}
                         </span>
                       </div>
@@ -718,7 +770,7 @@ function CompendiumComponent() {
                         </span>
                         <span className="text-2xl font-black">
                           {selectedItem.hpJson
-                            ? JSON.parse(selectedItem.hpJson).average
+                            ? (parseRawJson(selectedItem.hpJson) || {}).average
                             : selectedItem.hit_points}
                         </span>
                       </div>
@@ -728,7 +780,7 @@ function CompendiumComponent() {
                         </span>
                         <span className="text-lg font-bold">
                           {selectedItem.speedJson
-                            ? Object.entries(JSON.parse(selectedItem.speedJson))
+                            ? Object.entries(parseRawJson(selectedItem.speedJson) || {})
                                 .map(([k, v]) => `${k} ${v}ft`)
                                 .join(", ")
                             : selectedItem.speed
@@ -756,8 +808,8 @@ function CompendiumComponent() {
                         </h3>
                         <div className="space-y-4">
                           {(selectedItem.actionsJson
-                            ? JSON.parse(selectedItem.actionsJson)
-                            : selectedItem.actions
+                            ? parseRawJson(selectedItem.actionsJson) || []
+                            : selectedItem.actions || []
                           ).map((act: any, i: number) => (
                             <div key={i} className="p-4 bg-secondary/10 rounded-lg">
                               <strong className="text-lg block text-foreground mb-1">

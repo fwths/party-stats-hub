@@ -17,3 +17,21 @@ export function getShortName(fullName: string): string {
   if (shortName === "Qemuel") return "Qem";
   return shortName;
 }
+
+export function sanitizeHtml(html: string): string {
+  if (!html) return "";
+  return (
+    html
+      // Remove script tags and their contents
+      .replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, "")
+      // Remove inline event handlers (e.g. onload, onclick, onerror)
+      .replace(/\s+on\w+\s*=\s*"[^"]*"/gi, "")
+      .replace(/\s+on\w+\s*=\s*'[^']*'/gi, "")
+      .replace(/\s+on\w+\s*=\s*[^\s>]+/gi, "")
+      // Remove javascript: pseudo-protocol in links/hrefs
+      .replace(/href\s*=\s*(["']javascript:[^"']*["']|javascript:[^\s>]+)/gi, "")
+      // Remove iframe/object/embed/link/style/meta tags that could run exploits or load resources
+      .replace(/<(iframe|object|embed|link|meta|style)[^>]*>([\s\S]*?)<\/\1>/gi, "")
+      .replace(/<(iframe|object|embed|link|meta|style)[^>]*\/>/gi, "")
+  );
+}

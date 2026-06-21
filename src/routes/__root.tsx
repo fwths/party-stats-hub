@@ -17,6 +17,7 @@ import { applyTheme } from "../hooks/useThemePreset";
 import { initSyncEngine } from "../lib/sync-engine";
 import { ToastProvider } from "@/components/ui/toast";
 import { ConfirmProvider } from "@/components/ui/confirm";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 function NotFoundComponent() {
   return (
@@ -51,11 +52,22 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground text-red-500">
-          Error: {error.message}
+          Something went wrong
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground bg-secondary/50 p-4 rounded-lg text-left overflow-auto max-h-64 whitespace-pre-wrap">
-          {error.stack}
-        </p>
+        {import.meta.env.DEV ? (
+          <>
+            <p className="mt-2 text-sm text-muted-foreground bg-secondary/50 p-4 rounded-lg text-left overflow-auto max-h-64 whitespace-pre-wrap">
+              Error: {error.message}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground bg-secondary/50 p-4 rounded-lg text-left overflow-auto max-h-64 whitespace-pre-wrap">
+              {error.stack}
+            </p>
+          </>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">
+            An unexpected error occurred. Please try again.
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
@@ -188,11 +200,12 @@ function RootComponent() {
   }, []);
 
   useEffect(() => {
+    let active = true;
     if (typeof window !== "undefined") {
       import("@/lib/auth-fns").then(async (m) => {
         try {
           const { authenticated } = await m.checkAuthFn();
-          if (!authenticated && window.location.pathname !== "/login") {
+          if (active && !authenticated && window.location.pathname !== "/login") {
             navigate({ to: "/login" });
           }
         } catch (err) {
@@ -200,11 +213,14 @@ function RootComponent() {
         }
       });
     }
+    return () => {
+      active = false;
+    };
   }, [navigate]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
+      const registerSW = () => {
         navigator.serviceWorker
           .register("/sw.js", { scope: "/" })
           .then((reg) => {
@@ -213,18 +229,27 @@ function RootComponent() {
           .catch((err) => {
             console.error("Service Worker registration failed:", err);
           });
-      });
+      };
+
+      if (document.readyState === "complete") {
+        registerSW();
+      } else {
+        window.addEventListener("load", registerSW);
+        return () => window.removeEventListener("load", registerSW);
+      }
     }
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <ConfirmProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </ConfirmProvider>
-      </ToastProvider>
+      <TooltipProvider>
+        <ToastProvider>
+          <ConfirmProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </ConfirmProvider>
+        </ToastProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

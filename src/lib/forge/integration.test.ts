@@ -17,7 +17,7 @@ describe("Forge Integration Matrix", () => {
   });
 
   it("Fighter 1: Baseline martial test", async () => {
-    const character: BuilderState = {
+    const character: any = {
       name: "Fighter 1",
       level: 1,
       raceId: "human",

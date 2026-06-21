@@ -294,7 +294,7 @@ export function FeaturesPanel({
       </div>
 
       {/* Filter Pills */}
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-border/10 pb-3">
+      <div className="flex overflow-x-auto scrollbar-none gap-1.5 border-b border-border/10 pb-3 select-none flex-nowrap -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
         <button
           onClick={() => setFeatureFilter("all")}
           className={`rounded-full px-3 py-1 text-[10.5px] font-semibold transition-all select-none border ${

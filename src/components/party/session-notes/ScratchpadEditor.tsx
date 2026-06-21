@@ -262,7 +262,8 @@ export default function ScratchpadEditor({
                           onClick={async () => {
                             const confirmed = await confirm({
                               title: "Restore Draft Snapshot?",
-                              message: "Restore this draft snapshot? Your current active notes will be overwritten.",
+                              message:
+                                "Restore this draft snapshot? Your current active notes will be overwritten.",
                               variant: "warning",
                               confirmText: "Restore Draft",
                             });

@@ -176,7 +176,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                 <TooltipContent>Inspiration</TooltipContent>
               </Tooltip>
             )}
-             {(member as any).isNative && (
+            {(member as any).isNative && (
               <span
                 className="shrink-0 rounded border border-ui-emerald/40 bg-ui-emerald/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-ui-emerald select-none"
                 title="Built natively in Party Stats Hub"
@@ -379,7 +379,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               </div>
 
               <div className="h-px bg-gradient-to-r from-transparent via-border/50 to-transparent mt-4 mb-3.5" />
-              <div className="grid grid-cols-6 gap-1.5">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {member.abilities.map((a) => {
                   const elite = a.score >= 16;
                   const details = ABILITY_DETAILS[a.name];
@@ -426,7 +426,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
 
               {member.saves.length > 0 && (
                 <Section title="Saving Throws">
-                  <div className="grid grid-cols-6 gap-1">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     {member.saves.map((s) => {
                       const details = ABILITY_DETAILS[s.ability];
                       const Icon = details?.Icon;
@@ -473,7 +473,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                   </div>
                 </Section>
               )}
-              {(member.spellcasting?.length > 0 || spellSlots.length > 0 || pactSlots.length > 0) && (
+              {(member.spellcasting?.length > 0 ||
+                spellSlots.length > 0 ||
+                pactSlots.length > 0) && (
                 <Section title="Spellcasting">
                   <div className="flex flex-col gap-3">
                     {member.spellcasting && member.spellcasting.length > 0 && (
@@ -787,7 +789,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                           key={s.key}
                           className={`group/skill flex items-center justify-between transition-colors py-0.5 hover:bg-secondary/15 rounded px-1 -mx-1 ${isProf ? "" : "opacity-60"}`}
                         >
-                          <span className={`truncate flex items-center gap-1.5 min-w-0 ${nameColor}`}>
+                          <span
+                            className={`truncate flex items-center gap-1.5 min-w-0 ${nameColor}`}
+                          >
                             {Icon && (
                               <Icon
                                 size={8}
@@ -865,7 +869,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                         <span className="text-[10px] font-semibold uppercase text-muted-foreground mr-2">
                           Languages
                         </span>
-                        <span className="text-xs text-foreground">{member.languages.join(", ")}</span>
+                        <span className="text-xs text-foreground">
+                          {member.languages.join(", ")}
+                        </span>
                       </div>
                     )}
                     {member.tools.length > 0 && (
@@ -971,7 +977,9 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                             <Award size={9} className="text-accent/80 shrink-0" />
                             <span>
                               {f.name}
-                              {f.choices && f.choices.length > 0 ? ` (${f.choices.join(", ")})` : ""}
+                              {f.choices && f.choices.length > 0
+                                ? ` (${f.choices.join(", ")})`
+                                : ""}
                             </span>
                           </span>
                         </TooltipTrigger>

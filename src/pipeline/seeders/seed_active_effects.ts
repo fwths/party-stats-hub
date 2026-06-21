@@ -167,27 +167,6 @@ function buildEffects(source: EffectSource, sourceKind: "spell" | "feature" | "i
   ];
 }
 
-async function insertEffect(db: any, effect: any) {
-  await db
-    .insert(schema.activeEffects)
-    .values(effect)
-    .onConflictDoUpdate({
-      target: schema.activeEffects.id,
-      set: {
-        name: effect.name,
-        type: effect.type,
-        target: effect.target,
-        durationValue: effect.durationValue,
-        durationUnit: effect.durationUnit,
-        changesJson: effect.changesJson,
-        grantsAdvantageOn: effect.grantsAdvantageOn,
-        grantsDisadvantageOn: effect.grantsDisadvantageOn,
-        grantsResistances: effect.grantsResistances,
-        grantsImmunities: effect.grantsImmunities,
-      },
-    });
-}
-
 export async function seedActiveEffects(db: any) {
   console.log("Deriving active effects from normalized spells, features, and items...");
 
@@ -196,14 +175,16 @@ export async function seedActiveEffects(db: any) {
   let featureLinks = 0;
   let itemLinks = 0;
 
+  const effects: any[] = [];
+  const spellLinkRows: any[] = [];
+  const featureLinkRows: any[] = [];
+  const itemLinkRows: any[] = [];
+
   const spells = await db.select().from(schema.spells);
   for (const spell of spells) {
     for (const effect of buildEffects(spell, "spell")) {
-      await insertEffect(db, effect);
-      await db
-        .insert(schema.spellActiveEffects)
-        .values({ spellId: spell.id, effectId: effect.id })
-        .onConflictDoNothing();
+      effects.push(effect);
+      spellLinkRows.push({ spellId: spell.id, effectId: effect.id });
       effectCount++;
       spellLinks++;
     }
@@ -212,11 +193,8 @@ export async function seedActiveEffects(db: any) {
   const features = await db.select().from(schema.classFeatures);
   for (const feature of features) {
     for (const effect of buildEffects(feature, "feature")) {
-      await insertEffect(db, effect);
-      await db
-        .insert(schema.featureActiveEffects)
-        .values({ featureId: feature.id, effectId: effect.id })
-        .onConflictDoNothing();
+      effects.push(effect);
+      featureLinkRows.push({ featureId: feature.id, effectId: effect.id });
       effectCount++;
       featureLinks++;
     }
@@ -225,13 +203,44 @@ export async function seedActiveEffects(db: any) {
   const magicItems = await db.select().from(schema.magicItems);
   for (const item of magicItems) {
     for (const effect of buildEffects(item, "item")) {
-      await insertEffect(db, effect);
-      await db
-        .insert(schema.itemActiveEffects)
-        .values({ itemId: item.id, effectId: effect.id })
-        .onConflictDoNothing();
+      effects.push(effect);
+      itemLinkRows.push({ itemId: item.id, effectId: effect.id });
       effectCount++;
       itemLinks++;
+    }
+  }
+
+  const BATCH_SIZE = 1000;
+  if (effects.length > 0) {
+    for (let i = 0; i < effects.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.activeEffects)
+        .values(effects.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
+    }
+  }
+  if (spellLinkRows.length > 0) {
+    for (let i = 0; i < spellLinkRows.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.spellActiveEffects)
+        .values(spellLinkRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
+    }
+  }
+  if (featureLinkRows.length > 0) {
+    for (let i = 0; i < featureLinkRows.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.featureActiveEffects)
+        .values(featureLinkRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
+    }
+  }
+  if (itemLinkRows.length > 0) {
+    for (let i = 0; i < itemLinkRows.length; i += BATCH_SIZE) {
+      await db
+        .insert(schema.itemActiveEffects)
+        .values(itemLinkRows.slice(i, i + BATCH_SIZE))
+        .onConflictDoNothing();
     }
   }
 

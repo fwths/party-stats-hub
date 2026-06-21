@@ -63,7 +63,7 @@ export function CompanionsPanel({ member }: { member: PartyMember }) {
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-6 gap-1 bg-secondary/35 rounded-lg p-2 text-center border border-border/10 select-none">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 bg-secondary/35 rounded-lg p-2 text-center border border-border/10 select-none">
                 {def.stats.map((s, idx) => (
                   <div key={s.statId}>
                     <div className="text-[9px] font-bold text-muted-foreground uppercase">

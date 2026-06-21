@@ -3,6 +3,18 @@ import * as path from "path";
 import * as schema from "../../db/schema";
 import { renderEntries, slugify } from "../5etools-utils";
 import { getSourcePriority, isSourceAllowed } from "../source-config";
+const SUBCLASS_DEDUPLICATION_MAP: Record<string, string> = {
+  "sorcerer:aberrant mind": "aberrant",
+  "sorcerer:clockwork soul": "clockwork",
+  "sorcerer:wild": "wild magic",
+  "monk:four elements": "elements",
+  "barbarian:totem warrior": "wild heart",
+  "wizard:abjuration": "abjurer",
+  "wizard:divination": "diviner",
+  "wizard:evocation": "evoker",
+  "wizard:illusion": "illusionist",
+  "wizard:bladesinging": "bladesinger",
+};
 
 type ClassEntry = {
   name: string;
@@ -132,7 +144,11 @@ function selectAllowedSubclasses(
     if (!isSourceAllowed(subclass.source)) continue;
     if (allowedClassSources.get(subclass.className) !== subclass.classSource) continue;
 
-    const key = `${subclass.className}:${subclass.shortName || subclass.name}`.toLowerCase();
+    const rawShortName = subclass.shortName || subclass.name;
+    const lookupKey = `${subclass.className}:${rawShortName}`.toLowerCase();
+    const targetShortName = SUBCLASS_DEDUPLICATION_MAP[lookupKey] || rawShortName;
+    const key = `${subclass.className}:${targetShortName}`.toLowerCase();
+
     const existing = selected.get(key);
     const existingPriority = existing ? getSourcePriority(existing.source, existing.edition) : -1;
     const priority = getSourcePriority(subclass.source, subclass.edition);
@@ -177,7 +193,11 @@ function selectAllowedSubclassFeatures(
     if (!isSourceAllowed(feature.subclassSource)) continue;
     if (allowedClassSources.get(feature.className) !== feature.classSource) continue;
 
-    const subclassKey = `${feature.className}:${feature.subclassShortName}`.toLowerCase();
+    const rawSubclassShortName = feature.subclassShortName;
+    const lookupKey = `${feature.className}:${rawSubclassShortName}`.toLowerCase();
+    const targetSubclassShortName = SUBCLASS_DEDUPLICATION_MAP[lookupKey] || rawSubclassShortName;
+    const subclassKey = `${feature.className}:${targetSubclassShortName}`.toLowerCase();
+
     const selectedSubclass = selectedSubclasses.get(subclassKey);
     if (!selectedSubclass || selectedSubclass.source !== feature.subclassSource) continue;
 
@@ -289,80 +309,45 @@ export async function seedClasses(db: any) {
     const classFeatureFoundryMap = loadClassFeatureFoundryMap();
     const subclassFeatureFoundryMap = loadSubclassFeatureFoundryMap();
 
+    const classRows: any[] = [];
     for (const classEntry of classes) {
       const hitDie = classEntry.hd?.faces || 8;
       const key = `${classEntry.name.toLowerCase()}|${classEntry.source.toLowerCase()}`;
       const fluff = classFluffMap.get(key);
       const foundry = classFoundryMap.get(key);
 
-      await db
-        .insert(schema.classes)
-        .values({
-          id: slugify(classEntry.name),
-          name: classEntry.name,
-          description: classDescriptions.get(classEntry.name) || "",
-          hitDice: hitDie,
-          hitDiceType: `d${hitDie}`,
-          hpFirstLevel: hitDie,
-          hpHigherLevels: hpAverage(hitDie),
-          subclassTitle: classEntry.subclassTitle || null,
-          primaryAbilityJson: JSON.stringify(classEntry.primaryAbility || []),
-          proficienciesJson: JSON.stringify({
-            savingThrows: classEntry.proficiency || [],
-            starting: classEntry.startingProficiencies || {},
-          }),
-          startingEquipmentJson: JSON.stringify(classEntry.startingEquipment || {}),
-          acCalculationJson: JSON.stringify({}),
-          speedJson: JSON.stringify({}),
-          sensesJson: JSON.stringify({}),
-          spellcastingJson: JSON.stringify(spellcastingJson(classEntry)),
-          infusionsJson: JSON.stringify({}),
-          wildShapeJson: JSON.stringify({}),
-          optionsProgressionJson: JSON.stringify({
-            tableGroups: classEntry.classTableGroups || [],
-            feats: classEntry.featProgression || [],
-            optionalFeatures: classEntry.optionalfeatureProgression || [],
-          }),
-          source: classEntry.source,
-          page: null,
-          rawJson: JSON.stringify(classEntry),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.classes.id,
-          set: {
-            name: classEntry.name,
-            description: classDescriptions.get(classEntry.name) || "",
-            hitDice: hitDie,
-            hitDiceType: `d${hitDie}`,
-            hpFirstLevel: hitDie,
-            hpHigherLevels: hpAverage(hitDie),
-            subclassTitle: classEntry.subclassTitle || null,
-            primaryAbilityJson: JSON.stringify(classEntry.primaryAbility || []),
-            proficienciesJson: JSON.stringify({
-              savingThrows: classEntry.proficiency || [],
-              starting: classEntry.startingProficiencies || {},
-            }),
-            startingEquipmentJson: JSON.stringify(classEntry.startingEquipment || {}),
-            acCalculationJson: JSON.stringify({}),
-            speedJson: JSON.stringify({}),
-            sensesJson: JSON.stringify({}),
-            spellcastingJson: JSON.stringify(spellcastingJson(classEntry)),
-            infusionsJson: JSON.stringify({}),
-            wildShapeJson: JSON.stringify({}),
-            optionsProgressionJson: JSON.stringify({
-              tableGroups: classEntry.classTableGroups || [],
-              feats: classEntry.featProgression || [],
-              optionalFeatures: classEntry.optionalfeatureProgression || [],
-            }),
-            source: classEntry.source,
-            page: null,
-            rawJson: JSON.stringify(classEntry),
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      classRows.push({
+        id: slugify(classEntry.name),
+        name: classEntry.name,
+        description: classDescriptions.get(classEntry.name) || "",
+        hitDice: hitDie,
+        hitDiceType: `d${hitDie}`,
+        hpFirstLevel: hitDie,
+        hpHigherLevels: hpAverage(hitDie),
+        subclassTitle: classEntry.subclassTitle || null,
+        primaryAbilityJson: JSON.stringify(classEntry.primaryAbility || []),
+        proficienciesJson: JSON.stringify({
+          savingThrows: classEntry.proficiency || [],
+          starting: classEntry.startingProficiencies || {},
+        }),
+        startingEquipmentJson: JSON.stringify(classEntry.startingEquipment || {}),
+        acCalculationJson: JSON.stringify({}),
+        speedJson: JSON.stringify({}),
+        sensesJson: JSON.stringify({}),
+        spellcastingJson: JSON.stringify(spellcastingJson(classEntry)),
+        infusionsJson: JSON.stringify({}),
+        wildShapeJson: JSON.stringify({}),
+        optionsProgressionJson: JSON.stringify({
+          tableGroups: classEntry.classTableGroups || [],
+          feats: classEntry.featProgression || [],
+          optionalFeatures: classEntry.optionalfeatureProgression || [],
+        }),
+        source: classEntry.source,
+        page: null,
+        rawJson: JSON.stringify(classEntry),
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
     }
 
     const subclasses = selectAllowedSubclasses(files, allowedClassSources);
@@ -379,148 +364,108 @@ export async function seedClasses(db: any) {
       selectedSubclasses,
     );
 
+    const subclassRows: any[] = [];
     for (const subclass of subclasses) {
       const description = getSubclassDescription(subclass, subclassDescriptions, subclassFeatures);
       const key = `${subclass.className.toLowerCase()}|${(subclass.shortName || subclass.name).toLowerCase()}|${subclass.source.toLowerCase()}`;
       const fluff = subclassFluffMap.get(key);
       const foundry = subclassFoundryMap.get(key);
 
-      await db
-        .insert(schema.subclasses)
-        .values({
-          id: getSubclassId(subclass),
-          classId: slugify(subclass.className),
-          name: subclass.name,
-          description,
-          levelChosen: getSubclassLevel(subclass),
-          alwaysPreparedSpellsJson: JSON.stringify([]),
-          expandedSpellListJson: JSON.stringify([]),
-          spellcastingJson: JSON.stringify({ ability: subclass.spellcastingAbility }),
-          source: subclass.source,
-          page: null,
-          classSource: subclass.classSource,
-          rawJson: JSON.stringify(subclass),
-          fluffJson: fluff ? JSON.stringify(fluff) : null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.subclasses.id,
-          set: {
-            classId: slugify(subclass.className),
-            name: subclass.name,
-            description,
-            levelChosen: getSubclassLevel(subclass),
-            alwaysPreparedSpellsJson: JSON.stringify([]),
-            expandedSpellListJson: JSON.stringify([]),
-            spellcastingJson: JSON.stringify({ ability: subclass.spellcastingAbility }),
-            source: subclass.source,
-            page: null,
-            classSource: subclass.classSource,
-            rawJson: JSON.stringify(subclass),
-            fluffJson: fluff ? JSON.stringify(fluff) : null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      subclassRows.push({
+        id: getSubclassId(subclass),
+        classId: slugify(subclass.className),
+        name: subclass.name,
+        description,
+        levelChosen: getSubclassLevel(subclass),
+        alwaysPreparedSpellsJson: JSON.stringify([]),
+        expandedSpellListJson: JSON.stringify([]),
+        spellcastingJson: JSON.stringify({ ability: subclass.spellcastingAbility }),
+        source: subclass.source,
+        page: null,
+        classSource: subclass.classSource,
+        rawJson: JSON.stringify(subclass),
+        fluffJson: fluff ? JSON.stringify(fluff) : null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
     }
 
+    const featureRows: any[] = [];
     for (const feature of classFeatures) {
       const key = `${feature.className.toLowerCase()}|${feature.name.toLowerCase()}|${feature.level || 0}|${feature.source.toLowerCase()}`;
       const foundry = classFeatureFoundryMap.get(key);
 
-      await db
-        .insert(schema.classFeatures)
-        .values({
-          id: featureId(feature),
-          classId: slugify(feature.className),
-          subclassId: null,
-          name: feature.name,
-          description: renderEntries(feature.entries),
-          levelRequired: feature.level || null,
-          actionType: null,
-          mathematicalRecoveryJson: JSON.stringify({}),
-          usesJson: JSON.stringify({}),
-          numericalModifiersJson: JSON.stringify({}),
-          optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
-          source: feature.source,
-          page: null,
-          classSource: feature.classSource,
-          subclassSource: null,
-          rawJson: JSON.stringify(feature),
-          fluffJson: null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.classFeatures.id,
-          set: {
-            classId: slugify(feature.className),
-            subclassId: null,
-            name: feature.name,
-            description: renderEntries(feature.entries),
-            levelRequired: feature.level || null,
-            actionType: null,
-            mathematicalRecoveryJson: JSON.stringify({}),
-            usesJson: JSON.stringify({}),
-            numericalModifiersJson: JSON.stringify({}),
-            optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
-            source: feature.source,
-            page: null,
-            classSource: feature.classSource,
-            subclassSource: null,
-            rawJson: JSON.stringify(feature),
-            fluffJson: null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      featureRows.push({
+        id: featureId(feature),
+        classId: slugify(feature.className),
+        subclassId: null,
+        name: feature.name,
+        description: renderEntries(feature.entries),
+        levelRequired: feature.level || null,
+        actionType: null,
+        mathematicalRecoveryJson: JSON.stringify({}),
+        usesJson: JSON.stringify({}),
+        numericalModifiersJson: JSON.stringify({}),
+        optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
+        source: feature.source,
+        page: null,
+        classSource: feature.classSource,
+        subclassSource: null,
+        rawJson: JSON.stringify(feature),
+        fluffJson: null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
     }
 
     for (const feature of subclassFeatures) {
       const key = `${feature.className.toLowerCase()}|${(feature.subclassShortName || "").toLowerCase()}|${feature.name.toLowerCase()}|${feature.level || 0}|${feature.source.toLowerCase()}`;
       const foundry = subclassFeatureFoundryMap.get(key);
 
-      await db
-        .insert(schema.classFeatures)
-        .values({
-          id: featureId(feature),
-          classId: slugify(feature.className),
-          subclassId: slugify(`${feature.className}-${feature.subclassShortName}`),
-          name: feature.name,
-          description: renderEntries(feature.entries),
-          levelRequired: feature.level || null,
-          actionType: null,
-          mathematicalRecoveryJson: JSON.stringify({}),
-          usesJson: JSON.stringify({}),
-          numericalModifiersJson: JSON.stringify({}),
-          optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
-          source: feature.source,
-          page: null,
-          classSource: feature.classSource,
-          subclassSource: feature.subclassSource || null,
-          rawJson: JSON.stringify(feature),
-          fluffJson: null,
-          foundryJson: foundry ? JSON.stringify(foundry) : null,
-        })
-        .onConflictDoUpdate({
-          target: schema.classFeatures.id,
-          set: {
-            classId: slugify(feature.className),
-            subclassId: slugify(`${feature.className}-${feature.subclassShortName}`),
-            name: feature.name,
-            description: renderEntries(feature.entries),
-            levelRequired: feature.level || null,
-            actionType: null,
-            mathematicalRecoveryJson: JSON.stringify({}),
-            usesJson: JSON.stringify({}),
-            numericalModifiersJson: JSON.stringify({}),
-            optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
-            source: feature.source,
-            page: null,
-            classSource: feature.classSource,
-            subclassSource: feature.subclassSource || null,
-            rawJson: JSON.stringify(feature),
-            fluffJson: null,
-            foundryJson: foundry ? JSON.stringify(foundry) : null,
-          },
-        });
+      featureRows.push({
+        id: featureId(feature),
+        classId: slugify(feature.className),
+        subclassId: slugify(`${feature.className}-${feature.subclassShortName}`),
+        name: feature.name,
+        description: renderEntries(feature.entries),
+        levelRequired: feature.level || null,
+        actionType: null,
+        mathematicalRecoveryJson: JSON.stringify({}),
+        usesJson: JSON.stringify({}),
+        numericalModifiersJson: JSON.stringify({}),
+        optionsJson: JSON.stringify(extractFeatureOptions(feature.entries)),
+        source: feature.source,
+        page: null,
+        classSource: feature.classSource,
+        subclassSource: feature.subclassSource || null,
+        rawJson: JSON.stringify(feature),
+        fluffJson: null,
+        foundryJson: foundry ? JSON.stringify(foundry) : null,
+      });
+    }
+
+    const BATCH_SIZE = 1000;
+    if (classRows.length > 0) {
+      for (let i = 0; i < classRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.classes)
+          .values(classRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
+    }
+    if (subclassRows.length > 0) {
+      for (let i = 0; i < subclassRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.subclasses)
+          .values(subclassRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
+    }
+    if (featureRows.length > 0) {
+      for (let i = 0; i < featureRows.length; i += BATCH_SIZE) {
+        await db
+          .insert(schema.classFeatures)
+          .values(featureRows.slice(i, i + BATCH_SIZE))
+          .onConflictDoNothing();
+      }
     }
 
     console.log(`Seeded ${classes.length} classes.`);

@@ -44,6 +44,7 @@ import { spellcastingToRuleChoicesAndGrants } from "../../lib/rules/adapters/spe
 import { speciesToRuleChoicesAndGrants } from "../../lib/rules/adapters/species";
 import { backgroundToRuleChoicesAndGrants } from "../../lib/rules/adapters/backgrounds";
 import { classToRuleChoicesAndGrants } from "../../lib/rules/adapters/classes";
+import { featToRuleChoicesAndGrants } from "../../lib/rules/adapters/feats";
 import { DEFAULT_SOURCE_POLICY, isSourceAllowedByPolicy } from "../../lib/forge/source-policy";
 import { RuleChoiceGroupPicker } from "./RuleChoiceGroupPicker";
 
@@ -484,9 +485,10 @@ export function StepRace({ character, updateCharacter, theme }: StepProps) {
 }
 
 export function StepBackground({ character, updateCharacter }: StepProps) {
-  const { backgrounds, feats, languages, mundaneGear, itemTypes } = useLoaderData({
+  const { backgrounds, feats, languages, mundaneGear, itemTypes, skills, spells } = useLoaderData({
     from: "/builder",
   }) as any;
+  const skillOptions = getSkillOptionsFromDb(skills);
   const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Player's Handbook");
@@ -755,9 +757,10 @@ export function StepBackground({ character, updateCharacter }: StepProps) {
 
 export function StepClass({ character, updateCharacter, theme }: StepProps) {
   const activeTheme = theme || DEFAULT_THEME;
-  const { classes, subclasses, classFeatures, skills, mundaneGear, itemTypes } = useLoaderData({
-    from: "/builder",
-  }) as any;
+  const { classes, subclasses, classFeatures, skills, mundaneGear, itemTypes, languages } =
+    useLoaderData({
+      from: "/builder",
+    }) as any;
   const skillOptions = getSkillOptionsFromDb(skills);
   const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const availableSubclasses = subclasses.filter((s: any) => s.classId === character.classId);
@@ -961,7 +964,7 @@ export function StepClass({ character, updateCharacter, theme }: StepProps) {
               </div>
               <FeatureChoicePanel
                 groups={featureOptionGroups}
-                selected={character.featureChoices}
+                selected={character.featureChoices || {}}
                 onChange={(choices) => updateCharacter({ featureChoices: choices })}
               />
             </div>
@@ -1230,7 +1233,7 @@ export function StepAbilities({ character, updateCharacter, theme }: StepProps) 
   }) as any;
   const skillOptions = getSkillOptionsFromDb(skills);
   const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
-  const featLevels = getFeatChoiceLevels(character.classId, character.level);
+  const featLevels = getFeatChoiceLevels(character.classId || null, character.level);
   const generalFeats = (feats || [])
     .filter(
       (f: any) =>
@@ -2369,7 +2372,13 @@ export function StepEquipment({ character, updateCharacter, theme }: StepProps) 
                   updateCharacter({
                     customEquipment: [
                       ...currentEq,
-                      { name: item.name, quantity: 1, type: item.type, equipped: false, attuned: false },
+                      {
+                        name: item.name,
+                        quantity: 1,
+                        type: item.type,
+                        equipped: false,
+                        attuned: false,
+                      },
                     ],
                   });
                 }}

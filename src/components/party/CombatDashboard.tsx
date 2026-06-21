@@ -25,7 +25,8 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
   const handleShortRest = async () => {
     const confirmed = await confirm({
       title: "Short Rest",
-      message: "Are you sure you want to perform a Short Rest for the entire party?\n\nThis clears death saves, resets Warlock pact slots, and resets short-rest class resources.",
+      message:
+        "Are you sure you want to perform a Short Rest for the entire party?\n\nThis clears death saves, resets Warlock pact slots, and resets short-rest class resources.",
       variant: "warning",
       confirmText: "Short Rest",
     });
@@ -99,7 +100,8 @@ export function CombatDashboard({ members }: CombatDashboardProps) {
   const handleLongRest = async () => {
     const confirmed = await confirm({
       title: "Long Rest",
-      message: "Are you sure you want to perform a Long Rest for the entire party?\n\nThis restores all characters to max HP and full hit dice, resets all spell/pact slots and resources, clears death saves, and removes custom conditions.",
+      message:
+        "Are you sure you want to perform a Long Rest for the entire party?\n\nThis restores all characters to max HP and full hit dice, resets all spell/pact slots and resources, clears death saves, and removes custom conditions.",
       variant: "warning",
       confirmText: "Long Rest",
     });

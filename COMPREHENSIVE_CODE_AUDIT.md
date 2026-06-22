@@ -655,9 +655,11 @@ describe("Authentication", () => {
 
 - `README.md` - Comprehensive with setup, tech stack, features
 - `PROJECT.md` - Project vision and goals
-- `AUDIT.md` - Already contains audit findings
-- `CODE_REVIEW.md` - Contains review notes
-- `ACTION_PLAN.md` - Planned improvements
+- `COMPREHENSIVE_CODE_AUDIT.md` - Current comprehensive codebase audit report (June 22, 2026)
+- `ACTION_PLAN.md` - Planned improvements based on the June 19 audit
+- [AUDIT.md](./docs/old-audits/AUDIT.md) - Previous automated code audit (June 19, 2026)
+- [CODE_REVIEW.md](./docs/old-audits/CODE_REVIEW.md) - Previous manual code review notes (June 16, 2026)
+- [CODE_ANALYSIS_REPORT.md](./docs/old-audits/CODE_ANALYSIS_REPORT.md) - Initial codebase analysis report (June 14, 2026)
 
 ### Gaps 🔴
 

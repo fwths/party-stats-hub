@@ -1,7 +1,7 @@
 # 🗺️ Action Plan — Party Stats Hub Audit Remediation
 
 **Created:** 2026-06-19  
-**Based on:** [AUDIT.md](./AUDIT.md) — 48 findings (5 critical, 14 high, 18 medium, 11 low)
+**Based on:** [AUDIT.md](./docs/old-audits/AUDIT.md) — 48 findings (5 critical, 14 high, 18 medium, 11 low)
 
 ---
 

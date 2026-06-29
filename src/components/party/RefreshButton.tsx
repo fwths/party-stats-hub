@@ -1,5 +1,6 @@
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { partyQueryOptions } from "@/lib/party";
+import { getParty } from "@/lib/dndbeyond.functions";
 
 export function RefreshButton({ ids, className }: { ids: number[]; className?: string }) {
   const qc = useQueryClient();
@@ -7,7 +8,11 @@ export function RefreshButton({ ids, className }: { ids: number[]; className?: s
   const fetchedAt = new Date(data.fetchedAt);
   return (
     <button
-      onClick={() => qc.invalidateQueries({ queryKey: ["party", ids] })}
+      onClick={() => {
+        getParty({ data: { ids, force: true } }).finally(() => {
+          qc.invalidateQueries({ queryKey: ["party", ids] });
+        });
+      }}
       disabled={isFetching}
       className={
         className ||

@@ -187,6 +187,18 @@ export function classFeatureToRuleChoicesAndGrants(
   );
   grants.push(...inlineGrants);
 
+  // Some feature-granted spells are expressed only in prose in the source data.
+  if (/^tinker's magic$/i.test(name)) {
+    grants.push({
+      id: `${sourceEntity}_mending`,
+      type: "spell_known",
+      value: { name: "Mending", level: 0 },
+      mode: "fixed",
+      sourceEntity,
+      provenance,
+    });
+  }
+
   // Emit feature reference
   grants.push({
     id: `${sourceEntity}_reference`,

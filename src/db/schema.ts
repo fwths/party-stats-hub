@@ -1,4 +1,11 @@
-import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
+import {
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 // ENGINES & EFFECTS
 export const contentSources = sqliteTable("content_sources", {
@@ -983,3 +990,60 @@ export const characterOverrides = sqliteTable("character_overrides", {
   overrideType: text("override_type").notNull(), // e.g. "set_score", "set_proficiency"
   value: text("value").notNull(),
 });
+
+// Isolated Character V3 authority. These tables deliberately do not project V3
+// into the legacy character columns: the validated aggregate is the write model,
+// and every accepted mutation is retained as an immutable synchronization event.
+export const characterV3Snapshots = sqliteTable(
+  "character_v3_snapshots",
+  {
+    characterId: text("character_id").primaryKey(),
+    campaignId: text("campaign_id").notNull(),
+    ownerUserId: text("owner_user_id").notNull(),
+    schemaVersion: integer("schema_version").notNull(),
+    buildRevision: integer("build_revision").notNull(),
+    liveStateRevision: integer("live_state_revision").notNull(),
+    aggregateJson: text("aggregate_json").notNull(),
+    aggregateChecksum: text("aggregate_checksum").notNull(),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => ({
+    campaignIndex: index("character_v3_snapshots_campaign_idx").on(table.campaignId),
+    ownerIndex: index("character_v3_snapshots_owner_idx").on(table.ownerUserId),
+  }),
+);
+
+export const characterV3Mutations = sqliteTable(
+  "character_v3_mutations",
+  {
+    sequence: integer("sequence").primaryKey({ autoIncrement: true }),
+    mutationId: text("mutation_id").notNull(),
+    characterId: text("character_id").notNull(),
+    campaignId: text("campaign_id").notNull(),
+    actorUserId: text("actor_user_id").notNull(),
+    actorRole: text("actor_role").notNull(),
+    authorizationMode: text("authorization_mode").notNull(),
+    overrideReason: text("override_reason"),
+    eventType: text("event_type").notNull(),
+    expectedBuildRevision: integer("expected_build_revision"),
+    expectedLiveStateRevision: integer("expected_live_state_revision"),
+    resultingBuildRevision: integer("resulting_build_revision").notNull(),
+    resultingLiveStateRevision: integer("resulting_live_state_revision").notNull(),
+    detailsJson: text("details_json").notNull(),
+    resultingAggregateJson: text("resulting_aggregate_json").notNull(),
+    resultingAggregateChecksum: text("resulting_aggregate_checksum").notNull(),
+    committedAt: integer("committed_at").notNull(),
+  },
+  (table) => ({
+    mutationIdUnique: uniqueIndex("character_v3_mutations_mutation_id_uidx").on(table.mutationId),
+    characterSequenceIndex: index("character_v3_mutations_character_sequence_idx").on(
+      table.characterId,
+      table.sequence,
+    ),
+    campaignSequenceIndex: index("character_v3_mutations_campaign_sequence_idx").on(
+      table.campaignId,
+      table.sequence,
+    ),
+  }),
+);

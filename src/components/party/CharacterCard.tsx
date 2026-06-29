@@ -163,7 +163,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             >
               {member.name}
             </a>
-            {member.inspiration && (
+            {mods.inspiration && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="cursor-help shrink-0">

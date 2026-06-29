@@ -269,16 +269,20 @@ export function speciesToRuleChoicesAndGrants(speciesEntity: any): {
   );
   if (Array.isArray(featuresJson)) {
     featuresJson.forEach((feat: any, i: number) => {
+      const description = String(feat.description || "");
+      const statedUnlockLevel = description.match(/when you reach character level\s+(\d+)/i);
+      const level = Number(feat.level || feat.requiredLevel || statedUnlockLevel?.[1] || 1);
       grants.push({
         id: `${sourceEntity}_feature_${i}`,
         type: "feature_reference",
         value: {
           name: feat.name,
-          description: feat.description || "",
+          description,
           source: "race",
           sourceName: speciesEntity.name,
-          level: 1,
+          level,
         },
+        level,
         mode: "fixed",
         sourceEntity,
         provenance,

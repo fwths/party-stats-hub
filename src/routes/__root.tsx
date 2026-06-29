@@ -145,7 +145,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: appCss ? `${appCss}${appCss.includes("?") ? "&" : "?"}direct` : appCss,
       },
       {
         rel: "icon",

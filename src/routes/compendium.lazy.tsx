@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { sanitizeHtml } from "@/lib/utils";
 import { ThemeSelector } from "@/components/party/ThemeSelector";
+import { formatPrimaryAbility } from "@/components/builder/BuilderUtils";
 
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -319,7 +320,7 @@ function CompendiumComponent() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card
-          className={`md:col-span-1 h-[calc(100vh-12rem)] bg-card/60 backdrop-blur-md border-border/40 shadow-xl overflow-hidden ring-1 ring-white/5 ${mobileShowDetails ? "hidden md:flex" : "flex flex-col"}`}
+          className={`md:col-span-1 h-[calc(100vh-12rem)] bg-card/60 backdrop-blur-md border-border/40 shadow-xl overflow-hidden ring-1 ring-white/5 ${mobileShowDetails ? "hidden md:flex md:flex-col" : "flex flex-col"}`}
         >
           <CardHeader className="pb-4 bg-secondary/20 border-b border-border/40">
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -560,8 +561,9 @@ function CompendiumComponent() {
                 )}
 
                 {/* Standard Description */}
-                {selectedItem.description && typeof selectedItem.description === "string" && (
-                  <CardDescription className="text-lg mt-2 text-foreground/80 leading-relaxed">
+                {selectedItem.description && typeof selectedItem.description === "string" && 
+                 (activeTab === "rules" || activeTab === "classes" || activeTab === "races") && (
+                  <CardDescription className="text-lg mt-2 text-foreground/80 leading-relaxed whitespace-pre-wrap">
                     {selectedItem.description}
                   </CardDescription>
                 )}
@@ -714,7 +716,7 @@ function CompendiumComponent() {
                         </span>
                         <span className="text-2xl font-black text-primary">
                           {selectedItem.primaryAbilityJson
-                            ? (parseRawJson(selectedItem.primaryAbilityJson) || []).join(", ")
+                            ? formatPrimaryAbility(selectedItem.primaryAbilityJson)
                             : ""}
                         </span>
                       </div>

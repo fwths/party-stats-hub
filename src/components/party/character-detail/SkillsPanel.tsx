@@ -68,7 +68,9 @@ export function SavingThrowsPanel({
     (member.totemAspects && member.totemAspects.length > 0);
 
   const hasDangerSense =
-    member.features?.some((f) => f.name.toLowerCase().includes("danger sense")) ?? false;
+    member.features?.some(
+      (f) => f.isUnlocked !== false && f.name.toLowerCase().includes("danger sense"),
+    ) ?? false;
 
   const saveEffects = (() => {
     const effects: Record<
@@ -83,7 +85,10 @@ export function SavingThrowsPanel({
       CHA: [],
     };
 
-    const allFeatures = [...(member.features ?? []), ...(member.feats ?? [])];
+    const allFeatures = [
+      ...(member.features ?? []).filter((feature) => feature.isUnlocked !== false),
+      ...(member.feats ?? []),
+    ];
 
     for (const f of allFeatures) {
       const descLower = (f.description ?? "").toLowerCase();
@@ -471,7 +476,10 @@ export function SkillsSectionPanel({
       Array<{ type: "adv" | "dis"; label: string; text: string; source: string }>
     > = {};
 
-    const allFeatures = [...(member.features ?? []), ...(member.feats ?? [])];
+    const allFeatures = [
+      ...(member.features ?? []).filter((feature) => feature.isUnlocked !== false),
+      ...(member.feats ?? []),
+    ];
 
     for (const f of allFeatures) {
       const descLower = (f.description ?? "").toLowerCase();

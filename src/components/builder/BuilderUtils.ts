@@ -14,6 +14,7 @@ import {
 } from "./BuilderConstants";
 
 export type BuilderState = {
+  id?: number;
   name: string;
   raceId: string | null;
   speciesVariantId: string | null;

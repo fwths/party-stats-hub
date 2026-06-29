@@ -229,9 +229,91 @@ export function sortDatabaseResults(results: any[], databaseTitle: string): any[
   return results;
 }
 
+export async function fetchBlockChildren(token: string, blockId: string): Promise<any[]> {
+  let hasMore = true;
+  let startCursor: string | undefined = undefined;
+  const allChildren: any[] = [];
+
+  while (hasMore) {
+    let url = `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100`;
+    if (startCursor) {
+      url += `&start_cursor=${startCursor}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Notion-Version": "2022-06-28",
+      },
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Failed to fetch block children for ID ${blockId}: ${errText}`);
+    }
+
+    const data = await response.json();
+    allChildren.push(...(data.results || []));
+    hasMore = data.has_more;
+    startCursor = data.next_cursor || undefined;
+  }
+
+  return allChildren;
+}
+
+export async function downloadAndLocalizeFile(
+  url: string,
+  prefix: string,
+  id: string,
+): Promise<string | null> {
+  if (!url || !url.startsWith("http")) return null;
+  try {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+
+    const dir = path.join(process.cwd(), "public", "images", "notion");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Extract extension from url or default to .png
+    let ext = ".png";
+    try {
+      const urlPath = new URL(url).pathname;
+      const match = urlPath.match(/\.([a-z0-9]+)$/i);
+      if (match) {
+        ext = `.${match[1]}`;
+      }
+    } catch {}
+
+    const filename = `${prefix}_${id}${ext}`;
+    const filepath = path.join(dir, filename);
+    const localUrl = `/images/notion/${filename}`;
+
+    // Check if file already exists before downloading
+    if (!fs.existsSync(filepath)) {
+      console.log(`Downloading Notion S3 file (${prefix}) ${id}...`);
+      const res = await fetch(url);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        fs.writeFileSync(filepath, Buffer.from(arrayBuffer));
+        console.log(`Saved Notion file to: ${filepath}`);
+      } else {
+        console.warn(`Failed to download file from ${url}: ${res.status} ${res.statusText}`);
+        return null;
+      }
+    }
+
+    return localUrl;
+  } catch (err) {
+    console.warn(`Failed to download and localize file (${prefix}):`, id, err);
+    return null;
+  }
+}
+
 export async function resolveBlockChildrenRecursive(token: string, blocks: any[]): Promise<any[]> {
   const resolved: any[] = [];
-  const containerTypes = ["column_list", "column", "toggle", "synced_block"];
 
   for (const block of blocks) {
     if (block.type === "child_database") {
@@ -264,27 +346,33 @@ export async function resolveBlockChildrenRecursive(token: string, blocks: any[]
       }
     }
 
-    resolved.push(block);
-
-    if (block.has_children && containerTypes.includes(block.type)) {
+    if (block.type === "image") {
       try {
-        const response = await fetch(`https://api.notion.com/v1/blocks/${block.id}/children`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Notion-Version": "2022-06-28",
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          const children = data.results || [];
-          const resolvedChildren = await resolveBlockChildrenRecursive(token, children);
-          resolved.push(...resolvedChildren);
+        const imageUrl =
+          block.image.type === "external" ? block.image.external?.url : block.image.file?.url;
+        if (imageUrl && imageUrl.startsWith("http")) {
+          const localUrl = await downloadAndLocalizeFile(imageUrl, "image", block.id);
+          if (localUrl) {
+            block.image.type = "external";
+            block.image.external = { url: localUrl };
+            block.image.file = null;
+          }
         }
+      } catch (err) {
+        console.warn("Failed to download and localize image block:", block.id, err);
+      }
+    }
+
+    if (block.has_children) {
+      try {
+        const children = await fetchBlockChildren(token, block.id);
+        block.children = await resolveBlockChildrenRecursive(token, children);
       } catch (e) {
         console.warn("Failed to resolve sub-blocks of block ID:", block.id, e);
       }
     }
+
+    resolved.push(block);
   }
 
   return resolved;

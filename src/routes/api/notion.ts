@@ -94,6 +94,13 @@ export const Route = createFileRoute("/api/notion")({
           return null;
         };
 
+        const forceRefresh = url.searchParams.get("refresh") === "true";
+
+        if (!forceRefresh) {
+          const cached = await getCachedResponse();
+          if (cached) return cached;
+        }
+
         if (!token) {
           const cached = await getCachedResponse();
           if (cached) return cached;

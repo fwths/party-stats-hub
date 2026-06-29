@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import DEFAULT_JOURNAL from "./default-journal.md?raw";
-import { Loader2, ChevronRight, ExternalLink, AlertCircle } from "lucide-react";
+import { Loader2, ChevronRight, ExternalLink, AlertCircle, Maximize2, X } from "lucide-react";
 import { PartyMember } from "@/lib/dndbeyond.types";
 
 import { NotionPage, NOTE_KEY } from "./session-notes/types";
@@ -62,6 +62,8 @@ export default function SessionNotes({ members }: SessionNotesProps) {
   const [pageContent, setPageContent] = useState<string>("");
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
+  const [activeCover, setActiveCover] = useState<string | null>(null);
+  const [activeIcon, setActiveIcon] = useState<any | null>(null);
 
   const matchedMember = useMemo(() => {
     if (!selectedPageTitle || !members) return null;
@@ -122,6 +124,10 @@ export default function SessionNotes({ members }: SessionNotesProps) {
     url?: string;
     error?: string;
   } | null>(null);
+
+  // --- Lightbox Modal State ---
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  useModalHistorySync(isLightboxOpen, setIsLightboxOpen, "isSessionNotesCoverLightboxOpen");
 
   // Load Notion config on mount
   useEffect(() => {
@@ -225,6 +231,8 @@ export default function SessionNotes({ members }: SessionNotesProps) {
       setIsLoadingContent(true);
       setContentError(null);
       setPageContent("");
+      setActiveCover(null);
+      setActiveIcon(null);
       try {
         let url = `/api/notion?pageId=${encodeURIComponent(selectedPageId)}`;
         if (selectedPageIsDb) {
@@ -238,6 +246,8 @@ export default function SessionNotes({ members }: SessionNotesProps) {
         const data = await res.json();
         if (res.ok && data.success) {
           setPageContent(data.markdown || "");
+          setActiveCover(data.cover || null);
+          setActiveIcon(data.icon || null);
           if (data.parentDb) {
             setNavigationHistory((prev) =>
               prev.length === 0
@@ -459,13 +469,31 @@ export default function SessionNotes({ members }: SessionNotesProps) {
                       <span className="max-w-[150px] truncate">
                         Back to{" "}
                         {navigationHistory[navigationHistory.length - 1]?.title
-                          ? parseInlineStyles(navigationHistory[navigationHistory.length - 1].title)
+                          ? parseInlineStyles(
+                              navigationHistory[navigationHistory.length - 1].title,
+                              undefined,
+                              members,
+                            )
                           : "Codex"}
                       </span>
                     </button>
                   )}
-                  <h2 className="text-base font-heading font-bold text-gold leading-none select-text truncate">
-                    {selectedPageTitle ? parseInlineStyles(selectedPageTitle) : ""}
+                  {activeIcon &&
+                    (activeIcon.type === "emoji" ? (
+                      <span className="text-xl sm:text-2xl leading-none select-none flex-shrink-0 mr-1">
+                        {activeIcon.emoji}
+                      </span>
+                    ) : (
+                      <img
+                        src={activeIcon.url}
+                        alt=""
+                        className="h-7 w-7 rounded object-cover flex-shrink-0 border border-gold/30 shadow-sm mr-1"
+                      />
+                    ))}
+                  <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-gold leading-none select-text truncate">
+                    {selectedPageTitle
+                      ? parseInlineStyles(selectedPageTitle, undefined, members)
+                      : ""}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
@@ -492,7 +520,7 @@ export default function SessionNotes({ members }: SessionNotesProps) {
               </div>
 
               {/* Content Box */}
-              <div className="flex-1 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
+              <div className="overflow-y-auto max-h-[580px] pr-2 pb-6 custom-scrollbar">
                 {isLoadingContent ? (
                   <div className="h-full flex flex-col items-center justify-center py-20 gap-3 text-xs text-muted-foreground select-none">
                     <Loader2 size={20} className="animate-spin text-gold" />
@@ -513,6 +541,23 @@ export default function SessionNotes({ members }: SessionNotesProps) {
                   </div>
                 ) : (
                   <div className="py-1 space-y-4">
+                    {activeCover && (
+                      <div
+                        onClick={() => setIsLightboxOpen(true)}
+                        className="w-full h-44 sm:h-64 rounded-xl overflow-hidden mb-4 border border-border/40 shadow-inner relative group select-none cursor-zoom-in transition-all duration-300 hover:shadow-lg hover:border-gold/30"
+                      >
+                        <img
+                          src={activeCover}
+                          alt="Cover banner"
+                          className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500 ease-out"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent opacity-90 group-hover:opacity-85 transition-opacity duration-300" />
+                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-2.5 py-1.5 text-white/80 hover:text-white hover:bg-black/80 hover:scale-105 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer shadow-md flex items-center gap-1.5 text-xs font-semibold">
+                          <Maximize2 size={13} className="text-gold animate-pulse" />
+                          <span>View Full Cover</span>
+                        </div>
+                      </div>
+                    )}
                     {matchedMember && (
                       <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-xl border border-gold/25 bg-secondary/15 shadow-md animate-fade-in select-none">
                         {matchedMember.avatarUrl ? (
@@ -590,6 +635,45 @@ export default function SessionNotes({ members }: SessionNotesProps) {
         notes={notes}
         onSuccess={() => setTriggerRefresh((prev) => prev + 1)}
       />
+
+      {/* Lightbox Modal Pop-up */}
+      {isLightboxOpen && activeCover && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md animate-fade-in p-4 sm:p-6 md:p-8 cursor-zoom-out"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 z-50 bg-black/50 hover:bg-black/80 border border-white/20 hover:border-white/40 text-white rounded-full p-2.5 transition-all duration-200 cursor-pointer shadow-lg hover:scale-110"
+            title="Close Lightbox"
+          >
+            <X size={20} className="text-gold" />
+          </button>
+
+          {/* Image Container */}
+          <div
+            className="relative max-w-full max-h-[85vh] md:max-h-[90vh] flex flex-col items-center justify-center animate-lightbox-zoom-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={activeCover}
+              alt={selectedPageTitle || "Cover artwork"}
+              className="max-w-full max-h-[75vh] md:max-h-[80vh] object-contain rounded-xl border border-gold/30 shadow-2xl bg-secondary/10"
+            />
+            {selectedPageTitle && (
+              <div className="mt-4 px-4 py-2 bg-black/60 border border-gold/20 backdrop-blur-md rounded-xl text-center shadow-lg select-text max-w-xl">
+                <h3 className="text-base sm:text-lg font-heading font-extrabold text-gold leading-tight">
+                  {parseInlineStyles(selectedPageTitle, undefined, members)}
+                </h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 font-semibold uppercase tracking-wider">
+                  Full Cover Artwork
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

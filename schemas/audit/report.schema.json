@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://party-stats-hub.local/schemas/audit/report.schema.json",
+  "title": "Structured Audit Report",
+  "description": "Optional structured companion to the required Markdown audit report.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_name",
+    "report_type",
+    "generated_by",
+    "generated_on",
+    "repository_snapshot",
+    "scope",
+    "out_of_scope",
+    "executive_summary",
+    "findings",
+    "observations",
+    "not_a_findings",
+    "overall_assessment",
+    "top_risks",
+    "recommended_next_actions",
+    "confidence",
+    "release_impact"
+  ],
+  "properties": {
+    "report_name": { "type": "string", "minLength": 1 },
+    "report_type": { "type": "string", "minLength": 1 },
+    "generated_by": { "type": "string", "minLength": 1 },
+    "generated_on": { "$ref": "#/$defs/dateOrNotProvided" },
+    "audit_cycle": { "type": "string", "minLength": 1 },
+    "repository_snapshot": { "$ref": "#/$defs/repositorySnapshot" },
+    "scope": { "$ref": "#/$defs/stringList" },
+    "out_of_scope": { "$ref": "#/$defs/stringList" },
+    "executive_summary": { "type": "string", "minLength": 1 },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "finding.schema.json" }
+    },
+    "observations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/observation" }
+    },
+    "not_a_findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/notAFinding" }
+    },
+    "overall_assessment": { "type": "string", "minLength": 1 },
+    "top_risks": { "$ref": "#/$defs/stringList" },
+    "recommended_next_actions": { "$ref": "#/$defs/stringList" },
+    "confidence": { "enum": ["High", "Medium", "Low"] },
+    "release_impact": {
+      "enum": [
+        "No Impact",
+        "Minor Impact",
+        "Moderate Impact",
+        "Significant Impact",
+        "Release Blocking"
+      ]
+    },
+    "release_impact_rationale": { "type": "string" }
+  },
+  "$defs": {
+    "dateOrNotProvided": {
+      "anyOf": [
+        { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        { "const": "Not Provided" }
+      ]
+    },
+    "stringList": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "repositorySnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository_name",
+        "repository_branch",
+        "repository_commit",
+        "repository_type",
+        "primary_language",
+        "frameworks",
+        "database",
+        "files_reviewed"
+      ],
+      "properties": {
+        "repository_name": { "type": "string", "minLength": 1 },
+        "repository_branch": { "type": "string", "minLength": 1 },
+        "repository_commit": { "type": "string", "minLength": 1 },
+        "repository_type": { "type": "string", "minLength": 1 },
+        "primary_language": { "type": "string", "minLength": 1 },
+        "frameworks": { "$ref": "#/$defs/stringList" },
+        "database": { "type": "string", "minLength": 1 },
+        "files_reviewed": { "$ref": "#/$defs/stringList" }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "owner",
+        "category",
+        "location",
+        "evidence",
+        "reason_not_finding",
+        "recommended_validation"
+      ],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "owner": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 },
+        "location": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 },
+        "reason_not_finding": { "type": "string", "minLength": 1 },
+        "recommended_validation": { "type": "string", "minLength": 1 }
+      }
+    },
+    "notAFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "reason", "evidence_reviewed", "adr_reviewed"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "evidence_reviewed": { "$ref": "#/$defs/stringList" },
+        "adr_reviewed": { "$ref": "#/$defs/stringList" },
+        "notes": { "type": "string", "default": "" }
+      }
+    }
+  }
+}

@@ -55,7 +55,7 @@ export default function NotionPagesList({
   setShowNotionSettings: _setShowNotionSettings,
 }: NotionPagesListProps) {
   return (
-    <div className="w-full lg:w-[28%] flex flex-col card-arcane rounded-xl border border-border p-5 shadow-xl select-none min-h-[500px] flex-shrink-0">
+    <div className="w-full lg:w-[28%] flex flex-col card-arcane rounded-xl border border-border p-6 shadow-xl select-none min-h-[500px] flex-shrink-0">
       <div className="flex items-center justify-between border-b border-border/40 pb-3 mb-4">
         <div className="flex items-center gap-2.5">
           <BookOpen size={16} className="text-gold" />
@@ -134,8 +134,8 @@ export default function NotionPagesList({
       )}
 
       {/* Pages Scrollable List & Scratchpad block */}
-      <div className="flex-1 min-h-0 flex flex-col justify-between">
-        <div className="overflow-y-auto max-h-[380px] pr-1 custom-scrollbar space-y-1.5">
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="overflow-y-auto max-h-[580px] pr-1 pb-6 custom-scrollbar space-y-1.5">
           {!notionToken ? (
             <div className="text-center py-10 space-y-3">
               <Compass size={32} className="mx-auto text-muted-foreground/30 stroke-[1.5]" />
@@ -337,9 +337,9 @@ function TreeItem({
     <div className="space-y-1">
       <div
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
-        className={`group flex items-center justify-between p-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+        className={`group flex items-center justify-between p-1.5 rounded-lg border transition-all duration-200 cursor-pointer font-medium ${
           isSelected
-            ? "bg-gold/10 border-gold/45 text-gold font-bold shadow-[0_0_8px_rgba(212,175,55,0.08)]"
+            ? "bg-gold/10 border-gold/45 text-gold shadow-[0_0_8px_rgba(212,175,55,0.08)]"
             : "border-transparent hover:bg-secondary/10 hover:border-border/30 text-foreground"
         }`}
         onClick={() => onSelect(item.id, item.title, item.object === "database")}
@@ -363,7 +363,19 @@ function TreeItem({
             ) : (
               <span className="w-4 flex-shrink-0" />
             )}
-            {item.object === "database" ? (
+            {item.icon ? (
+              item.icon.type === "emoji" ? (
+                <span className="text-[11px] leading-none flex-shrink-0 w-4 text-center select-none">
+                  {item.icon.emoji}
+                </span>
+              ) : (
+                <img
+                  src={item.icon.url}
+                  alt=""
+                  className="h-[13px] w-[13px] rounded object-cover flex-shrink-0 border border-gold/15 shadow-sm"
+                />
+              )
+            ) : item.object === "database" ? (
               <Database size={11} className="text-amber-400/80 flex-shrink-0" />
             ) : (
               <FileText size={11} className="text-muted-foreground/60 flex-shrink-0" />

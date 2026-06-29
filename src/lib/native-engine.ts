@@ -274,15 +274,49 @@ function equipmentToCurrencies(items: any[]) {
   };
 }
 
+function normalizedEquipmentName(name: string): string {
+  return name
+    .replace(/,?\s*\+\d+\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function armorDefinitionFor(item: InventoryItem) {
+  const normalized = normalizedEquipmentName(item.name);
+  return Object.entries(ARMOR_AC).find(([name]) => {
+    const candidate = normalizedEquipmentName(name);
+    return (
+      candidate === normalized ||
+      candidate.replace(/ armor$/, "") === normalized.replace(/ armor$/, "")
+    );
+  })?.[1];
+}
+
+function isShieldItem(item: InventoryItem): boolean {
+  return (
+    item.armorTypeId === 4 || item.type?.toLowerCase() === "shield" || /\bshield\b/i.test(item.name)
+  );
+}
+
 function calculateArmorClass(inventory: InventoryItem[], dexMod: number): number {
-  const shieldBonus = inventory.some((item) => item.name === "Shield" && item.equipped) ? 2 : 0;
+  const equippedShield = inventory
+    .filter((item) => item.equipped && isShieldItem(item))
+    .sort((a, b) => Number(b.armorClass || 2) - Number(a.armorClass || 2))[0];
+  const shieldBonus = equippedShield ? Number(equippedShield.armorClass || 2) : 0;
   const equippedArmor = inventory
-    .filter((item) => item.equipped && item.armorClass && item.name !== "Shield")
+    .filter(
+      (item) =>
+        item.equipped &&
+        item.armorClass &&
+        !isShieldItem(item) &&
+        (armorDefinitionFor(item) || /armor|mail|plate|breastplate/i.test(item.type || item.name)),
+    )
     .sort((a, b) => Number(b.armorClass || 0) - Number(a.armorClass || 0))[0];
 
   if (!equippedArmor?.armorClass) return 10 + dexMod + shieldBonus;
 
-  const armor = ARMOR_AC[equippedArmor.name];
+  const armor = armorDefinitionFor(equippedArmor);
   const dexBonus = armor?.maxDex === 0 ? 0 : Math.min(dexMod, armor?.maxDex ?? dexMod);
   return equippedArmor.armorClass + dexBonus + shieldBonus;
 }
@@ -291,7 +325,31 @@ function inventoryToAttacks(
   inventory: InventoryItem[],
   finalScores: Record<string, number>,
   proficiencyBonus: number,
+  weaponProficiencies: unknown[],
 ): AttackInfo[] {
+  const simpleWeapons = new Set([
+    "club",
+    "dagger",
+    "greatclub",
+    "handaxe",
+    "javelin",
+    "light hammer",
+    "mace",
+    "quarterstaff",
+    "sickle",
+    "spear",
+    "crossbow",
+    "light crossbow",
+    "dart",
+    "shortbow",
+    "sling",
+  ]);
+  const normalizedProficiencies = weaponProficiencies.map((value) =>
+    String(value)
+      .toLowerCase()
+      .replace(/ weapons?$/, "")
+      .trim(),
+  );
   return inventory
     .filter((item) => item.type === "Weapon" && item.damage)
     .map((item) => {
@@ -305,9 +363,17 @@ function inventoryToAttacks(
         : isFinesse
           ? Math.max(strengthMod, dexMod)
           : strengthMod;
+      const weaponName = normalizedEquipmentName(item.name);
+      const isSimple = simpleWeapons.has(weaponName);
+      const isProficient = normalizedProficiencies.some(
+        (proficiency) =>
+          proficiency === weaponName ||
+          (proficiency === "simple" && isSimple) ||
+          (proficiency === "martial" && !isSimple),
+      );
       return {
         name: item.name,
-        attackBonus: proficiencyBonus + abilityMod,
+        attackBonus: (isProficient ? proficiencyBonus : 0) + abilityMod,
         damage: `${item.damage}${abilityMod >= 0 ? `+${abilityMod}` : abilityMod}`,
         damageType: weapon?.damageType || "",
         properties: item.properties || [],
@@ -610,6 +676,7 @@ export function createNativePartyMember(
     itemActiveEffects?: any[];
     spellActiveEffects?: any[];
     magicItems?: any[];
+    spells?: any[];
     feats?: any[];
     weapons?: any[];
     armor?: any[];
@@ -635,7 +702,7 @@ export function createNativePartyMember(
   },
   speciesVariantData?: any,
 ): PartyMember {
-  const id = Math.floor(Math.random() * 1000000) + 900000000; // Native IDs are 900M+
+  const id = state.id || Math.floor(Math.random() * 1000000) + 900000000; // Native IDs are 900M+
   const level = state.level || 1;
   const totalLevel =
     level + (state.multiClasses || []).reduce((sum: number, mc: any) => sum + (mc.level || 0), 0);
@@ -768,7 +835,29 @@ export function createNativePartyMember(
     ...resolvedFeatureGrants,
     ...featGrants,
     ...resolvedFeatGrants,
-  ];
+  ].filter((grant) => !grant.level || Number(grant.level) <= totalLevel);
+
+  const effectiveSelectedSpells = [...selectedSpells];
+  const selectedSpellNames = new Set(
+    effectiveSelectedSpells.map((spell) => String(spell.name || "").toLowerCase()),
+  );
+  for (const grant of _generatedGrants.filter((entry) => entry.type === "spell_known")) {
+    const spec = typeof grant.value === "string" ? { name: grant.value, level: 0 } : grant.value;
+    const name = String(spec?.name || "");
+    if (!name || selectedSpellNames.has(name.toLowerCase())) continue;
+    const databaseSpell = effectData?.spells?.find(
+      (spell: any) => String(spell.name || "").toLowerCase() === name.toLowerCase(),
+    );
+    effectiveSelectedSpells.push(
+      databaseSpell || {
+        id: `granted-${normalizeName(name)}`,
+        name,
+        level: Number(spec?.level || 0),
+        description: "",
+      },
+    );
+    selectedSpellNames.add(name.toLowerCase());
+  }
 
   const generatedSkills = _generatedGrants
     .filter((g) => g.type === "skill_proficiency")
@@ -803,8 +892,10 @@ export function createNativePartyMember(
         (mi: any) => mi.name.toLowerCase() === item.name.toLowerCase(),
       );
 
-      const isShield = item.name.toLowerCase() === "shield";
-      const inferredArmor = ARMOR_AC[item.name];
+      const isShield = /\bshield\b/i.test(item.name) || item.armorTypeId === 4;
+      const inferredArmor = Object.entries(ARMOR_AC).find(
+        ([name]) => normalizedEquipmentName(name) === normalizedEquipmentName(item.name),
+      )?.[1];
       const inferredWeapon = WEAPON_DAMAGE[item.name];
 
       // Determine weapon stats
@@ -816,7 +907,8 @@ export function createNativePartyMember(
         : inferredWeapon?.properties;
 
       // Determine armor stats
-      const armorClass = dbArmor ? dbArmor.baseAc : isShield ? 2 : inferredArmor?.base;
+      const armorClass =
+        item.armorClass ?? (dbArmor ? dbArmor.baseAc : isShield ? 2 : inferredArmor?.base);
 
       inventory.push({
         name: item.name,
@@ -831,6 +923,7 @@ export function createNativePartyMember(
         damage,
         properties,
         armorClass,
+        armorTypeId: item.armorTypeId,
         description:
           item.description ||
           dbMagicItem?.description ||
@@ -887,7 +980,7 @@ export function createNativePartyMember(
   }
 
   // 2. Active Spells foundryJson
-  for (const spell of selectedSpells) {
+  for (const spell of effectiveSelectedSpells) {
     if (spell.foundryJson) {
       _generatedGrants.push(
         ...parseFoundryEffectsToGrants(spell.foundryJson, spell.name, spell.name),
@@ -968,7 +1061,7 @@ export function createNativePartyMember(
   });
 
   // Active Spells
-  const linkedSpellEffects = spellEffectDetails(selectedSpells, effectData as any);
+  const linkedSpellEffects = spellEffectDetails(effectiveSelectedSpells, effectData as any);
   const normalizedSpellEffects = normalizeActiveEffects(linkedSpellEffects, {
     finalScores: baseScores,
     proficiencyBonus,
@@ -1132,7 +1225,7 @@ export function createNativePartyMember(
     }
   }
   const armorClass = calculateArmorClass(inventory, dexMod) + acBonus;
-  const attacks = inventoryToAttacks(inventory, finalScores, proficiencyBonus);
+  const attacks = inventoryToAttacks(inventory, finalScores, proficiencyBonus, weaponProficiencies);
 
   // Speed
   const speed = (raceData?.speed || 30) + (speedBonuses.walk || 0);
@@ -1258,14 +1351,13 @@ export function createNativePartyMember(
   const primProg = classData?.spellcastingJson
     ? parseJsonValue(classData.spellcastingJson, {})?.progression
     : "";
-  const isMulticlassCaster =
-    state.multiClasses &&
-    state.multiClasses.length > 0 &&
-    (primProg ||
-      state.multiClasses.some((mc: any) => {
-        const mcCls = effectData?.classes?.find((c: any) => c.id === mc.classId);
-        return mcCls?.spellcastingJson;
-      }));
+  const spellcastingClassCount =
+    (primProg ? 1 : 0) +
+    (state.multiClasses || []).filter((mc: any) => {
+      const mcCls = effectData?.classes?.find((c: any) => c.id === mc.classId);
+      return Boolean(mcCls?.spellcastingJson);
+    }).length;
+  const isMulticlassCaster = spellcastingClassCount > 1;
 
   if (primProg === "full") {
     casterLevelFloat += level;
@@ -1369,10 +1461,10 @@ export function createNativePartyMember(
     }
   }
 
-  const cantrips = selectedSpells
+  const cantrips = effectiveSelectedSpells
     .filter((spell) => Number(spell.level || 0) === 0)
     .map(spellToPreparedSpell);
-  const preparedSpells = selectedSpells
+  const preparedSpells = effectiveSelectedSpells
     .filter((spell) => Number(spell.level || 0) > 0)
     .map(spellToPreparedSpell);
 
@@ -1433,7 +1525,16 @@ export function createNativePartyMember(
       10 + (skills.find((skill) => skill.key === "investigation")?.modifier ?? intMod),
     passiveInsight: 10 + (skills.find((skill) => skill.key === "insight")?.modifier ?? wisMod),
     armorClass,
-    initiative: dexMod,
+    initiative:
+      dexMod +
+      (_generatedGrants.some(
+        (grant) =>
+          grant.type === "feature_reference" &&
+          grant.value?.source === "feat" &&
+          /^alert$/i.test(String(grant.value?.name || "")),
+      )
+        ? proficiencyBonus
+        : 0),
     speed,
     proficiencyBonus,
     senses,
@@ -1501,6 +1602,73 @@ export function createNativePartyMember(
   } as any;
 
   return member;
+}
+
+export function refreshNativePartyMemberSnapshot(member: PartyMember): PartyMember {
+  const explicitlyLockedFeatureNames = new Set<string>();
+  const features = (member.features ?? []).filter((feature) => {
+    const statedUnlockLevel = feature.description?.match(/when you reach character level\s+(\d+)/i);
+    const unlockLevel = Number(feature.level || statedUnlockLevel?.[1] || 1);
+    const isUnlocked = feature.isUnlocked !== false && unlockLevel <= member.level;
+    if (!isUnlocked) explicitlyLockedFeatureNames.add(feature.name.toLowerCase());
+    return isUnlocked;
+  });
+
+  const dexModifier = member.abilities.find((ability) => ability.name === "DEX")?.modifier ?? 0;
+  const hasAlert = (member.feats ?? []).some((feat) => /^alert$/i.test(feat.name));
+  const initiative =
+    hasAlert && member.initiative === dexModifier
+      ? member.initiative + member.proficiencyBonus
+      : member.initiative;
+
+  const cantrips = [...(member.cantrips ?? [])];
+  const hasTinkersMagic = features.some((feature) => /^tinker's magic$/i.test(feature.name));
+  if (hasTinkersMagic && !cantrips.some((spell) => /^mending$/i.test(spell.name))) {
+    cantrips.push({
+      level: 0,
+      name: "Mending",
+      description: "Granted by Tinker's Magic.",
+      prepared: true,
+      alwaysPrepared: true,
+    });
+  }
+
+  const finalScores = Object.fromEntries(
+    member.abilities.map((ability) => [ability.name, ability.score]),
+  ) as Record<string, number>;
+  const refreshedActions = new Map<string, ActionInfo>();
+  for (const action of deriveActionsFromFeatures(features, {
+    ...finalScores,
+    level: member.level,
+  })) {
+    refreshedActions.set(action.name, action);
+  }
+  for (const action of member.actions ?? []) {
+    if (!explicitlyLockedFeatureNames.has(action.name.toLowerCase())) {
+      refreshedActions.set(action.name, action);
+    }
+  }
+  const weaponAttacks = inventoryToAttacks(
+    member.inventory ?? [],
+    finalScores,
+    member.proficiencyBonus,
+    member.weaponProficiencies ?? [],
+  );
+  const nonWeaponAttacks = (member.attacks ?? []).filter((attack) => !attack.isWeapon);
+  const armorClassBonus = (member._generatedGrants ?? [])
+    .filter((grant: any) => grant.type === "armor_class_bonus")
+    .reduce((total: number, grant: any) => total + Number(grant.value || 0), 0);
+
+  return {
+    ...member,
+    features,
+    actions: Array.from(refreshedActions.values()),
+    initiative,
+    cantrips,
+    allSpells: [...cantrips, ...(member.preparedSpells ?? [])],
+    armorClass: calculateArmorClass(member.inventory ?? [], dexModifier) + armorClassBonus,
+    attacks: [...weaponAttacks, ...nonWeaponAttacks],
+  };
 }
 
 export const saveNativeCharacter = createServerFn({ method: "POST" })
@@ -1827,6 +1995,7 @@ export function computeCharacterSnapshot(canonicalCharacter: any, forgeData: any
       itemActiveEffects: forgeData?.itemActiveEffects || [],
       spellActiveEffects: forgeData?.spellActiveEffects || [],
       magicItems: forgeData?.magicItems || [],
+      spells: forgeData?.spells || [],
       feats: forgeData?.feats || [],
       weapons: forgeData?.weapons || [],
       armor: forgeData?.armor || [],

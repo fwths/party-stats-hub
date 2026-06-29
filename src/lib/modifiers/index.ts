@@ -12,6 +12,7 @@ import {
   getResourcesKey,
   getMetamagicKey,
   getMasteriesKey,
+  getInspirationKey,
 } from "./storage-keys";
 import { applyOverrides } from "./apply-overrides";
 import { calculateModifiedAc } from "./ac";
@@ -43,6 +44,7 @@ function getLocalOverridesRecord(memberId: number): Record<string, string | null
     getResourcesKey(memberId),
     getMetamagicKey(memberId),
     getMasteriesKey(memberId),
+    getInspirationKey(memberId),
   ];
   const record: Record<string, string | null> = {};
   keys.forEach((key) => {

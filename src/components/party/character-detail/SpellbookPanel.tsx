@@ -609,14 +609,20 @@ export default function SpellbookPanel({
   const isStarsDruid = useMemo(() => {
     return (
       member.classes.toLowerCase().includes("druid") &&
-      (member.features?.some((f) => f.name.toLowerCase().includes("starry form")) || false)
+      (member.features?.some(
+        (f) => f.isUnlocked !== false && f.name.toLowerCase().includes("starry form"),
+      ) ||
+        false)
     );
   }, [member]);
 
   const isGlamourBard = useMemo(() => {
     return (
       member.classes.toLowerCase().includes("bard") &&
-      (member.features?.some((f) => f.name.toLowerCase().includes("mantle of majesty")) || false)
+      (member.features?.some(
+        (f) => f.isUnlocked !== false && f.name.toLowerCase().includes("mantle of majesty"),
+      ) ||
+        false)
     );
   }, [member]);
 
@@ -631,7 +637,7 @@ export default function SpellbookPanel({
     (spell: PreparedSpell) => {
       if (!spell.uses) return null;
       const spentKey = `spell-uses:${spell.name}:${spell.uses.reset || "long rest"}`;
-      const spent = localResources.spent?.[spentKey] ?? 0;
+      const spent = localResources.getSpent(spentKey);
       const current = Math.max(0, spell.uses.max - spent);
       return {
         ...spell.uses,
@@ -639,7 +645,7 @@ export default function SpellbookPanel({
         spent,
       };
     },
-    [localResources.spent],
+    [localResources],
   );
 
   const getIsPrepared = useCallback(
@@ -996,7 +1002,8 @@ export default function SpellbookPanel({
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-amber-500/10 border border-amber-500/25 font-mono text-xs text-amber-400 font-bold"
                   title={`Reset: ${effUses.reset}`}
                 >
-                  <Zap className="w-3 h-3 text-amber-400 fill-amber-400/20" /> {effUses.current} / {effUses.max} Uses
+                  <Zap className="w-3 h-3 text-amber-400 fill-amber-400/20" /> {effUses.current} /{" "}
+                  {effUses.max} Uses
                 </span>
               );
             })()}
@@ -1248,7 +1255,8 @@ export default function SpellbookPanel({
                       className="w-full py-2 px-3 rounded-lg border bg-amber-500/5 border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500 text-[10.5px] font-bold transition-all hover:scale-[1.01] active:scale-[0.98] flex flex-col items-center justify-center gap-0.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
                     >
                       <span className="flex items-center gap-1.5 justify-center">
-                        <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20 animate-pulse" /> Cast using Spell Use
+                        <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20 animate-pulse" />{" "}
+                        Cast using Spell Use
                       </span>
                       <span className="text-[8.5px] font-normal opacity-85">
                         {effUses.current} / {effUses.max} left (Reset: {effUses.reset})
@@ -1874,7 +1882,8 @@ export default function SpellbookPanel({
                                       className="inline-flex items-center gap-0.5 rounded bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 text-[7px] uppercase tracking-wider text-amber-400 font-bold"
                                       title={`Reset: ${effUses.reset}`}
                                     >
-                                      <Zap className="w-2 h-2 text-amber-400 fill-amber-400/20" /> {effUses.current} / {effUses.max} Uses
+                                      <Zap className="w-2 h-2 text-amber-400 fill-amber-400/20" />{" "}
+                                      {effUses.current} / {effUses.max} Uses
                                     </span>
                                   );
                                 })()}

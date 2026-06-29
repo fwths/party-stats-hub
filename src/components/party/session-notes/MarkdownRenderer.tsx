@@ -381,12 +381,12 @@ export function MarkdownRenderer({
                     alt={matchMemberText.name}
                     className="h-[26px] w-[26px] rounded-full object-cover border border-border/50 shadow-sm flex-shrink-0"
                   />
-                  <span>{parseInlineStyles(part, onSelectPage)}</span>
+                  <span>{parseInlineStyles(part, onSelectPage, members)}</span>
                 </span>
               );
             }
 
-            return <span key={idx}>{parseInlineStyles(part, onSelectPage)}</span>;
+            return <span key={idx}>{parseInlineStyles(part, onSelectPage, members)}</span>;
           });
 
           // Join items with commas
@@ -488,7 +488,7 @@ export function MarkdownRenderer({
             className="my-4 flex gap-3 p-4 rounded-lg bg-gold/5 border border-gold/25 text-foreground/90 text-sm select-text leading-relaxed"
           >
             <span className="text-lg flex-shrink-0 select-none">{emoji}</span>
-            <div className="flex-1">{parseInlineStyles(text, onSelectPage)}</div>
+            <div className="flex-1">{parseInlineStyles(text, onSelectPage, members)}</div>
           </div>,
         );
         continue;
@@ -498,16 +498,21 @@ export function MarkdownRenderer({
     // Checkbox items (to_do)
     if (trimmed.startsWith("- [ ] ") || trimmed.startsWith("- [x] ")) {
       const isChecked = trimmed.startsWith("- [x] ");
+      const indentMatch = line.match(/^(\s*)/);
+      const indentSpaces = indentMatch ? indentMatch[1].length : 0;
+      const depth = Math.floor(indentSpaces / 2);
+      const plValue = 1 + depth * 4;
       elements.push(
         <div
           key={keyCounter++}
-          className="flex items-start gap-2.5 text-sm text-foreground/80 leading-relaxed my-1.5 pl-1"
+          style={{ paddingLeft: `${plValue * 4}px` }}
+          className="flex items-start gap-2.5 text-sm text-foreground/85 leading-relaxed my-1.5"
         >
           <span className="mt-1 flex-shrink-0 text-gold select-none">
             {isChecked ? <CheckCircle2 size={13} className="text-gold" /> : <Circle size={13} />}
           </span>
           <span className={isChecked ? "line-through text-muted-foreground" : ""}>
-            {parseInlineStyles(trimmed.slice(6), onSelectPage)}
+            {parseInlineStyles(trimmed.slice(6), onSelectPage, members)}
           </span>
         </div>,
       );
@@ -519,9 +524,9 @@ export function MarkdownRenderer({
       elements.push(
         <blockquote
           key={keyCounter++}
-          className="my-3 pl-4 border-l-2 border-gold/40 italic text-foreground/80 text-sm select-text leading-relaxed"
+          className="my-3.5 pl-4 border-l-2 border-gold/40 italic text-foreground/80 text-sm select-text leading-relaxed"
         >
-          {parseInlineStyles(trimmed.slice(2), onSelectPage)}
+          {parseInlineStyles(trimmed.slice(2), onSelectPage, members)}
         </blockquote>,
       );
       continue;
@@ -530,7 +535,7 @@ export function MarkdownRenderer({
     // Horizontal Ruler Divider
     if (trimmed === "---") {
       elements.push(
-        <hr key={keyCounter++} className="my-5 border-t border-border/30 select-none" />,
+        <hr key={keyCounter++} className="my-6 border-t border-border/30 select-none" />,
       );
       continue;
     }
@@ -565,9 +570,9 @@ export function MarkdownRenderer({
       elements.push(
         <h1
           key={keyCounter++}
-          className="font-heading text-lg font-bold tracking-tight text-gold mt-5 mb-3 border-b border-border/30 pb-2"
+          className="font-heading text-xl sm:text-2xl font-bold tracking-tight text-gold mt-10 mb-4 border-b border-border/30 pb-2"
         >
-          {parseInlineStyles(trimmed.slice(2), onSelectPage)}
+          {parseInlineStyles(trimmed.slice(2), onSelectPage, members)}
         </h1>,
       );
       continue;
@@ -576,9 +581,9 @@ export function MarkdownRenderer({
       elements.push(
         <h2
           key={keyCounter++}
-          className="font-heading text-base font-bold tracking-tight text-foreground mt-4 mb-2 border-b border-border/20 pb-1"
+          className="font-heading text-lg sm:text-xl font-bold tracking-tight text-gold/90 mt-8 mb-3 border-b border-border/30 pb-1.5"
         >
-          {parseInlineStyles(trimmed.slice(3), onSelectPage)}
+          {parseInlineStyles(trimmed.slice(3), onSelectPage, members)}
         </h2>,
       );
       continue;
@@ -587,23 +592,63 @@ export function MarkdownRenderer({
       elements.push(
         <h3
           key={keyCounter++}
-          className="font-heading text-sm font-bold tracking-tight text-foreground mt-3.5 mb-1.5"
+          className="font-heading text-base sm:text-lg font-bold tracking-tight text-gold/80 mt-6 mb-2"
         >
-          {parseInlineStyles(trimmed.slice(4), onSelectPage)}
+          {parseInlineStyles(trimmed.slice(4), onSelectPage, members)}
         </h3>,
+      );
+      continue;
+    }
+    if (trimmed.startsWith("#### ")) {
+      elements.push(
+        <h4
+          key={keyCounter++}
+          className="font-heading text-sm sm:text-base font-bold tracking-tight text-gold/70 mt-4 mb-2"
+        >
+          {parseInlineStyles(trimmed.slice(5), onSelectPage, members)}
+        </h4>,
+      );
+      continue;
+    }
+    if (trimmed.startsWith("##### ")) {
+      elements.push(
+        <h5
+          key={keyCounter++}
+          className="font-heading text-xs sm:text-sm font-bold tracking-tight text-gold/65 mt-3 mb-1"
+        >
+          {parseInlineStyles(trimmed.slice(6), onSelectPage, members)}
+        </h5>,
+      );
+      continue;
+    }
+    if (trimmed.startsWith("###### ")) {
+      elements.push(
+        <h6
+          key={keyCounter++}
+          className="font-heading text-[11px] sm:text-xs font-bold tracking-tight text-gold/60 mt-2 mb-1"
+        >
+          {parseInlineStyles(trimmed.slice(7), onSelectPage, members)}
+        </h6>,
       );
       continue;
     }
 
     // Bullet lists - custom gold diamond marker
     if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      const indentMatch = line.match(/^(\s*)/);
+      const indentSpaces = indentMatch ? indentMatch[1].length : 0;
+      const depth = Math.floor(indentSpaces / 2);
+      const plValue = 1 + depth * 4;
       elements.push(
         <div
           key={keyCounter++}
-          className="flex items-start gap-2 text-sm text-foreground/80 leading-relaxed my-1 pl-1"
+          style={{ paddingLeft: `${plValue * 4}px` }}
+          className="flex items-start gap-2 text-sm text-foreground/85 leading-relaxed my-1.5"
         >
-          <span className="text-gold mt-1.5 text-[8px] flex-shrink-0">◆</span>
-          <span>{parseInlineStyles(trimmed.slice(2), onSelectPage)}</span>
+          <span className="text-gold mt-1.5 text-[8px] flex-shrink-0">
+            {depth % 2 === 0 ? "◆" : "◇"}
+          </span>
+          <span>{parseInlineStyles(trimmed.slice(2), onSelectPage, members)}</span>
         </div>,
       );
       continue;
@@ -613,15 +658,20 @@ export function MarkdownRenderer({
     if (/^\d+\.\s+/.test(trimmed)) {
       const match = trimmed.match(/^(\d+)\.\s+/);
       const num = match ? match[1] : "1";
+      const indentMatch = line.match(/^(\s*)/);
+      const indentSpaces = indentMatch ? indentMatch[1].length : 0;
+      const depth = Math.floor(indentSpaces / 2);
+      const plValue = 1 + depth * 4;
       elements.push(
         <div
           key={keyCounter++}
-          className="flex items-start gap-2 text-sm text-foreground/80 leading-relaxed my-1 pl-1"
+          style={{ paddingLeft: `${plValue * 4}px` }}
+          className="flex items-start gap-2 text-sm text-foreground/85 leading-relaxed my-1.5"
         >
           <span className="text-gold font-bold font-mono text-xs mt-0.5 min-w-[15px] text-right">
             {num}.
           </span>
-          <span>{parseInlineStyles(trimmed.replace(/^\d+\.\s+/, ""), onSelectPage)}</span>
+          <span>{parseInlineStyles(trimmed.replace(/^\d+\.\s+/, ""), onSelectPage, members)}</span>
         </div>,
       );
       continue;
@@ -629,17 +679,17 @@ export function MarkdownRenderer({
 
     // Paragraph spacing
     if (!trimmed) {
-      elements.push(<div key={keyCounter++} className="h-2 select-none" />);
+      elements.push(<div key={keyCounter++} className="h-3 select-none" />);
       continue;
     }
 
     // Regular paragraphs
     elements.push(
-      <p key={keyCounter++} className="text-sm text-foreground/80 leading-relaxed my-2">
-        {parseInlineStyles(line, onSelectPage)}
+      <p key={keyCounter++} className="text-sm text-foreground/85 leading-relaxed my-2.5">
+        {parseInlineStyles(line, onSelectPage, members)}
       </p>,
     );
   }
 
-  return <div className="space-y-1 select-text">{elements}</div>;
+  return <div className="select-text">{elements}</div>;
 }

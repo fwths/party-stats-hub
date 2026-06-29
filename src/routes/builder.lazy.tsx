@@ -94,12 +94,16 @@ function BuilderWizard() {
     itemCardReferences,
     challengeRatings,
     creatureBuilderEntries,
-  } = Route.useLoaderData();
+    initialCharacter,
+  } = Route.useLoaderData() as any;
   const skillOptions = getSkillOptionsFromDb(skills);
   const toolOptions = getToolOptionsFromDb(mundaneGear, itemTypes);
   const [step, setStep] = useState(1);
   const [showFilters] = useState(false);
   const [character, setCharacter] = useState<BuilderState>(() => {
+    if (initialCharacter) {
+      return initialCharacter;
+    }
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("party_stats_forge_draft");
@@ -158,6 +162,7 @@ function BuilderWizard() {
   };
 
   useEffect(() => {
+    if (character.id) return; // Do not overwrite draft with active character edit
     try {
       localStorage.setItem("party_stats_forge_draft", JSON.stringify(character));
     } catch (e) {
@@ -261,10 +266,17 @@ function BuilderWizard() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
       document.cookie = `${COOKIE_KEY}=${ids.join(",")}; path=/; max-age=31536000; SameSite=Lax`;
 
-      // Clear the draft
-      localStorage.removeItem("party_stats_forge_draft");
+      // Clear the draft only if creating a new character
+      if (!character.id) {
+        localStorage.removeItem("party_stats_forge_draft");
+      }
 
-      toast.success("Character built natively and added to party!", "Forge Successful");
+      toast.success(
+        character.id
+          ? "Character updated successfully!"
+          : "Character built natively and added to party!",
+        "Forge Successful",
+      );
       navigate({ to: "/" });
     } catch (e) {
       console.error(e);

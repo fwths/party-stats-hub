@@ -44,6 +44,46 @@ export function queueSync(key: string, value: string | null) {
   }, 1000); // 1 second debounce
 }
 
+export async function flushSync() {
+  if (syncTimeout) {
+    clearTimeout(syncTimeout);
+    syncTimeout = null;
+  }
+  
+  const snapshot = { ...syncQueue };
+  const entries = Object.entries(snapshot);
+  if (entries.length === 0) return;
+
+  for (const k of Object.keys(snapshot)) {
+    delete syncQueue[k];
+  }
+
+  const requeueMissing = () => {
+    for (const [key, value] of Object.entries(snapshot)) {
+      if (!(key in syncQueue)) {
+        syncQueue[key] = value;
+      }
+    }
+  };
+
+  try {
+    const res = await fetch("/api/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        batch: entries.map(([k, v]) => ({ key: k, value: v })),
+      }),
+    });
+    if (!res.ok) {
+      console.warn("Failed to flush sync changes to server, re-queuing:", await res.text());
+      requeueMissing();
+    }
+  } catch (err) {
+    console.warn("Network error during flush sync to server, re-queuing:", err);
+    requeueMissing();
+  }
+}
+
 export async function initSyncEngine() {
   if (typeof window === "undefined") return;
   if (isInitialized) return;

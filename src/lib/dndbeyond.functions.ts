@@ -7,11 +7,12 @@ import { applyOverrides } from "./modifiers/apply-overrides";
 export * from "./dndbeyond.types";
 export * from "./dndbeyond.parser";
 
-export const getParty = createServerFn({ method: "GET" })
+export const getParty = createServerFn({ method: "POST" })
   .inputValidator(
     z
       .object({
         ids: z.array(z.number().int().positive()).optional(),
+        force: z.boolean().optional(),
       })
       .optional()
       .transform((data) => data ?? {}),
@@ -22,7 +23,7 @@ export const getParty = createServerFn({ method: "GET" })
       : [];
     const ids = inputIds.length > 0 ? inputIds : PARTY_CHARACTER_IDS;
     const { loadParty } = await import("./dndbeyond.server");
-    let members = await loadParty(ids);
+    let members = await loadParty(ids, data.force);
 
     try {
       // Dynamic import to prevent bundler trying to resolve node:sqlite in client context

@@ -506,9 +506,25 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
     }
   }, [localData, storageKey]);
 
+  const getDefaultSpent = (name: string): number => {
+    const action = initialActions.find((a) => a.name === name);
+    if (action && action.uses) {
+      return action.uses.max - action.uses.current;
+    }
+    return 0;
+  };
+
+  const getSpent = (name: string): number => {
+    if (localData.spent[name] !== undefined) {
+      return localData.spent[name];
+    }
+    return getDefaultSpent(name);
+  };
+
   const useResource = (name: string, max: number) => {
     setLocalData((prev) => {
-      const currentSpent = prev.spent[name] ?? 0;
+      const currentSpent =
+        prev.spent[name] !== undefined ? prev.spent[name] : getDefaultSpent(name);
       if (currentSpent >= max) return prev;
       return {
         spent: {
@@ -521,12 +537,14 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
 
   const useResourceAmount = (name: string, amount: number, max: number) => {
     setLocalData((prev) => {
-      const currentSpent = prev.spent[name] ?? 0;
-      if (currentSpent >= max) return prev;
+      const currentSpent =
+        prev.spent[name] !== undefined ? prev.spent[name] : getDefaultSpent(name);
+      if (amount >= 0 && currentSpent >= max) return prev;
+      if (amount < 0 && currentSpent <= 0) return prev;
       return {
         spent: {
           ...prev.spent,
-          [name]: Math.min(max, currentSpent + amount),
+          [name]: Math.max(0, Math.min(max, currentSpent + amount)),
         },
       };
     });
@@ -534,7 +552,8 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
 
   const regainResource = (name: string) => {
     setLocalData((prev) => {
-      const currentSpent = prev.spent[name] ?? 0;
+      const currentSpent =
+        prev.spent[name] !== undefined ? prev.spent[name] : getDefaultSpent(name);
       if (currentSpent <= 0) return prev;
       return {
         spent: {
@@ -547,7 +566,8 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
 
   const toggleResourceBubble = (name: string, index: number, max: number) => {
     setLocalData((prev) => {
-      const currentSpent = prev.spent[name] ?? 0;
+      const currentSpent =
+        prev.spent[name] !== undefined ? prev.spent[name] : getDefaultSpent(name);
       const remaining = max - currentSpent;
       let newSpent = currentSpent;
       if (index < remaining) {
@@ -584,8 +604,7 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
         if (key.startsWith("spell-uses:")) {
           const parts = key.split(":");
           const resetType = parts[2] ? parts[2].toLowerCase() : "long rest";
-          const isShortRestResource =
-            resetType.includes("short") || resetType === "rest";
+          const isShortRestResource = resetType.includes("short") || resetType === "rest";
           const shouldReset = isLongRest || isShortRestResource;
           if (shouldReset) {
             nextSpent[key] = 0;
@@ -603,7 +622,7 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
   };
 
   const getEffectiveResource = (a: ActionInfo) => {
-    const spent = localData.spent[a.name] ?? 0;
+    const spent = getSpent(a.name);
     const current = Math.max(0, (a.uses?.max ?? 0) - spent);
     return {
       ...a,
@@ -619,6 +638,7 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
 
   return {
     spent: localData.spent,
+    getSpent,
     useResource,
     useResourceAmount,
     regainResource,

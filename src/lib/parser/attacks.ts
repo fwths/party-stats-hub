@@ -89,7 +89,18 @@ export function computeAttacks(
       baseAtkBonus += genMods.attackBonus;
 
       const toHitOverride = getCvValue(item_id, 11);
-      const toHitBonus = getCvValue(item_id, 10);
+
+      const hasWeaponMastery =
+        (data.classes ?? []).some((c: any) =>
+          (c.classFeatures ?? []).some((cf: any) =>
+            cf.definition?.name?.toLowerCase().includes("weapon mastery"),
+          ),
+        ) ||
+        (data.feats ?? []).some((f: any) =>
+          f.definition?.name?.toLowerCase().includes("weapon mastery"),
+        );
+
+      const toHitBonus = hasWeaponMastery ? undefined : getCvValue(item_id, 10);
 
       let atkBonus = baseAtkBonus;
       if (typeof toHitOverride === "number") {
@@ -153,16 +164,16 @@ export function computeAttacks(
     1: "Bludgeoning",
     2: "Piercing",
     3: "Slashing",
-    4: "Acid",
-    5: "Cold",
-    6: "Fire",
-    7: "Lightning",
-    8: "Necrotic",
+    4: "Necrotic",
+    5: "Acid",
+    6: "Cold",
+    7: "Fire",
+    8: "Lightning",
     9: "Thunder",
     10: "Force",
     11: "Psychic",
-    12: "Poison",
-    13: "Radiant",
+    12: "Radiant",
+    13: "Poison",
   };
 
   for (const [source, list] of sources) {

@@ -6,6 +6,30 @@ import { PartyMember } from "@/lib/dndbeyond.types";
 import { Panel, CustomSelect } from "../CharacterDetailView";
 import { RAGE_DICTIONARY, WEAPON_MASTERY_DICTIONARY } from "./watermark-data";
 
+function simplifyDamageFormula(formula: string): string {
+  if (!formula || formula === "None") return formula;
+  const diceRegex = /^(-?\d+d\d+)/i;
+  const match = formula.match(diceRegex);
+  if (!match) return formula;
+
+  const dicePart = match[1];
+  const rest = formula.substring(dicePart.length);
+  const terms = rest.replace(/\s+/g, "").match(/[+-]\d+/g) ?? [];
+
+  let sum = 0;
+  for (const term of terms) {
+    sum += parseInt(term, 10);
+  }
+
+  if (sum > 0) {
+    return `${dicePart} + ${sum}`;
+  } else if (sum < 0) {
+    return `${dicePart} - ${Math.abs(sum)}`;
+  } else {
+    return dicePart;
+  }
+}
+
 const DAMAGE_TYPE_THEMES: Record<string, { bg: string; text: string; border: string }> = {
   fire: { bg: "bg-ui-red/10", text: "text-ui-red", border: "border-ui-red/30" },
   cold: { bg: "bg-ui-cyan/10", text: "text-ui-cyan", border: "border-ui-cyan/30" },
@@ -180,6 +204,46 @@ export function AttacksPanel({
         return a;
       });
     }
+
+    // Add dynamic Heavy Weapon Mastery damage bonus
+    const hasHeavyWeaponMastery =
+      member.actions?.some(
+        (a) =>
+          a.name.toLowerCase() === "heavy weapon mastery" ||
+          a.name.toLowerCase() === "great weapon master",
+      ) ||
+      member.features?.some(
+        (f) =>
+          f.isUnlocked !== false &&
+          (f.name.toLowerCase() === "heavy weapon mastery" ||
+            f.name.toLowerCase() === "great weapon master"),
+      );
+
+    if (hasHeavyWeaponMastery) {
+      list = list.map((a) => {
+        const isHeavy = a.properties?.some((p: string) => p.toLowerCase() === "heavy");
+        if (isHeavy && a.damage) {
+          const pb = member.proficiencyBonus;
+          return {
+            ...a,
+            damage: `${a.damage} + ${pb}`,
+            properties: [...(a.properties ?? []), `+${pb} Heavy Wpn Mastery`],
+          };
+        }
+        return a;
+      });
+    }
+
+    // Simplify all damage formulas
+    list = list.map((a) => {
+      if (a.damage) {
+        return {
+          ...a,
+          damage: simplifyDamageFormula(a.damage),
+        };
+      }
+      return a;
+    });
 
     return list;
   })();
@@ -415,7 +479,9 @@ export function ResourcesPanel({
   })();
 
   const rageOptions = (() => {
-    const hasRageOfTheWilds = (member.features ?? []).some((f) => f.name === "Rage of the Wilds");
+    const hasRageOfTheWilds = (member.features ?? []).some(
+      (f) => f.isUnlocked !== false && f.name === "Rage of the Wilds",
+    );
     if (hasRageOfTheWilds) {
       return ["None", "Bear", "Eagle", "Wolf"];
     }
@@ -599,7 +665,7 @@ export function ResourcesPanel({
                     </button>
                     <button
                       onClick={() => localResources.regainResource(a.name)}
-                      disabled={(localResources.spent[a.name] ?? 0) <= 0}
+                      disabled={localResources.getSpent(a.name) <= 0}
                       className="rounded-lg border border-border/50 bg-secondary/35 px-2.5 py-1 text-[9.5px] font-semibold text-muted-foreground hover:border-accent/40 hover:text-accent hover:bg-secondary/60 disabled:opacity-30 cursor-pointer focus:outline-none transition-all"
                     >
                       Regain

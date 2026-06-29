@@ -43,3 +43,7 @@ export function getMetamagicKey(memberId: number) {
 export function getMasteriesKey(memberId: number) {
   return `party-stats:masteries:${memberId}`;
 }
+
+export function getInspirationKey(memberId: number) {
+  return `party-stats:inspiration:${memberId}`;
+}

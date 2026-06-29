@@ -97,9 +97,9 @@ export function partyQueryOptions(ids: number[] | null) {
   return queryOptions({
     queryKey: ["party", effective],
     queryFn: () => getParty({ data: { ids: effective } }),
-    staleTime: 15_000,
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
+    staleTime: Infinity,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });

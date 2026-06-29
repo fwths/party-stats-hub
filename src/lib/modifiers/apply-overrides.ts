@@ -12,6 +12,7 @@ import {
   getResourcesKey,
   getMetamagicKey,
   getMasteriesKey,
+  getInspirationKey,
 } from "./storage-keys";
 
 export function applyOverrides(
@@ -50,6 +51,13 @@ export function applyOverrides(
     } catch (e) {
       console.warn(`Failed to parse HP overrides for character ${id}:`, e);
     }
+  }
+
+  // 1b. Inspiration Override
+  const inspirationRaw = values[getInspirationKey(id)];
+  let inspiration = member.inspiration;
+  if (inspirationRaw !== undefined && inspirationRaw !== null) {
+    inspiration = inspirationRaw === "true";
   }
 
   // 2. Conditions
@@ -228,6 +236,7 @@ export function applyOverrides(
     actions,
     metamagic,
     weaponMasteries,
+    inspiration,
     // Pass custom properties for modifiers logic:
     ...({ rageState: activeRage } as any),
   };

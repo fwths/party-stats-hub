@@ -53,6 +53,9 @@ books/
 !src/data/**/*.json
 !parsed_classes/**/*.json
 !src/lib/notion-cache-seed.json
+!schemas/
+!schemas/audit/
+!schemas/audit/*.json
 
 # Databases
 *.db
@@ -68,7 +71,9 @@ bundle-stats.html
 
 # Temporary & Scratch
 scratch/
-.agents/
+.agents/*
+!.agents/audit/
+!.agents/audit/**
 2024_spells_repo/
 2024_srd_repo/
 

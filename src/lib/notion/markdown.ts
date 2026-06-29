@@ -92,13 +92,41 @@ export function extractRichTextContent(richText: any[]): string {
       if (rt.type === "mention" && rt.mention?.type === "page" && rt.mention.page?.id) {
         return `[${rt.plain_text || "Page"}](pageId:${rt.mention.page.id})`;
       }
-      return rt.plain_text || "";
+
+      let text = rt.plain_text || "";
+      if (!text) return "";
+
+      const match = text.match(/^(\s*)(.*?)(\s*)$/s);
+      const leadingSpace = match ? match[1] : "";
+      let coreText = match ? match[2] : text;
+      const trailingSpace = match ? match[3] : "";
+
+      if (coreText) {
+        const ann = rt.annotations;
+        if (ann) {
+          if (ann.code) {
+            coreText = `\`${coreText}\``;
+          } else {
+            if (ann.bold) coreText = `**${coreText}**`;
+            if (ann.italic) coreText = `*${coreText}*`;
+            if (ann.strikethrough) coreText = `~~${coreText}~~`;
+            if (ann.underline) coreText = `<u>${coreText}</u>`;
+          }
+        }
+
+        const url = rt.href || rt.text?.link?.url;
+        if (url) {
+          coreText = `[${coreText}](${url})`;
+        }
+      }
+
+      return leadingSpace + coreText + trailingSpace;
     })
     .join("");
 }
 
 // Notion Block to Markdown Parser Helper
-export function parseNotionBlocksToMarkdown(blocks: any[]): string {
+export function parseNotionBlocksToMarkdown(blocks: any[], depth = 0, contextPrefix = ""): string {
   let markdown = "";
 
   for (const block of blocks) {
@@ -107,41 +135,44 @@ export function parseNotionBlocksToMarkdown(blocks: any[]): string {
     if (!blockData) continue;
 
     const textContent = blockData.rich_text ? extractRichTextContent(blockData.rich_text) : "";
+    let blockMarkdown = "";
+
+    const indent = "  ".repeat(depth);
 
     switch (type) {
       case "heading_1":
-        markdown += `# ${textContent}\n\n`;
+        blockMarkdown = `# ${textContent}\n\n`;
         break;
       case "heading_2":
-        markdown += `## ${textContent}\n\n`;
+        blockMarkdown = `## ${textContent}\n\n`;
         break;
       case "heading_3":
-        markdown += `### ${textContent}\n\n`;
+        blockMarkdown = `### ${textContent}\n\n`;
         break;
       case "bulleted_list_item":
-        markdown += `- ${textContent}\n`;
+        blockMarkdown = `${indent}- ${textContent}\n`;
         break;
       case "numbered_list_item":
-        markdown += `1. ${textContent}\n`;
+        blockMarkdown = `${indent}1. ${textContent}\n`;
         break;
       case "to_do":
         const checked = blockData.checked ? "x" : " ";
-        markdown += `- [${checked}] ${textContent}\n`;
+        blockMarkdown = `${indent}- [${checked}] ${textContent}\n`;
         break;
       case "quote":
-        markdown += `> ${textContent}\n\n`;
+        blockMarkdown = `> ${textContent}\n\n`;
         break;
       case "toggle":
-        markdown += `▼ **${textContent}**\n\n`;
+        blockMarkdown = `▼ **${textContent}**\n\n`;
         break;
       case "database_table":
         const dbTitle = blockData.title || "Database";
         const dbResults = blockData.results || [];
 
-        markdown += `### 📊 ${dbTitle}\n\n`;
+        blockMarkdown = `### 📊 ${dbTitle}\n\n`;
 
         if (dbResults.length === 0) {
-          markdown += `*No entries found in this database.*\n\n`;
+          blockMarkdown += `*No entries found in this database.*\n\n`;
         } else {
           const firstEntry = dbResults[0];
           const properties = firstEntry.properties || {};
@@ -152,8 +183,8 @@ export function parseNotionBlocksToMarkdown(blocks: any[]): string {
           const rawColumnKeys = Object.keys(properties).filter((key) => key !== titleKey);
           const columnKeys = sortColumnKeys(rawColumnKeys, dbTitle);
 
-          markdown += `| ${titleKey} | ${columnKeys.join(" | ")} |\n`;
-          markdown += `| ${"--- | ".repeat(columnKeys.length + 1)}\n`;
+          blockMarkdown += `| ${titleKey} | ${columnKeys.join(" | ")} |\n`;
+          blockMarkdown += `| ${"--- | ".repeat(columnKeys.length + 1)}\n`;
 
           for (const entry of dbResults) {
             const props = entry.properties || {};
@@ -168,48 +199,78 @@ export function parseNotionBlocksToMarkdown(blocks: any[]): string {
               return getPropertyValueText(props[key]);
             });
 
-            markdown += `| ${titleLink} | ${cellValues.join(" | ")} |\n`;
+            blockMarkdown += `| ${titleLink} | ${cellValues.join(" | ")} |\n`;
           }
-          markdown += `\n`;
+          blockMarkdown += `\n`;
         }
         break;
       case "callout":
         const emoji = blockData.icon?.emoji || "ℹ️";
-        markdown += `> [!CALLOUT] ${emoji} ${textContent}\n\n`;
+        blockMarkdown = `> [!CALLOUT] ${emoji} ${textContent}\n\n`;
         break;
       case "divider":
-        markdown += `---\n\n`;
+        blockMarkdown = `---\n\n`;
         break;
       case "child_page":
-        markdown += `> [!SUBPAGE] [${blockData.title || "Subpage"}](pageId:${block.id})\n\n`;
+        blockMarkdown = `> [!SUBPAGE] [${blockData.title || "Subpage"}](pageId:${block.id})\n\n`;
         break;
       case "child_database":
-        markdown += `> [!DATABASE] [${blockData.title || "Database"}](pageId:${block.id})\n\n`;
+        blockMarkdown = `> [!DATABASE] [${blockData.title || "Database"}](pageId:${block.id})\n\n`;
         break;
       case "image":
         const imageUrl =
           blockData.type === "external" ? blockData.external?.url : blockData.file?.url;
         if (imageUrl) {
           const caption = blockData.caption ? extractRichTextContent(blockData.caption) : "";
-          markdown += `![${caption || "image"}](${imageUrl})\n\n`;
+          blockMarkdown = `![${caption || "image"}](${imageUrl})\n\n`;
         }
         break;
       case "code":
         const lang = blockData.language || "plain text";
-        markdown += `\`\`\`${lang}\n${textContent}\n\`\`\`\n\n`;
+        blockMarkdown = `\`\`\`${lang}\n${textContent}\n\`\`\`\n\n`;
         break;
       case "paragraph":
-        markdown += `${textContent}\n\n`;
+        blockMarkdown = `${textContent}\n\n`;
         break;
       default:
         if (blockData.rich_text) {
-          markdown += `${textContent}\n\n`;
+          blockMarkdown = `${textContent}\n\n`;
         }
         break;
     }
+
+    if (contextPrefix && blockMarkdown) {
+      blockMarkdown = blockMarkdown
+        .split("\n")
+        .map((line) => (line.trim() !== "" ? contextPrefix + line : line))
+        .join("\n");
+    }
+
+    markdown += blockMarkdown;
+
+    if (block.children && block.children.length > 0) {
+      let newDepth = depth;
+      let newContextPrefix = contextPrefix;
+
+      if (["bulleted_list_item", "numbered_list_item", "to_do"].includes(type)) {
+        newDepth = depth + 1;
+      } else if (type === "quote" || type === "callout") {
+        newContextPrefix = contextPrefix + "> ";
+      }
+
+      const childrenMarkdown = parseNotionBlocksToMarkdown(
+        block.children,
+        newDepth,
+        newContextPrefix,
+      );
+      if (childrenMarkdown) {
+        // Ensure there is spacing between list children and next siblings
+        markdown += childrenMarkdown + "\n";
+      }
+    }
   }
 
-  return markdown.trim();
+  return depth === 0 ? markdown.trim() : markdown;
 }
 
 // Basic Markdown to Notion Block Parser

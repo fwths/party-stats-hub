@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter, Link } from "@tanstack/react-router";
 import { syncedLocalStorage as syncedStorage } from "@/lib/synced-storage";
+import { getParty } from "@/lib/dndbeyond.functions";
+import { flushSync } from "@/lib/sync-engine";
 import {
   Award,
   BookOpen,
@@ -219,6 +223,8 @@ export function CharacterDetailView({
   member: PartyMember;
   allMembers?: PartyMember[];
 }) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const { toast } = useToast();
   const [activeLayout, setActiveLayout] = useState<"classic" | "sticky" | "tabbed" | "widescreen">(
     () => {
@@ -371,7 +377,9 @@ export function CharacterDetailView({
   const isStarsDruid =
     member.classes.toLowerCase().includes("druid") &&
     (member.subclasses.some((s) => s.toLowerCase().includes("stars")) ||
-      (member.features ?? []).some((f) => f.name.toLowerCase().includes("starry form")));
+      (member.features ?? []).some(
+        (f) => f.isUnlocked !== false && f.name.toLowerCase().includes("starry form"),
+      ));
 
   const isGlamourBard =
     member.classes.toLowerCase().includes("bard") &&
@@ -673,14 +681,19 @@ export function CharacterDetailView({
   }
 
   const hasFeralInstinct =
-    member.features?.some((f) => f.name.toLowerCase().includes("feral instinct")) ?? false;
+    member.features?.some(
+      (f) => f.isUnlocked !== false && f.name.toLowerCase().includes("feral instinct"),
+    ) ?? false;
 
   const initEffects = (() => {
     const list: Array<{ type: "adv" | "dis"; text: string }> = [];
     if (hasFeralInstinct) {
       list.push({ type: "adv", text: "Feral Instinct: Advantage on Initiative checks." });
     }
-    const allFeatures = [...(member.features ?? []), ...(member.feats ?? [])];
+    const allFeatures = [
+      ...(member.features ?? []).filter((feature) => feature.isUnlocked !== false),
+      ...(member.feats ?? []),
+    ];
     for (const f of allFeatures) {
       const descLower = (f.description ?? "").toLowerCase();
       if (descLower.includes("advantage on initiative")) {
@@ -794,7 +807,7 @@ export function CharacterDetailView({
 
               const aspectOptions = (() => {
                 const hasAspectOfTheWilds = (member.features ?? []).some(
-                  (f) => f.name === "Aspect of the Wilds",
+                  (f) => f.isUnlocked !== false && f.name === "Aspect of the Wilds",
                 );
                 if (hasAspectOfTheWilds) {
                   return ["Owl", "Panther", "Salmon"];
@@ -2315,14 +2328,33 @@ export function CharacterDetailView({
     <div className="flex flex-col gap-4 relative">
       {isClientMounted && document.getElementById("character-header-actions")
         ? createPortal(
-            <button
-              onClick={() => setShowSyncConfirm(true)}
-              className="rounded-lg border border-border/50 bg-secondary/35 px-2.5 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center gap-1.5 transition-all duration-200"
-              title="Reset local changes and sync with D&D Beyond"
-            >
-              <RefreshCw size={12} />
-              <span className="hidden sm:inline">Sync DDB</span>
-            </button>,
+            <div className="flex items-center gap-2">
+              <Link
+                to="/builder"
+                search={{ id: member.id }}
+                className="rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-accent hover:bg-accent/20 cursor-pointer focus:outline-none flex items-center gap-1.5 transition-all duration-200"
+                title="Level up or edit this character natively"
+              >
+                <Sparkles size={12} className="animate-pulse" />
+                <span>Level Up / Edit</span>
+              </Link>
+              {(!member.isNative || member.id < 900000000) && (
+                <button
+                  onClick={() => setShowSyncConfirm(true)}
+                  className="rounded-lg border border-border/50 bg-secondary/35 px-2.5 py-1.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground hover:border-accent hover:text-accent hover:bg-secondary/60 cursor-pointer focus:outline-none flex items-center gap-1.5 transition-all duration-200"
+                  title={
+                    member.isNative
+                      ? "Reset all native choices and sync back to D&D Beyond"
+                      : "Reset local changes and sync with D&D Beyond"
+                  }
+                >
+                  <RefreshCw size={12} />
+                  <span className={member.isNative ? "" : "hidden sm:inline"}>
+                    {member.isNative ? "Reset to DDB" : "Sync DDB"}
+                  </span>
+                </button>
+              )}
+            </div>,
             document.getElementById("character-header-actions")!,
           )
         : null}
@@ -2376,27 +2408,62 @@ export function CharacterDetailView({
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  localHp.reset();
-                  localSlots.reset();
-                  localResources.reset();
-                  setLocalInnateSorcery(false);
-                  setLocalStarryForm("None");
-                  setLocalMantleOfMajesty(false);
-                  setLocalArmorModel(member.activeArmorModel);
-                  setLocalTotemAspects(member.totemAspects || []);
-                  setLocalMetamagic(member.metamagic || []);
-                  setLocalWeaponMasteries(member.weaponMasteries || []);
-                  setLocalActiveInfusions(member.activeInfusions || []);
-                  setLocalRage("None");
+                onClick={async () => {
                   try {
-                    syncedStorage.removeItem(`party-stats:item-overrides:${member.id}`);
-                    syncedStorage.removeItem(`party-stats:custom-items:${member.id}`);
-                  } catch {}
-                  setAllInvOverrides({});
-                  setLocalCustomItems([]);
-                  clearLocalConditions();
-                  setShowSyncConfirm(false);
+                    // 1. Fetch fresh data from D&D Beyond FIRST
+                    const ids = allMembers?.map((m) => m.id) || [member.id];
+                    const result = await getParty({ data: { ids, force: true } });
+
+                    // 2. Verify the fetch was actually successful and didn't fall back to cache
+                    const updatedMember = result.members.find((m) => m.id === member.id);
+                    if (updatedMember?.error) {
+                      toast.error(updatedMember.error, "Sync Blocked by D&D Beyond");
+                      return; // Abort sync, keep local overrides intact
+                    }
+
+                    // 3. If successful, it's safe to wipe all local overrides
+                    const keysToWipe = [
+                      `party-stats:hp:${member.id}`,
+                      `party-stats:slots:${member.id}`,
+                      `party-stats:resources:${member.id}`,
+                      `party-stats:active-infusions:${member.id}`,
+                      `party-stats:item-overrides:${member.id}`,
+                      `party-stats:custom-items:${member.id}`,
+                      `party-stats:armor-model:${member.id}`,
+                      `party-stats:totem-aspects:${member.id}`,
+                      `party-stats:rage:${member.id}`,
+                      `party-stats:metamagic:${member.id}`,
+                      `party-stats:weapon-masteries:${member.id}`,
+                      `party-stats:inspiration:${member.id}`,
+                    ];
+                    keysToWipe.forEach((key) => {
+                      try {
+                        syncedStorage.removeItem(key);
+                      } catch {}
+                    });
+
+                    try {
+                      const stored = syncedStorage.getItem("mob.conditions.v1");
+                      const all = stored ? JSON.parse(stored) : {};
+                      all[member.id] = [];
+                      syncedStorage.setItem("mob.conditions.v1", JSON.stringify(all));
+                    } catch {}
+
+                    // 4. Flush the sync queue to the server so the KV store is wiped synchronously
+                    await flushSync();
+
+                    toast.success(
+                      "Successfully refreshed character data. Reloading...",
+                      "Synced with D&D Beyond",
+                    );
+
+                    // 5. Force a full reload to completely re-initialize all hooks with fresh server data
+                    window.location.reload();
+                  } catch (err) {
+                    toast.error("Failed to fetch live data from D&D Beyond.", "Sync Failed");
+                  } finally {
+                    setShowSyncConfirm(false);
+                  }
                 }}
                 className="rounded bg-destructive px-4 py-1.5 text-xs font-bold text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
               >

@@ -1,15 +1,22 @@
 import { PreparedSpell, SpellSlotLevel } from "../dndbeyond.types";
 import { MULTI_SLOTS, PACT_TABLE } from "./constants";
 
-export function casterLevelFor(className: string, level: number, subclass: string): number {
+export function casterLevelFor(
+  className: string,
+  level: number,
+  subclass: string,
+  combinesSpellcasting = false,
+): number {
   const n = className.toLowerCase();
   if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(n)) return level;
   if (n === "artificer") return Math.ceil(level / 2); // artificer rounds up
-  if (["paladin", "ranger"].includes(n)) return level >= 2 ? Math.floor(level / 2) : 0;
+  if (["paladin", "ranger"].includes(n)) {
+    return level >= 2 ? (combinesSpellcasting ? Math.floor(level / 2) : Math.ceil(level / 2)) : 0;
+  }
   if (n === "fighter" && /eldritch knight/i.test(subclass))
-    return level >= 3 ? Math.floor(level / 3) : 0;
+    return level >= 3 ? (combinesSpellcasting ? Math.floor(level / 3) : Math.ceil(level / 3)) : 0;
   if (n === "rogue" && /arcane trickster/i.test(subclass))
-    return level >= 3 ? Math.floor(level / 3) : 0;
+    return level >= 3 ? (combinesSpellcasting ? Math.floor(level / 3) : Math.ceil(level / 3)) : 0;
   return 0;
 }
 
@@ -19,12 +26,24 @@ export function computeSpellSlots(data: any): {
 } {
   let casterLevel = 0;
   let warlockLevel = 0;
+  const spellcastingClasses = (data.classes ?? []).filter((c: any) => {
+    const name = String(c.definition?.name ?? "").toLowerCase();
+    const subclass = String(c.subclassDefinition?.name ?? "");
+    return (
+      ["artificer", "bard", "cleric", "druid", "paladin", "ranger", "sorcerer", "wizard"].includes(
+        name,
+      ) ||
+      (name === "fighter" && /eldritch knight/i.test(subclass)) ||
+      (name === "rogue" && /arcane trickster/i.test(subclass))
+    );
+  });
+  const combinesSpellcasting = spellcastingClasses.length > 1;
   for (const c of data.classes ?? []) {
     const name = c.definition?.name ?? "";
     const lvl = c.level ?? 0;
     const sub = c.subclassDefinition?.name ?? "";
     if (name.toLowerCase() === "warlock") warlockLevel += lvl;
-    else casterLevel += casterLevelFor(name, lvl, sub);
+    else casterLevel += casterLevelFor(name, lvl, sub, combinesSpellcasting);
   }
   const usedByLevel = new Map<number, number>();
   for (const s of data.spellSlots ?? []) usedByLevel.set(s.level, s.used ?? 0);

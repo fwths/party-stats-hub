@@ -888,6 +888,7 @@ export function parseCharacterPayload(id: number, payload: any): PartyMember {
       readonlyUrl: data.readonlyUrl ?? `https://www.dndbeyond.com/characters/${id}`,
     };
   } catch (err: any) {
+    console.error("DEBUG STACK:", err.stack);
     return errorMember(id, err?.message ?? "Fetch failed");
   }
 }

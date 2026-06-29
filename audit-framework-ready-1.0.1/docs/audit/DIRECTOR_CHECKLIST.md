@@ -742,3 +742,36 @@ The Repository Director has succeeded when:
 The purpose of this checklist is not bureaucracy.
 
 The purpose is to ensure that every audit cycle produces reliable, repeatable, decision-quality information.
+
+# Executive Dashboard Checklist
+
+Before publishing the executive summary, verify it includes:
+
+```text
+Architecture Score
+Rules Accuracy Score
+Campaign Integrity Score
+Reliability Score
+Security Score
+Maintainability Score
+Operational Readiness Score
+Release Status
+```
+
+If a score is unavailable, use `Not Provided` and explain why.
+
+---
+
+# Director Quality Gate
+
+The Repository Director should verify:
+
+```text
+□ Every official finding passed the evidence gate
+□ The Critic reviewed every finding
+□ Severity corrections were considered
+□ Ownership disputes were resolved
+□ Duplicates were merged or removed
+□ Not A Findings were not placed in the registry
+□ Observations were not assigned permanent finding IDs
+```

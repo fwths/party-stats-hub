@@ -729,3 +729,52 @@ Every section should help engineering teams understand:
 - What matters most
 - What should happen next
 - Why it matters
+
+# v1.0.1 Executive Dashboard And Quality Gate
+
+Begin the executive summary with a one-page dashboard:
+
+```text
+Architecture:              X/100 or Not Provided
+Rules Accuracy:            X/100 or Not Provided
+Campaign Integrity:        X/100 or Not Provided
+Reliability:               X/100 or Not Provided
+Security:                  X/100 or Not Provided
+Maintainability:           X/100 or Not Provided
+Operational Readiness:     X/100 or Not Provided
+Release Status:            Ready / Ready With Remediation / Not Ready / Blocked
+```
+
+## Director Quality Gate
+
+Before finalizing the executive summary, verify:
+
+```text
+□ Critic reviewed every official finding
+□ Findings without evidence are downgraded, rejected, or marked Needs More Evidence
+□ Observations are not placed in the Findings Registry
+□ Not A Findings are not placed in the Findings Registry
+□ Every finding has exactly one owner
+□ Severity is proportional to impact
+□ Recommendations are actionable
+□ ADR-approved decisions are not reported as defects
+```
+
+## Standard Report Ending
+
+End the report with:
+
+```text
+# Overall Assessment
+# Top Risks
+# Recommended Next Actions
+# Confidence
+# Release Impact
+```
+
+
+## Evidence Rule
+
+If evidence is insufficient to support a finding, record an **Observation** instead of creating a **Finding**.
+
+Do not infer beyond the available evidence.

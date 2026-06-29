@@ -671,3 +671,95 @@ Avoid duplicate findings.
 Avoid speculative findings.
 
 Focus on evidence, workflows, and long-term campaign health.
+
+# v1.0.1 Reporting Quality Rules
+
+## Repository Snapshot
+
+Include a repository snapshot near the top of the report:
+
+```yaml
+repository_name:
+repository_branch:
+repository_commit:
+repository_type:
+primary_language:
+frameworks:
+files_reviewed:
+generated_on:
+audit_cycle:
+```
+
+Use `Not Provided` when unavailable.
+
+## Observation vs Finding
+
+Do not convert every concern into a finding.
+
+Use:
+
+```text
+Observation
+```
+
+when the concern is plausible but needs more evidence.
+
+Use:
+
+```text
+Not A Finding
+```
+
+when a concern was investigated and rejected, intentionally accepted by ADR, duplicated, outside ownership, or not impactful.
+
+## Finding Evidence Gate
+
+Create an official finding only when all are true:
+
+```text
+□ Evidence exists
+□ Repository location is provided when possible
+□ Impact is meaningful
+□ Recommendation is actionable
+□ Owner is exactly one agent
+□ Registry was checked for duplicates
+□ ADRs were checked when applicable
+□ Severity is proportional
+□ Confidence is justified
+```
+
+If the gate fails, record an Observation instead.
+
+## Evidence Format
+
+Use this structure for official findings:
+
+```yaml
+evidence:
+  files:
+  symbols:
+  lines:
+  observed_behavior:
+  expected_behavior:
+  rationale:
+  reproduction:
+```
+
+## Standard Report Ending
+
+End the report with:
+
+```text
+# Overall Assessment
+# Top Risks
+# Recommended Next Actions
+# Confidence
+# Release Impact
+```
+
+
+## Evidence Rule
+
+If evidence is insufficient to support a finding, record an **Observation** instead of creating a **Finding**.
+
+Do not infer beyond the available evidence.

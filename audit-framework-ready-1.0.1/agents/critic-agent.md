@@ -729,3 +729,58 @@ A successful review should leave the Repository Director with:
 Do not create new technical findings.
 
 Create clarity.
+
+# v1.0.1 Mandatory Finding Review Questions
+
+For every official finding, answer:
+
+```text
+1. Is the evidence sufficient?
+2. Could this be intentional design?
+3. Does an ADR explain or approve it?
+4. Is the severity proportional to the demonstrated impact?
+5. Is the recommendation actionable and proportionate?
+```
+
+Classify each finding as one of:
+
+```text
+Confirmed
+Confirmed With Changes
+Needs More Evidence
+Possible Duplicate
+Ownership Review Required
+Reject
+Not A Finding
+```
+
+A finding with insufficient evidence should not proceed as a confirmed finding.
+
+## Critic Evidence Gate
+
+Reject or downgrade findings when:
+
+- Repository locations are missing without explanation.
+- The impact is speculative.
+- The recommendation is vague.
+- The issue is an ADR-approved tradeoff.
+- The same root cause already appears under another finding.
+
+## Standard Report Ending
+
+End the report with:
+
+```text
+# Overall Assessment
+# Top Risks
+# Recommended Next Actions
+# Confidence
+# Release Impact
+```
+
+
+## Evidence Rule
+
+If evidence is insufficient to support a finding, record an **Observation** instead of creating a **Finding**.
+
+Do not infer beyond the available evidence.

@@ -740,3 +740,96 @@ Findings should prioritize:
 Quality is more important than quantity.
 
 Agents should avoid low-value findings and false positives whenever possible.
+
+# Evidence Requirements
+
+Every official finding should include an `evidence` section.
+
+Minimum recommended structure:
+
+```yaml
+evidence:
+  files:
+    - path/to/file.ts
+  symbols:
+    - ClassName.methodName
+  lines:
+    - 120-145
+  observed_behavior: >
+    What the repository appears to do.
+  expected_behavior: >
+    What should happen instead.
+  rationale: >
+    Why this evidence supports the finding.
+  reproduction: []
+```
+
+Use `Not Provided` only when the repository location cannot be determined.
+
+A finding without meaningful evidence should usually have:
+
+```yaml
+confidence: Low
+```
+
+or remain an Observation.
+
+---
+
+# Observation Format
+
+Use Observations for concerns that are useful but not yet validated as findings.
+
+```yaml
+observation:
+  title:
+  owner:
+  category:
+  location:
+  evidence:
+  reason_not_finding:
+  recommended_validation:
+```
+
+Observations do not receive permanent finding IDs.
+
+---
+
+# Not A Finding Format
+
+Use `Not A Finding` when an investigated concern should not become an official finding.
+
+```yaml
+not_a_finding:
+  title:
+  reason:
+  evidence_reviewed:
+  adr_reviewed:
+  notes:
+```
+
+Typical reasons:
+
+- Intentional design documented by ADR.
+- No meaningful risk.
+- Duplicate of an existing finding.
+- Insufficient evidence.
+- Outside agent ownership.
+
+---
+
+# Finding Acceptance Gate
+
+Before creating an official finding, verify:
+
+```text
+□ Evidence exists
+□ Impact exists
+□ Recommendation exists
+□ Owner is exactly one agent
+□ Severity is valid
+□ Confidence is justified
+□ Registry was checked for duplicates
+□ ADRs were checked when applicable
+□ The issue is not better represented as an Observation
+```

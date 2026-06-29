@@ -544,3 +544,24 @@ Findings should be ranked based on risk to:
 5. Long-term maintainability
 
 All agents must follow this matrix consistently.
+
+# Severity Calibration Questions
+
+Use these questions to normalize severity before publishing a finding.
+
+| Question | Default Severity |
+|---|---|
+| Can character data be permanently lost or corrupted? | Critical |
+| Can campaign data be permanently lost or corrupted? | Critical |
+| Can authentication or authorization be bypassed? | Critical |
+| Can production data become unrecoverable? | Critical |
+| Can core gameplay calculations become incorrect for common cases? | High |
+| Can important campaign workflows fail? | High |
+| Can important save/update behavior fail unsafely? | High |
+| Is the issue mainly maintainability, scalability, or test coverage without immediate integrity risk? | Medium |
+| Is the issue a limited refactoring or cleanup opportunity? | Low |
+| Is the issue informational or a future improvement? | Info |
+
+Severity represents impact, not implementation effort.
+
+When evidence is weak, do not inflate severity. Use lower confidence or keep the item as an Observation.

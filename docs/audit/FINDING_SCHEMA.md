@@ -1,216 +1,26 @@
 # Standard Finding Schema
 
-All agents must use this format.
+This document defines the authoritative finding format used by all audit agents.
 
-Use the exact structure below.
+All findings produced by any agent must conform to this schema.
 
----
+The schema exists to:
 
-id: ARC-001
+- Standardize reporting
+- Enable de-duplication
+- Support long-term tracking
+- Track remediation progress
+- Detect regressions
+- Support executive reporting
 
-title: Short descriptive title
-
-severity: Critical | High | Medium | Low | Info
-
-confidence: High | Medium | Low
-
-owner: Agent Name
-
-category:
-  - Primary Category
-  - Secondary Category
-
-location:
-  file: path/to/file
-  line: 123
-
-description: >
-  Explain the issue.
-
-impact: >
-  Explain the business, gameplay,
-  reliability, security, or architectural impact.
-
-recommendation: >
-  Describe the recommended fix.
-
-status: Open
+All audit tools, agents, reports, registries, and dashboards must use this structure.
 
 ---
 
-# Field Definitions
+# Required Finding Format
 
-## id
-
-Unique identifier.
-
-Prefixes:
-
-ARC = Architecture
-DND = Rules & Gameplay
-CMP = Campaign & Collaboration
-COD = Code Quality
-CRT = Critic Review
-
-Examples:
-
-ARC-001
-DND-015
-CMP-007
-COD-023
-
----
-
-## title
-
-One-line summary of the issue.
-
-Good:
-
-Incorrect proficiency calculation
-
-Bad:
-
-Some issue in character service
-
----
-
-## severity
-
-Possible values:
-
-Critical
-High
-Medium
-Low
-Info
-
----
-
-## confidence
-
-Possible values:
-
-High
-Medium
-Low
-
-Confidence measures certainty.
-
-High:
-Evidence clearly supports the finding.
-
-Medium:
-Reasonable evidence exists.
-
-Low:
-May require additional verification.
-
----
-
-## owner
-
-Owning agent.
-
-Examples:
-
-Architecture & Data Model Agent
-
-D&D Domain Agent
-
-Campaign & Collaboration Agent
-
-Code Quality & Reliability Agent
-
----
-
-## category
-
-Used for filtering and reporting.
-
-Examples:
-
-Rules Engine
-
-Character Calculation
-
-Campaign Management
-
-Data Model
-
-Performance
-
-Reliability
-
-Security
-
-Maintainability
-
----
-
-## location
-
-Source location.
-
-Include:
-
-- file
-- line
-
-If unavailable, provide the best available location.
-
----
-
-## description
-
-Describe:
-
-- What is happening
-- Why it is happening
-
-Avoid vague language.
-
----
-
-## impact
-
-Describe:
-
-- User impact
-- Gameplay impact
-- Campaign impact
-- Security impact
-- Reliability impact
-
----
-
-## recommendation
-
-Specific actionable fix.
-
-Avoid generic advice.
-
----
-
-## status
-
-Possible values:
-
-Open
-Accepted
-In Progress
-Resolved
-Rejected
-
-Default:
-
-Open
-
----
-
-# Example Finding
-
-id: DND-004
+```yaml
+id: DND-001
 
 title: Expertise applies proficiency twice
 
@@ -219,6 +29,14 @@ severity: High
 confidence: High
 
 owner: D&D Domain Agent
+
+status: Open
+
+lifecycle: New
+
+first_detected: 2026-06-29
+
+last_reviewed: 2026-06-29
 
 category:
   - Rules Engine
@@ -229,15 +47,696 @@ location:
   line: 284
 
 description: >
-  Expertise calculations apply proficiency bonus twice,
-  resulting in inflated skill values.
+  Expertise calculations apply proficiency bonus twice.
 
 impact: >
-  Character sheets display incorrect skills,
-  affecting gameplay accuracy.
+  Character skill values become incorrect.
 
 recommendation: >
-  Apply proficiency once before expertise multiplier
-  is calculated.
+  Apply expertise multiplier after proficiency calculation.
+
+notes: ""
+```
+
+---
+
+# Field Definitions
+
+## id
+
+Unique identifier.
+
+The ID must never change.
+
+The ID must never be reused.
+
+The ID must remain the same even after a finding is resolved.
+
+---
+
+### ID Prefixes
+
+Architecture Findings
+
+```text
+ARC-001
+```
+
+D&D Domain Findings
+
+```text
+DND-001
+```
+
+Campaign & Collaboration Findings
+
+```text
+CMP-001
+```
+
+Code Quality Findings
+
+```text
+COD-001
+```
+
+Critic Findings
+
+```text
+CRT-001
+```
+
+Repository Director Decisions
+
+```text
+DIR-001
+```
+
+---
+
+## title
+
+Short summary of the issue.
+
+Requirements:
+
+- One sentence
+- Clear
+- Specific
+- Actionable
+
+Good:
+
+```text
+Campaign ownership transfer can orphan characters
+```
+
+Bad:
+
+```text
+Problem in campaign service
+```
+
+---
+
+## severity
+
+Represents business impact.
+
+Allowed Values:
+
+```text
+Critical
+High
+Medium
+Low
+Info
+```
+
+Definitions are governed by:
+
+```text
+SEVERITY_MATRIX.md
+```
+
+Agents may not invent new severity levels.
+
+---
+
+## confidence
+
+Represents certainty that the finding is valid.
+
+Allowed Values:
+
+```text
+High
+Medium
+Low
+```
+
+---
+
+### High Confidence
+
+Use when:
+
+- Strong evidence exists
+- Behavior is reproducible
+- Root cause is understood
+
+Example:
+
+```text
+Character calculator applies modifier twice.
+```
+
+---
+
+### Medium Confidence
+
+Use when:
+
+- Evidence exists
+- Additional validation may help
+
+Example:
+
+```text
+Potential race condition during ownership transfer.
+```
+
+---
+
+### Low Confidence
+
+Use when:
+
+- Evidence is incomplete
+- Additional investigation required
+
+Example:
+
+```text
+Potential performance degradation under high load.
+```
+
+---
+
+## owner
+
+The official owning agent.
+
+Only one owner is allowed.
+
+Examples:
+
+```text
+Architecture & Data Model Agent
+```
+
+```text
+D&D Domain Agent
+```
+
+```text
+Campaign & Collaboration Agent
+```
+
+```text
+Code Quality & Reliability Agent
+```
+
+Ownership rules are governed by:
+
+```text
+PROJECT_CONTEXT.md
+```
+
+---
+
+## status
+
+Tracks remediation state.
+
+Allowed Values:
+
+```text
+Open
+Accepted
+In Progress
+Resolved
+Rejected
+```
+
+---
+
+### Open
+
+Issue exists and requires action.
+
+---
+
+### Accepted
+
+Issue exists but is intentionally accepted.
+
+---
+
+### In Progress
+
+Remediation work has started.
+
+---
+
+### Resolved
+
+Issue has been fixed.
+
+---
+
+### Rejected
+
+Finding determined to be invalid.
+
+---
+
+## lifecycle
+
+Tracks historical state.
+
+Allowed Values:
+
+```text
+New
+Existing
+Resolved
+Regressed
+```
+
+---
+
+### New
+
+First appearance.
+
+---
+
+### Existing
+
+Known unresolved issue.
+
+---
+
+### Resolved
+
+Previously fixed.
+
+---
+
+### Regressed
+
+Previously fixed but returned.
+
+---
+
+## first_detected
+
+Date of initial discovery.
+
+Format:
+
+```text
+YYYY-MM-DD
+```
+
+Example:
+
+```text
+2026-06-29
+```
+
+---
+
+## last_reviewed
+
+Most recent validation date.
+
+Format:
+
+```text
+YYYY-MM-DD
+```
+
+---
+
+## category
+
+Used for grouping, filtering, metrics, and reporting.
+
+At least one category is required.
+
+Multiple categories are allowed.
+
+---
+
+### Architecture Categories
+
+```text
+Architecture
+Scalability
+Data Model
+Extensibility
+Technical Debt
+```
+
+---
+
+### D&D Categories
+
+```text
+Rules Engine
+Character Calculation
+Spellcasting
+Class Progression
+Combat
+Conditions
+Inventory
+```
+
+---
+
+### Campaign Categories
+
+```text
+Campaign Management
+Party Management
+Permissions
+Ownership
+Collaboration
+DM Experience
+UX
+```
+
+---
+
+### Code Categories
+
+```text
+Security
+Performance
+Reliability
+Maintainability
+Testing
+Infrastructure
+Deployment
+Backups
+Monitoring
+Recovery
+```
+
+---
+
+## location
+
+Identifies where the issue exists.
+
+Minimum:
+
+```yaml
+location:
+  file:
+```
+
+Preferred:
+
+```yaml
+location:
+  file:
+  line:
+```
+
+Example:
+
+```yaml
+location:
+  file: src/domain/CharacterCalculator.ts
+  line: 284
+```
+
+If not applicable:
+
+```yaml
+location:
+  file: Multiple Files
+```
+
+or
+
+```yaml
+location:
+  file: Architecture
+```
+
+---
+
+## description
+
+Describes the issue.
+
+Should answer:
+
+```text
+What is happening?
+Why is it happening?
+```
+
+Requirements:
+
+- Factual
+- Specific
+- Evidence-based
+
+Avoid:
+
+```text
+This looks wrong.
+```
+
+---
+
+## impact
+
+Explains consequences.
+
+Should answer:
+
+```text
+Why does this matter?
+Who is affected?
+What could happen?
+```
+
+Examples:
+
+```text
+Character sheets may display incorrect values.
+```
+
+```text
+Campaign ownership confusion may lead to data loss.
+```
+
+```text
+Database growth could significantly degrade performance.
+```
+
+---
+
+## recommendation
+
+Describes the preferred resolution.
+
+Requirements:
+
+- Specific
+- Actionable
+- Practical
+
+Good:
+
+```text
+Move ownership validation to a dedicated service and enforce authorization before campaign updates.
+```
+
+Bad:
+
+```text
+Refactor this.
+```
+
+---
+
+## notes
+
+Optional supporting information.
+
+Examples:
+
+```text
+Observed during multiclass level-up workflow.
+```
+
+```text
+Likely introduced during campaign refactor.
+```
+
+```text
+Requires load testing for confirmation.
+```
+
+Default:
+
+```text
+""
+```
+
+---
+
+# Finding Creation Rules
+
+Before creating a finding:
+
+1. Verify ownership.
+2. Verify evidence.
+3. Verify severity.
+4. Verify the finding does not already exist.
+
+If ownership is unclear:
+
+Do not create a finding.
+
+Create an Observation and escalate ownership determination to the Repository Director.
+
+---
+
+# Duplicate Finding Rules
+
+A finding is considered duplicate if:
+
+- Same root cause
+- Same impacted subsystem
+- Same remediation
+
+Duplicates should reference the existing finding ID.
+
+Agents should avoid creating new IDs for duplicate findings.
+
+---
+
+# Regression Rules
+
+If a resolved issue returns:
+
+Do not create a new finding.
+
+Update the existing finding.
+
+Example:
+
+```yaml
+status: Open
+
+lifecycle: Regressed
+```
+
+The original ID remains unchanged.
+
+---
+
+# Example Architecture Finding
+
+```yaml
+id: ARC-003
+
+title: Character and Campaign domains are tightly coupled
+
+severity: Medium
+
+confidence: High
+
+owner: Architecture & Data Model Agent
 
 status: Open
+
+lifecycle: New
+
+first_detected: 2026-06-29
+
+last_reviewed: 2026-06-29
+
+category:
+  - Architecture
+  - Data Model
+
+location:
+  file: Architecture
+
+description: >
+  Character entities directly depend on campaign-specific logic,
+  creating coupling between independent domains.
+
+impact: >
+  Future rules expansions and campaign system changes will become
+  increasingly difficult to implement safely.
+
+recommendation: >
+  Introduce domain boundaries and move campaign-specific behavior
+  into dedicated services.
+
+notes: ""
+```
+
+---
+
+# Example D&D Finding
+
+```yaml
+id: DND-004
+
+title: Expertise applies proficiency twice
+
+severity: High
+
+confidence: High
+
+owner: D&D Domain Agent
+
+status: Open
+
+lifecycle: New
+
+first_detected: 2026-06-29
+
+last_reviewed: 2026-06-29
+
+category:
+  - Rules Engine
+  - Character Calculation
+
+location:
+  file: src/rules/CharacterCalculator.ts
+  line: 284
+
+description: >
+  Expertise calculations apply proficiency bonus twice.
+
+impact: >
+  Character skill bonuses become incorrect and deviate from expected
+  game rules.
+
+recommendation: >
+  Apply expertise multiplier only after proficiency has been
+  calculated once.
+
+notes: ""
+```
+
+---
+
+# Audit Quality Requirements
+
+Findings should prioritize:
+
+1. Character Data Integrity
+2. Campaign Data Integrity
+3. Rules Correctness
+4. Security
+5. Reliability
+6. Collaboration Safety
+7. Performance
+8. Maintainability
+
+Quality is more important than quantity.
+
+Agents should avoid low-value findings and false positives whenever possible.

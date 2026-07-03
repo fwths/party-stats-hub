@@ -41,7 +41,31 @@ export {
   InventoryList,
 };
 
-export function CharacterCard({ member }: { member: PartyMember }) {
+export type CharacterCardControls = {
+  canEdit: boolean;
+  busy?: boolean;
+  onDamage?: () => void;
+  onHeal?: () => void;
+  onOpenSheet?: () => void;
+  sheetOpen?: boolean;
+  onAddCondition?: (name: string) => void;
+  onRemoveCondition?: (name: string) => void;
+  onSpendResource?: (name: string) => void;
+  onToggleInspiration?: () => void;
+  onAdjustExhaustion?: (delta: -1 | 1) => void;
+  onGrantTemporaryHp?: () => void;
+  onDeathSave?: (result: "success" | "failure") => void;
+  onStabilize?: () => void;
+  onLongRest?: () => void;
+};
+
+export function CharacterCard({
+  member,
+  controls,
+}: {
+  member: PartyMember;
+  controls?: CharacterCardControls;
+}) {
   const {
     list: localConditions,
     add: addLocalCondition,
@@ -132,7 +156,20 @@ export function CharacterCard({ member }: { member: PartyMember }) {
   return (
     <article className="card-arcane card-arcane-hover group relative overflow-hidden rounded-xl border border-border/40 p-4 shadow-lg">
       <div className="flex items-start gap-3">
-        {member.avatarUrl ? (
+        {controls && member.avatarUrl ? (
+          <button
+            type="button"
+            onClick={controls.onOpenSheet}
+            className={`block h-16 w-16 flex-shrink-0 overflow-hidden rounded-[28%] transition-all duration-300 hover:scale-105 ${avatarRing}`}
+            title="Open character sheet"
+          >
+            <img
+              src={member.avatarUrl}
+              alt={member.name}
+              className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
+            />
+          </button>
+        ) : member.avatarUrl ? (
           <Link
             to="/character/$id"
             params={{ id: String(member.id) }}
@@ -145,6 +182,13 @@ export function CharacterCard({ member }: { member: PartyMember }) {
               className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
             />
           </Link>
+        ) : controls ? (
+          <button
+            type="button"
+            onClick={controls.onOpenSheet}
+            className={`h-16 w-16 flex-shrink-0 rounded-[28%] border border-border bg-muted hover:border-accent ${avatarRing}`}
+            title="Open character sheet"
+          />
         ) : (
           <Link
             to="/character/$id"
@@ -155,25 +199,50 @@ export function CharacterCard({ member }: { member: PartyMember }) {
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <a
-              href={member.readonlyUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="font-heading block truncate text-xl font-bold text-foreground drop-shadow-sm transition-colors group-hover:text-accent hover:underline"
-            >
-              {member.name}
-            </a>
-            {mods.inspiration && (
+            {controls ? (
+              <button
+                type="button"
+                onClick={controls.onOpenSheet}
+                className="font-heading block truncate text-left text-xl font-bold text-foreground drop-shadow-sm transition-colors hover:text-accent hover:underline"
+              >
+                {member.name}
+              </button>
+            ) : (
+              <a
+                href={member.readonlyUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-heading block truncate text-xl font-bold text-foreground drop-shadow-sm transition-colors group-hover:text-accent hover:underline"
+              >
+                {member.name}
+              </a>
+            )}
+            {(mods.inspiration || controls?.canEdit) && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-help shrink-0">
+                  <button
+                    type="button"
+                    disabled={!controls?.canEdit || controls.busy}
+                    onClick={controls?.onToggleInspiration}
+                    className="shrink-0 disabled:cursor-default"
+                  >
                     <Star
                       size={12}
-                      className="text-gold fill-gold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_80%,transparent)] animate-pulse"
+                      className={
+                        mods.inspiration
+                          ? "fill-gold text-gold drop-shadow-[0_0_6px_color-mix(in_oklab,var(--gold)_80%,transparent)] animate-pulse"
+                          : "text-muted-foreground/50 hover:text-gold"
+                      }
                     />
-                  </span>
+                  </button>
                 </TooltipTrigger>
-                <TooltipContent>Inspiration</TooltipContent>
+                <TooltipContent>
+                  {controls?.canEdit
+                    ? mods.inspiration
+                      ? "Clear Inspiration"
+                      : "Grant Inspiration"
+                    : "Inspiration"}
+                </TooltipContent>
               </Tooltip>
             )}
             {(member as any).isNative && (
@@ -231,6 +300,16 @@ export function CharacterCard({ member }: { member: PartyMember }) {
             onAddLocal={addLocalCondition}
             onRemoveLocal={removeLocalCondition}
             onTickLocal={tickLocalCondition}
+            managed={
+              controls
+                ? {
+                    canEdit: controls.canEdit,
+                    onAdd: (name) => controls.onAddCondition?.(name),
+                    onRemove: (name) => controls.onRemoveCondition?.(name),
+                    onAdjustExhaustion: (delta) => controls.onAdjustExhaustion?.(delta),
+                  }
+                : undefined
+            }
           />
           {member.error && !member.error.includes("403") && (
             <p className="mt-1 text-xs text-destructive">{member.error}</p>
@@ -289,6 +368,59 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                 style={{ width: `${animHpPct}%` }}
               />
             </div>
+            {controls && (
+              <div className="mt-2 space-y-1.5">
+                <div className="flex gap-1.5">
+                  {controls.canEdit && (
+                    <>
+                      <button
+                        type="button"
+                        disabled={controls.busy}
+                        onClick={controls.onDamage}
+                        className="flex-1 rounded border border-border/50 bg-secondary/30 px-2 py-1 text-[10px] font-bold text-foreground transition-colors hover:border-hp-critical/60 hover:text-hp-critical disabled:opacity-50"
+                      >
+                        −1 HP
+                      </button>
+                      <button
+                        type="button"
+                        disabled={controls.busy}
+                        onClick={controls.onHeal}
+                        className="flex-1 rounded border border-border/50 bg-secondary/30 px-2 py-1 text-[10px] font-bold text-foreground transition-colors hover:border-hp-good/60 hover:text-hp-good disabled:opacity-50"
+                      >
+                        +1 HP
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={controls.onOpenSheet}
+                    className="flex-1 rounded border border-accent/40 bg-accent/10 px-2 py-1 text-[10px] font-bold text-accent transition-colors hover:bg-accent/20"
+                  >
+                    {controls.sheetOpen ? "Close Sheet" : "Open Sheet"}
+                  </button>
+                </div>
+                {controls.canEdit && (
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      disabled={controls.busy}
+                      onClick={controls.onGrantTemporaryHp}
+                      className="flex-1 rounded border border-border/50 bg-secondary/30 px-2 py-1 text-[9px] font-bold text-muted-foreground hover:border-accent/50 hover:text-accent disabled:opacity-50"
+                    >
+                      Temp 5
+                    </button>
+                    <button
+                      type="button"
+                      disabled={controls.busy}
+                      onClick={controls.onLongRest}
+                      className="flex-1 rounded border border-border/50 bg-secondary/30 px-2 py-1 text-[9px] font-bold text-muted-foreground hover:border-accent/50 hover:text-accent disabled:opacity-50"
+                    >
+                      Long Rest
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {hpCurrent <= 0 && (
@@ -326,6 +458,34 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                   ))}
                 </div>
               </div>
+              {controls?.canEdit && !deathSaves.stabilized && (
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    disabled={controls.busy}
+                    onClick={() => controls.onDeathSave?.("success")}
+                    className="rounded border border-hp-good/40 bg-hp-good/10 py-1 text-[9px] font-bold text-hp-good disabled:opacity-50"
+                  >
+                    Success
+                  </button>
+                  <button
+                    type="button"
+                    disabled={controls.busy}
+                    onClick={() => controls.onDeathSave?.("failure")}
+                    className="rounded border border-destructive/40 bg-destructive/10 py-1 text-[9px] font-bold text-destructive disabled:opacity-50"
+                  >
+                    Failure
+                  </button>
+                  <button
+                    type="button"
+                    disabled={controls.busy}
+                    onClick={controls.onStabilize}
+                    className="rounded border border-accent/40 bg-accent/10 py-1 text-[9px] font-bold text-accent disabled:opacity-50"
+                  >
+                    Stabilize
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -911,10 +1071,17 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                         const isSmallMax = u.max <= 6;
 
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={`${a.source}-${a.name}`}
-                            className="flex flex-col gap-1.5 rounded-lg border border-border/30 bg-secondary/20 p-2.5 transition-all duration-200 hover:border-accent/40"
-                            title={`Resets on ${u.reset}`}
+                            disabled={!controls?.canEdit || out || controls.busy}
+                            onClick={() => controls?.onSpendResource?.(a.name)}
+                            className="flex w-full flex-col gap-1.5 rounded-lg border border-border/30 bg-secondary/20 p-2.5 text-left transition-all duration-200 hover:border-accent/40 disabled:cursor-default"
+                            title={
+                              controls?.canEdit
+                                ? `Spend 1 · Resets on ${u.reset}`
+                                : `Resets on ${u.reset}`
+                            }
                           >
                             <div className="flex items-center justify-between text-xs font-semibold text-foreground">
                               <span>{a.name}</span>
@@ -949,7 +1116,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                                 />
                               </div>
                             )}
-                          </div>
+                          </button>
                         );
                       })}
                   </div>
@@ -963,6 +1130,7 @@ export function CharacterCard({ member }: { member: PartyMember }) {
                     currencies={member.currencies}
                     weightCarried={member.weightCarried}
                     carryingCapacity={carryingCapacity}
+                    attunementCapacity={member.attunementCapacity}
                   />
                 </Section>
               )}

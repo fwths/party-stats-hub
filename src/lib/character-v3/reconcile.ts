@@ -18,7 +18,10 @@ export type V3CatalogRecord = {
   contentRevision: string;
 };
 
-export type V3Compatibility = "core-2024" | "current-2024-compatible" | "legacy";
+export type V3Compatibility =
+  | "core-2024"
+  | "current-2024-compatible"
+  | "legacy-5e-compatible";
 export type V3ReconciliationStatus =
   | "already-canonical"
   | "resolved-current"
@@ -49,7 +52,11 @@ const CORE_2024_SOURCES = new Set(["XPHB", "XDMG", "XMM"]);
 function compatibility(record: V3CatalogRecord): V3Compatibility {
   if (CORE_2024_SOURCES.has(record.sourceId.toUpperCase())) return "core-2024";
   if (record.edition?.toLowerCase() === "one") return "current-2024-compatible";
-  return "legacy";
+  return "legacy-5e-compatible";
+}
+
+function isCurrent2024Compatibility(compatibility: ExactRuleRef["compatibility"]): boolean {
+  return compatibility === "core-2024" || compatibility === "current-2024-compatible";
 }
 
 function supportedIdentityKind(kind: ExactRuleRef["kind"]) {
@@ -74,7 +81,7 @@ function catalogRef(record: V3CatalogRecord): ExactRuleRef {
     upstreamId: record.id,
     contentRevision: record.contentRevision,
     compatibility: classification,
-    verification: classification === "legacy" ? "imported-unverified" : "verified",
+    verification: isCurrent2024Compatibility(classification) ? "verified" : "imported-unverified",
   };
 }
 
@@ -84,8 +91,7 @@ function reconcileRef(
   catalog: V3CatalogRecord[],
 ): V3ReconciliationEntry {
   if (
-    imported.verification === "verified" &&
-    ["core-2024", "current-2024-compatible"].includes(imported.compatibility)
+    imported.verification === "verified" && isCurrent2024Compatibility(imported.compatibility)
   ) {
     return {
       path,
@@ -109,7 +115,7 @@ function reconcileRef(
       requiresDecision: true,
     };
   }
-  const current = candidates.filter((record) => compatibility(record) !== "legacy");
+  const current = candidates.filter((record) => isCurrent2024Compatibility(compatibility(record)));
   if (current.length > 1) {
     return {
       path,
@@ -387,9 +393,20 @@ function applyReferenceReplacements(input: {
     },
     liveState: {
       ...character.liveState,
+      hitDice:
+        character.liveState.hitDice.status === "tracked"
+          ? {
+              ...character.liveState.hitDice,
+              pools: character.liveState.hitDice.pools.map((pool) => ({
+                ...pool,
+                classVersionKey: replaceKey(pool.classVersionKey),
+              })),
+            }
+          : character.liveState.hitDice,
       resources: character.liveState.resources.map((resource) => ({
         ...resource,
         sourceVersionKey: resource.sourceVersionKey ? replaceKey(resource.sourceVersionKey) : null,
+        additionalSourceVersionKeys: resource.additionalSourceVersionKeys.map(replaceKey),
       })),
       conditions: character.liveState.conditions.map((condition) => ({
         ...condition,
@@ -405,6 +422,7 @@ function applyReferenceReplacements(input: {
             sourceVersionKey: item.charges.sourceVersionKey
               ? replaceKey(item.charges.sourceVersionKey)
               : null,
+            additionalSourceVersionKeys: item.charges.additionalSourceVersionKeys.map(replaceKey),
           }
         : null,
     })),

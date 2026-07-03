@@ -247,12 +247,19 @@ interface InventoryPanelProps {
   member: PartyMember;
   allMembers: PartyMember[];
   localInventory: any[];
-  toggleLocalItemEquipped: (itemName: string) => void;
-  toggleLocalItemAttuned: (itemName: string) => void;
+  toggleLocalItemEquipped: (item: any, equipped: boolean) => void;
+  toggleLocalItemAttuned: (item: any, attuned: boolean) => void;
   deleteLocalCustomItem: (itemName: string) => void;
   addLocalCustomItem: (newItem: any) => void;
   displayCarryingCapacity: number;
   infusionsPanel?: React.ReactNode;
+  allowLocalCustomItems?: boolean;
+  catalogControls?: {
+    search: (query: string) => Promise<any[]>;
+    add: (kind: "weapon" | "armor" | "magic-item", id: string, quantity: number) => void;
+    setQuantity: (id: string, quantity: number) => void;
+    remove: (id: string) => void;
+  };
 }
 
 export default function InventoryPanel({
@@ -265,6 +272,8 @@ export default function InventoryPanel({
   addLocalCustomItem,
   displayCarryingCapacity,
   infusionsPanel,
+  allowLocalCustomItems = true,
+  catalogControls,
 }: InventoryPanelProps) {
   // Local state for search/filters
   const [invSearchTerm, setInvSearchTerm] = useState("");
@@ -288,8 +297,26 @@ export default function InventoryPanel({
   // D&D Beyond SRD API cache states
   const [dndApiItems, setDndApiItems] = useState<any[]>([]);
   const [isFetchingDetail, setIsFetchingDetail] = useState(false);
+  const [catalogResults, setCatalogResults] = useState<any[]>([]);
+  const [catalogSearching, setCatalogSearching] = useState(false);
 
   useEffect(() => {
+    if (!catalogControls || invSearchTerm.trim().length < 2) {
+      setCatalogResults([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setCatalogSearching(true);
+      void catalogControls
+        .search(invSearchTerm.trim())
+        .then(setCatalogResults)
+        .finally(() => setCatalogSearching(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [catalogControls, invSearchTerm]);
+
+  useEffect(() => {
+    if (!allowLocalCustomItems) return;
     if (dndApiItems.length > 0) return;
 
     async function fetchAllItems() {
@@ -318,7 +345,7 @@ export default function InventoryPanel({
     }
 
     fetchAllItems();
-  }, [dndApiItems.length]);
+  }, [allowLocalCustomItems, dndApiItems.length]);
 
   const allAvailableItems = useMemo(() => {
     const candidates = new Map<
@@ -492,7 +519,9 @@ export default function InventoryPanel({
   const groupedInventory = useMemo(() => {
     const groupedMap = new Map<string, any>();
     localInventory.forEach((item) => {
-      const key = item.name.toLowerCase().trim();
+      const key = catalogControls && item.id
+        ? `id:${item.id}`
+        : item.name.toLowerCase().trim();
       const existing = groupedMap.get(key);
       if (existing) {
         existing.quantity = (existing.quantity || 1) + (item.quantity || 1);
@@ -503,7 +532,7 @@ export default function InventoryPanel({
       }
     });
     return Array.from(groupedMap.values());
-  }, [localInventory]);
+  }, [catalogControls, localInventory]);
 
   const filteredInventory = groupedInventory.filter((item) => {
     const matchesSearch =
@@ -665,30 +694,21 @@ export default function InventoryPanel({
           <div className="flex flex-col gap-0.5">
             <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gold">
               <Sparkles size={12} className="text-gold animate-pulse" />
-              <span>Attunement Slots</span>
+              <span>Attuned Items</span>
             </span>
-            <span className="text-[10px] text-muted-foreground">Magic item slots filled</span>
+            <span className="text-[10px] text-muted-foreground">Current attunement state</span>
           </div>
           <div className="flex items-center gap-2">
             {(() => {
-              const attunedCount =
-                localInventory.filter((i) => i.equipped && i.attuned).length ?? 0;
-              return [1, 2, 3].map((slotIdx) => {
-                const isFilled = slotIdx <= attunedCount;
-                return (
-                  <div
-                    key={slotIdx}
-                    className={cn(
-                      "h-5 w-5 rounded-full border flex items-center justify-center text-[9px] font-bold transition-all duration-300",
-                      isFilled
-                        ? "border-gold bg-gold/15 text-gold shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_40%,transparent)]"
-                        : "border-border bg-secondary/30 text-muted-foreground/45",
-                    )}
-                  >
-                    {isFilled ? "✦" : slotIdx}
-                  </div>
-                );
-              });
+              const attunedCount = localInventory.filter((i) => i.attuned).length;
+              return (
+                <div className="flex h-7 min-w-7 items-center justify-center rounded-full border border-gold bg-gold/15 px-2 font-mono text-xs font-bold text-gold shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_40%,transparent)]">
+                  {attunedCount}
+                  {typeof member.attunementCapacity === "number"
+                    ? ` / ${member.attunementCapacity}`
+                    : ""}
+                </div>
+              );
             })()}
           </div>
         </div>
@@ -731,7 +751,34 @@ export default function InventoryPanel({
                     )
                   )}
 
-                  {quickAddSuggestions.length > 0 && (
+                  {catalogControls && (catalogSearching || catalogResults.length > 0) && (
+                    <div className="absolute left-0 right-0 mt-1.5 z-[110] max-h-60 overflow-y-auto rounded-lg border border-border bg-popover p-1.5 shadow-2xl">
+                      <div className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Current 2024-compatible catalogue
+                      </div>
+                      {catalogSearching && <div className="px-2 py-2 text-xs text-muted-foreground">Searching…</div>}
+                      {catalogResults.map((item) => (
+                        <button
+                          key={`${item.kind}:${item.id}`}
+                          type="button"
+                          onClick={() => {
+                            catalogControls.add(item.kind, String(item.id), 1);
+                            setInvSearchTerm("");
+                            setCatalogResults([]);
+                          }}
+                          className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left hover:bg-secondary"
+                        >
+                          <span>
+                            <span className="block text-xs font-bold text-foreground">{item.name}</span>
+                            <span className="text-[10px] text-muted-foreground">{item.type} · {item.source}</span>
+                          </span>
+                          <span className="text-[9px] font-bold text-accent">+ Add</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {allowLocalCustomItems && quickAddSuggestions.length > 0 && (
                     <div className="absolute left-0 right-0 mt-1.5 z-[110] max-h-60 overflow-y-auto rounded-lg border border-border bg-popover p-1.5 shadow-2xl animate-in fade-in duration-100">
                       <div className="text-[9px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider flex justify-between items-center select-none">
                         <span>✨ Quick Add to Inventory</span>
@@ -886,7 +933,7 @@ export default function InventoryPanel({
                     </div>
                   )}
                 </div>
-                <button
+                {allowLocalCustomItems && <button
                   onClick={() => {
                     setNewItemName("");
                     setNewItemType("Gear");
@@ -903,7 +950,7 @@ export default function InventoryPanel({
                 >
                   <Plus size={13} />
                   <span>Add Item</span>
-                </button>
+                </button>}
               </div>
 
               <div className="flex flex-wrap gap-1 mt-1">
@@ -1083,13 +1130,19 @@ export default function InventoryPanel({
                 const activeInvItem =
                   groupedInventory.find(
                     (item) =>
-                      item.name === selectedInvItem.name &&
-                      item.equipped === selectedInvItem.equipped,
+                      selectedInvItem.id && item.id
+                        ? item.id === selectedInvItem.id
+                        : item.name === selectedInvItem.name &&
+                          item.equipped === selectedInvItem.equipped,
                   ) || selectedInvItem;
                 const theme = getRarityTheme(activeInvItem.rarity);
+                const attunementRequirement = activeInvItem.attunementRequirement;
+                const attunementForbidden =
+                  attunementRequirement?.status === "not-required" &&
+                  attunementRequirement.provenance === "verified-rule";
 
                 const handleToggleEquip = () => {
-                  toggleLocalItemEquipped(activeInvItem.name);
+                  toggleLocalItemEquipped(activeInvItem, !activeInvItem.equipped);
                   setSelectedInvItem({
                     ...activeInvItem,
                     equipped: !activeInvItem.equipped,
@@ -1097,7 +1150,7 @@ export default function InventoryPanel({
                 };
 
                 const handleToggleAttune = () => {
-                  toggleLocalItemAttuned(activeInvItem.name);
+                  toggleLocalItemAttuned(activeInvItem, !activeInvItem.attuned);
                   setSelectedInvItem({
                     ...activeInvItem,
                     attuned: !activeInvItem.attuned,
@@ -1131,6 +1184,15 @@ export default function InventoryPanel({
                       <h3 className="font-heading text-base font-bold text-foreground mt-2 select-all leading-tight">
                         {activeInvItem.name}
                       </h3>
+                      {attunementRequirement && (
+                        <p className="mt-1 text-[9px] font-semibold text-muted-foreground">
+                          {attunementRequirement.status === "required"
+                            ? `Requires attunement${attunementRequirement.conditions ? ` — ${attunementRequirement.conditions}` : ""}`
+                            : attunementRequirement.status === "not-required"
+                              ? "Does not require attunement"
+                              : "Attunement requirement not yet verified"}
+                        </p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mb-4 text-[10px] select-all">
@@ -1194,8 +1256,12 @@ export default function InventoryPanel({
                       </button>
                       <button
                         onClick={handleToggleAttune}
+                        disabled={attunementForbidden && !activeInvItem.attuned}
+                        title={attunementForbidden ? "This verified item does not require attunement" : undefined}
                         className={cn(
                           "flex-1 rounded-lg border px-3 py-2 text-xs font-bold transition-all duration-200 cursor-pointer select-none text-center",
+                          attunementForbidden && !activeInvItem.attuned &&
+                            "cursor-not-allowed opacity-45",
                           activeInvItem.attuned
                             ? "bg-gold/15 border-gold/30 text-gold hover:bg-gold/25 shadow-[0_0_8px_rgba(212,175,55,0.1)]"
                             : "bg-secondary/35 border-border/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
@@ -1216,6 +1282,41 @@ export default function InventoryPanel({
                         </button>
                       )}
                     </div>
+
+                    {catalogControls && activeInvItem.id && (
+                      <div className="mb-4 flex items-end gap-2 rounded-lg border border-border/40 bg-secondary/20 p-2.5">
+                        <label className="flex-1 text-[8px] font-bold uppercase tracking-wider text-muted-foreground">
+                          Quantity
+                          <input
+                            type="number"
+                            min={1}
+                            max={10000}
+                            defaultValue={activeInvItem.quantity || 1}
+                            key={`${activeInvItem.id}:${activeInvItem.quantity}`}
+                            onBlur={(event) => {
+                              const quantity = Math.max(1, Math.min(10000, Number.parseInt(event.currentTarget.value, 10) || 1));
+                              event.currentTarget.value = String(quantity);
+                              if (quantity !== activeInvItem.quantity) {
+                                catalogControls.setQuantity(activeInvItem.id, quantity);
+                              }
+                            }}
+                            className="mt-1 block w-full rounded-md border border-border/50 bg-background/60 px-2 py-1.5 font-mono text-xs text-foreground outline-none focus:border-accent"
+                            aria-label={`Quantity of ${activeInvItem.name}`}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!window.confirm(`Remove ${activeInvItem.name} from inventory?`)) return;
+                            catalogControls.remove(activeInvItem.id);
+                            setSelectedInvItem(null);
+                          }}
+                          className="rounded-md border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-400 transition-colors hover:bg-rose-500/20"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
 
                     {(() => {
                       const isWeapon =
@@ -1295,7 +1396,7 @@ export default function InventoryPanel({
       {infusionsPanel}
 
       {/* Add Custom Item Modal */}
-      {showAddItemModal && (
+      {allowLocalCustomItems && showAddItemModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="relative w-full max-w-lg rounded-xl border border-border bg-background p-5 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-border/40 pb-2.5 mb-4 select-none">

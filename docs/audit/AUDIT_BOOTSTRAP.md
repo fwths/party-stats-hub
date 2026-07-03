@@ -104,6 +104,8 @@ The following agent prompts should exist:
 
 /.agents/audit/campaign-agent.md
 
+/.agents/audit/frontend-agent.md
+
 /.agents/audit/code-quality-agent.md
 
 /.agents/audit/critic-agent.md
@@ -141,6 +143,8 @@ The following audit documents should exist:
 /docs/audit/RULES_TEST_MATRIX.md
 
 /docs/audit/CAMPAIGN_SCENARIOS.md
+
+/docs/audit/FRONTEND_UX_CHECKLIST.md
 
 /docs/audit/RELIABILITY_SECURITY_CHECKLIST.md
 ```
@@ -198,6 +202,8 @@ The audit cycle should produce:
 
 /audit-results/campaign-report.md
 
+/audit-results/frontend-report.md
+
 /audit-results/code-quality-report.md
 
 /audit-results/critic-report.md
@@ -216,6 +222,7 @@ The full audit must run in this order:
 
 2. D&D Domain Agent
    Campaign & Collaboration Agent
+   Frontend & UX Agent
 
 3. Code Quality & Reliability Agent
 
@@ -224,7 +231,7 @@ The full audit must run in this order:
 5. Repository Director
 ```
 
-D&D and Campaign audits may run in parallel after the Architecture audit completes.
+D&D, Campaign, and Frontend audits may run in parallel after the Architecture audit completes.
 
 All other stages should run sequentially.
 
@@ -582,6 +589,102 @@ Follow REPORT_TEMPLATE.md while preserving all campaign-specific output sections
 
 ---
 
+# Stage 2C — Frontend & UX Audit
+
+This stage may run in parallel with Stage 2A and Stage 2B.
+
+## Agent
+
+```text
+Frontend & UX Agent
+```
+
+## Agent Prompt
+
+```text
+/.agents/audit/frontend-agent.md
+```
+
+## Required Inputs
+
+```text
+Repository Source Code
+
+/docs/audit/PROJECT_CONTEXT.md
+
+/docs/audit/FINDING_SCHEMA.md
+
+/docs/audit/SEVERITY_MATRIX.md
+
+/docs/audit/FINDINGS_REGISTRY.md
+
+/docs/audit/FINDING_ID_GUIDELINES.md
+
+/docs/audit/FRONTEND_UX_CHECKLIST.md
+
+/docs/audit/REPORT_TEMPLATE.md
+
+/audit-results/architecture-report.md
+```
+
+## Primary Diagnostic Document
+
+```text
+/docs/audit/FRONTEND_UX_CHECKLIST.md
+```
+
+## Required Output
+
+```text
+/audit-results/frontend-report.md
+```
+
+## Frontend Agent Request
+
+Use this request:
+
+```text
+Perform the Frontend & UX audit using /.agents/audit/frontend-agent.md.
+
+Use all required inputs listed in AUDIT_BOOTSTRAP.md.
+
+Use architecture-report.md as architectural context.
+
+Review FRONTEND_UX_CHECKLIST.md as the diagnostic guide.
+
+Produce:
+
+/audit-results/frontend-report.md
+
+Follow REPORT_TEMPLATE.md while preserving all frontend-specific output sections.
+```
+
+## Completion Checklist
+
+```text
+□ Visual & Responsive Layouts Score included
+
+□ Accessibility Score included
+
+□ SSR & Hydration Score included
+
+□ PWA & Offline Support Score included
+
+□ Client Performance Score included
+
+□ Findings Summary included
+
+□ Detailed Findings included
+
+□ Confidence Assessment included
+
+□ Release Impact included
+
+□ Final Recommendation included
+```
+
+---
+
 # Stage 3 — Code Quality & Reliability Audit
 
 ## Agent
@@ -620,6 +723,8 @@ Repository Source Code
 /audit-results/dnd-report.md
 
 /audit-results/campaign-report.md
+
+/audit-results/frontend-report.md
 ```
 
 ## Primary Diagnostic Document
@@ -725,6 +830,8 @@ Critic Agent
 
 /audit-results/campaign-report.md
 
+/audit-results/frontend-report.md
+
 /audit-results/code-quality-report.md
 ```
 
@@ -827,6 +934,8 @@ Repository Director
 /audit-results/dnd-report.md
 
 /audit-results/campaign-report.md
+
+/audit-results/frontend-report.md
 
 /audit-results/code-quality-report.md
 
@@ -1001,6 +1110,8 @@ The audit is complete only when:
 
 □ campaign-report.md exists
 
+□ frontend-report.md exists
+
 □ code-quality-report.md exists
 
 □ critic-report.md exists
@@ -1131,6 +1242,8 @@ Stage 1
 Stage 2A
 
 Stage 2B
+
+Stage 2C
 
 Stage 3
 

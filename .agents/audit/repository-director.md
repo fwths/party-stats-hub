@@ -30,6 +30,7 @@ You should receive:
 - architecture-report.md
 - dnd-report.md
 - campaign-report.md
+- frontend-report.md
 - code-quality-report.md
 - critic-report.md
 
@@ -167,6 +168,30 @@ Determine:
 - Which issues threaten long-running campaigns?
 - Which issues threaten collaboration?
 - Which issues threaten Dungeon Master adoption?
+
+---
+
+## Review Frontend Report
+
+Extract:
+
+- Styling & design system findings
+- Accessibility (a11y) findings
+- SSR & hydration findings
+- PWA & Service Worker findings
+- Client performance findings
+- Visual & Responsive Layouts score
+- Accessibility score
+- SSR & Hydration score
+- PWA & Offline Support score
+- Client Performance score
+
+Determine:
+
+- Which findings block users with accessibility needs?
+- Which findings trigger React/SSR hydration exceptions or errors?
+- Which visual flaws affect mobile usability?
+- Are PWA components stable in offline mode?
 
 ---
 

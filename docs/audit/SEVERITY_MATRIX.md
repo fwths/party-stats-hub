@@ -508,6 +508,17 @@ Critical findings should be limited to ownership, corruption, or severe collabor
 
 ---
 
+## Frontend & UX Agent
+
+Most findings should normally be:
+
+- Medium
+- Low
+
+Critical or High findings should be reserved for visual blockages that prevent core workflows entirely (e.g. broken builder steps), severe accessibility failures that lock out users with assistive technologies, or React hydration exceptions that crash client pages.
+
+---
+
 ## Code Quality & Reliability Agent
 
 Can use all severity levels depending on impact.

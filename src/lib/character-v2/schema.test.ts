@@ -29,15 +29,15 @@ const mobCharacters = [
     ownerUserId: "eleni",
     name: 'Arion "Ari" Starfire',
     className: "Bard",
-    level: 6,
+    level: 7,
   },
-  { id: 132900149, ownerUserId: "alexia", name: "Echo", className: "Druid", level: 6 },
+  { id: 132900149, ownerUserId: "alexia", name: "Echo", className: "Druid", level: 7 },
   {
     id: 132940690,
     ownerUserId: "andreas",
     name: "Dresana Silvakias",
     className: "Barbarian",
-    level: 6,
+    level: 7,
   },
 ] as const;
 

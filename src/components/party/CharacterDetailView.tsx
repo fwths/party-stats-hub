@@ -31,6 +31,7 @@ import { useModalHistorySync } from "@/hooks/useModalHistorySync";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { PartyMember, PreparedSpell } from "@/lib/dndbeyond.types";
+import { searchCharacterV3ItemCatalogFn } from "@/lib/character-v3/sync-functions";
 import { ConditionsPanel, InventoryList, useCharacterConditions } from "./CharacterCard";
 import { getFullyModifiedStats } from "@/lib/party-modifiers";
 import SpellbookPanel from "./character-detail/SpellbookPanel";
@@ -219,9 +220,32 @@ function DetailStat({
 export function CharacterDetailView({
   member,
   allMembers = [],
+  managedExternally = false,
+  liveControls,
 }: {
   member: PartyMember;
   allMembers?: PartyMember[];
+  managedExternally?: boolean;
+  liveControls?: {
+    canEdit: boolean;
+    onSpendSpellSlot: (level: number, isPact: boolean) => void;
+    onDamage: (amount: number) => void;
+    onHeal: (amount: number) => void;
+    onSetTemporaryHp: (amount: number) => void;
+    onDeathSave: (result: "success" | "failure") => void;
+    onStabilize: () => void;
+    onShortRest: (hitDice: Record<string, number>, healing: number) => void;
+    onLongRest: () => void;
+    onSpendResource: (name: string, amount: number) => void;
+    onAddCondition: (name: string) => void;
+    onRemoveCondition: (name: string) => void;
+    onAdjustExhaustion: (delta: -1 | 1) => void;
+    onSetItemEquipped: (itemId: string, equipped: boolean) => void;
+    onSetItemAttuned: (itemId: string, attuned: boolean) => void;
+    onSetItemQuantity: (itemId: string, quantity: number) => void;
+    onRemoveItem: (itemId: string) => void;
+    onAddCatalogItem: (kind: "weapon" | "armor" | "magic-item", id: string, quantity: number) => void;
+  };
 }) {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -386,12 +410,21 @@ export function CharacterDetailView({
     member.subclasses.some((s) => s.toLowerCase().includes("glamour"));
 
   const localHp = useLocalHpState(
-    member.id,
+    managedExternally ? -member.id : member.id,
     member.hpMax,
     member.hpCurrent,
     member.tempHp,
     member.hitDice,
     member.deathSaves,
+    {
+      managed: managedExternally,
+      canEdit: liveControls?.canEdit ?? false,
+      onDamage: (amount) => liveControls?.onDamage(amount),
+      onHeal: (amount) => liveControls?.onHeal(amount),
+      onSetTemporaryHp: (amount) => liveControls?.onSetTemporaryHp(amount),
+      onDeathSave: (result) => liveControls?.onDeathSave(result),
+      onStabilize: () => liveControls?.onStabilize(),
+    },
   );
 
   const [localArmorModel, setLocalArmorModel] = useLocalArmorModel(
@@ -442,7 +475,11 @@ export function CharacterDetailView({
     return 0;
   })();
 
-  const localSlots = useLocalSpellSlots(member.id, member.spellSlots, member.pactSlots);
+  const localSlots = useLocalSpellSlots(member.id, member.spellSlots, member.pactSlots, {
+    managed: managedExternally,
+    canEdit: liveControls?.canEdit ?? false,
+    onSpendSlot: (level, isPact) => liveControls?.onSpendSpellSlot(level, isPact),
+  });
 
   const parseComponentCost = (desc?: string): { cost: number; item: string } | null => {
     if (!desc) return null;
@@ -517,7 +554,8 @@ export function CharacterDetailView({
     });
 
     if (spell.concentration) {
-      addLocalCondition("Concentration", null);
+      if (managedExternally) liveControls?.onAddCondition("Concentration");
+      else addLocalCondition("Concentration", null);
     }
 
     setSelectedMetamagicName(null);
@@ -586,6 +624,11 @@ export function CharacterDetailView({
   const localResources = useLocalResourcesState(
     member.id,
     displayActions.filter((a) => a.source === "class" && a.uses),
+    {
+      managed: managedExternally,
+      canEdit: liveControls?.canEdit ?? false,
+      onSpend: (name, amount) => liveControls?.onSpendResource(name, amount),
+    },
   );
   const innateSorcerySpent = localResources.spent["Innate Sorcery"] ?? 0;
 
@@ -883,6 +926,16 @@ export function CharacterDetailView({
           onAddLocal={addLocalCondition}
           onRemoveLocal={removeLocalCondition}
           onTickLocal={tickLocalCondition}
+          managed={
+            managedExternally
+              ? {
+                  canEdit: liveControls?.canEdit ?? false,
+                  onAdd: (name) => liveControls?.onAddCondition(name),
+                  onRemove: (name) => liveControls?.onRemoveCondition(name),
+                  onAdjustExhaustion: (delta) => liveControls?.onAdjustExhaustion(delta),
+                }
+              : undefined
+          }
         />
         {member.error && !member.error.includes("403") && (
           <p className="mt-2 text-xs text-destructive">{member.error}</p>
@@ -946,12 +999,19 @@ export function CharacterDetailView({
           </span>
           <span className="relative font-mono text-lg font-bold text-foreground flex items-center gap-1 select-none">
             <span
-              onClick={() => {
-                setShowHpControl(!showHpControl);
-                setTempHpInputVal(String(localHp.tempHp));
-              }}
-              className="cursor-pointer hover:text-accent hover:underline flex items-baseline gap-0.5"
-              title="Open HP Control Center"
+              onClick={
+                managedExternally
+                  ? undefined
+                  : () => {
+                      setShowHpControl(!showHpControl);
+                      setTempHpInputVal(String(localHp.tempHp));
+                    }
+              }
+              className={cn(
+                "flex items-baseline gap-0.5",
+                !managedExternally && "cursor-pointer hover:text-accent hover:underline",
+              )}
+              title={managedExternally ? "Synchronized party state" : "Open HP Control Center"}
             >
               <span>{localHp.hpCurrent}</span>
               <span className="text-muted-foreground text-xs font-normal mx-0.5">/</span>
@@ -961,7 +1021,7 @@ export function CharacterDetailView({
               )}
             </span>
 
-            {showHpControl && (
+            {showHpControl && !managedExternally && (
               <div className="absolute right-0 top-7 z-50 flex flex-col gap-3 rounded-xl border border-border/80 bg-popover/95 p-3.5 shadow-2xl min-w-[240px] backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
                 <div className="flex items-center justify-between border-b border-border/30 pb-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -1829,6 +1889,7 @@ export function CharacterDetailView({
         currencies={member.currencies}
         weightCarried={member.weightCarried}
         carryingCapacity={displayCarryingCapacity}
+        attunementCapacity={member.attunementCapacity}
       />
     </Panel>
   );
@@ -2218,7 +2279,7 @@ export function CharacterDetailView({
     content = (
       <div className="flex flex-col gap-4">
         {tabNavigation}
-        <div className="min-h-[300px]">
+        <div className={cn("min-h-[300px]", managedExternally && "pointer-events-none")}>
           {activeTab === "combat" && (
             <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
               <div className="flex flex-col gap-4">{attacks}</div>
@@ -2300,12 +2361,32 @@ export function CharacterDetailView({
               member={member}
               allMembers={allMembers}
               localInventory={localInventory}
-              toggleLocalItemEquipped={toggleLocalItemEquipped}
-              toggleLocalItemAttuned={toggleLocalItemAttuned}
+              toggleLocalItemEquipped={(item, equipped) => {
+                if (managedExternally && item.id) liveControls?.onSetItemEquipped(item.id, equipped);
+                else toggleLocalItemEquipped(item.name);
+              }}
+              toggleLocalItemAttuned={(item, attuned) => {
+                if (managedExternally && item.id) liveControls?.onSetItemAttuned(item.id, attuned);
+                else toggleLocalItemAttuned(item.name);
+              }}
               deleteLocalCustomItem={deleteLocalCustomItem}
               addLocalCustomItem={addLocalCustomItem}
               displayCarryingCapacity={displayCarryingCapacity}
               infusionsPanel={infusionsPanel}
+              allowLocalCustomItems={!managedExternally}
+              catalogControls={
+                managedExternally && liveControls?.canEdit
+                  ? {
+                      search: async (query) =>
+                        searchCharacterV3ItemCatalogFn({ data: { query, limit: 30 } }),
+                      add: (kind, id, quantity) =>
+                        liveControls.onAddCatalogItem(kind, id, quantity),
+                      setQuantity: (id, quantity) =>
+                        liveControls.onSetItemQuantity(id, quantity),
+                      remove: (id) => liveControls.onRemoveItem(id),
+                    }
+                  : undefined
+              }
             />
           )}
           {activeTab === "bio" && (
@@ -2326,7 +2407,7 @@ export function CharacterDetailView({
 
   return (
     <div className="flex flex-col gap-4 relative">
-      {isClientMounted && document.getElementById("character-header-actions")
+      {!managedExternally && isClientMounted && document.getElementById("character-header-actions")
         ? createPortal(
             <div className="flex items-center gap-2">
               <Link
@@ -2366,28 +2447,37 @@ export function CharacterDetailView({
           </div>
         </div>
       </section>
+      {managedExternally && (
+        <div className="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-accent">
+          Shared synchronized sheet · Live changes update the whole party
+        </div>
+      )}
       <div>
-        {restAndHitDiceConsole}
+        {(!managedExternally || liveControls?.canEdit) && restAndHitDiceConsole}
         {/* Layout switcher is hidden per user request */}
         {false && layoutSwitcher}
       </div>
       {content}
 
-      <RestModals
-        restModal={restModal}
-        onClose={() => setRestModal(null)}
-        member={member}
-        localHp={localHp}
-        localSlots={localSlots}
-        localResources={localResources}
-        shortRestDiceSpend={shortRestDiceSpend}
-        setShortRestDiceSpend={setShortRestDiceSpend}
-        shortRestHealInput={shortRestHealInput}
-        setShortRestHealInput={setShortRestHealInput}
-        setLocalInnateSorcery={setLocalInnateSorcery}
-        setLocalStarryForm={setLocalStarryForm}
-        setLocalMantleOfMajesty={setLocalMantleOfMajesty}
-      />
+      {(!managedExternally || liveControls?.canEdit) && (
+        <RestModals
+          restModal={restModal}
+          onClose={() => setRestModal(null)}
+          member={member}
+          localHp={localHp}
+          localSlots={localSlots}
+          localResources={localResources}
+          shortRestDiceSpend={shortRestDiceSpend}
+          setShortRestDiceSpend={setShortRestDiceSpend}
+          shortRestHealInput={shortRestHealInput}
+          setShortRestHealInput={setShortRestHealInput}
+          setLocalInnateSorcery={setLocalInnateSorcery}
+          setLocalStarryForm={setLocalStarryForm}
+          setLocalMantleOfMajesty={setLocalMantleOfMajesty}
+          onApplyShortRest={managedExternally ? liveControls?.onShortRest : undefined}
+          onApplyLongRest={managedExternally ? liveControls?.onLongRest : undefined}
+        />
+      )}
 
       {/* SYNC/RESET CONFIRMATION MODAL */}
       {showSyncConfirm && (

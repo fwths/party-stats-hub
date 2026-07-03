@@ -263,6 +263,39 @@ Categories:
 
 ---
 
+## Frontend & UX Findings
+
+Prefix:
+
+```text
+UIX
+```
+
+Examples:
+
+```text
+UIX-001
+UIX-002
+UIX-003
+```
+
+Owned By:
+
+```text
+Frontend & UX Agent
+```
+
+Categories:
+
+- UI Consistency
+- Accessibility
+- SSR Safety
+- Responsive Design
+- PWA & Service Worker
+- Client Performance
+
+---
+
 ## Critic Reviews
 
 Prefix:
@@ -561,6 +594,7 @@ ARC
 DND
 CMP
 COD
+UIX
 ```
 
 ---
@@ -680,6 +714,14 @@ Code Quality
 COD-001
 COD-002
 COD-003
+```
+
+Frontend & UX
+
+```text
+UIX-001
+UIX-002
+UIX-003
 ```
 
 ---

@@ -1,30 +1,31 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+const MOB_LOGIN_IDENTITIES: Record<string, { id: string; role: "admin" | "player" | "dm" }> = {
+  fotis: { id: "qemuel", role: "admin" },
+  nikos: { id: "nikos", role: "player" },
+  eleni: { id: "eleni", role: "player" },
+  alexia: { id: "alexia", role: "player" },
+  andreas: { id: "andreas", role: "player" },
+  danny: { id: "danny", role: "dm" },
+};
+
 // Server function to verify authentication status
 export const checkAuthFn = createServerFn({ method: "GET" }).handler(async () => {
   try {
+    const { getRequestHeaders } = await import("@tanstack/react-start/server");
+    const { getUserIdFromSession } = await import("./db.server");
     const { db } = await import("./drizzle.server");
     const schema = await import("../db/schema");
     const { eq } = await import("drizzle-orm");
 
-    let users = await db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.id, "default-user"))
-      .limit(1);
+    const headers = getRequestHeaders();
+    const userId = await getUserIdFromSession(headers.get("cookie") ?? "");
+    if (!userId) return { authenticated: false, user: null };
 
-    if (!users.length) {
-      const newUser = {
-        id: "default-user",
-        username: "admin",
-        passwordHash: "",
-        role: "admin",
-        createdAt: Date.now(),
-      };
-      await db.insert(schema.users).values(newUser);
-      users = [newUser as any];
-    }
+    const users = await db.select().from(schema.users).where(eq(schema.users.id, userId)).limit(1);
+
+    if (!users.length) return { authenticated: false, user: null };
 
     return {
       authenticated: true,
@@ -37,12 +38,8 @@ export const checkAuthFn = createServerFn({ method: "GET" }).handler(async () =>
   } catch (err) {
     console.error("checkAuthFn error:", err);
     return {
-      authenticated: true,
-      user: {
-        id: "default-user",
-        username: "admin",
-        role: "admin",
-      },
+      authenticated: false,
+      user: null,
     };
   }
 });
@@ -60,10 +57,16 @@ export const loginFn = createServerFn({ method: "POST" })
     try {
       const { getRequestHeaders } = await import("@tanstack/react-start/server");
       const headers = getRequestHeaders();
-      const { assertLoginAllowed, recordLoginAttempt, verifyPasscode, startSession } =
+      const {
+        assertLoginAllowed,
+        recordLoginAttempt,
+        verifyPasscode,
+        verifyMotherOfBobClaimToken,
+        startSession,
+      } =
         await import("@/lib/auth.server");
       const { db } = await import("./drizzle.server");
-      const { eq } = await import("drizzle-orm");
+      const { and, eq } = await import("drizzle-orm");
       const schema = await import("../db/schema");
       const { hashPassword } = await import("./auth-utils");
       const { randomUUID } = await import("node:crypto");
@@ -72,6 +75,7 @@ export const loginFn = createServerFn({ method: "POST" })
 
       const username = data.username.trim().toLowerCase();
       const password = data.password;
+      const reservedIdentity = MOB_LOGIN_IDENTITIES[username];
 
       // Find user
       const usersList = await db
@@ -81,16 +85,42 @@ export const loginFn = createServerFn({ method: "POST" })
         .limit(1);
 
       let targetUser: any = null;
+      let claimedNow = false;
 
       if (usersList.length > 0) {
         // User exists, verify password
         const user = usersList[0];
         const computedHash = hashPassword(password);
-        if (user.passwordHash !== computedHash) {
+        if (user.passwordHash === "") {
+          const claimAuthorized =
+            Boolean(data.passcode) &&
+            (reservedIdentity
+              ? verifyMotherOfBobClaimToken(username, data.passcode!)
+              : verifyPasscode(data.passcode!));
+          if (!claimAuthorized) {
+            recordLoginAttempt(headers, false);
+            throw new Error(
+              reservedIdentity
+                ? "Use your private account claim token to claim this party account"
+                : "Use the campaign passcode to claim this account",
+            );
+          }
+          const claim = await db
+            .update(schema.users)
+            .set({ passwordHash: computedHash })
+            .where(and(eq(schema.users.id, user.id), eq(schema.users.passwordHash, "")));
+          if (claim.changes !== 1) {
+            recordLoginAttempt(headers, false);
+            throw new Error("This account was already claimed. Sign in with its existing password.");
+          }
+          claimedNow = true;
+          targetUser = { ...user, passwordHash: computedHash };
+        } else if (user.passwordHash !== computedHash) {
           recordLoginAttempt(headers, false);
           throw new Error("Invalid username or password");
+        } else {
+          targetUser = user;
         }
-        targetUser = user;
       } else {
         // User doesn't exist, register them on the fly if passcode is provided and correct
         if (!data.passcode) {
@@ -98,20 +128,22 @@ export const loginFn = createServerFn({ method: "POST" })
             "User does not exist. A valid campaign passcode is required to register.",
           );
         }
-        const isPasscodeValid = verifyPasscode(data.passcode);
+        const isPasscodeValid = reservedIdentity
+          ? verifyMotherOfBobClaimToken(username, data.passcode)
+          : verifyPasscode(data.passcode);
         if (!isPasscodeValid) {
           recordLoginAttempt(headers, false);
           throw new Error("Invalid campaign passcode for registration");
         }
 
         // Register new user
-        const newUserId = randomUUID();
+        const newUserId = reservedIdentity?.id ?? randomUUID();
         const computedHash = hashPassword(password);
         const newUser = {
           id: newUserId,
           username,
           passwordHash: computedHash,
-          role: "player",
+          role: reservedIdentity?.role ?? "player",
           createdAt: Date.now(),
         };
 
@@ -122,6 +154,10 @@ export const loginFn = createServerFn({ method: "POST" })
       recordLoginAttempt(headers, true);
 
       // Create session
+      if (claimedNow) {
+        const { deleteSessionsForUser } = await import("./db.server");
+        await deleteSessionsForUser(targetUser.id);
+      }
       const { cookieString } = await startSession(targetUser.id);
 
       // Set HTTP-only session cookie

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type Database from "better-sqlite3";
 
 export type AppliedDatabaseMigration = {
@@ -17,6 +16,7 @@ export class DatabaseMigrationIntegrityError extends Error {
 const migrations = [
   {
     id: "2026-06-30-001-character-v3-authority",
+    checksum: "7b1525f90c118acaf654dec0168ddb740ac75a5f16918adbb3130d76bbd58111",
     sql: `
       CREATE TABLE character_v3_snapshots (
         character_id TEXT PRIMARY KEY,
@@ -74,15 +74,19 @@ const migrations = [
   },
 ] as const;
 
-function migrationChecksum(sql: string): string {
-  return createHash("sha256").update(sql).digest("hex");
-}
-
 export function registeredDatabaseMigrations(): ReadonlyArray<{ id: string; checksum: string }> {
   return migrations.map((migration) => ({
     id: migration.id,
-    checksum: migrationChecksum(migration.sql),
+    checksum: migration.checksum,
   }));
+}
+
+export function databaseMigrationSources(): ReadonlyArray<{
+  id: string;
+  checksum: string;
+  sql: string;
+}> {
+  return migrations;
 }
 
 export function applyDatabaseMigrations(
@@ -116,7 +120,7 @@ export function applyDatabaseMigrations(
   const applied: AppliedDatabaseMigration[] = [];
   for (const migration of migrations) {
     if (existing.some((row) => row.id === migration.id)) continue;
-    const checksum = migrationChecksum(migration.sql);
+    const checksum = migration.checksum;
     const appliedAt = now();
     db.transaction(() => {
       db.exec(migration.sql);

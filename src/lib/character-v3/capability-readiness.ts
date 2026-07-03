@@ -18,6 +18,7 @@ export type CapabilityReadinessReport = {
   pendingChoiceSlotCount: number;
   maximumChoiceCoverage: number;
   minimumUnresolvedAfterChoices: number;
+  remainingCapabilities: Array<{ id: string; kind: string; label: string; value: number | null }>;
   definiteUnexplained: Array<{ id: string; kind: string; label: string }>;
   candidates: Array<{
     capabilityId: string;
@@ -96,6 +97,12 @@ export function buildCapabilityReadinessReport(input: {
     pendingChoiceSlotCount: slots.length,
     maximumChoiceCoverage,
     minimumUnresolvedAfterChoices: capabilities.length - maximumChoiceCoverage,
+    remainingCapabilities: capabilities.map((capability) => ({
+      id: capability.id,
+      kind: capability.kind,
+      label: capability.label,
+      value: capability.value,
+    })),
     definiteUnexplained: capabilities
       .filter((_, index) => edges[index].length === 0)
       .map((capability) => ({

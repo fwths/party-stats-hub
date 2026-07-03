@@ -2,28 +2,21 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 async function getCurrentUser() {
+  const { getRequestHeaders } = await import("@tanstack/react-start/server");
+  const { getUserIdFromSession } = await import("./db.server");
   const { db } = await import("./drizzle.server");
   const schema = await import("../db/schema");
   const { eq } = await import("drizzle-orm");
 
+  const userId = await getUserIdFromSession(getRequestHeaders().get("cookie") ?? "");
+  if (!userId) throw new Error("Authentication required");
+
   const users = await db
     .select()
     .from(schema.users)
-    .where(eq(schema.users.id, "default-user"))
+    .where(eq(schema.users.id, userId))
     .limit(1);
-
-  if (!users.length) {
-    const newUser = {
-      id: "default-user",
-      username: "admin",
-      passwordHash: "",
-      role: "admin",
-      createdAt: Date.now(),
-    };
-    await db.insert(schema.users).values(newUser);
-    return newUser;
-  }
-
+  if (!users.length) throw new Error("Authenticated user no longer exists");
   return users[0];
 }
 
@@ -172,6 +165,7 @@ export const selectActiveCampaignFn = createServerFn({ method: "POST" })
 
 export const getActiveCampaignFn = createServerFn({ method: "GET" }).handler(async () => {
   try {
+    const user = await getCurrentUser();
     const { getRequestHeaders } = await import("@tanstack/react-start/server");
     const headers = getRequestHeaders();
     const cookieHeader = headers.get("cookie");
@@ -192,15 +186,30 @@ export const getActiveCampaignFn = createServerFn({ method: "GET" }).handler(asy
 
     const { db } = await import("./drizzle.server");
     const schema = await import("../db/schema");
-    const { eq } = await import("drizzle-orm");
+    const { and, eq, or } = await import("drizzle-orm");
 
     const campaignList = await db
-      .select()
+      .select({ campaign: schema.campaigns })
       .from(schema.campaigns)
-      .where(eq(schema.campaigns.id, activeCampaignId))
+      .leftJoin(
+        schema.campaignMembers,
+        and(
+          eq(schema.campaignMembers.campaignId, schema.campaigns.id),
+          eq(schema.campaignMembers.userId, user.id),
+        ),
+      )
+      .where(
+        and(
+          eq(schema.campaigns.id, activeCampaignId),
+          or(
+            eq(schema.campaigns.dmUserId, user.id),
+            eq(schema.campaignMembers.userId, user.id),
+          ),
+        ),
+      )
       .limit(1);
 
-    return campaignList.length > 0 ? campaignList[0] : null;
+    return campaignList.length > 0 ? campaignList[0].campaign : null;
   } catch (err) {
     console.error("getActiveCampaignFn error:", err);
     return null;
@@ -232,6 +241,17 @@ export const updateCampaignCharactersFn = createServerFn({ method: "POST" })
     const { db } = await import("./drizzle.server");
     const schema = await import("../db/schema");
     const { eq, and, notIn, inArray } = await import("drizzle-orm");
+
+    const ownedCampaign = await db
+      .select({ id: schema.campaigns.id })
+      .from(schema.campaigns)
+      .where(
+        and(eq(schema.campaigns.id, activeCampaignId), eq(schema.campaigns.dmUserId, user.id)),
+      )
+      .limit(1);
+    if (ownedCampaign.length === 0) {
+      throw new Error("Only the campaign owner can replace the campaign character list");
+    }
 
     const inputIdsStrings = data.ids.map((id) => id.toString());
 

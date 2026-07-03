@@ -603,14 +603,19 @@ describe("Character V3 fixed starting-class capabilities", () => {
 
       expect(report.matches).toContainEqual(
         expect.objectContaining({
-          baseline: {
+          baseline: expect.objectContaining({
             label: "Darkvision",
             kind: "sense",
             value: 60,
             sourceRef: null,
             status: "imported-unreconciled",
             id: expect.any(String),
-          },
+            currentSheetConfirmation: {
+              method: "ddb-current-sheet",
+              status: "owner-confirmed",
+              sourceSystem: "ddb",
+            },
+          }),
           grant: expect.objectContaining({
             label: "Darkvision",
             kind: "sense",
@@ -685,7 +690,9 @@ describe("Character V3 fixed starting-class capabilities", () => {
       "Orc",
     ]);
     expect(report.unexplainedBaseline.map((capability) => capability.label)).toContain("Goblin");
-    expect(report.grants.every((grant) => grant.sourceRef.compatibility === "legacy")).toBe(true);
+    expect(
+      report.grants.every((grant) => grant.sourceRef.compatibility === "legacy-5e-compatible"),
+    ).toBe(true);
 
     const result = applyCapabilityMatches({
       character: approved,
@@ -889,7 +896,7 @@ describe("Character V3 owner-confirmed capability choices", () => {
         castingAbility: "WIS",
         sourceRef: expect.objectContaining({
           name: "Firbolg",
-          compatibility: "legacy",
+          compatibility: "legacy-5e-compatible",
           verification: "imported-unverified",
         }),
       }),
@@ -1201,7 +1208,7 @@ describe("Character V3 owner-confirmed capability choices", () => {
     ).toThrow(/already been confirmed/);
   });
 
-  it("blocks Qemuel's Magic Initiate confirmation until Booming Blade is explicitly approved", () => {
+  it("confirms Qemuel's TCE Booming Blade under the MOB legacy-compatible table policy", () => {
     const qemuel = canonicalCharacter(fixtures[0]);
     const feat = originFeatCapabilityCatalog.find(
       (entry) => entry.featRef.name === "Magic Initiate" && entry.featRef.sourceId === "XPHB",
@@ -1222,9 +1229,6 @@ describe("Character V3 owner-confirmed capability choices", () => {
       castingAbility: "INT" as const,
       selectedSpellVersionKeys,
     };
-    expect(() => confirmImportedMagicInitiate(base)).toThrow(
-      /Booming Blade must be verified or explicitly approved/,
-    );
     expect(() => confirmImportedMagicInitiate({ ...base, actorUserId: "alexia" })).toThrow(
       MagicInitiatePermissionError,
     );
@@ -1249,27 +1253,12 @@ describe("Character V3 owner-confirmed capability choices", () => {
     expect(boomingBlade.canonical).toMatchObject({
       name: "Booming Blade",
       sourceId: "TCE",
-      compatibility: "legacy",
+      compatibility: "legacy-5e-compatible",
       verification: "imported-unverified",
     });
-    const approved = recordContentVersionDecision({
-      character: qemuel,
-      report: versionReport,
-      decision: {
-        mutationId: "qemuel:test-approve-tce-booming-blade",
-        actorUserId: "qemuel",
-        expectedBuildRevision: qemuel.build.revision,
-        importedVersionKey: boomingBlade.imported.versionKey,
-        resolution: "accept-matched-version",
-        reason: "Test-only explicit approval of exact TCE Booming Blade for 2024 compatibility.",
-        catalogRevision: "sqlite:magic-initiate-test",
-      },
-    }).character;
     const result = confirmImportedMagicInitiate({
       ...base,
-      character: approved,
-      expectedBuildRevision: approved.build.revision,
-      mutationId: "qemuel:test-confirm-approved-magic-initiate",
+      mutationId: "qemuel:test-confirm-mob-policy-magic-initiate",
     });
     expect(result.character.build.decisions).toContainEqual(
       expect.objectContaining({
@@ -1685,6 +1674,92 @@ describe("Character V3 owner-confirmed capability choices", () => {
 });
 
 describe("Character V3 native capability readiness", () => {
+  it.each([
+    {
+      fixture: fixtures[0],
+      remaining: [
+        "language:Common",
+        "language:Elvish",
+        "language:Giant",
+        "resistance:Fire",
+        "tool:Leatherworker's Tools",
+        "tool:Smith's Tools",
+      ],
+    },
+    {
+      fixture: fixtures[1],
+      remaining: [
+        "condition-immunity:Magical Sleep",
+        "language:Common",
+        "language:Elvish",
+        "language:Halfling",
+        "resistance:Psychic",
+      ],
+    },
+    {
+      fixture: fixtures[2],
+      remaining: [
+        "language:Common",
+        "language:Draconic",
+        "language:Orc",
+        "resistance:Fire",
+        "tool:Bagpipes",
+        "tool:Drum",
+        "tool:Dulcimer",
+        "tool:Flute",
+        "tool:Lute",
+        "tool:Lyre",
+        "tool:Viol",
+      ],
+    },
+    {
+      fixture: fixtures[3],
+      remaining: ["language:Common", "language:Druidic", "language:Giant"],
+    },
+    {
+      fixture: fixtures[4],
+      remaining: [
+        "language:Common",
+        "language:Goblin",
+        "language:Orc",
+        "sense:Darkvision",
+        "tool:Flute",
+      ],
+    },
+  ])(
+    "publishes the exact post-fixed-grant source-provenance manifest for $fixture.id",
+    ({ fixture, remaining }) => {
+    const character = applyDeterministicCapabilityMatches(canonicalCharacter(fixture));
+    const background = deriveBackgroundCapabilityChoices(character, backgroundCapabilityCatalog);
+    const startingClass = deriveStartingClassCapabilityChoices(character, capabilityCatalog);
+    const subclass = deriveConditionalSubclassCapabilityChoices(character, subclassFeatureCatalog);
+    const species = deriveSpeciesCapabilityChoices(character, speciesCapabilityCatalog);
+    const originFeat = deriveOriginFeatCapabilityChoices(
+      character,
+      backgroundCapabilityCatalog,
+      originFeatCapabilityCatalog,
+    );
+    const report = buildCapabilityReadinessReport({
+      character,
+      requirements: [
+        ...background.requirements,
+        ...startingClass.requirements,
+        ...subclass.requirements,
+        ...species.requirements,
+        ...originFeat.requirements,
+      ],
+      options: [...currentCapabilityOptions(), ...species.options],
+    });
+
+    expect(
+      report.remainingCapabilities
+        .map((capability) => `${capability.kind}:${capability.label}`)
+        .sort(),
+    ).toEqual([...remaining].sort());
+    expect(report.remainingCapabilityCount).toBe(remaining.length);
+    },
+  );
+
   it.each([
     { fixture: fixtures[0], expectedSlots: 2 },
     { fixture: fixtures[1], expectedSlots: 0 },

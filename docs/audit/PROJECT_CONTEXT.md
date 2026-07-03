@@ -152,7 +152,13 @@ Future-only collaboration scenarios must remain roadmap Observations unless impl
 
 Owns authentication and authorization vulnerabilities, reliability, performance, maintainability, testing, deployment, migrations, backups, recovery, monitoring, and dependency risk.
 
-Does not own gameplay correctness, campaign product policy, or architecture decisions.
+Does not own gameplay correctness, campaign product policy, architecture decisions, or client styling and accessibility.
+
+### Frontend & UX Agent
+
+Owns frontend styling (Tailwind CSS 4), component layout/responsiveness, accessibility (a11y) compliance, React 19 SSR hydration safety, Progressive Web App (PWA) reliability, and client performance.
+
+Does not own backend SQLite databases, campaign permission policy, D&D rules accuracy, or backend network security.
 
 ### Critic Agent
 

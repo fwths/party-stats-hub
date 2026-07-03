@@ -210,7 +210,7 @@ describe("Character V3 exact catalog reconciliation", () => {
     expect(result.character.build.speciesRef).toMatchObject({
       name: "Half-Orc",
       sourceId: "PHB",
-      compatibility: "legacy",
+      compatibility: "legacy-5e-compatible",
       verification: "imported-unverified",
     });
     expect(result.character.resolutions).toContainEqual(

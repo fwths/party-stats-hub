@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { CharacterAggregate } from "./schema";
+import { characterV3PublicError } from "./public-errors";
 
 export const MutationAuthoritySchema = z
   .object({
@@ -42,7 +43,7 @@ export type AuthorizationAudit = {
 
 export class CharacterMutationPermissionError extends Error {
   constructor(message = "Actor is not authorized to mutate this character") {
-    super(message);
+    super(characterV3PublicError("NOT_CHARACTER_OWNER", message).message);
     this.name = "CharacterMutationPermissionError";
   }
 }

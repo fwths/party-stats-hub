@@ -212,6 +212,267 @@ describe("Character V3 persistence repository", () => {
     expect(committed.character.identity.ownerUserId).toBe("andreas");
   });
 
+  it("commits hardened live-state operations from the stored snapshot", () => {
+    const before = dresana();
+    repository.initialize(initialization(before));
+
+    const inspired = repository.setInspiration(before.identity.id, {
+      mutationId: "mutation:dresana:gain-inspiration",
+      actorUserId: "andreas",
+      expectedBuildRevision: before.build.revision,
+      expectedLiveStateRevision: before.liveState.revision,
+      inspiration: false,
+    });
+
+    expect(inspired.character.liveState.inspiration).toBe(false);
+    expect(inspired.event).toMatchObject({
+      type: "set-character-inspiration",
+      expectedRevision: { build: before.build.revision, liveState: before.liveState.revision },
+      resultingRevision: {
+        build: before.build.revision,
+        liveState: before.liveState.revision + 1,
+      },
+      details: { change: { before: before.liveState.inspiration, after: false } },
+    });
+    expect(repository.load(before.identity.id)).toEqual(inspired.character);
+    expect(repository.eventsSince("mother-of-bob").map((event) => event.type)).toEqual([
+      "initialize-character-v3",
+      "set-character-inspiration",
+    ]);
+  });
+
+  it("commits atomic level advancement from the stored snapshot", () => {
+    const before = dresana();
+    repository.initialize(initialization(before));
+    const tough = before.build.decisions
+      .flatMap((decision) => (decision.type === "rule-selection" ? decision.selections : []))
+      .find((selection) => selection.name === "Tough")!;
+
+    const committed = repository.advanceCharacterLevel(before.identity.id, {
+      mutationId: "mutation:dresana:repository-level-8",
+      actorUserId: "andreas",
+      expectedBuildRevision: before.build.revision,
+      expectedLiveStateRevision: before.liveState.revision,
+      classRef: before.build.levels.at(-1)!.classRef,
+      hp: {
+        method: "fixed",
+        hitDieContribution: 7,
+        constitutionModifier: 3,
+        bonuses: [{ sourceRef: tough, label: "Tough", amount: 2 }],
+      },
+      currentHpPolicy: "preserve-damage",
+      decisions: [],
+      spells: [],
+    });
+
+    expect(committed.event).toMatchObject({
+      type: "advance-character-level",
+      expectedRevision: { build: before.build.revision, liveState: before.liveState.revision },
+      resultingRevision: {
+        build: before.build.revision + 1,
+        liveState: before.liveState.revision + 1,
+      },
+      details: {
+        characterLevel: { before: 7, after: 8 },
+        maximumHp: { before: 89, after: 101 },
+      },
+    });
+    expect(repository.load(before.identity.id)).toEqual(committed.character);
+    expect(repository.eventsSince("mother-of-bob").map((event) => event.type)).toEqual([
+      "initialize-character-v3",
+      "advance-character-level",
+    ]);
+  });
+
+  it("commits condition add/remove as ordered sync events", () => {
+    const before = dresana();
+    repository.initialize(initialization(before));
+    const condition = {
+      id: "condition:dresana:prone:round-2",
+      conditionRef: null,
+      label: "Prone",
+      sourceLabel: "Battlefield shove",
+      appliedByUserId: "danny",
+    };
+
+    const added = repository.addCondition(before.identity.id, {
+      mutationId: "mutation:dresana:add-prone",
+      actorUserId: "andreas",
+      expectedBuildRevision: before.build.revision,
+      expectedLiveStateRevision: before.liveState.revision,
+      condition,
+    });
+    const removed = repository.removeCondition(before.identity.id, {
+      mutationId: "mutation:dresana:remove-prone",
+      actorUserId: "andreas",
+      expectedBuildRevision: added.character.build.revision,
+      expectedLiveStateRevision: added.character.liveState.revision,
+      conditionId: condition.id,
+    });
+
+    expect(added.event.details).toEqual({ condition });
+    expect(removed.event.details).toEqual({ condition });
+    expect(repository.load(before.identity.id)?.liveState.conditions).not.toContainEqual(condition);
+    expect(repository.eventsSince("mother-of-bob").map((event) => event.type)).toEqual([
+      "initialize-character-v3",
+      "add-character-condition",
+      "remove-character-condition",
+    ]);
+  });
+
+  it("commits Hit Point operations as ordered sync events", () => {
+    const before = dresana();
+    repository.initialize(initialization(before));
+
+    const damaged = repository.applyDamage(before.identity.id, {
+      mutationId: "mutation:dresana:take-5-damage",
+      actorUserId: "andreas",
+      expectedBuildRevision: before.build.revision,
+      expectedLiveStateRevision: before.liveState.revision,
+      amount: 5,
+      criticalHit: false,
+    });
+    const healed = repository.restoreHitPoints(before.identity.id, {
+      mutationId: "mutation:dresana:heal-3",
+      actorUserId: "andreas",
+      expectedBuildRevision: damaged.character.build.revision,
+      expectedLiveStateRevision: damaged.character.liveState.revision,
+      amount: 3,
+    });
+    const temped = repository.grantTemporaryHitPoints(before.identity.id, {
+      mutationId: "mutation:dresana:temp-4",
+      actorUserId: "andreas",
+      expectedBuildRevision: healed.character.build.revision,
+      expectedLiveStateRevision: healed.character.liveState.revision,
+      amount: 4,
+    });
+
+    expect(damaged.event).toMatchObject({
+      type: "apply-damage",
+      details: {
+        before: {
+          currentHp: before.liveState.currentHp,
+          temporaryHp: before.liveState.temporaryHp,
+        },
+        after: { currentHp: before.liveState.currentHp - 5, temporaryHp: 0 },
+      },
+    });
+    expect(healed.character.liveState.currentHp).toBe(before.liveState.currentHp - 2);
+    expect(temped.character.liveState.temporaryHp).toBe(4);
+    expect(repository.load(before.identity.id)).toEqual(temped.character);
+    expect(repository.eventsSince("mother-of-bob").map((event) => event.type)).toEqual([
+      "initialize-character-v3",
+      "apply-damage",
+      "restore-hit-points",
+      "grant-temporary-hit-points",
+    ]);
+  });
+
+  it("commits death-save and stabilization operations from the stored snapshot", () => {
+    const before = dresana();
+    repository.initialize(initialization(before));
+    const dropped = repository.applyDamage(before.identity.id, {
+      mutationId: "mutation:dresana:drop-to-zero",
+      actorUserId: "andreas",
+      expectedBuildRevision: before.build.revision,
+      expectedLiveStateRevision: before.liveState.revision,
+      amount: before.liveState.currentHp,
+      criticalHit: false,
+    });
+    const deathSave = repository.recordDeathSave(before.identity.id, {
+      mutationId: "mutation:dresana:death-save-success",
+      actorUserId: "andreas",
+      expectedBuildRevision: dropped.character.build.revision,
+      expectedLiveStateRevision: dropped.character.liveState.revision,
+      result: "success",
+    });
+    const stabilized = repository.stabilizeCharacter(before.identity.id, {
+      mutationId: "mutation:dresana:stabilize",
+      actorUserId: "andreas",
+      expectedBuildRevision: deathSave.character.build.revision,
+      expectedLiveStateRevision: deathSave.character.liveState.revision,
+    });
+
+    expect(dropped.character.liveState.currentHp).toBe(0);
+    expect(deathSave.character.liveState.deathSaves.successes).toBe(1);
+    expect(stabilized.character.liveState.deathSaves).toEqual({
+      successes: 0,
+      failures: 0,
+      stabilized: true,
+    });
+    expect(repository.eventsSince("mother-of-bob").map((event) => event.type)).toEqual([
+      "initialize-character-v3",
+      "apply-damage",
+      "record-death-save",
+      "stabilize-character",
+    ]);
+  });
+
+  it("rejects stale repository live-state commands without appending events", () => {
+    const before = dresana();
+    repository.initialize(initialization(before));
+    repository.setExhaustion(before.identity.id, {
+      mutationId: "mutation:dresana:set-exhaustion",
+      actorUserId: "andreas",
+      expectedBuildRevision: before.build.revision,
+      expectedLiveStateRevision: before.liveState.revision,
+      exhaustion: 1,
+    });
+
+    expect(() =>
+      repository.setInspiration(before.identity.id, {
+        mutationId: "mutation:dresana:stale-inspiration",
+        actorUserId: "andreas",
+        expectedBuildRevision: before.build.revision,
+        expectedLiveStateRevision: before.liveState.revision,
+        inspiration: true,
+      }),
+    ).toThrow(/revision conflict/);
+    expect(repository.eventsSince("mother-of-bob").map((event) => event.type)).toEqual([
+      "initialize-character-v3",
+      "set-character-exhaustion",
+    ]);
+  });
+
+  it("persists a 2024 Long Rest as one audited campaign event", () => {
+    const before = dresana();
+    repository.initialize(initialization(before));
+    const result = repository.takeLongRest(before.identity.id, {
+      mutationId: "mutation:dresana:long-rest",
+      actorUserId: "andreas",
+      expectedBuildRevision: before.build.revision,
+      expectedLiveStateRevision: before.liveState.revision,
+    });
+
+    expect(result.character.liveState.revision).toBe(before.liveState.revision + 1);
+    expect(repository.load(before.identity.id)).toEqual(result.character);
+    expect(repository.eventsSince("mother-of-bob").at(-1)?.type).toBe(
+      "take-character-long-rest",
+    );
+  });
+
+  it("replays exact repository live-state command retries without double-appending", () => {
+    const before = dresana();
+    repository.initialize(initialization(before));
+    const input = {
+      mutationId: "mutation:dresana:repository-inspiration-retry",
+      actorUserId: "andreas",
+      expectedBuildRevision: before.build.revision,
+      expectedLiveStateRevision: before.liveState.revision,
+      inspiration: false,
+    };
+
+    const first = repository.setInspiration(before.identity.id, input);
+    const retry = repository.setInspiration(before.identity.id, input);
+
+    expect(retry.replayed).toBe(true);
+    expect(retry).toEqual({ ...first, replayed: true });
+    expect(() =>
+      repository.setInspiration(before.identity.id, { ...input, inspiration: true }),
+    ).toThrow(CharacterV3MutationReplayMismatchError);
+    expect(repository.eventsSince("mother-of-bob")).toHaveLength(2);
+  });
+
   it("rolls back the snapshot when appending the event fails", () => {
     const before = dresana();
     repository.initialize(initialization(before));

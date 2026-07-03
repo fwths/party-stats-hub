@@ -100,6 +100,12 @@ Code Quality Findings
 COD-001
 ```
 
+Frontend & UX Findings
+
+```text
+UIX-001
+```
+
 Critic Findings
 
 ```text
@@ -241,6 +247,10 @@ D&D Domain Agent
 
 ```text
 Campaign & Collaboration Agent
+```
+
+```text
+Frontend & UX Agent
 ```
 
 ```text

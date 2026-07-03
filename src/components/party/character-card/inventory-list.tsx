@@ -68,11 +68,13 @@ export function InventoryList({
   currencies,
   weightCarried,
   carryingCapacity,
+  attunementCapacity,
 }: {
   items: InventoryItem[];
   currencies: PartyMember["currencies"];
   weightCarried: number;
   carryingCapacity: number;
+  attunementCapacity?: number;
 }) {
   const equipped = items.filter((i) => i.equipped);
   const magicCarried = items.filter((i) => !i.equipped && i.magic);
@@ -147,13 +149,15 @@ export function InventoryList({
         </div>
       </div>
 
-      {/* Attunement Tracker */}
+      {/* Capacity is rules-derived; this surface reports state without inventing a universal cap. */}
       <div className="flex items-center justify-between rounded-lg border border-gold/30 bg-[color-mix(in_oklab,var(--gold)_8%,var(--secondary))] px-2.5 py-1.5 shadow-[0_0_8px_color-mix(in_oklab,var(--gold)_20%,transparent)] select-none">
         <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-gold">
           <Sparkles size={10} className="text-gold/90 animate-pulse" />
-          <span>Attunement Slots</span>
+          <span>Attuned Items</span>
         </span>
-        <span className="font-mono text-xs font-bold text-gold">{attunedCount} / 3</span>
+        <span className="font-mono text-xs font-bold text-gold">
+          {attunedCount}{typeof attunementCapacity === "number" ? ` / ${attunementCapacity}` : ""}
+        </span>
       </div>
 
       {equipped.length > 0 && <InventoryGroup label="Equipped" items={equipped} />}

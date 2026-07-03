@@ -38,11 +38,20 @@ export class MagicInitiateConflictError extends Error {
 function authorized(character: CharacterAggregate, ref: ExactRuleRef): boolean {
   return (
     ref.verification === "verified" ||
+    isMobApprovedLegacyCompatibleSpell(ref) ||
     character.resolutions.some(
       (resolution) =>
         resolution.type === "content-version-decision" &&
         resolution.selectedVersionKey === ref.versionKey,
     )
+  );
+}
+
+function isMobApprovedLegacyCompatibleSpell(ref: ExactRuleRef): boolean {
+  return (
+    ref.kind === "spell" &&
+    ref.verification === "imported-unverified" &&
+    ["legacy", "legacy-5e-compatible"].includes(ref.compatibility)
   );
 }
 

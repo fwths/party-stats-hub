@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 
 const SESSION_COOKIE_NAME = "mob_session_id";
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
@@ -35,15 +35,34 @@ export function parseCookies(header: string | null): Record<string, string> {
 }
 
 export function getSessionIdFromHeaders(headers: Headers): string | null {
-  return "default-session";
+  return parseCookies(headers.get("cookie"))[SESSION_COOKIE_NAME] ?? null;
 }
 
 export async function isAuthenticated(headers: Headers): Promise<boolean> {
-  return true;
+  const sessionId = getSessionIdFromHeaders(headers);
+  if (!sessionId) return false;
+  const { getUserIdFromSession } = await import("./db.server");
+  return Boolean(await getUserIdFromSession(headers.get("cookie") ?? ""));
 }
 
 export function verifyPasscode(passcode: string): boolean {
-  return true;
+  return verifySecret(passcode, getPasscode());
+}
+
+function verifySecret(provided: string, expected: string): boolean {
+  const providedBuffer = Buffer.from(provided);
+  const expectedBuffer = Buffer.from(expected);
+  return (
+    providedBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(providedBuffer, expectedBuffer)
+  );
+}
+
+export function verifyMotherOfBobClaimToken(username: string, token: string): boolean {
+  const key = `MOB_CLAIM_TOKEN_${username.trim().toUpperCase()}`;
+  const expected = process.env[key];
+  if (!expected) return false;
+  return verifySecret(token, expected);
 }
 
 function getLoginRateLimitKey(headers: Headers): string {

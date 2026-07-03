@@ -42,6 +42,7 @@ Verify these exist:
 /.agents/audit/architecture-agent.md
 /.agents/audit/dnd-agent.md
 /.agents/audit/campaign-agent.md
+/.agents/audit/frontend-agent.md
 /.agents/audit/code-quality-agent.md
 /.agents/audit/critic-agent.md
 /.agents/audit/repository-director.md
@@ -59,6 +60,7 @@ Verify these exist:
 /docs/audit/ARCHITECTURE_RED_FLAGS.md
 /docs/audit/RULES_TEST_MATRIX.md
 /docs/audit/CAMPAIGN_SCENARIOS.md
+/docs/audit/FRONTEND_UX_CHECKLIST.md
 /docs/audit/RELIABILITY_SECURITY_CHECKLIST.md
 ```
 
@@ -86,12 +88,13 @@ Run reports in this order:
 1. Architecture & Data Model Agent
 2. D&D Domain Agent
 3. Campaign & Collaboration Agent
-4. Code Quality & Reliability Agent
-5. Critic Agent
-6. Repository Director
+4. Frontend & UX Agent
+5. Code Quality & Reliability Agent
+6. Critic Agent
+7. Repository Director
 ```
 
-D&D and Campaign may run in parallel after Architecture is complete.
+D&D, Campaign, and Frontend may run in parallel after Architecture is complete.
 
 ---
 
@@ -124,6 +127,7 @@ Verify expected outputs exist:
 /audit-results/architecture-report.md
 /audit-results/dnd-report.md
 /audit-results/campaign-report.md
+/audit-results/frontend-report.md
 /audit-results/code-quality-report.md
 /audit-results/critic-report.md
 /audit-results/executive-summary.md

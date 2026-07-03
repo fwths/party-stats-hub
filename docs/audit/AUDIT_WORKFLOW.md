@@ -286,6 +286,44 @@ campaign-report.md
 
 ---
 
+## Frontend, UI/UX, & Accessibility (a11y) Agent
+
+Primary responsibility:
+
+```text
+Frontend Quality & UX
+```
+
+Focus:
+
+```text
+UI Consistency
+
+Accessibility (a11y)
+
+SSR Safety
+
+Responsive Design
+
+PWA & Service Worker
+
+Client Performance
+```
+
+Diagnostic Guide:
+
+```text
+FRONTEND_UX_CHECKLIST.md
+```
+
+Output:
+
+```text
+frontend-report.md
+```
+
+---
+
 ## Code Quality & Reliability Agent
 
 Primary responsibility:
@@ -399,7 +437,7 @@ The audit flows through the following stages.
 ```text
 Architecture
       ↓
-D&D + Campaign
+D&D + Campaign + Frontend
       ↓
 Code Quality
       ↓
@@ -544,6 +582,50 @@ Collaboration Review
 
 ---
 
+# Stage 2C — Frontend & UX Audit
+
+Inputs:
+
+```text
+Repository Source Code
+
+PROJECT_CONTEXT.md
+
+FINDING_SCHEMA.md
+
+SEVERITY_MATRIX.md
+
+FINDINGS_REGISTRY.md
+
+FINDING_ID_GUIDELINES.md
+
+FRONTEND_UX_CHECKLIST.md
+
+REPORT_TEMPLATE.md
+
+architecture-report.md
+```
+
+Output:
+
+```text
+frontend-report.md
+```
+
+Required Reviews:
+
+```text
+Accessibility Conformance Assessment
+
+SSR & Hydration Safety Review
+
+Visual & Responsive Design Review
+
+PWA & Service Worker Caching Review
+```
+
+---
+
 # Stage 3 — Code Quality Audit
 
 Inputs:
@@ -570,6 +652,8 @@ architecture-report.md
 dnd-report.md
 
 campaign-report.md
+
+frontend-report.md
 ```
 
 Output:
@@ -618,6 +702,8 @@ architecture-report.md
 dnd-report.md
 
 campaign-report.md
+
+frontend-report.md
 
 code-quality-report.md
 ```
@@ -672,6 +758,8 @@ architecture-report.md
 dnd-report.md
 
 campaign-report.md
+
+frontend-report.md
 
 code-quality-report.md
 

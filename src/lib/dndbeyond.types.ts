@@ -53,12 +53,18 @@ export interface ActionInfo {
 }
 
 export interface InventoryItem {
+  id?: string;
   name: string;
   type: string; // Weapon / Armor / Wondrous item / Potion / ...
   rarity: string | null; // Common, Uncommon, Rare, Very Rare, Legendary, Artifact, Mundane
   magic: boolean;
   equipped: boolean;
   attuned: boolean;
+  attunementRequirement?: {
+    status: "required" | "not-required" | "unknown";
+    conditions: string | null;
+    provenance: "verified-rule" | "imported-current-sheet" | "unspecified";
+  };
   quantity: number;
   weight?: number;
   description?: string;
@@ -247,6 +253,7 @@ export interface PartyMember {
   defenses: DefenseInfo[];
   actions: ActionInfo[];
   inventory: InventoryItem[];
+  attunementCapacity?: number;
   readonlyUrl: string;
   error?: string;
   languages: string[];

@@ -128,9 +128,9 @@ const catalog = loadCatalog();
 const fixtures = [
   { id: 97349530, owner: "qemuel", targetLevel: 8, fixedHp: 5 },
   { id: 131296315, owner: "nikos", targetLevel: 8, fixedHp: 4 },
-  { id: 131593533, owner: "eleni", targetLevel: 7, fixedHp: 5 },
-  { id: 132900149, owner: "alexia", targetLevel: 7, fixedHp: 5 },
-  { id: 132940690, owner: "andreas", targetLevel: 7, fixedHp: 7 },
+  { id: 131593533, owner: "eleni", targetLevel: 8, fixedHp: 5 },
+  { id: 132900149, owner: "alexia", targetLevel: 8, fixedHp: 5 },
+  { id: 132940690, owner: "andreas", targetLevel: 8, fixedHp: 7 },
 ] as const;
 
 function mobMigrationOptions(id: number) {
@@ -185,7 +185,7 @@ describe("Character V2 canonical 2024 reconciliation", () => {
       classRef: canonical.levels.at(-1)!.classRef,
       hpGain: 7,
     });
-    expect(advanced.levels.at(-1)).toMatchObject({ characterLevel: 7, classLevel: 7 });
+    expect(advanced.levels.at(-1)).toMatchObject({ characterLevel: 8, classLevel: 8 });
   });
 
   it.each(fixtures)("resolves the class progression for DDB character $id", (fixture) => {
@@ -294,7 +294,7 @@ describe("Character V2 next-level previews from canonical rule data", () => {
     }
   });
 
-  it("previews Ari's Countercharm and required prepared-spell choice", () => {
+  it("previews Ari's level-8 ASI/feat and prepared-spell choices", () => {
     const character = migrate(fixtures[2]);
     const preview = createNextLevelPreview(
       character.build,
@@ -302,16 +302,21 @@ describe("Character V2 next-level previews from canonical rule data", () => {
       catalog.classes,
       catalog.features,
     );
-    expect(preview.automaticFeatures.map((feature) => feature.name)).toEqual(["Countercharm"]);
-    expect(preview.requiredChoices).toContainEqual({
-      id: "bard:level-7:prepared-spells",
-      label: "Choose 1 prepared spell",
-      count: 1,
-      options: ["Eligible class spell"],
-    });
+    expect(preview.automaticFeatures.map((feature) => feature.name)).toEqual([
+      "Ability Score Improvement",
+    ]);
+    expect(preview.requiredChoices).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: "Choose 1 prepared spell", count: 1 }),
+        expect.objectContaining({
+          label: "Ability Score Improvement or eligible feat",
+          count: 1,
+        }),
+      ]),
+    );
   });
 
-  it("models Echo's Elemental Fury as one choice rather than granting both options", () => {
+  it("previews Echo's level-8 ASI/feat after her level-7 Elemental Fury choice", () => {
     const character = migrate(fixtures[3]);
     const preview = createNextLevelPreview(
       character.build,
@@ -319,20 +324,21 @@ describe("Character V2 next-level previews from canonical rule data", () => {
       catalog.classes,
       catalog.features,
     );
-    expect(preview.automaticFeatures.map((feature) => feature.name)).toContain("Elemental Fury");
-    expect(preview.automaticFeatures.map((feature) => feature.name)).not.toContain(
-      "Potent Spellcasting",
+    expect(preview.automaticFeatures.map((feature) => feature.name)).toEqual([
+      "Ability Score Improvement",
+    ]);
+    expect(preview.requiredChoices).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ label: "Choose 1 prepared spell", count: 1 }),
+        expect.objectContaining({
+          label: "Ability Score Improvement or eligible feat",
+          count: 1,
+        }),
+      ]),
     );
-    expect(preview.automaticFeatures.map((feature) => feature.name)).not.toContain("Primal Strike");
-    expect(preview.requiredChoices).toContainEqual({
-      id: "druid-elemental-fury-7:option:0",
-      label: "Elemental Fury",
-      count: 1,
-      options: ["Potent Spellcasting", "Primal Strike"],
-    });
   });
 
-  it("previews both of Dresana's automatic level-7 features", () => {
+  it("previews Dresana's level-8 ASI/feat decision", () => {
     const character = migrate(fixtures[4]);
     const preview = createNextLevelPreview(
       character.build,
@@ -341,18 +347,19 @@ describe("Character V2 next-level previews from canonical rule data", () => {
       catalog.features,
     );
     expect(preview.automaticFeatures.map((feature) => feature.name)).toEqual([
-      "Feral Instinct",
-      "Instinctive Pounce",
+      "Ability Score Improvement",
     ]);
-    expect(preview.requiredChoices).toEqual([]);
+    expect(preview.requiredChoices).toContainEqual(
+      expect.objectContaining({ label: "Ability Score Improvement or eligible feat", count: 1 }),
+    );
   });
 
   it("refuses to classify any remaining MOB advancement as automatic", () => {
     const expectedChoiceLabels = new Map<number, string[]>([
       [97349530, ["Ability Score Improvement or eligible feat"]],
       [131296315, ["Choose 1 prepared spell", "Ability Score Improvement or eligible feat"]],
-      [131593533, ["Choose 1 prepared spell"]],
-      [132900149, ["Elemental Fury", "Choose 1 prepared spell"]],
+      [131593533, ["Choose 1 prepared spell", "Ability Score Improvement or eligible feat"]],
+      [132900149, ["Choose 1 prepared spell", "Ability Score Improvement or eligible feat"]],
     ]);
 
     for (const fixture of fixtures.slice(0, 4)) {

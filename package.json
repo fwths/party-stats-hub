@@ -16,6 +16,7 @@
     "db:migrate": "tsx scripts/database-migrate.ts",
     "db:backup": "tsx scripts/database-backup.ts",
     "db:restore:verify": "tsx scripts/database-restore-verify.ts",
+    "mob:v3:bootstrap": "tsx scripts/bootstrap-mother-of-bob-v3.ts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",

@@ -25,6 +25,8 @@ interface RestModalsProps {
   setLocalInnateSorcery: (val: boolean) => void;
   setLocalStarryForm: (val: "None" | "Archer" | "Chalice" | "Dragon") => void;
   setLocalMantleOfMajesty: (val: boolean) => void;
+  onApplyShortRest?: (hitDice: Record<string, number>, healing: number) => void;
+  onApplyLongRest?: () => void;
 }
 
 export function RestModals({
@@ -41,6 +43,8 @@ export function RestModals({
   setLocalInnateSorcery,
   setLocalStarryForm,
   setLocalMantleOfMajesty,
+  onApplyShortRest,
+  onApplyLongRest,
 }: RestModalsProps) {
   if (!restModal) return null;
 
@@ -139,6 +143,11 @@ export function RestModals({
               <button
                 onClick={() => {
                   const healAmt = parseInt(shortRestHealInput, 10) || 0;
+                  if (onApplyShortRest) {
+                    onApplyShortRest(shortRestDiceSpend, healAmt);
+                    onClose();
+                    return;
+                  }
                   localHp.shortRest(healAmt);
 
                   // Consume selected hit dice
@@ -185,6 +194,11 @@ export function RestModals({
               </button>
               <button
                 onClick={() => {
+                  if (onApplyLongRest) {
+                    onApplyLongRest();
+                    onClose();
+                    return;
+                  }
                   localHp.longRest();
                   localSlots.restSlots(true);
                   localResources.restResources(true);

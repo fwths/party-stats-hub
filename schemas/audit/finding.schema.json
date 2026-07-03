@@ -24,7 +24,7 @@
   "properties": {
     "id": {
       "type": "string",
-      "pattern": "^(ARC|DND|CMP|COD|CRT|DIR)-[0-9]{3,}$"
+      "pattern": "^(ARC|DND|CMP|COD|CRT|DIR|UIX)-[0-9]{3,}$"
     },
     "title": { "type": "string", "minLength": 1 },
     "severity": {
@@ -36,6 +36,7 @@
         "Architecture & Data Model Agent",
         "D&D Domain Agent",
         "Campaign & Collaboration Agent",
+        "Frontend & UX Agent",
         "Code Quality & Reliability Agent",
         "Critic Agent",
         "Repository Director"

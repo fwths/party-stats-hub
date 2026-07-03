@@ -1,8 +1,105 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { db } from "./drizzle.server";
 import * as schema from "../db/schema";
 import { and, eq, like, or, sql, asc, count, not } from "drizzle-orm";
+
+type BuilderNameMapping = {
+  raceId: number | null;
+  backgroundId: number | null;
+  classId: number | null;
+  subclassId: number | null;
+  level: number;
+  multiClasses: Array<{ classId: number; subclassId: null; level: number }>;
+};
+
+async function mapBuilderNamesToIds(
+  raceName: string | null,
+  backgroundName: string | null,
+  classesStr: string | null,
+  subclassesArr: string[] = [],
+): Promise<BuilderNameMapping> {
+  try {
+    const { db } = await import("./drizzle.server");
+
+    let raceId: number | null = null;
+    let backgroundId: number | null = null;
+    let classId: number | null = null;
+    let subclassId: number | null = null;
+    let level = 1;
+    const multiClasses: BuilderNameMapping["multiClasses"] = [];
+
+    if (raceName) {
+      const rows = await db
+        .select({ id: schema.species.id })
+        .from(schema.species)
+        .where(like(sql`lower(${schema.species.name})`, `%${raceName.toLowerCase()}%`))
+        .limit(1);
+      if (rows.length > 0) {
+        raceId = rows[0].id;
+      } else {
+        const variantRows = await db
+          .select({ id: schema.speciesVariants.id })
+          .from(schema.speciesVariants)
+          .where(like(sql`lower(${schema.speciesVariants.name})`, `%${raceName.toLowerCase()}%`))
+          .limit(1);
+        if (variantRows.length > 0) raceId = variantRows[0].id;
+      }
+    }
+
+    if (backgroundName) {
+      const rows = await db
+        .select({ id: schema.backgrounds.id })
+        .from(schema.backgrounds)
+        .where(like(sql`lower(${schema.backgrounds.name})`, `%${backgroundName.toLowerCase()}%`))
+        .limit(1);
+      if (rows.length > 0) backgroundId = rows[0].id;
+    }
+
+    if (classesStr) {
+      const parts = classesStr.split("/").map((p) => p.trim());
+      for (let index = 0; index < parts.length; index++) {
+        const match = parts[index].match(/^(.+?)\s+(\d+)$/);
+        if (!match) continue;
+        const className = match[1].trim();
+        const classLevel = Number(match[2]);
+        const rows = await db
+          .select({ id: schema.classes.id })
+          .from(schema.classes)
+          .where(like(sql`lower(${schema.classes.name})`, `%${className.toLowerCase()}%`))
+          .limit(1);
+        if (rows.length === 0) continue;
+        if (index === 0) {
+          classId = rows[0].id;
+          level = classLevel;
+        } else {
+          multiClasses.push({ classId: rows[0].id, subclassId: null, level: classLevel });
+        }
+      }
+    }
+
+    if (subclassesArr.length > 0) {
+      const subclassName = subclassesArr[0];
+      const rows = await db
+        .select({ id: schema.subclasses.id })
+        .from(schema.subclasses)
+        .where(like(sql`lower(${schema.subclasses.name})`, `%${subclassName.toLowerCase()}%`))
+        .limit(1);
+      if (rows.length > 0) subclassId = rows[0].id;
+    }
+
+    return { raceId, backgroundId, classId, subclassId, level, multiClasses };
+  } catch (err) {
+    console.error("Error mapping names to database IDs:", err);
+    return {
+      raceId: null,
+      backgroundId: null,
+      classId: null,
+      subclassId: null,
+      level: 1,
+      multiClasses: [],
+    };
+  }
+}
 
 async function getSnapshot(): Promise<Record<string, any[]>> {
   try {
@@ -15,6 +112,7 @@ async function getSnapshot(): Promise<Record<string, any[]>> {
 
 async function queryTable(tableName: string, schemaKey: string): Promise<any[]> {
   try {
+    const { db } = await import("./drizzle.server");
     const table = (schema as any)[schemaKey];
     if (table) return await db.select().from(table);
   } catch (err) {
@@ -28,6 +126,81 @@ async function queryTable(tableName: string, schemaKey: string): Promise<any[]> 
 export const getClassesFromDb = createServerFn({ method: "GET" }).handler(async () => {
   return await queryTable("classes", "classes");
 });
+
+export const getBuilderInitialCharacterFromDb = createServerFn({ method: "GET" })
+  .inputValidator(z.object({ id: z.number().optional() }))
+  .handler(async ({ data }) => {
+    if (!data.id) return null;
+
+    try {
+      const { db } = await import("./drizzle.server");
+      const rows = await db
+        .select()
+        .from(schema.characters)
+        .where(eq(schema.characters.id, data.id.toString()));
+
+      if (rows.length === 0) return null;
+
+      let initialCharacter: any = null;
+      if (rows[0].builderStateJson) {
+        initialCharacter = JSON.parse(rows[0].builderStateJson);
+      } else if (rows[0].rawJson) {
+        const member = JSON.parse(rows[0].rawJson);
+        const mapped = await mapBuilderNamesToIds(
+          member.race || null,
+          member.background || null,
+          member.classes || null,
+          member.subclasses || [],
+        );
+
+        const abilitiesObj: Record<string, number> = {
+          STR: 10,
+          DEX: 10,
+          CON: 10,
+          INT: 10,
+          WIS: 10,
+          CHA: 10,
+        };
+        if (Array.isArray(member.abilities)) {
+          for (const ability of member.abilities) {
+            if (
+              ability &&
+              typeof ability === "object" &&
+              typeof ability.name === "string" &&
+              typeof ability.score === "number"
+            ) {
+              abilitiesObj[ability.name] = ability.score;
+            }
+          }
+        }
+
+        initialCharacter = {
+          name: member.name || "Unnamed Hero",
+          raceId: mapped.raceId,
+          speciesVariantId: null,
+          backgroundId: mapped.backgroundId,
+          classId: mapped.classId,
+          subclassId: mapped.subclassId,
+          level: mapped.level || 1,
+          abilities: abilitiesObj,
+          abilityBonuses: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
+          ruleChoices: {},
+          highLevelFeatChoices: {},
+          hpType: "fixed",
+          manualHpRolls: {},
+          customEquipment: [],
+          multiClasses: mapped.multiClasses,
+          abilitiesMethod: "standard",
+        };
+      }
+
+      if (initialCharacter) initialCharacter.id = Number(rows[0].id);
+      return initialCharacter;
+    } catch (err) {
+      console.error("Failed to load initial character for builder:", err);
+      return null;
+    }
+  });
 
 export const getSpellsFromDb = createServerFn({ method: "GET" }).handler(async () => {
   return await queryTable("spells", "spells");
@@ -121,6 +294,7 @@ export const searchCompendiumEntriesFromDb = createServerFn({ method: "GET" }).h
 
 export const getCompendiumSearchMetaFromDb = createServerFn({ method: "GET" }).handler(async () => {
   try {
+    const { db } = await import("./drizzle.server");
     const entityTypes = await db
       .select({
         entityType: schema.compendiumEntries.entityType,
@@ -349,6 +523,7 @@ export const getMonsterFluffByName = createServerFn({ method: "GET" })
   .inputValidator(z.object({ name: z.string() }))
   .handler(async ({ data }) => {
     try {
+      const { db } = await import("./drizzle.server");
       const row = await db
         .select({ fluffJson: schema.monsters.fluffJson })
         .from(schema.monsters)

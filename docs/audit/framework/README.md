@@ -24,9 +24,10 @@ Use the agents in order:
 1. .agents/audit/architecture-agent.md
 2. .agents/audit/dnd-agent.md
 3. .agents/audit/campaign-agent.md
-4. .agents/audit/code-quality-agent.md
-5. .agents/audit/critic-agent.md
-6. .agents/audit/repository-director.md
+4. .agents/audit/frontend-agent.md
+5. .agents/audit/code-quality-agent.md
+6. .agents/audit/critic-agent.md
+7. .agents/audit/repository-director.md
 
 Use all required inputs listed in docs/audit/AUDIT_BOOTSTRAP.md.
 
@@ -47,6 +48,7 @@ The audit should produce:
 audit-results/architecture-report.md
 audit-results/dnd-report.md
 audit-results/campaign-report.md
+audit-results/frontend-report.md
 audit-results/code-quality-report.md
 audit-results/critic-report.md
 audit-results/executive-summary.md
@@ -59,11 +61,12 @@ Run the agents in this order:
 1. Architecture & Data Model Agent
 2. D&D Domain Agent
 3. Campaign & Collaboration Agent
-4. Code Quality & Reliability Agent
-5. Critic Agent
-6. Repository Director
+4. Frontend & UX Agent
+5. Code Quality & Reliability Agent
+6. Critic Agent
+7. Repository Director
 
-The D&D and Campaign agents may run in parallel after the Architecture report exists. The Critic and Repository Director should run after the earlier reports are complete.
+The D&D, Campaign, and Frontend agents may run in parallel after the Architecture report exists. The Critic and Repository Director should run after the earlier reports are complete.
 
 ## Required Final Updates
 

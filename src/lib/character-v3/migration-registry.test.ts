@@ -28,6 +28,53 @@ describe("Character schema migration registry", () => {
     expect(result).toEqual({ character, sourceVersion: 3, targetVersion: 3, steps: [] });
   });
 
+  it("compatibly hydrates a V3 snapshot saved before hit-die tracking", () => {
+    const character = migrateDdbPayloadToCharacterV3({
+      payload: payload(),
+      ownerUserId: "andreas",
+      campaignId: "mother-of-bob",
+    });
+    const legacyV3 = JSON.parse(JSON.stringify(character));
+    delete legacyV3.liveState.hitDice;
+
+    const result = migratePersistedCharacter(legacyV3, { campaignId: "mother-of-bob" });
+
+    expect(result.sourceVersion).toBe(3);
+    expect(result.steps).toEqual([]);
+    expect(result.character.liveState.hitDice).toEqual({
+      status: "unavailable",
+      reason: "Persisted V3 snapshot predates hit-die tracking",
+    });
+  });
+
+  it("compatibly marks resources from older V3 snapshots as imported-unverified", () => {
+    const character = migrateDdbPayloadToCharacterV3({
+      payload: payload(),
+      ownerUserId: "andreas",
+      campaignId: "mother-of-bob",
+    });
+    const legacyV3 = JSON.parse(JSON.stringify(character));
+    legacyV3.liveState.resources.forEach((resource: Record<string, unknown>) => {
+      delete resource.provenance;
+      delete resource.additionalSourceVersionKeys;
+      delete resource.recoveryRules;
+    });
+
+    const result = migratePersistedCharacter(legacyV3, { campaignId: "mother-of-bob" });
+
+    expect(
+      result.character.liveState.resources.every(
+        (resource) => resource.provenance === "imported-unverified",
+      ),
+    ).toBe(true);
+    expect(
+      result.character.liveState.resources.every(
+        (resource) =>
+          resource.additionalSourceVersionKeys.length === 0 && resource.recoveryRules.length === 0,
+      ),
+    ).toBe(true);
+  });
+
   it("deterministically migrates a persisted V2 aggregate through every registered step", () => {
     const character = migrateDdbPayloadToCharacterV2(payload(), "andreas");
     const untouched = JSON.parse(JSON.stringify(character));

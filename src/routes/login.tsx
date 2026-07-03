@@ -155,7 +155,7 @@ function LoginComponent() {
               htmlFor="register-toggle"
               className="text-sm text-muted-foreground select-none cursor-pointer"
             >
-              I am a new user (Register)
+              First login / claim party account
             </label>
           </div>
 
@@ -165,7 +165,7 @@ function LoginComponent() {
                 htmlFor="passcode"
                 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                Campaign Passcode
+                Account Claim Token
               </label>
               <input
                 id="passcode"
@@ -174,7 +174,7 @@ function LoginComponent() {
                 disabled={loading}
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter passcode to register"
+                placeholder="Enter your private first-login token"
                 className="w-full px-4 py-2.5 bg-secondary/40 border border-border/80 focus:border-purple-500/70 focus:ring-1 focus:ring-purple-500/40 rounded-xl outline-none transition-all placeholder:text-muted-foreground/30 text-foreground text-sm"
               />
             </div>
@@ -192,7 +192,7 @@ function LoginComponent() {
             disabled={loading}
             className="w-full mt-4 py-3 bg-purple-500 hover:bg-purple-600 active:bg-purple-700 disabled:bg-muted/40 disabled:text-muted-foreground text-white font-semibold rounded-xl transition-all shadow-[0_4px_10px_rgba(168,85,247,0.2)] disabled:shadow-none cursor-pointer flex items-center justify-center gap-2"
           >
-            <span>{isRegister ? "Register & Enter" : "Login & Enter"}</span>
+            <span>{isRegister ? "Claim Account & Enter" : "Login & Enter"}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 

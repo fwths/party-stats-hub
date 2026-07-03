@@ -65,6 +65,8 @@ export function ConditionsPanel({
   onAddLocal,
   onRemoveLocal,
   onTickLocal,
+  readOnly = false,
+  managed,
 }: {
   characterId: number;
   remoteConditions: string[];
@@ -73,6 +75,13 @@ export function ConditionsPanel({
   onAddLocal: (name: string, rounds: number | null) => void;
   onRemoveLocal: (name: string) => void;
   onTickLocal: (name: string, delta: number) => void;
+  readOnly?: boolean;
+  managed?: {
+    canEdit: boolean;
+    onAdd: (name: string) => void;
+    onRemove: (name: string) => void;
+    onAdjustExhaustion?: (delta: -1 | 1) => void;
+  };
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [customName, setCustomName] = useState("");
@@ -81,7 +90,8 @@ export function ConditionsPanel({
 
   const handleAdd = (name: string, r: number | null) => {
     if (!name.trim()) return;
-    onAddLocal(name.trim(), r);
+    if (managed) managed.onAdd(name.trim());
+    else onAddLocal(name.trim(), r);
     setCustomName("");
     setIsOpen(false);
   };
@@ -90,169 +100,215 @@ export function ConditionsPanel({
     <div className="mt-1.5 flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-1">
         {exhaustion > 0 && (
-          <ConditionChip name={`Exhaustion ${exhaustion}`} Icon={HeartCrack} intense />
+          <span className="inline-flex items-center gap-1">
+            <ConditionChip name={`Exhaustion ${exhaustion}`} Icon={HeartCrack} intense />
+            {managed?.canEdit && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => managed.onAdjustExhaustion?.(-1)}
+                  className="h-5 rounded border border-border/50 px-1.5 text-[10px] text-muted-foreground hover:border-accent/50 hover:text-accent"
+                  title="Reduce Exhaustion"
+                >
+                  −
+                </button>
+                {exhaustion < 6 && (
+                  <button
+                    type="button"
+                    onClick={() => managed.onAdjustExhaustion?.(1)}
+                    className="h-5 rounded border border-border/50 px-1.5 text-[10px] text-muted-foreground hover:border-destructive/50 hover:text-destructive"
+                    title="Increase Exhaustion"
+                  >
+                    +
+                  </button>
+                )}
+              </>
+            )}
+          </span>
+        )}
+        {exhaustion === 0 && managed?.canEdit && (
+          <button
+            type="button"
+            onClick={() => managed.onAdjustExhaustion?.(1)}
+            className="inline-flex h-5 items-center gap-1 rounded-full border border-dashed border-border/60 px-2 text-[9px] uppercase tracking-wider text-muted-foreground hover:border-destructive/50 hover:text-destructive"
+          >
+            <HeartCrack size={8} />
+            Exhaustion
+          </button>
         )}
         {remoteConditions.map((c) => {
           const Icon = conditionIcon(c);
-          return <ConditionChip key={`r-${c}`} name={c} Icon={Icon} readOnly />;
-        })}
-        {localConditions.map((c) => {
-          const Icon = conditionIcon(c.name);
           return (
             <ConditionChip
-              key={`l-${c.name}`}
-              name={c.name}
+              key={`r-${c}`}
+              name={c}
               Icon={Icon}
-              rounds={c.rounds}
-              onTick={() => onTickLocal(c.name, -1)}
-              onRemove={() => onRemoveLocal(c.name)}
+              readOnly={!managed?.canEdit}
+              onRemove={managed?.canEdit ? () => managed.onRemove(c) : undefined}
             />
           );
         })}
+        {!managed &&
+          !readOnly &&
+          localConditions.map((c) => {
+            const Icon = conditionIcon(c.name);
+            return (
+              <ConditionChip
+                key={`l-${c.name}`}
+                name={c.name}
+                Icon={Icon}
+                rounds={c.rounds}
+                onTick={() => onTickLocal(c.name, -1)}
+                onRemove={() => onRemoveLocal(c.name)}
+              />
+            );
+          })}
 
         {/* Add Buff Button */}
-        <div className="relative inline-block">
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="inline-flex h-5 items-center gap-1 rounded-full border border-dashed border-border/60 bg-transparent px-2 text-[9px] font-medium uppercase tracking-wider text-muted-foreground transition-all duration-200 hover:border-accent/60 hover:text-accent hover:bg-accent/5 cursor-pointer"
-          >
-            <Plus size={8} className="shrink-0" />
-            <span>Add Effect</span>
-          </button>
+        {(!managed || managed.canEdit) && !readOnly && (
+          <div className="relative inline-block">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="inline-flex h-5 items-center gap-1 rounded-full border border-dashed border-border/60 bg-transparent px-2 text-[9px] font-medium uppercase tracking-wider text-muted-foreground transition-all duration-200 hover:border-accent/60 hover:text-accent hover:bg-accent/5 cursor-pointer"
+            >
+              <Plus size={8} className="shrink-0" />
+              <span>Add Effect</span>
+            </button>
 
-          {isOpen && (
-            <div className="absolute left-0 top-6 z-50 w-64 rounded-lg border border-border/80 bg-popover/95 p-3 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
-              {/* Category tabs */}
-              <div className="flex gap-1 border-b border-border/30 pb-1.5 mb-2">
-                {(["spells", "conditions", "cover"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setEffectTab(tab)}
-                    className={`flex-1 text-[9px] font-bold uppercase py-0.5 rounded transition-all cursor-pointer ${
-                      effectTab === tab
-                        ? "bg-accent/15 text-accent border border-accent/30 font-extrabold"
-                        : "text-muted-foreground hover:bg-secondary/40"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-
-              {/* Categorized presets list */}
-              <div className="max-h-28 overflow-y-auto mb-2.5 flex flex-wrap gap-1 pr-1 scrollbar-thin">
-                {effectTab === "spells" &&
-                  [
-                    { name: "Bless", d: 10 },
-                    { name: "Shield", d: 1 },
-                    { name: "Haste", d: 10 },
-                    { name: "Bane", d: 10 },
-                    { name: "Slow", d: 10 },
-                    { name: "Bladesong", d: 10 },
-                    { name: "Longstrider", d: null },
-                    { name: "Warding Bond", d: null },
-                  ].map((p) => (
+            {isOpen && (
+              <div className="absolute left-0 top-6 z-50 w-64 rounded-lg border border-border/80 bg-popover/95 p-3 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-1 duration-150">
+                {/* Category tabs */}
+                <div className="flex gap-1 border-b border-border/30 pb-1.5 mb-2">
+                  {(["spells", "conditions", "cover"] as const).map((tab) => (
                     <button
-                      key={p.name}
+                      key={tab}
                       type="button"
-                      onClick={() => handleAdd(p.name, p.d)}
-                      className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-
-                {effectTab === "conditions" &&
-                  [
-                    "Blinded",
-                    "Charmed",
-                    "Deafened",
-                    "Frightened",
-                    "Grappled",
-                    "Invisible",
-                    "Paralyzed",
-                    "Poisoned",
-                    "Prone",
-                    "Restrained",
-                    "Stunned",
-                    "Unconscious",
-                  ].map((cond) => (
-                    <button
-                      key={cond}
-                      type="button"
-                      onClick={() => handleAdd(cond, null)}
-                      className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
-                    >
-                      {cond}
-                    </button>
-                  ))}
-
-                {effectTab === "cover" &&
-                  ["Half Cover", "3/4 Cover"].map((cov) => (
-                    <button
-                      key={cov}
-                      type="button"
-                      onClick={() => handleAdd(cov, null)}
-                      className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
-                    >
-                      {cov}
-                    </button>
-                  ))}
-              </div>
-
-              {/* Custom Input controls */}
-              <div className="border-t border-border/40 pt-2 flex flex-col gap-1.5">
-                <input
-                  type="text"
-                  placeholder="Custom effect name..."
-                  value={customName}
-                  onChange={(e) => setCustomName(e.target.value)}
-                  className="w-full rounded border border-border bg-secondary/40 px-2 py-1 text-[10px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-accent"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAdd(customName, rounds);
-                  }}
-                />
-
-                {/* Duration select grid */}
-                <div className="flex items-center justify-between text-[9px] text-muted-foreground uppercase select-none mt-0.5">
-                  <span>Duration (Rounds)</span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setRounds(null)}
-                      className={`px-1.5 py-0.5 rounded text-[8px] font-bold border transition-colors cursor-pointer ${
-                        rounds === null
-                          ? "border-accent/40 bg-accent/10 text-accent"
-                          : "border-border/30 bg-secondary/25 hover:border-accent/30"
+                      onClick={() => setEffectTab(tab)}
+                      className={`flex-1 text-[9px] font-bold uppercase py-0.5 rounded transition-all cursor-pointer ${
+                        effectTab === tab
+                          ? "bg-accent/15 text-accent border border-accent/30 font-extrabold"
+                          : "text-muted-foreground hover:bg-secondary/40"
                       }`}
                     >
-                      No Limit
+                      {tab}
                     </button>
-                    <input
-                      type="number"
-                      placeholder="∞"
-                      value={rounds ?? ""}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        setRounds(isNaN(val) ? null : val);
-                      }}
-                      className="w-10 rounded border border-border/50 bg-secondary/40 py-0.5 font-mono text-[9px] text-center text-foreground focus:outline-none"
-                    />
-                  </div>
+                  ))}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleAdd(customName, rounds)}
-                  className="mt-1 w-full rounded bg-primary py-1 text-[9px] font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer focus:outline-none transition-colors"
-                >
-                  Add Effect
-                </button>
+                {/* Categorized presets list */}
+                <div className="max-h-28 overflow-y-auto mb-2.5 flex flex-wrap gap-1 pr-1 scrollbar-thin">
+                  {effectTab === "spells" &&
+                    [
+                      { name: "Bless", d: 10 },
+                      { name: "Shield", d: 1 },
+                      { name: "Haste", d: 10 },
+                      { name: "Bane", d: 10 },
+                      { name: "Slow", d: 10 },
+                      { name: "Bladesong", d: 10 },
+                      { name: "Longstrider", d: null },
+                      { name: "Warding Bond", d: null },
+                    ].map((p) => (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => handleAdd(p.name, p.d)}
+                        className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+
+                  {effectTab === "conditions" &&
+                    [
+                      "Blinded",
+                      "Charmed",
+                      "Deafened",
+                      "Frightened",
+                      "Grappled",
+                      "Invisible",
+                      "Paralyzed",
+                      "Poisoned",
+                      "Prone",
+                      "Restrained",
+                      "Stunned",
+                      "Unconscious",
+                    ].map((cond) => (
+                      <button
+                        key={cond}
+                        type="button"
+                        onClick={() => handleAdd(cond, null)}
+                        className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
+                      >
+                        {cond}
+                      </button>
+                    ))}
+
+                  {effectTab === "cover" &&
+                    ["Half Cover", "3/4 Cover"].map((cov) => (
+                      <button
+                        key={cov}
+                        type="button"
+                        onClick={() => handleAdd(cov, null)}
+                        className="rounded border border-border/30 bg-secondary/35 hover:border-accent/40 hover:bg-secondary/60 text-[9px] text-foreground font-medium px-1.5 py-0.5 cursor-pointer transition-colors"
+                      >
+                        {cov}
+                      </button>
+                    ))}
+                </div>
+
+                {/* Custom Input controls */}
+                <div className="border-t border-border/40 pt-2 flex flex-col gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="Custom effect name..."
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    className="w-full rounded border border-border bg-secondary/40 px-2 py-1 text-[10px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-accent"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAdd(customName, rounds);
+                    }}
+                  />
+
+                  {/* Duration select grid */}
+                  <div className="flex items-center justify-between text-[9px] text-muted-foreground uppercase select-none mt-0.5">
+                    <span>Duration (Rounds)</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setRounds(null)}
+                        className={`px-1.5 py-0.5 rounded text-[8px] font-bold border transition-colors cursor-pointer ${
+                          rounds === null
+                            ? "border-accent/40 bg-accent/10 text-accent"
+                            : "border-border/30 bg-secondary/25 hover:border-accent/30"
+                        }`}
+                      >
+                        No Limit
+                      </button>
+                      <input
+                        type="number"
+                        placeholder="∞"
+                        value={rounds ?? ""}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          setRounds(isNaN(val) ? null : val);
+                        }}
+                        className="w-10 rounded border border-border/50 bg-secondary/40 py-0.5 font-mono text-[9px] text-center text-foreground focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAdd(customName, rounds)}
+                    className="mt-1 w-full rounded bg-primary py-1 text-[9px] font-bold text-primary-foreground hover:bg-primary/90 cursor-pointer focus:outline-none transition-colors"
+                  >
+                    Add Effect
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

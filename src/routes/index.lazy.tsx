@@ -16,6 +16,7 @@ import {
   Plus,
   Settings,
   ChevronDown,
+  DatabaseZap,
 } from "lucide-react";
 import { RefreshButton } from "@/components/party/RefreshButton";
 import { PartyHighlights } from "@/components/party/PartyHighlights";
@@ -30,6 +31,7 @@ import { SharedInventory } from "@/components/party/SharedInventory";
 import SessionNotes from "@/components/party/SessionNotes";
 import RulesReference from "@/components/party/RulesReference";
 import { DMTools } from "@/components/party/DMTools";
+import { CharacterV3SyncPanel } from "@/components/party/CharacterV3SyncPanel";
 
 export const Route = createLazyFileRoute("/")({
   component: Index,
@@ -288,8 +290,8 @@ export default function Index() {
 function PartyDashboard({ ids }: { ids: number[] }) {
   const { data } = useSuspenseQuery(partyQueryOptions(ids));
   const [activeTab, setActiveTab] = useState<
-    "grid" | "combat" | "inventory" | "roller" | "notes" | "rules" | "dm"
-  >("grid");
+    "grid" | "combat" | "inventory" | "roller" | "notes" | "rules" | "dm" | "v3-sync"
+  >("v3-sync");
 
   const validMembers = data.members.filter((m) => !m.error);
 
@@ -363,6 +365,17 @@ function PartyDashboard({ ids }: { ids: number[] }) {
           <span>Compendium</span>
         </Link>
         <button
+          onClick={() => setActiveTab("v3-sync")}
+          className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+            activeTab === "v3-sync"
+              ? "border border-cyan-500/40 bg-cyan-500/15 text-cyan-400 shadow-sm"
+              : "border border-transparent hover:border-border hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <DatabaseZap size={12} />
+          <span>MOB Live</span>
+        </button>
+        <button
           onClick={() => setActiveTab("dm")}
           className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
             activeTab === "dm"
@@ -416,6 +429,12 @@ function PartyDashboard({ ids }: { ids: number[] }) {
         {activeTab === "dm" && (
           <div className="animate-fade-in">
             <DMTools members={data.members} />
+          </div>
+        )}
+
+        {activeTab === "v3-sync" && (
+          <div className="animate-fade-in">
+            <CharacterV3SyncPanel legacyMembers={data.members} />
           </div>
         )}
       </div>

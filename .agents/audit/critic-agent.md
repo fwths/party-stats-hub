@@ -35,6 +35,7 @@ You should receive:
 - architecture-report.md
 - dnd-report.md
 - campaign-report.md
+- frontend-report.md
 - code-quality-report.md
 
 You should never receive repository source code.
@@ -121,6 +122,17 @@ Focus on:
 - Ownership impact
 - Collaboration claims
 - UX observations
+
+---
+
+## Frontend Agent
+
+Focus on:
+
+- Visual style & responsiveness evidence
+- Accessibility compliance validation
+- SSR hydration claims
+- PWA offline behavior
 
 ---
 

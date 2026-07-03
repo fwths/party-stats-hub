@@ -73,6 +73,26 @@ function importedSpellRef(spell: PreparedSpell, contentRevision: string): ExactR
   };
 }
 
+function importedSpellDetails(
+  spell: PreparedSpell,
+): NonNullable<CharacterAggregate["build"]["spells"][number]["details"]> {
+  return {
+    sourceSystem: "ddb",
+    provenance: "imported-current-sheet",
+    spellLevel: spell.level,
+    description: spell.description ?? "",
+    school: spell.school ?? "",
+    activation: spell.activation ? { ...spell.activation } : null,
+    range: spell.range ? { ...spell.range } : null,
+    duration: spell.duration ? { ...spell.duration } : null,
+    components: [...(spell.components ?? [])],
+    componentsDescription: spell.componentsDescription ?? "",
+    concentration: spell.concentration ?? false,
+    ritual: spell.ritual ?? false,
+    limitedUse: spell.uses ? { maximum: spell.uses.max, recovery: spell.uses.reset } : null,
+  };
+}
+
 function spellSelections(
   member: PartyMember | undefined,
   classVersionKey: string,
@@ -98,6 +118,7 @@ function spellSelections(
       selectedAtCharacterLevel: null,
       provenance: "imported",
       decisionId: null,
+      details: importedSpellDetails(spell),
     });
   };
   member.cantrips.forEach((spell) => add(spell, "cantrip"));
@@ -144,6 +165,7 @@ function importedGrantRef(input: {
 function attachDdbGrantedSpellSources(
   character: CharacterAggregate,
   payload: unknown,
+  member: PartyMember,
 ): CharacterAggregate {
   const data = (payload as { data?: Record<string, unknown> })?.data;
   if (!data) return character;
@@ -188,7 +210,30 @@ function attachDdbGrantedSpellSources(
       const raw = entry as {
         componentId?: unknown;
         spellCastingAbilityId?: unknown;
-        definition?: { id?: unknown; name?: unknown; level?: unknown };
+        limitedUse?: { maxUses?: unknown; resetType?: unknown };
+        definition?: {
+          id?: unknown;
+          name?: unknown;
+          level?: unknown;
+          description?: unknown;
+          school?: unknown;
+          activation?: { activationTime?: unknown; activationType?: unknown };
+          range?: {
+            origin?: unknown;
+            rangeValue?: unknown;
+            aoeType?: unknown;
+            aoeValue?: unknown;
+          };
+          duration?: {
+            durationType?: unknown;
+            durationInterval?: unknown;
+            durationUnit?: unknown;
+          };
+          components?: unknown;
+          componentsDescription?: unknown;
+          concentration?: unknown;
+          ritual?: unknown;
+        };
       };
       const name = raw.definition?.name;
       const level = raw.definition?.level;
@@ -247,6 +292,80 @@ function attachDdbGrantedSpellSources(
         selectedAtCharacterLevel: null,
         provenance: "imported",
         decisionId: null,
+        details: (() => {
+          const imported = [...member.cantrips, ...member.allSpells].find(
+            (spell) => spell.level === level && normalizeSpellName(spell.name) === normalizeSpellName(name),
+          );
+          if (imported) return importedSpellDetails(imported);
+          const definition = raw.definition!;
+          const reset =
+            raw.limitedUse?.resetType === 1
+              ? "short/long rest"
+              : raw.limitedUse?.resetType === 2
+                ? "long rest"
+                : raw.limitedUse?.resetType === 3
+                  ? "day"
+                  : "rest";
+          return importedSpellDetails({
+            level,
+            name,
+            description:
+              typeof definition.description === "string" ? definition.description : "",
+            school: typeof definition.school === "string" ? definition.school : undefined,
+            activation:
+              definition.activation &&
+              typeof definition.activation.activationTime === "number" &&
+              typeof definition.activation.activationType === "number"
+                ? {
+                    activationTime: definition.activation.activationTime,
+                    activationType: definition.activation.activationType,
+                  }
+                : undefined,
+            range: definition.range
+              ? {
+                  origin: typeof definition.range.origin === "string" ? definition.range.origin : "",
+                  rangeValue:
+                    typeof definition.range.rangeValue === "number"
+                      ? definition.range.rangeValue
+                      : null,
+                  aoeType:
+                    typeof definition.range.aoeType === "string" ? definition.range.aoeType : null,
+                  aoeValue:
+                    typeof definition.range.aoeValue === "number" ? definition.range.aoeValue : null,
+                }
+              : undefined,
+            duration: definition.duration
+              ? {
+                  durationType:
+                    typeof definition.duration.durationType === "string"
+                      ? definition.duration.durationType
+                      : "",
+                  durationInterval:
+                    typeof definition.duration.durationInterval === "number"
+                      ? definition.duration.durationInterval
+                      : null,
+                  durationUnit:
+                    typeof definition.duration.durationUnit === "string"
+                      ? definition.duration.durationUnit
+                      : null,
+                }
+              : undefined,
+            components: Array.isArray(definition.components)
+              ? definition.components.filter((value): value is number => typeof value === "number")
+              : undefined,
+            componentsDescription:
+              typeof definition.componentsDescription === "string"
+                ? definition.componentsDescription
+                : undefined,
+            concentration:
+              typeof definition.concentration === "boolean" ? definition.concentration : undefined,
+            ritual: typeof definition.ritual === "boolean" ? definition.ritual : undefined,
+            uses:
+              typeof raw.limitedUse?.maxUses === "number"
+                ? { current: raw.limitedUse.maxUses, max: raw.limitedUse.maxUses, reset }
+                : undefined,
+          });
+        })(),
       });
     }
   }
@@ -294,6 +413,11 @@ function importedCapabilities(
       value,
       sourceRef: null,
       status: "imported-unreconciled",
+      currentSheetConfirmation: {
+        method: "ddb-current-sheet",
+        status: "owner-confirmed",
+        sourceSystem: "ddb",
+      },
     });
   };
   member.languages.forEach((label) => add("language", label));
@@ -308,6 +432,47 @@ function importedCapabilities(
   );
   member.senses.forEach((sense) => add("sense", sense.name, sense.value));
   return { sourceSystem: "ddb", capabilities };
+}
+
+function importedHitDice(
+  character: CharacterAggregateV2,
+  classRefs: Map<string, ExactRuleRef>,
+  member: PartyMember | undefined,
+): CharacterAggregate["liveState"]["hitDice"] {
+  if (!member) {
+    return {
+      status: "unavailable",
+      reason: "Original character hit-die snapshot was not provided",
+    };
+  }
+  const parts = member.hitDice
+    .split(/\s*\+\s*/)
+    .map((part) => part.trim().match(/^(\d+)\/(\d+)d(\d+)$/))
+    .filter((match): match is RegExpMatchArray => match !== null);
+  const classOrder: string[] = [];
+  const classCounts = new Map<string, number>();
+  character.build.levels.forEach((level) => {
+    const versionKey = classRefs.get(level.classRef.id)!.versionKey;
+    if (!classCounts.has(versionKey)) classOrder.push(versionKey);
+    classCounts.set(versionKey, (classCounts.get(versionKey) ?? 0) + 1);
+  });
+  if (parts.length !== classOrder.length) {
+    return {
+      status: "unavailable",
+      reason: `Expected ${classOrder.length} class hit-die pools, received ${parts.length}`,
+    };
+  }
+  const pools = classOrder.map((classVersionKey, index) => ({
+    classVersionKey,
+    remaining: Number(parts[index][1]),
+    maximum: Number(parts[index][2]),
+    die: Number(parts[index][3]),
+    provenance: "imported-unverified" as const,
+  }));
+  if (pools.some((pool) => pool.maximum !== classCounts.get(pool.classVersionKey))) {
+    return { status: "unavailable", reason: "Imported hit-die maximums do not match class levels" };
+  }
+  return { status: "tracked", pools };
 }
 
 export function migrateCharacterV2ToV3(
@@ -355,7 +520,15 @@ export function migrateCharacterV2ToV3(
       code: "V3_IMPORTED_CAPABILITIES_REQUIRE_RECONCILIATION",
       severity: "warning",
       message:
-        "Imported languages, proficiencies, defenses, and senses are preserved as a temporary baseline until their exact rule sources are reconciled.",
+        "Imported languages and proficiencies are preserved as a temporary baseline until their exact rule sources are reconciled.",
+    });
+  }
+  const hitDice = importedHitDice(character, classRefs, options.importedMember);
+  if (hitDice.status === "unavailable") {
+    migrationIssues.push({
+      code: "V3_HIT_DICE_SNAPSHOT_UNAVAILABLE",
+      severity: "blocking",
+      message: hitDice.reason,
     });
   }
   if (character.build.overrides.length > 0) {
@@ -364,6 +537,18 @@ export function migrateCharacterV2ToV3(
       severity: "warning",
       message: "V2 migration-baseline payloads were not converted into executable V3 overrides.",
     });
+  }
+
+  const importedInventoryByName = new Map<
+    string,
+    NonNullable<typeof options.importedMember>["inventory"]
+  >();
+  for (const importedItem of options.importedMember?.inventory ?? []) {
+    const key = importedItem.name.trim().toLowerCase();
+    importedInventoryByName.set(key, [
+      ...(importedInventoryByName.get(key) ?? []),
+      importedItem,
+    ]);
   }
 
   const migrated: CharacterAggregate = {
@@ -384,6 +569,193 @@ export function migrateCharacterV2ToV3(
       organizations: options.importedMember?.characteristics.organizations ?? "",
       notes: options.importedMember?.characteristics.otherNotes ?? "",
       currencies: options.importedMember?.currencies ?? { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+      movement: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        walk:
+          options.importedMember && Number.isInteger(options.importedMember.speed)
+            ? options.importedMember.speed
+            : null,
+        special: (options.importedMember?.specialSpeeds ?? [])
+          .filter(
+            (speed): speed is { type: "Fly" | "Swim" | "Climb" | "Burrow"; value: number } =>
+              ["Fly", "Swim", "Climb", "Burrow"].includes(speed.type) &&
+              Number.isInteger(speed.value) &&
+              speed.value >= 0,
+          )
+          .map((speed) => ({ type: speed.type, value: speed.value })),
+      },
+      armorClass: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        value:
+          options.importedMember && Number.isInteger(options.importedMember.armorClass)
+            ? options.importedMember.armorClass
+            : null,
+      },
+      initiative: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        value:
+          options.importedMember && Number.isInteger(options.importedMember.initiative)
+            ? options.importedMember.initiative
+            : null,
+      },
+      passiveScores: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        perception:
+          options.importedMember && Number.isInteger(options.importedMember.passivePerception)
+            ? options.importedMember.passivePerception
+            : null,
+        investigation:
+          options.importedMember && Number.isInteger(options.importedMember.passiveInvestigation)
+            ? options.importedMember.passiveInvestigation
+            : null,
+        insight:
+          options.importedMember && Number.isInteger(options.importedMember.passiveInsight)
+            ? options.importedMember.passiveInsight
+            : null,
+      },
+      skills: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        values: (options.importedMember?.skills ?? []).map((skill) => ({
+          key: skill.key,
+          name: skill.name,
+          ability: skill.ability as "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA",
+          modifier: skill.modifier,
+          proficiency: skill.proficiency,
+        })),
+      },
+      savingThrows: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        values: (options.importedMember?.saves ?? []).map((save) => ({
+          ability: save.ability as "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA",
+          modifier: save.modifier,
+          proficiency: save.proficiency,
+        })),
+      },
+      spellcastingTotals: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        values: (options.importedMember?.spellcasting ?? []).map((entry) => ({
+          className: entry.className,
+          ability: entry.ability as "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA",
+          saveDc: entry.saveDc,
+          attackBonus: entry.attackBonus,
+        })),
+      },
+      senses: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        values: (options.importedMember?.senses ?? []).map((sense) => ({
+          name: sense.name,
+          value: sense.value,
+        })),
+      },
+      defenses: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        values: (options.importedMember?.defenses ?? []).map((defense) => ({
+          type: defense.type,
+          damageType: defense.damageType,
+        })),
+      },
+      proficiencies: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        languages: [...(options.importedMember?.languages ?? [])],
+        tools: [...(options.importedMember?.tools ?? [])],
+        armor: [...(options.importedMember?.armorProficiencies ?? [])],
+        weapons: [...(options.importedMember?.weaponProficiencies ?? [])],
+      },
+      actions: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        values: (options.importedMember?.actions ?? []).map((action) => ({
+          name: action.name,
+          source: action.source,
+          description: action.description ?? "",
+          activation: action.activation
+            ? {
+                activationType: action.activation.activationType,
+                activationTime: action.activation.activationTime,
+              }
+            : null,
+          limitedUse: action.uses
+            ? { maximum: action.uses.max, recovery: action.uses.reset }
+            : null,
+        })),
+      },
+      attacks: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        values: (options.importedMember?.attacks ?? []).map((attack) => ({
+          name: attack.name,
+          attackBonus: attack.attackBonus,
+          damage: attack.damage,
+          damageType: attack.damageType,
+          properties: [...attack.properties],
+          isWeapon: attack.isWeapon,
+        })),
+      },
+      features: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        values: (options.importedMember?.features ?? []).map((feature) => ({
+          name: feature.name,
+          description: feature.description,
+          source: feature.source,
+          sourceName: feature.sourceName,
+          level: feature.level ?? null,
+          isUnlocked: feature.isUnlocked ?? true,
+        })),
+        feats: (options.importedMember?.feats ?? []).map((feat) => ({
+          name: feat.name,
+          description: feat.description,
+          choices: [...feat.choices],
+        })),
+      },
+      encumbrance: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        weightCarried:
+          options.importedMember && Number.isFinite(options.importedMember.weightCarried)
+            ? options.importedMember.weightCarried
+            : null,
+        carryingCapacity:
+          options.importedMember && Number.isFinite(options.importedMember.carryingCapacity)
+            ? options.importedMember.carryingCapacity
+            : null,
+      },
+      demographics: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        gender: options.importedMember?.characteristics.gender ?? "",
+        age: options.importedMember?.characteristics.age ?? "",
+        height: options.importedMember?.characteristics.height ?? "",
+        weight:
+          options.importedMember?.characteristics.weight != null
+            ? String(options.importedMember.characteristics.weight)
+            : "",
+        eyes: options.importedMember?.characteristics.eyes ?? "",
+        skin: options.importedMember?.characteristics.skin ?? "",
+        hair: options.importedMember?.characteristics.hair ?? "",
+      },
+      specializations: {
+        sourceSystem: "ddb",
+        provenance: "imported-current-sheet",
+        activeArmorModel: options.importedMember?.activeArmorModel ?? null,
+        activeInfusions: [...(options.importedMember?.activeInfusions ?? [])],
+        infusions: (options.importedMember?.infusions ?? []).map((option) => ({ ...option })),
+        metamagic: (options.importedMember?.metamagic ?? []).map((option) => ({ ...option })),
+        totemAspects: (options.importedMember?.totemAspects ?? []).map((option) => ({ ...option })),
+        weaponMasteries: (options.importedMember?.weaponMasteries ?? []).map((option) => ({
+          ...option,
+        })),
+      },
     },
     build: {
       schemaVersion: 3,
@@ -399,6 +771,11 @@ export function migrateCharacterV2ToV3(
         method: character.build.abilityBasis.method,
         baseScores: character.build.abilityBasis.scores,
         verified: character.build.abilityBasis.verified,
+        currentSheetConfirmation: {
+          method: "ddb-current-sheet",
+          status: "owner-confirmed",
+          sourceSystem: "ddb",
+        },
       },
       levels: character.build.levels.map((level) => ({
         characterLevel: level.characterLevel,
@@ -421,6 +798,11 @@ export function migrateCharacterV2ToV3(
         maximum: character.liveState.maxHp,
         method: "imported-baseline",
         verified: false,
+        currentSheetConfirmation: {
+          method: "ddb-current-sheet",
+          status: "owner-confirmed",
+          sourceSystem: "ddb",
+        },
       },
       gains: [],
     },
@@ -431,9 +813,11 @@ export function migrateCharacterV2ToV3(
       inspiration: character.liveState.inspiration,
       exhaustion: character.liveState.exhaustion,
       deathSaves: character.liveState.deathSaves,
+      hitDice,
       resources: character.liveState.resources.map((resource) => ({
         key: resource.key,
         sourceVersionKey: null,
+        provenance: "imported-unverified" as const,
         label: resource.label,
         current: resource.current,
         maximum: resource.max,
@@ -447,16 +831,73 @@ export function migrateCharacterV2ToV3(
         appliedByUserId: condition.appliedByUserId,
       })),
     },
-    items: character.items.map((item) => ({
-      id: item.id,
-      definitionRef: item.definitionRef ? exactRuleRef(item.definitionRef, contentRevision) : null,
-      name: item.name,
-      quantity: item.quantity,
-      equipped: item.equipped,
-      attuned: item.attuned,
-      containerId: item.containerId,
-      provenance: item.provenance,
-      charges: null,
+    items: character.items.map((item) => {
+      const matchingItems = importedInventoryByName.get(item.name.trim().toLowerCase()) ?? [];
+      const matchingImported = matchingItems.shift() ?? null;
+      return {
+        id: item.id,
+        definitionRef: item.definitionRef
+          ? exactRuleRef(item.definitionRef, contentRevision)
+          : null,
+        name: item.name,
+        quantity: item.quantity,
+        equipped: item.equipped,
+        attuned: item.attuned,
+        containerId: item.containerId,
+        provenance: item.provenance,
+        charges: null,
+        details: matchingImported
+          ? {
+              sourceSystem: "ddb" as const,
+              provenance: "imported-current-sheet" as const,
+              type: matchingImported.type,
+              rarity: matchingImported.rarity,
+              magic: matchingImported.magic,
+              weight: matchingImported.weight ?? null,
+              description: matchingImported.description ?? "",
+              snippet: matchingImported.snippet ?? "",
+              cost: matchingImported.cost ?? null,
+              damage: matchingImported.damage ?? null,
+              properties: [...(matchingImported.properties ?? [])],
+              armorClass: matchingImported.armorClass ?? null,
+              armorTypeId: matchingImported.armorTypeId ?? null,
+            }
+          : null,
+      };
+    }),
+    companions: (options.importedMember?.creatures ?? []).map((creature) => ({
+      id: `ddb:creature:${creature.id}`,
+      sourceSystem: "ddb",
+      provenance: "imported-current-sheet",
+      name: creature.name,
+      description: creature.description,
+      liveState: {
+        active: creature.isActive,
+        removedHitPoints: creature.removedHitPoints,
+        temporaryHitPoints: creature.temporaryHitPoints ?? 0,
+      },
+      definition: {
+        upstreamId: String(creature.definition.id),
+        name: creature.definition.name,
+        armorClass: creature.definition.armorClass,
+        armorClassDescription: creature.definition.armorClassDescription,
+        averageHitPoints: creature.definition.averageHitPoints,
+        hitPointDice: creature.definition.hitPointDice
+          ? { ...creature.definition.hitPointDice }
+          : null,
+        movements: creature.definition.movements.map((movement) => ({ ...movement })),
+        passivePerception: creature.definition.passivePerception,
+        avatarUrl: creature.definition.avatarUrl,
+        stats: creature.definition.stats.map((stat) => ({ ...stat })),
+        senses: creature.definition.senses.map((sense) => ({ ...sense })),
+        specialTraitsDescription: creature.definition.specialTraitsDescription,
+        actionsDescription: creature.definition.actionsDescription,
+        reactionsDescription: creature.definition.reactionsDescription,
+        bonusActionsDescription: creature.definition.bonusActionsDescription,
+        characteristicsDescription: creature.definition.characteristicsDescription,
+        skills: creature.definition.skills.map((skill) => ({ ...skill })),
+        savingThrows: creature.definition.savingThrows.map((save) => ({ ...save })),
+      },
     })),
     migrationBaseline: importedCapabilities(options.importedMember),
     resolutions: character.migrationResolutions.map((resolution) => ({
@@ -491,5 +932,6 @@ export function migrateDdbPayloadToCharacterV3(input: {
   return attachDdbGrantedSpellSources(
     migrateCharacterV2ToV3(v2, { campaignId: input.campaignId, importedMember: member }),
     input.payload,
+    member,
   );
 }

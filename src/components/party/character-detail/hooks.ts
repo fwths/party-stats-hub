@@ -131,6 +131,15 @@ export function useLocalHpState(
   tempHpInit: number,
   hitDiceStr: string,
   deathSavesInit: { successes: number; failures: number; stabilized: boolean },
+  external?: {
+    managed: boolean;
+    canEdit: boolean;
+    onDamage: (amount: number) => void;
+    onHeal: (amount: number) => void;
+    onSetTemporaryHp: (amount: number) => void;
+    onDeathSave: (result: "success" | "failure") => void;
+    onStabilize: () => void;
+  },
 ) {
   const storageKey = `party-stats:hp:${memberId}`;
   const [localData, setLocalData] = useState<LocalHpData>(() => {
@@ -169,6 +178,10 @@ export function useLocalHpState(
   }, [localData, storageKey]);
 
   const damage = (amount: number) => {
+    if (external?.managed) {
+      if (external.canEdit && amount > 0) external.onDamage(amount);
+      return;
+    }
     setLocalData((prev) => {
       let newTemp = prev.tempHp;
       let newHp = prev.hpCurrent;
@@ -213,6 +226,10 @@ export function useLocalHpState(
   };
 
   const heal = (amount: number) => {
+    if (external?.managed) {
+      if (external.canEdit && amount > 0) external.onHeal(amount);
+      return;
+    }
     setLocalData((prev) => {
       const newHp = Math.min(hpMax, prev.hpCurrent + amount);
       const newDeathSaves =
@@ -229,10 +246,18 @@ export function useLocalHpState(
   };
 
   const setTempHp = (amount: number) => {
+    if (external?.managed) {
+      if (external.canEdit) external.onSetTemporaryHp(Math.max(0, amount));
+      return;
+    }
     setLocalData((prev) => ({ ...prev, tempHp: Math.max(0, amount) }));
   };
 
   const setDeathSaveSuccesses = (val: number) => {
+    if (external?.managed) {
+      if (external.canEdit && val > deathSavesInit.successes) external.onDeathSave("success");
+      return;
+    }
     setLocalData((prev) => ({
       ...prev,
       deathSaves: {
@@ -244,6 +269,10 @@ export function useLocalHpState(
   };
 
   const setDeathSaveFailures = (val: number) => {
+    if (external?.managed) {
+      if (external.canEdit && val > deathSavesInit.failures) external.onDeathSave("failure");
+      return;
+    }
     setLocalData((prev) => ({
       ...prev,
       deathSaves: {
@@ -255,6 +284,10 @@ export function useLocalHpState(
   };
 
   const setStabilized = (stabilized: boolean) => {
+    if (external?.managed) {
+      if (external.canEdit && stabilized && !deathSavesInit.stabilized) external.onStabilize();
+      return;
+    }
     setLocalData((prev) => ({
       ...prev,
       deathSaves: {
@@ -339,10 +372,10 @@ export function useLocalHpState(
   };
 
   return {
-    hpCurrent: localData.hpCurrent,
-    tempHp: localData.tempHp,
+    hpCurrent: external?.managed ? hpCurrentInit : localData.hpCurrent,
+    tempHp: external?.managed ? tempHpInit : localData.tempHp,
     spentHitDice: localData.spentHitDice,
-    deathSaves: localData.deathSaves ?? deathSavesInit,
+    deathSaves: external?.managed ? deathSavesInit : (localData.deathSaves ?? deathSavesInit),
     damage,
     heal,
     setTempHp,
@@ -361,6 +394,11 @@ export function useLocalSpellSlots(
   memberId: number,
   initialSpellSlots: SpellSlotLevel[],
   initialPactSlots: SpellSlotLevel[],
+  external?: {
+    managed: boolean;
+    canEdit: boolean;
+    onSpendSlot: (level: number, isPact: boolean) => void;
+  },
 ) {
   const storageKey = `party-stats:slots:${memberId}`;
   const [localData, setLocalData] = useState<LocalSlotsData>(() => {
@@ -387,6 +425,15 @@ export function useLocalSpellSlots(
   }, [localData, storageKey]);
 
   const toggleSlot = (level: number, index: number, isPact: boolean) => {
+    if (external?.managed) {
+      if (!external.canEdit) return;
+      const slot = (isPact ? initialPactSlots : initialSpellSlots).find(
+        (entry) => entry.level === level,
+      );
+      if (!slot || slot.used >= slot.max || index >= slot.max - slot.used) return;
+      external.onSpendSlot(level, isPact);
+      return;
+    }
     setLocalData((prev) => {
       const usedMap = { ...(isPact ? prev.pactSlotsUsed : prev.spellSlotsUsed) };
       const maxSlots =
@@ -444,6 +491,7 @@ export function useLocalSpellSlots(
   };
 
   const getEffectiveSlots = (slots: SpellSlotLevel[], isPact: boolean) => {
+    if (external?.managed) return slots;
     return slots.map((s) => {
       const localUsed = (isPact ? localData.pactSlotsUsed : localData.spellSlotsUsed)[s.level];
       return {
@@ -481,7 +529,11 @@ export function useLocalSpellSlots(
   };
 }
 
-export function useLocalResourcesState(memberId: number, initialActions: ActionInfo[]) {
+export function useLocalResourcesState(
+  memberId: number,
+  initialActions: ActionInfo[],
+  external?: { managed: boolean; canEdit: boolean; onSpend: (name: string, amount: number) => void },
+) {
   const storageKey = `party-stats:resources:${memberId}`;
   const [localData, setLocalData] = useState<LocalResourcesData>(() => {
     try {
@@ -515,6 +567,7 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
   };
 
   const getSpent = (name: string): number => {
+    if (external?.managed) return getDefaultSpent(name);
     if (localData.spent[name] !== undefined) {
       return localData.spent[name];
     }
@@ -522,6 +575,10 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
   };
 
   const useResource = (name: string, max: number) => {
+    if (external?.managed) {
+      if (external.canEdit && getSpent(name) < max) external.onSpend(name, 1);
+      return;
+    }
     setLocalData((prev) => {
       const currentSpent =
         prev.spent[name] !== undefined ? prev.spent[name] : getDefaultSpent(name);
@@ -536,6 +593,10 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
   };
 
   const useResourceAmount = (name: string, amount: number, max: number) => {
+    if (external?.managed) {
+      if (external.canEdit && amount > 0 && getSpent(name) < max) external.onSpend(name, amount);
+      return;
+    }
     setLocalData((prev) => {
       const currentSpent =
         prev.spent[name] !== undefined ? prev.spent[name] : getDefaultSpent(name);
@@ -551,6 +612,7 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
   };
 
   const regainResource = (name: string) => {
+    if (external?.managed) return;
     setLocalData((prev) => {
       const currentSpent =
         prev.spent[name] !== undefined ? prev.spent[name] : getDefaultSpent(name);
@@ -565,6 +627,11 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
   };
 
   const toggleResourceBubble = (name: string, index: number, max: number) => {
+    if (external?.managed) {
+      const remaining = max - getSpent(name);
+      if (external.canEdit && index < remaining) external.onSpend(name, 1);
+      return;
+    }
     setLocalData((prev) => {
       const currentSpent =
         prev.spent[name] !== undefined ? prev.spent[name] : getDefaultSpent(name);
@@ -637,7 +704,9 @@ export function useLocalResourcesState(memberId: number, initialActions: ActionI
   };
 
   return {
-    spent: localData.spent,
+    spent: external?.managed
+      ? Object.fromEntries(initialActions.map((action) => [action.name, getDefaultSpent(action.name)]))
+      : localData.spent,
     getSpent,
     useResource,
     useResourceAmount,

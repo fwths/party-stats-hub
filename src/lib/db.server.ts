@@ -8,7 +8,7 @@ let dbInstance: any;
 // A high-fidelity in-memory Mock Database for platforms that use 'unenv' or don't support SQLite
 class MockDatabase {
   kv = new Map<string, { value: string; updated_at: number }>();
-  sessions = new Map<string, { expires_at: number }>();
+  sessions = new Map<string, { expires_at: number; user_id: string }>();
 
   exec(_sql: string) {
     // No-op for mock DB setup
@@ -109,6 +109,16 @@ class MockDatabase {
       return {
         run: (id: string) => {
           self.sessions.delete(id);
+        },
+      };
+    }
+
+    if (trimmed.includes("DELETE FROM sessions WHERE user_id = ?")) {
+      return {
+        run: (userId: string) => {
+          for (const [id, session] of self.sessions.entries()) {
+            if (session.user_id === userId) self.sessions.delete(id);
+          }
         },
       };
     }
@@ -315,27 +325,54 @@ export async function getKvWithPrefix(prefix: string): Promise<Record<string, st
 
 export async function createSession(id: string, userId: string, expiresAt: number): Promise<void> {
   await cleanExpiredSessions();
-  const db = await initDb();
-  const stmt = db.prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)");
+  const { sqlite } = await import("./drizzle.server");
+  const stmt = sqlite.prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)");
   stmt.run(id, userId, expiresAt);
 }
 
-export async function getUserIdFromSession(sessionId: string): Promise<string | null> {
-  return "default-user";
+export function getSessionIdFromCookieHeader(cookieHeader: string): string | null {
+  for (const cookie of cookieHeader.split(";")) {
+    const [rawName, ...rawValue] = cookie.trim().split("=");
+    if (rawName === "mob_session_id") {
+      const value = rawValue.join("=").trim();
+      return value ? decodeURIComponent(value) : null;
+    }
+  }
+  return null;
+}
+
+export async function getUserIdFromSession(cookieHeader: string): Promise<string | null> {
+  const sessionId = getSessionIdFromCookieHeader(cookieHeader);
+  if (!sessionId) return null;
+  const { sqlite } = await import("./drizzle.server");
+  const row = sqlite
+    .prepare("SELECT user_id FROM sessions WHERE id = ? AND expires_at > ?")
+    .get(sessionId, Date.now()) as { user_id: string } | undefined;
+  return row?.user_id || null;
 }
 
 export async function isSessionValid(id: string): Promise<boolean> {
-  return true;
+  if (!id) return false;
+  const { sqlite } = await import("./drizzle.server");
+  const row = sqlite
+    .prepare("SELECT user_id FROM sessions WHERE id = ? AND expires_at > ?")
+    .get(id, Date.now()) as { user_id: string } | undefined;
+  return Boolean(row?.user_id);
 }
 
 export async function deleteSession(id: string): Promise<void> {
-  const db = await initDb();
-  const stmt = db.prepare("DELETE FROM sessions WHERE id = ?");
+  const { sqlite } = await import("./drizzle.server");
+  const stmt = sqlite.prepare("DELETE FROM sessions WHERE id = ?");
   stmt.run(id);
 }
 
+export async function deleteSessionsForUser(userId: string): Promise<void> {
+  const { sqlite } = await import("./drizzle.server");
+  sqlite.prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
+}
+
 export async function cleanExpiredSessions(): Promise<void> {
-  const db = await initDb();
-  const stmt = db.prepare("DELETE FROM sessions WHERE expires_at < ?");
+  const { sqlite } = await import("./drizzle.server");
+  const stmt = sqlite.prepare("DELETE FROM sessions WHERE expires_at < ?");
   stmt.run(Date.now());
 }

@@ -32,6 +32,7 @@ You should receive:
 - architecture-report.md
 - dnd-report.md
 - campaign-report.md
+- frontend-report.md
 
 Examples:
 
@@ -46,11 +47,12 @@ Examples:
 /audit-results/architecture-report.md
 /audit-results/dnd-report.md
 /audit-results/campaign-report.md
+/audit-results/frontend-report.md
 ```
 
 Review prior reports before beginning.
 
-The Architecture, D&D, and Campaign reports provide context for where technical implementation risk is most likely to exist.
+The Architecture, D&D, Campaign, and Frontend reports provide context for where technical implementation risk is most likely to exist.
 
 ---
 

@@ -2,12 +2,34 @@ import { createHash } from "node:crypto";
 import type Database from "better-sqlite3";
 import { migratePersistedCharacter } from "./migration-registry";
 import {
+  applyDamage,
+  grantTemporaryHitPoints,
+  recordDeathSave,
+  restoreHitPoints,
+  stabilizeCharacter,
+} from "./hit-point-operations";
+import {
+  addCharacterCondition,
+  recoverCharacterResources,
+  removeCharacterCondition,
+  setCharacterExhaustion,
+  setCharacterInspiration,
+  spendCharacterResource,
+  takeCharacterLongRest,
+  takeCharacterShortRest,
+} from "./live-state-operations";
+import { advanceCharacterLevel } from "./operations";
+import { mutateCompanion } from "./companion-operations";
+import { mutateItem } from "./item-operations";
+import { confirmImportedFoundation } from "./foundation-confirmation";
+import {
   CommitCharacterMutationInputSchema,
   InitializeCharacterInputSchema,
   PersistedCharacterMutationSchema,
   type PersistedCharacterMutation,
 } from "./persistence";
 import { CharacterAggregateSchema, type CharacterAggregate } from "./schema";
+import { characterV3PublicError } from "./public-errors";
 
 type SnapshotRow = {
   character_id: string;
@@ -45,7 +67,10 @@ export class CharacterV3RevisionConflictError extends Error {
     actualLive: number,
   ) {
     super(
-      `character revision conflict: expected build/live ${expectedBuild}/${expectedLive}, found ${actualBuild}/${actualLive}`,
+      characterV3PublicError(
+        "REVISION_CONFLICT",
+        `Character revision conflict: expected build/live ${expectedBuild}/${expectedLive}, found ${actualBuild}/${actualLive}`,
+      ).message,
     );
     this.name = "CharacterV3RevisionConflictError";
   }
@@ -53,7 +78,12 @@ export class CharacterV3RevisionConflictError extends Error {
 
 export class CharacterV3MutationReplayMismatchError extends Error {
   constructor(mutationId: string) {
-    super(`Mutation ID ${mutationId} was already used with different content`);
+    super(
+      characterV3PublicError(
+        "MUTATION_ID_REUSED",
+        `Mutation ID ${mutationId} was already used with different content`,
+      ).message,
+    );
     this.name = "CharacterV3MutationReplayMismatchError";
   }
 }
@@ -62,6 +92,29 @@ export type CharacterV3CommitResult = {
   character: CharacterAggregate;
   event: PersistedCharacterMutation;
   replayed: boolean;
+};
+
+export type CharacterV3CampaignSnapshot = {
+  campaignId: string;
+  cursor: number;
+  characters: CharacterAggregate[];
+};
+
+type AuditedCharacterMutation = {
+  character: CharacterAggregate;
+  auditEvent: {
+    mutationId: string;
+    actorUserId: string;
+    characterId: string;
+    type: string;
+    authorization: {
+      mode: "owner" | "administrator-override";
+      actorRole: "player" | "dm" | "admin";
+      overrideReason: string | null;
+    };
+    buildRevision: { before: number; after: number };
+    liveStateRevision: { before: number; after: number };
+  } & Record<string, unknown>;
 };
 
 function canonicalJson(value: unknown): string {
@@ -186,6 +239,109 @@ export class CharacterV3Repository {
       .immediate();
   }
 
+  spendResource(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      spendCharacterResource(character, rawInput),
+    );
+  }
+
+  recoverResources(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      recoverCharacterResources(character, rawInput),
+    );
+  }
+
+  takeShortRest(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      takeCharacterShortRest(character, rawInput),
+    );
+  }
+
+  takeLongRest(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      takeCharacterLongRest(character, rawInput),
+    );
+  }
+
+  setInspiration(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      setCharacterInspiration(character, rawInput),
+    );
+  }
+
+  setExhaustion(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      setCharacterExhaustion(character, rawInput),
+    );
+  }
+
+  addCondition(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      addCharacterCondition(character, rawInput),
+    );
+  }
+
+  removeCondition(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      removeCharacterCondition(character, rawInput),
+    );
+  }
+
+  applyDamage(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      applyDamage(character, rawInput),
+    );
+  }
+
+  restoreHitPoints(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      restoreHitPoints(character, rawInput),
+    );
+  }
+
+  grantTemporaryHitPoints(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      grantTemporaryHitPoints(character, rawInput),
+    );
+  }
+
+  recordDeathSave(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      recordDeathSave(character, rawInput),
+    );
+  }
+
+  stabilizeCharacter(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      stabilizeCharacter(character, rawInput),
+    );
+  }
+
+  mutateCompanion(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      mutateCompanion(character, rawInput),
+    );
+  }
+
+  mutateItem(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      mutateItem(character, rawInput),
+    );
+  }
+
+  advanceCharacterLevel(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      advanceCharacterLevel(character, rawInput),
+    );
+  }
+
+  confirmImportedFoundation(characterId: string, rawInput: unknown): CharacterV3CommitResult {
+    const input = rawInput as Omit<Parameters<typeof confirmImportedFoundation>[0], "character">;
+    return this.commitAuditedOperation(characterId, rawInput, (character) =>
+      confirmImportedFoundation({ character, ...input }),
+    );
+  }
+
   load(characterId: string): CharacterAggregate | null {
     const row = this.db
       .prepare(
@@ -219,6 +375,79 @@ export class CharacterV3Repository {
       )
       .all(campaignId, afterSequence, limit) as MutationRow[];
     return rows.map((row) => this.fromMutationRow(row));
+  }
+
+  campaignSnapshot(campaignId: string): CharacterV3CampaignSnapshot {
+    if (!campaignId.trim()) throw new Error("Invalid campaign ID");
+    return this.db.transaction(() => {
+      const ids = this.db
+        .prepare(
+          "SELECT character_id FROM character_v3_snapshots WHERE campaign_id = ? ORDER BY character_id ASC",
+        )
+        .all(campaignId) as Array<{ character_id: string }>;
+      const characters = ids.map(({ character_id }) => {
+        const character = this.load(character_id);
+        if (!character) throw new Error(`Character ${character_id} disappeared during snapshot read`);
+        return character;
+      });
+      const highWater = this.db
+        .prepare(
+          "SELECT COALESCE(MAX(sequence), 0) AS cursor FROM character_v3_mutations WHERE campaign_id = ?",
+        )
+        .get(campaignId) as { cursor: number };
+      return { campaignId, cursor: highWater.cursor, characters };
+    })();
+  }
+
+  private commitAuditedOperation(
+    characterId: string,
+    rawInput: unknown,
+    operation: (character: CharacterAggregate) => AuditedCharacterMutation,
+  ): CharacterV3CommitResult {
+    const replayBase = this.loadReplayBase(characterId, rawInput);
+    const current = replayBase ?? this.load(characterId);
+    if (!current) throw new Error(`Character ${characterId} is not initialized`);
+    let result: AuditedCharacterMutation;
+    try {
+      result = operation(current);
+    } catch (error) {
+      if (
+        replayBase &&
+        typeof rawInput === "object" &&
+        rawInput !== null &&
+        "mutationId" in rawInput &&
+        typeof rawInput.mutationId === "string"
+      ) {
+        throw new CharacterV3MutationReplayMismatchError(rawInput.mutationId);
+      }
+      throw error;
+    }
+    const { auditEvent } = result;
+    const {
+      mutationId,
+      actorUserId,
+      characterId: eventCharacterId,
+      type,
+      authorization,
+      buildRevision,
+      liveStateRevision,
+      ...details
+    } = auditEvent;
+    return this.commit({
+      expectedRevision: {
+        build: buildRevision.before,
+        liveState: liveStateRevision.before,
+      },
+      character: result.character,
+      event: {
+        mutationId,
+        actorUserId,
+        characterId: eventCharacterId,
+        type,
+        authorization,
+        details,
+      },
+    });
   }
 
   private validateEventAuthority(
@@ -363,6 +592,37 @@ export class CharacterV3Repository {
         .prepare("SELECT * FROM character_v3_mutations WHERE mutation_id = ?")
         .get(mutationId) as MutationRow | undefined) ?? null
     );
+  }
+
+  private loadReplayBase(characterId: string, rawInput: unknown): CharacterAggregate | null {
+    if (
+      typeof rawInput !== "object" ||
+      rawInput === null ||
+      !("mutationId" in rawInput) ||
+      typeof rawInput.mutationId !== "string"
+    ) {
+      return null;
+    }
+    const replay = this.findMutation(rawInput.mutationId);
+    if (!replay) return null;
+    if (replay.character_id !== characterId || replay.expected_build_revision === null) {
+      throw new CharacterV3MutationReplayMismatchError(rawInput.mutationId);
+    }
+    const base = this.db
+      .prepare(
+        `SELECT * FROM character_v3_mutations
+         WHERE character_id = ? AND sequence < ?
+           AND resulting_build_revision = ? AND resulting_live_state_revision = ?
+         ORDER BY sequence DESC LIMIT 1`,
+      )
+      .get(
+        characterId,
+        replay.sequence,
+        replay.expected_build_revision,
+        replay.expected_live_state_revision,
+      ) as MutationRow | undefined;
+    if (!base) throw new Error(`Mutation replay base is missing for ${rawInput.mutationId}`);
+    return this.fromMutationRow(base).resultingCharacter;
   }
 
   private replayOrThrow(

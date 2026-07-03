@@ -86,6 +86,8 @@ Verify all required inputs exist.
 
 □ campaign-report.md exists
 
+□ frontend-report.md exists
+
 □ code-quality-report.md exists
 
 □ critic-report.md exists
@@ -223,6 +225,46 @@ Questions:
 □ Are collaboration risks understood?
 
 □ Are DM workflows acceptable?
+```
+
+---
+
+# Phase 4B — Frontend & UX Review
+
+Review:
+
+```text
+frontend-report.md
+```
+
+Verify:
+
+```text
+□ Visual & Responsive Layouts Score recorded
+
+□ Accessibility Score recorded
+
+□ SSR & Hydration Score recorded
+
+□ PWA & Offline Support Score recorded
+
+□ Client Performance Score recorded
+
+□ Tailwind 4 variable usage reviewed
+
+□ Screen-reader and keyboard compatibility reviewed
+```
+
+Questions:
+
+```text
+□ Are accessibility blockers identified and prioritized?
+
+□ Are SSR hydration mismatches eliminated?
+
+□ Does the app adapt cleanly to mobile viewports?
+
+□ Is offline PWA usage stable?
 ```
 
 ---

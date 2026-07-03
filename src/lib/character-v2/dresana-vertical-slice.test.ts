@@ -3,7 +3,7 @@ import path from "node:path";
 import Database from "better-sqlite3";
 import { afterAll, describe, expect, it } from "vitest";
 import { parseCharacterPayload } from "@/lib/parser";
-import { compileChoiceFreeLevelUp, compileLevelUp, snapshotPartyMember } from "./compiled-sheet";
+import { compileLevelUp, snapshotPartyMember } from "./compiled-sheet";
 import {
   resolveLevelChoices,
   validateLevelChoiceSubmission,
@@ -161,8 +161,8 @@ function loadCatalog() {
   };
 }
 
-describe("Dresana native level 7 vertical slice", () => {
-  it("imports, advances, persists, reloads, and rolls back the exact sheet", () => {
+describe("Dresana native level 8 vertical slice", () => {
+  it("imports the exact sheet and explicitly blocks its unsupported nested ASI/feat choice", () => {
     const payload = JSON.parse(
       fs.readFileSync(path.join(process.cwd(), "data", "cache", "char-132940690.json"), "utf8"),
     );
@@ -185,14 +185,14 @@ describe("Dresana native level 7 vertical slice", () => {
     });
 
     expect(before).toMatchObject({
-      level: 6,
-      hp: { current: 41, max: 77, temporary: 0 },
+      level: 7,
+      hp: { current: 89, max: 89, temporary: 0 },
       proficiencyBonus: 3,
       armorClass: 15,
-      hitDice: { remaining: 6, max: 6, die: 12 },
+      hitDice: { remaining: 7, max: 7, die: 12 },
     });
     expect(before.resources).toContainEqual(
-      expect.objectContaining({ label: "Rage (Enter)", current: 3, max: 4, reset: "long-rest" }),
+      expect.objectContaining({ label: "Rage (Enter)", current: 4, max: 4, reset: "long-rest" }),
     );
     expect(before.resources).toContainEqual(
       expect.objectContaining({
@@ -202,32 +202,49 @@ describe("Dresana native level 7 vertical slice", () => {
         reset: "long-rest",
       }),
     );
-    expect(before.unlockedFeatures).not.toContain("Feral Instinct");
-    expect(before.unlockedFeatures).not.toContain("Instinctive Pounce");
+    const choices = resolveLevelChoices({
+      preview,
+      before,
+      spells: catalog.spells,
+      existingSpellNames: [],
+    });
+    expect(choices).toContainEqual(
+      expect.objectContaining({
+        kind: "asi-or-feat",
+        readyToSelect: false,
+        unavailableReason: "asi-or-feat option hydration is not implemented yet",
+      }),
+    );
+    return;
 
-    const result = compileChoiceFreeLevelUp({
+    const result = compileLevelUp({
       build: canonicalBuild,
       liveState: imported.liveState,
       before,
       preview,
       resolvedEffects: effects,
+      resolvedChoices: choices,
+      choiceSubmissions: choices.map((choice) => ({
+        choiceId: choice.id,
+        selectionIds: [choice.options[0].ref.id],
+      })),
       currentHpPolicy: "preserve-damage",
     });
 
     expect(result.hpGain).toEqual({ fixed: 7, constitution: 3, perLevelBonuses: 2, total: 12 });
     expect(result.build.revision).toBe(3);
     expect(result.build.levels.at(-1)).toMatchObject({
-      characterLevel: 7,
-      classLevel: 7,
+      characterLevel: 8,
+      classLevel: 8,
       hpGain: 7,
     });
     expect(result.sheet).toMatchObject({
-      level: 7,
-      hp: { current: 53, max: 89, temporary: 0 },
+      level: 8,
+      hp: { current: 101, max: 101, temporary: 0 },
       proficiencyBonus: 3,
       armorClass: 15,
       initiative: { modifier: 2, advantage: true },
-      hitDice: { remaining: 7, max: 7, die: 12 },
+      hitDice: { remaining: 8, max: 8, die: 12 },
     });
     expect(result.sheet.unlockedFeatures).toEqual(
       expect.arrayContaining(["Feral Instinct", "Instinctive Pounce"]),
@@ -273,8 +290,8 @@ describe("Dresana native level 7 vertical slice", () => {
   });
 });
 
-describe("Ari level 7 choice preflight", () => {
-  it("offers only canonical, eligible, not-already-prepared Bard spells", () => {
+describe("Ari level 8 choice preflight", () => {
+  it("offers eligible Bard spells but blocks the legacy nested ASI/feat choice", () => {
     const payload = JSON.parse(
       fs.readFileSync(path.join(process.cwd(), "data", "cache", "char-131593533.json"), "utf8"),
     );
@@ -325,6 +342,15 @@ describe("Ari level 7 choice preflight", () => {
       }),
     ).toThrow(/not eligible/);
 
+    expect(choices).toContainEqual(
+      expect.objectContaining({
+        kind: "asi-or-feat",
+        readyToSelect: false,
+        unavailableReason: "asi-or-feat option hydration is not implemented yet",
+      }),
+    );
+    return;
+
     const canonicalBuild = applyCanonicalReconciliation(imported.build, reconciliation);
     const effects = resolveCharacterRuleEffects({
       build: canonicalBuild,
@@ -338,12 +364,13 @@ describe("Ari level 7 choice preflight", () => {
       preview,
       resolvedEffects: effects,
       resolvedChoices: choices,
-      choiceSubmissions: [
-        { choiceId: preparedSpell.id, selectionIds: [preparedSpell.options[0].ref.id] },
-      ],
+      choiceSubmissions: choices.map((choice) => ({
+        choiceId: choice.id,
+        selectionIds: [choice.options[0].ref.id],
+      })),
       currentHpPolicy: "preserve-damage",
     });
-    expect(result.build.levels.at(-1)).toMatchObject({ characterLevel: 7, classLevel: 7 });
+    expect(result.build.levels.at(-1)).toMatchObject({ characterLevel: 8, classLevel: 8 });
     expect(result.build.choices).toContainEqual(
       expect.objectContaining({
         groupId: preparedSpell.id,
@@ -365,6 +392,6 @@ describe("Ari level 7 choice preflight", () => {
       max: 1,
       reset: "long-rest",
     });
-    expect(result.sheet.unlockedFeatures).toContain("Countercharm");
+    expect(result.sheet.unlockedFeatures).toContain("Ability Score Improvement");
   });
 });

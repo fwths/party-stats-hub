@@ -1,7 +1,9 @@
+import { createHash } from "node:crypto";
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   applyDatabaseMigrations,
+  databaseMigrationSources,
   DatabaseMigrationIntegrityError,
   registeredDatabaseMigrations,
   verifyDatabaseMigrations,
@@ -15,6 +17,12 @@ describe("reviewed database migrations", () => {
   });
 
   afterEach(() => db.close());
+
+  it("keeps each reviewed checksum synchronized with its exact SQL", () => {
+    for (const migration of databaseMigrationSources()) {
+      expect(createHash("sha256").update(migration.sql).digest("hex")).toBe(migration.checksum);
+    }
+  });
 
   it("applies the V3 authority schema transactionally and only once", () => {
     const first = applyDatabaseMigrations(db, () => 1_750_000_000_000);

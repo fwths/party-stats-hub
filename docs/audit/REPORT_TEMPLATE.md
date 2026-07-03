@@ -29,6 +29,8 @@ dnd-agent.md
 
 campaign-agent.md
 
+frontend-agent.md
+
 code-quality-agent.md
 
 critic-agent.md
@@ -499,6 +501,18 @@ Healthy With Improvements
 Requires Remediation
 
 High Risk
+```
+
+Frontend & UX Agent:
+
+```text
+Visually & Accessibly Healthy
+
+Healthy With Improvements
+
+Requires UI/a11y Remediation
+
+High UI/a11y Risk
 ```
 
 Use the recommendation options defined by the agent prompt.
